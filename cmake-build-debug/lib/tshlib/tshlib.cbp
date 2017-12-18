@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="tshlib"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\usr\;CMake Files\..\..\..\..\usr\lib\;CMake Files\..\..\..\..\usr\lib\cmake\;CMake Files\..\..\..\..\usr\lib\cmake\eigen3\;CMake Files\..\tshlib\;CMake Files\..\tshlib\src\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tshlib">
+				<Option output="/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/libtshlib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DTSHLIB_BENCHMARK"/>
+					<Add directory="/usr/local/include/glog"/>
+					<Add directory="/usr/include/eigen3"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 tshlib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tshlib/fast">
+				<Option output="/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/libtshlib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DTSHLIB_BENCHMARK"/>
+					<Add directory="/usr/local/include/glog"/>
+					<Add directory="/usr/include/eigen3"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 tshlib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Alignment.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Alignment.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Alphabet.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Alphabet.h">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Likelihood.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Likelihood.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Optimiser.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Optimiser.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Optimization_Brent.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Optimization_Brent.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/PhyTree.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/PhyTree.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Sequence.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Sequence.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/SubstitutionModel.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/SubstitutionModel.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/TreeRearrangment.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/TreeRearrangment.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/TreeSearch.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/TreeSearch.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Utilities.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Utree.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/Utree.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/newick.cpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/tshlib/src/newick.hpp">
+			<Option target="tshlib"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/miniJATI/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/miniJATI/../../../../usr/lib/cmake/eigen3/Eigen3Config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\cmake\eigen3\"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/miniJATI/../../../../usr/lib/cmake/eigen3/Eigen3Config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\cmake\eigen3\"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/miniJATI/../../../../usr/lib/cmake/eigen3/Eigen3Config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\cmake\eigen3\"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/miniJATI/../tshlib/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\..\tshlib\src\"/>
+		</Unit>
+		<Unit filename="/home/max/CLionProjects/miniJATI/../tshlib/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\..\tshlib\src\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

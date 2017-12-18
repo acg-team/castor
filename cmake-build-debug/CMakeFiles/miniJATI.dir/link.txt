@@ -1,0 +1,1 @@
+/usr/bin/c++   -std=c++11 -lstdc++ -ldl -pthread  -Wall -Wshadow -Weffc++ -O0 -g   CMakeFiles/miniJATI.dir/main.cpp.o  -o miniJATI lib/tshlib/libtshlib.a -lglog -lgflags -lglog -lgflags 
