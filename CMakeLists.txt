@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.9)
 project(miniJATI)
 
+message("CMAKE MODULE PATH: ${CMAKE_MODULE_PATH}")
+
 set(CMAKE_CXX_STANDARD 11)
 
 SET(CMAKE_CXX_FLAGS_DEBUG  "-Wall -Wshadow -Weffc++ -O0 -g")
@@ -38,8 +40,11 @@ if (EIGEN3_FOUND)
 endif (EIGEN3_FOUND)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-add_subdirectory("../tshlib/src" ${CMAKE_CACHEFILE_DIR}/lib/tshlib)
-include_directories("../tshlib/src")
+#add_subdirectory("../tshlib/src" ${CMAKE_CACHEFILE_DIR}/lib/tshlib)
+#include_directories("../tshlib/src")
+
+find_package("TshLib")
+include_directories(${TSHLIB_INCLUDE_DIRS})
 
 set(SOURCES
         main.cpp)

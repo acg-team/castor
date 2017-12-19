@@ -63,7 +63,7 @@ CMAKE_BINARY_DIR = /home/max/CLionProjects/miniJATI/cmake-build-debug
 # Target rules for target CMakeFiles/miniJATI.dir
 
 # All Build rule for target.
-CMakeFiles/miniJATI.dir/all: lib/tshlib/CMakeFiles/tshlib.dir/all
+CMakeFiles/miniJATI.dir/all:
 	$(MAKE) -f CMakeFiles/miniJATI.dir/build.make CMakeFiles/miniJATI.dir/depend
 	$(MAKE) -f CMakeFiles/miniJATI.dir/build.make CMakeFiles/miniJATI.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/max/CLionProjects/miniJATI/cmake-build-debug/CMakeFiles --progress-num=1,2 "Built target miniJATI"
@@ -76,7 +76,7 @@ all: CMakeFiles/miniJATI.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/miniJATI.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/max/CLionProjects/miniJATI/cmake-build-debug/CMakeFiles 15
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/max/CLionProjects/miniJATI/cmake-build-debug/CMakeFiles 2
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/miniJATI.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/max/CLionProjects/miniJATI/cmake-build-debug/CMakeFiles 0
 .PHONY : CMakeFiles/miniJATI.dir/rule
@@ -93,61 +93,6 @@ CMakeFiles/miniJATI.dir/clean:
 
 # clean rule for target.
 clean: CMakeFiles/miniJATI.dir/clean
-
-.PHONY : clean
-
-#=============================================================================
-# Directory level rules for directory lib/tshlib
-
-# Convenience name for "all" pass in the directory.
-lib/tshlib/all: lib/tshlib/CMakeFiles/tshlib.dir/all
-
-.PHONY : lib/tshlib/all
-
-# Convenience name for "clean" pass in the directory.
-lib/tshlib/clean: lib/tshlib/CMakeFiles/tshlib.dir/clean
-
-.PHONY : lib/tshlib/clean
-
-# Convenience name for "preinstall" pass in the directory.
-lib/tshlib/preinstall:
-
-.PHONY : lib/tshlib/preinstall
-
-#=============================================================================
-# Target rules for target lib/tshlib/CMakeFiles/tshlib.dir
-
-# All Build rule for target.
-lib/tshlib/CMakeFiles/tshlib.dir/all:
-	$(MAKE) -f lib/tshlib/CMakeFiles/tshlib.dir/build.make lib/tshlib/CMakeFiles/tshlib.dir/depend
-	$(MAKE) -f lib/tshlib/CMakeFiles/tshlib.dir/build.make lib/tshlib/CMakeFiles/tshlib.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/max/CLionProjects/miniJATI/cmake-build-debug/CMakeFiles --progress-num=3,4,5,6,7,8,9,10,11,12,13,14,15 "Built target tshlib"
-.PHONY : lib/tshlib/CMakeFiles/tshlib.dir/all
-
-# Include target in all.
-all: lib/tshlib/CMakeFiles/tshlib.dir/all
-
-.PHONY : all
-
-# Build rule for subdir invocation for target.
-lib/tshlib/CMakeFiles/tshlib.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/max/CLionProjects/miniJATI/cmake-build-debug/CMakeFiles 13
-	$(MAKE) -f CMakeFiles/Makefile2 lib/tshlib/CMakeFiles/tshlib.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/max/CLionProjects/miniJATI/cmake-build-debug/CMakeFiles 0
-.PHONY : lib/tshlib/CMakeFiles/tshlib.dir/rule
-
-# Convenience name for target.
-tshlib: lib/tshlib/CMakeFiles/tshlib.dir/rule
-
-.PHONY : tshlib
-
-# clean rule for target.
-lib/tshlib/CMakeFiles/tshlib.dir/clean:
-	$(MAKE) -f lib/tshlib/CMakeFiles/tshlib.dir/build.make lib/tshlib/CMakeFiles/tshlib.dir/clean
-.PHONY : lib/tshlib/CMakeFiles/tshlib.dir/clean
-
-# clean rule for target.
-clean: lib/tshlib/CMakeFiles/tshlib.dir/clean
 
 .PHONY : clean
 

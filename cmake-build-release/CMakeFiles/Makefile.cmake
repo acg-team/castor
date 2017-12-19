@@ -11,7 +11,6 @@ set(CMAKE_MAKEFILE_DEPENDS
   "CMakeFiles/3.9.4/CMakeCCompiler.cmake"
   "CMakeFiles/3.9.4/CMakeCXXCompiler.cmake"
   "CMakeFiles/3.9.4/CMakeSystem.cmake"
-  "/home/max/CLionProjects/tshlib/src/CMakeLists.txt"
   "/home/max/Desktop/clion-2017.3/bin/cmake/share/cmake-3.9/Modules/CMakeCInformation.cmake"
   "/home/max/Desktop/clion-2017.3/bin/cmake/share/cmake-3.9/Modules/CMakeCXXInformation.cmake"
   "/home/max/Desktop/clion-2017.3/bin/cmake/share/cmake-3.9/Modules/CMakeCommonLanguageInclude.cmake"
@@ -32,6 +31,10 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/home/max/Desktop/clion-2017.3/bin/cmake/share/cmake-3.9/Modules/Platform/UnixPaths.cmake"
   "/home/max/Desktop/clion-2017.3/bin/cmake/share/cmake-3.9/Modules/ProcessorCount.cmake"
   "/usr/lib/cmake/eigen3/Eigen3Config.cmake"
+  "/usr/local/lib/tshlib/TshLibConfig.cmake"
+  "/usr/local/lib/tshlib/TshLibConfigVersion.cmake"
+  "/usr/local/lib/tshlib/TshLibTargets-debug.cmake"
+  "/usr/local/lib/tshlib/TshLibTargets.cmake"
   )
 
 # The corresponding makefile is:
@@ -43,11 +46,9 @@ set(CMAKE_MAKEFILE_OUTPUTS
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
   "CMakeFiles/CMakeDirectoryInformation.cmake"
-  "lib/tshlib/CMakeFiles/CMakeDirectoryInformation.cmake"
   )
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/miniJATI.dir/DependInfo.cmake"
-  "lib/tshlib/CMakeFiles/tshlib.dir/DependInfo.cmake"
   )

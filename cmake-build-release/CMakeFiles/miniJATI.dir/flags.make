@@ -6,5 +6,5 @@ CXX_FLAGS =  -std=c++11 -lstdc++ -ldl -pthread  -O3   -std=gnu++11
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/usr/local/include/glog -I/usr/include/eigen3 -I/home/max/CLionProjects/miniJATI/../tshlib/src 
+CXX_INCLUDES = -I/usr/local/include/glog -I/usr/include/eigen3 -I/usr/local/include/tshlib 
 

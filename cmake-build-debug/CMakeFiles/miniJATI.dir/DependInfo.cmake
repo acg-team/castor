@@ -12,12 +12,11 @@ set(CMAKE_CXX_COMPILER_ID "GNU")
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/usr/local/include/glog"
   "/usr/include/eigen3"
-  "../../tshlib/src"
+  "/usr/local/include/tshlib"
   )
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/home/max/CLionProjects/miniJATI/cmake-build-debug/lib/tshlib/CMakeFiles/tshlib.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

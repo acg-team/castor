@@ -197,20 +197,17 @@ ProcessorCount_cmd_getconf:FILEPATH=/usr/bin/getconf
 //Path to a program.
 ProcessorCount_cmd_sysctl:FILEPATH=/sbin/sysctl
 
+//The directory containing a CMake configuration file for TSHLIB.
+TSHLIB_DIR:PATH=TSHLIB_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for TshLib.
+TshLib_DIR:PATH=/usr/local/lib/tshlib
+
 //Value Computed by CMake
 miniJATI_BINARY_DIR:STATIC=/home/max/CLionProjects/miniJATI/cmake-build-release
 
 //Value Computed by CMake
 miniJATI_SOURCE_DIR:STATIC=/home/max/CLionProjects/miniJATI
-
-//Value Computed by CMake
-tshlib_BINARY_DIR:STATIC=/home/max/CLionProjects/miniJATI/cmake-build-release/lib/tshlib
-
-//Dependencies for the target
-tshlib_LIB_DEPENDS:STATIC=general;/usr/include/eigen3;general;glog;general;gflags;
-
-//Value Computed by CMake
-tshlib_SOURCE_DIR:STATIC=/home/max/CLionProjects/tshlib/src
 
 
 ########################
@@ -319,7 +316,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=2
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP

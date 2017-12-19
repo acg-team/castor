@@ -90,7 +90,7 @@ miniJATI_EXTERNAL_OBJECTS =
 
 miniJATI: CMakeFiles/miniJATI.dir/main.cpp.o
 miniJATI: CMakeFiles/miniJATI.dir/build.make
-miniJATI: lib/tshlib/libtshlib.a
+miniJATI: /usr/local/lib/libtshlib.so
 miniJATI: CMakeFiles/miniJATI.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/max/CLionProjects/miniJATI/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable miniJATI"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/miniJATI.dir/link.txt --verbose=$(VERBOSE)

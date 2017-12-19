@@ -123,19 +123,6 @@ miniJATI/fast:
 	$(MAKE) -f CMakeFiles/miniJATI.dir/build.make CMakeFiles/miniJATI.dir/build
 .PHONY : miniJATI/fast
 
-#=============================================================================
-# Target rules for targets named tshlib
-
-# Build rule for target.
-tshlib: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 tshlib
-.PHONY : tshlib
-
-# fast build rule for target.
-tshlib/fast:
-	$(MAKE) -f lib/tshlib/CMakeFiles/tshlib.dir/build.make lib/tshlib/CMakeFiles/tshlib.dir/build
-.PHONY : tshlib/fast
-
 main.o: main.cpp.o
 
 .PHONY : main.o
@@ -172,7 +159,6 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... miniJATI"
-	@echo "... tshlib"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
