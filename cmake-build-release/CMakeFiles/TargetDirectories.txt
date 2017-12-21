@@ -1,6 +1,0 @@
-/home/max/CLionProjects/miniJATI/cmake-build-release/CMakeFiles/rebuild_cache.dir
-/home/max/CLionProjects/miniJATI/cmake-build-release/CMakeFiles/edit_cache.dir
-/home/max/CLionProjects/miniJATI/cmake-build-release/CMakeFiles/miniJATI.dir
-/home/max/CLionProjects/miniJATI/cmake-build-release/lib/tshlib/CMakeFiles/rebuild_cache.dir
-/home/max/CLionProjects/miniJATI/cmake-build-release/lib/tshlib/CMakeFiles/edit_cache.dir
-/home/max/CLionProjects/miniJATI/cmake-build-release/lib/tshlib/CMakeFiles/tshlib.dir
