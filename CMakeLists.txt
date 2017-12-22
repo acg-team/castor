@@ -1,9 +1,22 @@
-cmake_minimum_required(VERSION 3.9)
-project(miniJATI)
+cmake_minimum_required(VERSION 3.5)
 
+<<<<<<< HEAD
 message("CMAKE MODULE PATH: ${CMAKE_MODULE_PATH}")
 
 set(CMAKE_CXX_STANDARD 11)
+=======
+set(THSLIB_MAJOR_VERSION 1)
+set(THSLIB_MINOR_VERSION 0)
+set(THSLIB_PATCH_VERSION 0)
+set(THSLIB_VERSION ${THSLIB_MAJOR_VERSION}.${THSLIB_MINOR_VERSION}.${THSLIB_PATCH_VERSION})
+
+project(miniJATI VERSION ${THSLIB_VERSION}
+        DESCRIPTION "Joint Alignment Tree Inferecne -- Minimal Version"
+        LANGUAGES "CXX")
+
+
+set(CMAKE_CXX_STANDARD 14)
+>>>>>>> master
 
 SET(CMAKE_CXX_FLAGS_DEBUG  "-Wall -Wshadow -Weffc++ -O0 -g")
 SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g")
@@ -20,6 +33,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(LINUX TRUE)
     message(STATUS "Compilation will be performed under Linux")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lstdc++ -ldl -pthread ")
     include_directories("/usr/local/include/glog")
 
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -29,9 +43,7 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     find_package(gflags REQUIRED)
 endif ()
 
-if (UNIX)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lstdc++ -ldl -pthread ")
-endif (UNIX)
+
 
 
 find_package("Eigen3")
@@ -40,14 +52,29 @@ if (EIGEN3_FOUND)
 endif (EIGEN3_FOUND)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
+<<<<<<< HEAD
 #add_subdirectory("../tshlib/src" ${CMAKE_CACHEFILE_DIR}/lib/tshlib)
 #include_directories("../tshlib/src")
 
 find_package("TshLib")
 include_directories(${TSHLIB_INCLUDE_DIRS})
+=======
+
+find_package("TshLib")
+if (TSHLIB_FOUND)
+    message("Found TSHLIB in ${TSHLIB_INCLUDE_DIRS}")
+endif(TSHLIB_FOUND)
+include_directories(${TSHLIB_INCLUDE_DIRS})
+
+
+find_package(bpp-core)
+find_package(bpp-seq)
+find_package(bpp-phyl)
+
+>>>>>>> master
 
 set(SOURCES
-        main.cpp)
+        main.cpp utils.cpp utils.hpp)
 
 
 add_executable(miniJATI ${SOURCES})
@@ -55,3 +82,4 @@ add_executable(miniJATI ${SOURCES})
 target_link_libraries(miniJATI tshlib)
 target_link_libraries(miniJATI glog)
 target_link_libraries(miniJATI gflags)
+target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
