@@ -113,17 +113,6 @@ void ::UtreeBppUtils::convertUtree(bpp::TreeTemplate<bpp::Node> *in_tree, Utree 
         // Add this node as starting point of the tree
         out_tree->addMember(ichild, true);
 
-        // If the node in PhyTree is a leaf, skip the recursion
-        //if (bppNode->isLeaf()) {
-
-        //    ichild->vnode_leaf = true;
-
-        //} else {
-
-
-
-        //}
-
 
     }
 

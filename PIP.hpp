@@ -46,31 +46,72 @@
 
 #include <Bpp/Phyl/Model/SubstitutionModel.h>
 #include <Bpp/Phyl/Model/AbstractSubstitutionModel.h>
+#include <Bpp/Phyl/Model/Nucleotide/NucleotideSubstitutionModel.h>
+#include <Bpp/Phyl/Model/Protein/ProteinSubstitutionModel.h>
 
-namespace bpp {
+//namespace bpp {
+//
+//    class PIP : public bpp::AbstractReversibleSubstitutionModel {
+//    private:
+//
+//        double lambda;
+//        double mu;
+//        double tau;
+//        double nu;
+//        std::string name;
+//
+//    public:
+//
+//        PIP(bpp::SubstitutionModel *model, double valLambda, double valMu) :
+//                AbstractParameterAliasable(model->getName()),
+//                AbstractReversibleSubstitutionModel(model->getAlphabet(), &model->getStateMap(), model->getName()) {}
+//
+//        virtual ~PIP() {}
+//
+//        PIP* clone() const { return new  PIP(*this); }
+//
+//        std::string getName() const { return name; }
+//
+//
+//    };
+//}
+//
 
-    class PIP : public bpp::AbstractReversibleSubstitutionModel {
+
+using namespace bpp;
+
+    class PIP: public AbstractReversibleNucleotideSubstitutionModel {
     private:
+        double lambda_, mu_, tau_, nu_;
+        std::string name_;
 
-        double lambda;
-        double mu;
-        double tau;
-        double nu;
-        std::string name;
+        double kappa_, r_;
+        mutable double l_, k_, exp1_, exp2_;
+        mutable RowMatrix<double> p_;
 
     public:
-
-        PIP(bpp::SubstitutionModel *model, double valLambda, double valMu) :
-                AbstractParameterAliasable(model->getName()),
-                AbstractReversibleSubstitutionModel(model->getAlphabet(), &model->getStateMap(), model->getName()) {}
+        PIP(const SubstitutionModel* model, double lambda = 0.1, double mu = 0.1);
 
         virtual ~PIP() {}
 
-        PIP* clone() const { return new  PIP(*this); }
+        PIP* clone() const { return new PIP(*this); }
 
-        std::string getName() const { return name; }
+    public:
+        double Pij_t    (size_t i, size_t j, double d) const;
+        double dPij_dt  (size_t i, size_t j, double d) const;
+        double d2Pij_dt2(size_t i, size_t j, double d) const;
+        const Matrix<double>& getPij_t    (double d) const;
+        const Matrix<double>& getdPij_dt  (double d) const;
+        const Matrix<double>& getd2Pij_dt2(double d) const;
 
+        std::string getName() const { return name_; }
+
+    protected:
+        void updateMatrices();
 
     };
-}
+
+
+
 #endif //MINIJATI_PIP_HPP
+

@@ -1,8 +1,4 @@
-cmake-build-debug
-<<<<<<< HEAD
-cmake-build-release
 .idea
-=======
 cmake-build-intel
 cmake-build-release
->>>>>>> master
+cmake-build-debug

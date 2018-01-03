@@ -42,11 +42,11 @@
  * @see For more information visit: 
  */
 #include "PIP.hpp"
-
-bpp::PIP(bpp::SubstitutionModel *model, double valLambda, double valMu){
-    lambda = valLambda;
-    mu = valMu;
-    name = model->getName() + "+PIP";
-    addParameter_(Parameter("alpha", lambda, &Parameter::R_PLUS_STAR));
-}
-
+//
+//bpp::PIP(bpp::SubstitutionModel *model, double valLambda, double valMu){
+//    lambda = valLambda;
+//    mu = valMu;
+//    name = model->getName() + "+PIP";
+//    addParameter_(Parameter("alpha", lambda, &Parameter::R_PLUS_STAR));
+//}
+//

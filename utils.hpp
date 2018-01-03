@@ -49,7 +49,7 @@
 #include <Bpp/Phyl/TreeTemplate.h>
 
 namespace UtreeBppUtils{
-
+using namespace tshlib;
     void convertUtree(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree);
     void _traverseTree(Utree *in_tree, VirtualNode *target, bpp::Node *source);
 
