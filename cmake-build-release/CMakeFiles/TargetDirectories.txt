@@ -1,3 +1,3 @@
-/home/max/CLionProjects/miniJATI/cmake-build-release/CMakeFiles/rebuild_cache.dir
-/home/max/CLionProjects/miniJATI/cmake-build-release/CMakeFiles/edit_cache.dir
-/home/max/CLionProjects/miniJATI/cmake-build-release/CMakeFiles/miniJATI.dir
+/Users/lorenzogatti/Documents/projects/minijati/cmake-build-release/CMakeFiles/rebuild_cache.dir
+/Users/lorenzogatti/Documents/projects/minijati/cmake-build-release/CMakeFiles/edit_cache.dir
+/Users/lorenzogatti/Documents/projects/minijati/cmake-build-release/CMakeFiles/miniJATI.dir

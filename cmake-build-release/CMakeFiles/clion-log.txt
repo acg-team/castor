@@ -1,8 +1,18 @@
-/home/max/Desktop/clion-2017.3/bin/cmake/bin/cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" /home/max/CLionProjects/miniJATI
-CMAKE MODULE PATH: 
--- Compilation will be performed under Linux
-Found Eigen3 in: /usr/include/eigen3
+/Applications/CMake.app/Contents/bin/cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" /Users/lorenzogatti/Documents/projects/minijati
+-- Compilation will be performed under Apple MacOS
+Found Eigen3 in: /usr/local/include/eigen3
+-- bpp-core 3.0.0 found:
+--   static lib: /usr/local/lib/libbpp-core.a
+--   shared lib: /usr/local/lib/libbpp-core.3.0.0.dylib
+--   includes: /usr/local/include
+-- bpp-seq 11.0.0 found:
+--   static lib: /usr/local/lib/libbpp-seq.a
+--   shared lib: /usr/local/lib/libbpp-seq.11.0.0.dylib
+--   includes: /usr/local/include
+-- bpp-phyl 11.0.0 found:
+--   static lib: /usr/local/lib/libbpp-phyl.a
+--   shared lib: /usr/local/lib/libbpp-phyl.11.0.0.dylib
+--   includes: /usr/local/include
 -- Configuring done
-WARNING: Target "miniJATI" requests linking to directory "/usr/include/eigen3".  Targets may link only to libraries.  CMake is dropping the item.
 -- Generating done
--- Build files have been written to: /home/max/CLionProjects/miniJATI/cmake-build-release
+-- Build files have been written to: /Users/lorenzogatti/Documents/projects/minijati/cmake-build-release

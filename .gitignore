@@ -1,4 +1,5 @@
-.idea
-cmake-build-intel
-cmake-build-release
-cmake-build-debug
+.idea/*
+data/*
+cmake-build-intel/*
+cmake-build-release/*
+cmake-build-debug/*
