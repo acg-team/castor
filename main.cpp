@@ -75,17 +75,15 @@
 #include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
 
-#include <Alignment.hpp>
-
-#include "utils.hpp"
-
-
-
-
 #include <glog/logging.h>
 #include <gflags/gflags.h>
+
+#include <Alignment.hpp>
 #include <Likelihood.hpp>
 #include <TreeRearrangment.hpp>
+
+#include "utils.hpp"
+#include "PIP.hpp"
 
 
 using namespace tshlib;
@@ -202,6 +200,9 @@ int main(int argc, char *argv[]) {
     bpp::SubstitutionModel *model_k80 = new bpp::K80(&bpp::AlphabetTools::DNA_ALPHABET, k80_kappa);
     bpp::SubstitutionModel *model_GTR = new bpp::GTR(&bpp::AlphabetTools::DNA_ALPHABET);
 
+
+    bpp::SubstitutionModel *model_PIP_JC96 = new PIP_Nuc(&bpp::AlphabetTools::DNA_ALPHABET, 0.2, 0.4, model_jc69);
+    bpp::SubstitutionModel *model_PIP_K80 = new PIP_Nuc(&bpp::AlphabetTools::DNA_ALPHABET, 0.2, 0.4, model_k80);
     // Fill Q matrix as for JC69
     Eigen::MatrixXd Q = MatrixBppUtils::Matrix2Eigen(model_jc69->getGenerator());
 

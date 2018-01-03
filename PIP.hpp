@@ -80,36 +80,37 @@
 
 using namespace bpp;
 
-    class PIP: public AbstractReversibleNucleotideSubstitutionModel {
-    private:
-        double lambda_, mu_, tau_, nu_;
-        std::string name_;
+class PIP_Nuc: public AbstractReversibleNucleotideSubstitutionModel {
+private:
+    double lambda_, mu_, tau_, nu_;
+    std::string name_;
 
-        double kappa_, r_;
-        mutable double l_, k_, exp1_, exp2_;
-        mutable RowMatrix<double> p_;
+    double kappa_, r_;
+    mutable double l_, k_, exp1_, exp2_;
+    mutable RowMatrix<double> p_;
 
-    public:
-        PIP(const SubstitutionModel* model, double lambda = 0.1, double mu = 0.1);
+public:
 
-        virtual ~PIP() {}
+    explicit PIP_Nuc(const NucleicAlphabet *alpha, double lambda = 0.1, double mu = 0.1, SubstitutionModel *basemodel = nullptr);
 
-        PIP* clone() const { return new PIP(*this); }
+    virtual ~PIP_Nuc() = default;
 
-    public:
-        double Pij_t    (size_t i, size_t j, double d) const;
-        double dPij_dt  (size_t i, size_t j, double d) const;
-        double d2Pij_dt2(size_t i, size_t j, double d) const;
-        const Matrix<double>& getPij_t    (double d) const;
-        const Matrix<double>& getdPij_dt  (double d) const;
-        const Matrix<double>& getd2Pij_dt2(double d) const;
+    PIP_Nuc* clone() const { return new PIP_Nuc(*this); }
 
-        std::string getName() const { return name_; }
+public:
+    //double Pij_t    (size_t i, size_t j, double d) const;
+    //double dPij_dt  (size_t i, size_t j, double d) const;
+    //double d2Pij_dt2(size_t i, size_t j, double d) const;
+    //const Matrix<double>& getPij_t    (double d) const;
+    //const Matrix<double>& getdPij_dt  (double d) const;
+    //const Matrix<double>& getd2Pij_dt2(double d) const;
 
-    protected:
-        void updateMatrices();
+    std::string getName() const { return name_; }
 
-    };
+protected:
+    //void updateMatrices();
+
+};
 
 
 

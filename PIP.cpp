@@ -42,11 +42,35 @@
  * @see For more information visit: 
  */
 #include "PIP.hpp"
-//
-//bpp::PIP(bpp::SubstitutionModel *model, double valLambda, double valMu){
+
+
+//PIP_Nuc(bpp::SubstitutionModel *model, double valLambda, double valMu){
 //    lambda = valLambda;
 //    mu = valMu;
 //    name = model->getName() + "+PIP";
 //    addParameter_(Parameter("alpha", lambda, &Parameter::R_PLUS_STAR));
 //}
-//
+
+PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, SubstitutionModel *basemodel) :
+            AbstractParameterAliasable("PIP."),
+            AbstractReversibleNucleotideSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP."),
+            lambda_(lambda), mu_(mu), r_(), l_(), k_(), exp1_(), exp2_(), p_(size_, size_)
+    {
+
+
+        // Inheriting basemodel parameters
+        ParameterList parlist = basemodel->getParameters();
+
+        for(int i=0; i<parlist.size(); i++){
+            addParameter_(new Parameter("PIP."+parlist[i].getName(), parlist[i].getValue(),parlist[i].getConstraint()));
+        }
+
+        name_ = basemodel->getName() + "+PIP";
+
+        addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
+        addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
+
+        //updateMatrices();
+    }
+
+
