@@ -76,7 +76,6 @@
 #include <unsupported/Eigen/MatrixFunctions>
 
 #include <glog/logging.h>
-#include <gflags/gflags.h>
 
 #include <Alignment.hpp>
 #include <Likelihood.hpp>
@@ -84,26 +83,10 @@
 
 #include "utils.hpp"
 #include "PIP.hpp"
+#include "cli_parser.hpp"
 
 
 using namespace tshlib;
-
-
-static bool ValidateString(const char* flagname, const std::string& path) {
-    std::ifstream file(path);
-    return file.good();
-}
-
-DEFINE_string(input_sequences, "path/to/fasta.fa", "File path containing the sequences [FASTA]");
-DEFINE_validator(input_sequences, &ValidateString);
-
-DEFINE_string(input_tree, "path/to/newick.nwk", "File path containing the tree file [NWK]");
-DEFINE_validator(input_tree, &ValidateString);
-
-//DECLARE_bool(big_menu);
-DECLARE_string(input_sequences);
-DECLARE_string(input_tree);
-
 
 
 
@@ -193,45 +176,82 @@ int main(int argc, char *argv[]) {
     utree->rootnode->initialiseLikelihoodComponents((int) alignment->getAlignmentSize(), alignment->align_alphabetsize);
 
 
-    double k80_kappa = 0.5;
+    //------------------------------------------------------------------------------------------------------------------
+    // INIT SubModels + Indel
 
     // Set the substitution model
-    bpp::SubstitutionModel *model_jc69 = new bpp::JCnuc(&bpp::AlphabetTools::DNA_ALPHABET);
-    bpp::SubstitutionModel *model_k80 = new bpp::K80(&bpp::AlphabetTools::DNA_ALPHABET, k80_kappa);
-    bpp::SubstitutionModel *model_GTR = new bpp::GTR(&bpp::AlphabetTools::DNA_ALPHABET);
+    bpp::SubstitutionModel *submodel;
 
+    if(!FLAGS_model_substitution.empty()){
 
-    bpp::SubstitutionModel *model_PIP_JC96 = new PIP_Nuc(&bpp::AlphabetTools::DNA_ALPHABET, 0.2, 0.4, model_jc69);
-    bpp::SubstitutionModel *model_PIP_K80 = new PIP_Nuc(&bpp::AlphabetTools::DNA_ALPHABET, 0.2, 0.4, model_k80);
-    // Fill Q matrix as for JC69
-    Eigen::MatrixXd Q = MatrixBppUtils::Matrix2Eigen(model_jc69->getGenerator());
+        if(FLAGS_model_substitution == "GTR"){
+            submodel = new bpp::GTR(&bpp::AlphabetTools::DNA_ALPHABET);
+        }
 
-    // set Pi, steady state frequencies
-    auto freqs = model_jc69->getFrequencies();
-    Eigen::VectorXd pi = MatrixBppUtils::Vector2Eigen(freqs);
+        if(FLAGS_model_substitution == "JC69") {
+            submodel = new bpp::JCnuc(&bpp::AlphabetTools::DNA_ALPHABET);
+        }
 
-    double mu = 0.1;
-    double lambda = 0.2;
-
-    Q.conservativeResize(Q.rows()+1, Q.cols()+1);
-
-    // Fill Q matrix as for JC69+PIP
-    for(int r = 0; r<Q.rows(); r++){
-        for(int c=0; c<Q.cols(); c++ ){
-
-            if(r==c){
-                Q(r,c) =  Q(r,c)-mu;
-            }else{
-                Q(r,c) =   Q(r,c);
-            }
+        if(FLAGS_model_substitution == "K80") {
+            double k80_kappa = 0.5;
+            submodel = new bpp::K80(&bpp::AlphabetTools::DNA_ALPHABET, k80_kappa);
 
         }
 
-        Q(r, Q.cols() - 1) = mu;
     }
 
-    pi.conservativeResize(pi.rows()+1);
-    pi(pi.rows()-1) = 0;
+    Eigen::MatrixXd Q;
+    Eigen::VectorXd pi;
+    double lambda;
+    double mu;
+
+    // Extend the substitution model with PIP
+    if(FLAGS_model_indels){
+
+        lambda= 0.2;
+        mu=0.1;
+
+        submodel = new PIP_Nuc(&bpp::AlphabetTools::DNA_ALPHABET, lambda, mu, submodel);
+
+        // Fill Q matrix
+        Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());
+        std::cout << Q ;
+
+        // set Pi, steady state frequencies
+        auto freqs = submodel->getFrequencies();
+        pi = MatrixBppUtils::Vector2Eigen(freqs);
+
+        std::cout << pi;
+
+
+        Q.conservativeResize(Q.rows()+1, Q.cols()+1);
+
+        // Fill Q matrix
+        for(int r = 0; r<Q.rows(); r++){
+            for(int c=0; c<Q.cols(); c++ ){
+
+                if(r==c){
+                    Q(r,c) =  Q(r,c)-mu;
+                }else{
+                    Q(r,c) =   Q(r,c);
+                }
+
+            }
+
+            Q(r, Q.cols() - 1) = mu;
+        }
+
+
+
+        std::cout << Q ;
+        pi.conservativeResize(pi.rows()+1);
+        pi(pi.rows()-1) = 0;
+
+        std::cout << pi;
+    }
+
+
+
 
     //------------------------------------------------------------------------------------------------------------------
     // INITIAL LIKELIHOOD COMPUTATION
@@ -426,7 +446,7 @@ int main(int argc, char *argv[]) {
 
             computeMoveLikelihood = false;
             // ------------------------------------
-            if (computeMoveLikelihood) {
+            if (FLAGS_lkmove_bothways) {
 
                 // ------------------------------------
                 // Compute the full likelihood from the list of nodes involved in the rearrangment

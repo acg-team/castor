@@ -62,7 +62,7 @@ find_package(bpp-phyl)
 
 
 set(SOURCES
-        main.cpp utils.cpp utils.hpp PIP.cpp PIP.hpp)
+        main.cpp utils.cpp utils.hpp PIP.cpp PIP.hpp cli_parser.hpp)
 
 
 add_executable(miniJATI ${SOURCES})
