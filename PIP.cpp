@@ -67,6 +67,35 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, Substit
 
         name_ = basemodel->getName() + "+PIP";
 
+        generator_.resize(alpha->getSize()+1, alpha->getSize()+1);
+        size_ = alpha->getSize()+1;
+        freq_.resize(alpha->getSize()+1);
+
+
+        // Copy the generator from substitution model + extend it
+        const bpp::Matrix<double> &qmatrix = basemodel->getGenerator();
+        int cols = qmatrix.getNumberOfColumns();
+        int rows = qmatrix.getNumberOfRows();
+
+        for(int i=0;i<rows;i++){
+            for(int j=0;j<cols;j++) {
+
+                if (i==j) {
+                    generator_(i, j) = qmatrix(i, j)-mu;
+                }else{
+
+                    generator_(i, j) = qmatrix(i, j);
+                }
+
+            }
+
+            generator_(i, cols) = mu;
+        }
+
+        // Add frequency for gap character
+        freq_.at(alpha->getSize()) = 0;
+
+
         addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
         addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
 

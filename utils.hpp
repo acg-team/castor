@@ -60,7 +60,7 @@ namespace MatrixBppUtils{
 
 
     Eigen::MatrixXd Matrix2Eigen(const bpp::Matrix<double> &inMatrix);
-    Eigen::VectorXd Vector2Eigen(std::vector<double> &inVector);
+    Eigen::VectorXd Vector2Eigen(const std::vector<double> &inVector);
 
 }
 

@@ -145,7 +145,7 @@ Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix
     return m;
 }
 
-Eigen::VectorXd MatrixBppUtils::Vector2Eigen(std::vector<double> &inVector) {
+Eigen::VectorXd MatrixBppUtils::Vector2Eigen(const std::vector<double> &inVector) {
 
     Eigen::VectorXd vector = Eigen::VectorXd::Zero(inVector.size());
 

@@ -215,39 +215,10 @@ int main(int argc, char *argv[]) {
 
         // Fill Q matrix
         Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());
-        std::cout << Q ;
+        pi = MatrixBppUtils::Vector2Eigen(submodel->getFrequencies());
 
-        // set Pi, steady state frequencies
-        auto freqs = submodel->getFrequencies();
-        pi = MatrixBppUtils::Vector2Eigen(freqs);
+        std::cout << Q << std::endl;
 
-        std::cout << pi;
-
-
-        Q.conservativeResize(Q.rows()+1, Q.cols()+1);
-
-        // Fill Q matrix
-        for(int r = 0; r<Q.rows(); r++){
-            for(int c=0; c<Q.cols(); c++ ){
-
-                if(r==c){
-                    Q(r,c) =  Q(r,c)-mu;
-                }else{
-                    Q(r,c) =   Q(r,c);
-                }
-
-            }
-
-            Q(r, Q.cols() - 1) = mu;
-        }
-
-
-
-        std::cout << Q ;
-        pi.conservativeResize(pi.rows()+1);
-        pi(pi.rows()-1) = 0;
-
-        std::cout << pi;
     }
 
 
