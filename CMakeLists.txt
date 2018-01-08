@@ -62,7 +62,7 @@ find_package(bpp-phyl)
 
 
 set(SOURCES
-        main.cpp utils.cpp utils.hpp PIP.cpp PIP.hpp cli_parser.hpp)
+        main.cpp utils.cpp utils.hpp PIP.cpp PIP.hpp cli_parser.hpp Version.hpp)
 
 
 add_executable(miniJATI ${SOURCES})
@@ -71,3 +71,13 @@ target_link_libraries(miniJATI tshlib)
 target_link_libraries(miniJATI glog)
 target_link_libraries(miniJATI gflags)
 target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
+
+
+SET(SOURCES_EXTBPP  Jati.cpp PIP.cpp PIP.hpp Version.hpp Jati.cpp)
+
+add_executable(miniJATI_onBPP ${SOURCES_EXTBPP})
+
+target_link_libraries(miniJATI_onBPP tshlib)
+target_link_libraries(miniJATI_onBPP glog)
+target_link_libraries(miniJATI_onBPP gflags)
+target_link_libraries(miniJATI_onBPP ${BPP_LIBS_SHARED})

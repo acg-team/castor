@@ -47,6 +47,8 @@
 * From Core:
 */
 #include <Bpp/Io/OutputStream.h>
+#include <Bpp/App/BppApplication.h>
+#include <Bpp/App/ApplicationTools.h>
 
 /*
 * From SeqLib:
@@ -59,6 +61,7 @@
 /*
 * From PhylLib:
 */
+#include <Bpp/Phyl/App/PhylogeneticsApplicationTools.h>
 #include <Bpp/Phyl/Model/SubstitutionModel.h>
 #include <Bpp/Phyl/Model/Nucleotide/JCnuc.h>
 #include <Bpp/Phyl/Model/Nucleotide/K80.h>
@@ -81,6 +84,7 @@
 #include <Likelihood.hpp>
 #include <TreeRearrangment.hpp>
 
+#include "Version.hpp"
 #include "utils.hpp"
 #include "PIP.hpp"
 #include "cli_parser.hpp"
@@ -96,7 +100,8 @@ int main(int argc, char *argv[]) {
     google::InitGoogleLogging("JATI-minimal");
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    LOG(INFO) << "JATI-minimal v.0.0.1 build: cpp0001 " << std::endl;
+    LOG(INFO) << softwarename;
+    bpp::BppApplication bppml(argc, argv, softwarename);
 
     //------------------------------------------------------------------------------------------------------------------
     // LOAD MSA FROM FILE
@@ -180,12 +185,16 @@ int main(int argc, char *argv[]) {
     // INIT SubModels + Indel
 
     // Set the substitution model
-    bpp::SubstitutionModel *submodel;
-
+    bpp::SubstitutionModel *submodel, *submodel_complete;
+    unique_ptr<bpp::GeneticCode> gCode;
     if(!FLAGS_model_substitution.empty()){
 
         if(FLAGS_model_substitution == "GTR"){
             submodel = new bpp::GTR(&bpp::AlphabetTools::DNA_ALPHABET);
+            submodel->setFreqFromData(*sites);
+
+            //submodel_complete = PhylogeneticsApplicationTools::getSubstitutionModel(&bpp::AlphabetTools::DNA_ALPHABET, gCode, sites,  )
+
         }
 
         if(FLAGS_model_substitution == "JC69") {
@@ -217,12 +226,11 @@ int main(int argc, char *argv[]) {
         Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());
         pi = MatrixBppUtils::Vector2Eigen(submodel->getFrequencies());
 
-        std::cout << Q << std::endl;
-
     }
+    bpp::StdStr s1;
+    bpp::PhylogeneticsApplicationTools::printParameters(submodel, s1, 1, true);
 
-
-
+    VLOG(1) << s1.str();
 
     //------------------------------------------------------------------------------------------------------------------
     // INITIAL LIKELIHOOD COMPUTATION
@@ -287,7 +295,6 @@ int main(int argc, char *argv[]) {
     int min_radius = 3;  // Minimum radius for an NNI move is 3 nodes
     int max_radius = utree->getMaxNodeDistance(); // Full tree traversing from any node of the tree
 
-    bool computeMoveLikelihood = true;
     std::vector<VirtualNode *> list_vnode_to_root;
 
     // Print node description with neighbors
@@ -336,7 +343,7 @@ int main(int argc, char *argv[]) {
             // Print tree on file
             //utree->saveTreeOnFile("../data/test.txt");
             bool isLKImproved = false;
-            computeMoveLikelihood = true;
+            bool computeMoveLikelihood = true;
             // ------------------------------------
             if (computeMoveLikelihood) {
 
