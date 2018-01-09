@@ -42,64 +42,109 @@
  * @see For more information visit: 
  */
 #include "PIP.hpp"
-
-
-//PIP_Nuc(bpp::SubstitutionModel *model, double valLambda, double valMu){
-//    lambda = valLambda;
-//    mu = valMu;
-//    name = model->getName() + "+PIP";
-//    addParameter_(Parameter("alpha", lambda, &Parameter::R_PLUS_STAR));
-//}
+#include <Bpp/Numeric/Matrix/MatrixTools.h>
+#include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
 
 PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, SubstitutionModel *basemodel) :
-            AbstractParameterAliasable("PIP."),
-            AbstractReversibleNucleotideSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP."),
-            lambda_(lambda), mu_(mu), r_(), l_(), k_(), exp1_(), exp2_(), p_(size_, size_)
-    {
+        AbstractParameterAliasable("PIP."),
+        AbstractReversibleNucleotideSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP."),
+        lambda_(lambda), mu_(mu), r_(), l_(), k_(), exp1_(), exp2_(), p_(size_, size_) {
 
 
-        // Inheriting basemodel parameters
-        ParameterList parlist = basemodel->getParameters();
+    // Inheriting basemodel parameters
+    ParameterList parlist = basemodel->getParameters();
 
-        for(int i=0; i<parlist.size(); i++){
-            addParameter_(new Parameter("PIP."+parlist[i].getName(), parlist[i].getValue(),parlist[i].getConstraint()));
-        }
-
-        name_ = basemodel->getName() + "+PIP";
-
-        generator_.resize(alpha->getSize()+1, alpha->getSize()+1);
-        size_ = alpha->getSize()+1;
-        freq_.resize(alpha->getSize()+1);
-
-
-        // Copy the generator from substitution model + extend it
-        const bpp::Matrix<double> &qmatrix = basemodel->getGenerator();
-        int cols = qmatrix.getNumberOfColumns();
-        int rows = qmatrix.getNumberOfRows();
-
-        for(int i=0;i<rows;i++){
-            for(int j=0;j<cols;j++) {
-
-                if (i==j) {
-                    generator_(i, j) = qmatrix(i, j)-mu;
-                }else{
-
-                    generator_(i, j) = qmatrix(i, j);
-                }
-
-            }
-
-            generator_(i, cols) = mu;
-        }
-
-        // Add frequency for gap character
-        freq_.at(alpha->getSize()) = 0;
-
-
-        addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
-        addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
-
-        //updateMatrices();
+    for (int i = 0; i < parlist.size(); i++) {
+        addParameter_(new Parameter("PIP." + parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
     }
 
+    name_ = basemodel->getName() + "+PIP";
 
+    generator_.resize(alpha->getSize() + 1, alpha->getSize() + 1);
+    size_ = alpha->getSize() + 1;
+    freq_.resize(alpha->getSize() + 1);
+
+
+    // Copy the generator from substitution model + extend it
+    const bpp::Matrix<double> &qmatrix = basemodel->getGenerator();
+
+    int cols = qmatrix.getNumberOfColumns();
+    int rows = qmatrix.getNumberOfRows();
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+
+            if (i == j) {
+                generator_(i, j) = qmatrix(i, j) - mu;
+            } else {
+
+                generator_(i, j) = qmatrix(i, j);
+            }
+
+        }
+
+        generator_(i, cols) = mu;
+    }
+
+    // Add frequency for gap character
+    freq_.at(alpha->getSize()) = 0;
+
+
+    addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
+    addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
+
+    //updateMatrices();
+}
+
+void PIP_Nuc::updateMatrices() {
+
+
+}
+
+double PIP_Nuc::Pij_t(size_t i, size_t j, double d) const {
+
+    return getPij_t(d)(i,j);
+
+}
+
+double PIP_Nuc::dPij_dt(size_t i, size_t j, double d) const {
+
+    std::cerr << "PIP_Nuc::dPij_dt has been called";
+    return 0;
+}
+
+double PIP_Nuc::d2Pij_dt2(size_t i, size_t j, double d) const {
+
+    std::cerr << "PIP_Nuc::d2Pij_dt2 has been called";
+    return 0;
+
+}
+
+const bpp::Matrix<double> &PIP_Nuc::getPij_t(double d) const {
+
+    RowMatrix<double> md;
+
+    MatrixTools::copy(generator_, md);
+    MatrixTools::scale(md, d);
+    MatrixTools::exp(md,md);
+
+    return md;
+
+
+}
+
+const bpp::Matrix<double> &PIP_Nuc::getdPij_dt(double d) const {
+
+    std::cerr << "PIP_Nuc::getdPij_dt has been called";
+
+
+}
+
+const bpp::Matrix<double> &PIP_Nuc::getd2Pij_dt2(double d) const {
+
+    std::cerr << "PIP_Nuc::getd2dPij_dt2 has been called";
+
+
+}
+
+void PIP_Nuc::setFreq(std::map<int, double> &freqs) {}

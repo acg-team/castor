@@ -130,11 +130,13 @@ bpp::TreeTemplate<bpp::Node>* UtreeBppUtils::convertTree_u2b(tshlib::Utree *in_t
     auto *RootNode = new bpp::Node;
 
     RootNode->setName(in_tree->rootnode->getNodeName());
-    RootNode->setId(in_tree->rootnode->vnode_id);
     RootNode->setDistanceToFather(in_tree->rootnode->vnode_branchlength);
 
     _traverseTree_u2b(RootNode, in_tree->rootnode->getNodeLeft());
     _traverseTree_u2b(RootNode, in_tree->rootnode->getNodeRight());
+
+
+    RootNode->setId((int) in_tree->listVNodes.size());
 
     // Set root node on new bpp tree
     auto *tree = new bpp::TreeTemplate<bpp::Node>();
@@ -198,3 +200,23 @@ Eigen::VectorXd MatrixBppUtils::Vector2Eigen(const std::vector<double> &inVector
 
     return vector;
 }
+
+/*
+bpp::Matrix<double> MatrixBppUtils::Eigen2Matrix(Eigen::MatrixXd &inMatrix) {
+
+    bpp::Matrix<double> outMatrix;
+    outMatrix.resize((size_t) inMatrix.cols(), (size_t) inMatrix.cols());
+
+    for(int r=0; r<inMatrix.rows(); r++){
+        for (int c=0; c<inMatrix.cols(); c++){
+
+            outMatrix(r,c) = inMatrix(r,c);
+
+        }
+
+    }
+
+
+    return outMatrix;
+}
+*/

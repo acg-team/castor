@@ -68,6 +68,8 @@
 #include <Bpp/Phyl/Model/Nucleotide/GTR.h>
 #include <Bpp/Phyl/Distance/DistanceMethod.h>
 #include <Bpp/Phyl/Distance/DistanceEstimation.h>
+#include <Bpp/Phyl/Model/RateDistribution/ConstantRateDistribution.h>
+#include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
 #include <Bpp/Phyl/Distance/BioNJ.h>
 #include <Bpp/Phyl/Io/Newick.h>
 #include <Bpp/Phyl/Tree.h>
@@ -187,32 +189,26 @@ int main(int argc, char *argv[]) {
     // Set the substitution model
     bpp::SubstitutionModel *submodel, *submodel_complete;
     unique_ptr<bpp::GeneticCode> gCode;
-    if(!FLAGS_model_substitution.empty()){
-
-        if(FLAGS_model_substitution == "GTR"){
-            submodel = new bpp::GTR(&bpp::AlphabetTools::DNA_ALPHABET);
-            submodel->setFreqFromData(*sites);
-
-            //submodel_complete = PhylogeneticsApplicationTools::getSubstitutionModel(&bpp::AlphabetTools::DNA_ALPHABET, gCode, sites,  )
-
-        }
-
-        if(FLAGS_model_substitution == "JC69") {
-            submodel = new bpp::JCnuc(&bpp::AlphabetTools::DNA_ALPHABET);
-        }
-
-        if(FLAGS_model_substitution == "K80") {
-            double k80_kappa = 0.5;
-            submodel = new bpp::K80(&bpp::AlphabetTools::DNA_ALPHABET, k80_kappa);
-
-        }
-
-    }
+    map<std::string, std::string> modelmap;
+    TransitionModel *transmodel = 0;
+    DiscreteDistribution *rDist = 0;
 
     Eigen::MatrixXd Q;
     Eigen::VectorXd pi;
     double lambda;
     double mu;
+
+    if(!FLAGS_model_substitution.empty()){
+        unique_ptr<GeneticCode> gCode;
+        modelmap["model"] = FLAGS_model_substitution;
+
+        transmodel = PhylogeneticsApplicationTools::getTransitionModel(&bpp::AlphabetTools::DNA_ALPHABET, gCode.get(), sites, modelmap, "", true,  false, 0);
+        transmodel->setFreqFromData(*sites);
+
+        rDist = new bpp::ConstantRateDistribution();
+        SiteContainerTools::changeGapsToUnknownCharacters(*sites);
+
+    }
 
     // Extend the substitution model with PIP
     if(FLAGS_model_indels){
@@ -228,53 +224,64 @@ int main(int argc, char *argv[]) {
 
     }
     bpp::StdStr s1;
-    bpp::PhylogeneticsApplicationTools::printParameters(submodel, s1, 1, true);
+    bpp::PhylogeneticsApplicationTools::printParameters(transmodel, s1, 1, true);
     //tl = new RHomogeneousMixedTreeLikelihood(*tree, *sites, model, rDist, checkTree, true, false);
     VLOG(1) << s1.str();
 
+    tree = UtreeBppUtils::convertTree_u2b(utree);
+    bpp::RHomogeneousTreeLikelihood *tl;
 
-
-
+    if(!FLAGS_model_indels) {
+        tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, true, false);
+        tl->initialize();
+        double logL = tl->getLogLikelihood();
+        VLOG(1) << "LOG Likelihood under SubModel (without gaps) " << logL;
+    }
+    //*newickReader = new bpp::Newick(false);
+    //std::ostream &objOstream = std::cerr;
+    //newickReader->write(&tree, &objOstream);
 
     //------------------------------------------------------------------------------------------------------------------
     // INITIAL LIKELIHOOD COMPUTATION
-
+    double logLK = 0;
     auto likelihood = new Likelihood();
-
-    likelihood->Init(utree, pi, Q, mu, lambda);
-
-    // COMPUTE LK GIVEN TREE TOPOLOGY AND MSA
-    double logLK = 0.0;
-
-    // Traverse the tree in post-order filling a list of node ready for traversal
     std::vector<VirtualNode *> allnodes_postorder;
-    likelihood->compileNodeList_postorder(allnodes_postorder, utree->rootnode);
 
-    // Set survival probability to each node in the list
-    likelihood->setAllIotas(allnodes_postorder);
+    if(FLAGS_model_indels) {
 
-    // Set deletion probability to each node in the list
-    likelihood->setAllBetas(allnodes_postorder);
+        likelihood->Init(utree, pi, Q, mu, lambda);
 
-    // Set insertion histories on each node of the list
-    likelihood->setInsertionHistories(allnodes_postorder,*alignment);
+        // COMPUTE LK GIVEN TREE TOPOLOGY AND MSA
+        logLK = 0.0;
 
-    // set probability matrix -- exponential of substitution rates
-    likelihood->computePr(allnodes_postorder, alignment->align_alphabetsize);
+        // Traverse the tree in post-order filling a list of node ready for traversal
+        likelihood->compileNodeList_postorder(allnodes_postorder, utree->rootnode);
 
-    // Initialise likelihood components on the tree
-    likelihood->computeFV(allnodes_postorder, *alignment); //TODO: Add weight per column
+        // Set survival probability to each node in the list
+        likelihood->setAllIotas(allnodes_postorder);
 
-    // Make a backup of the newly computed components
-    likelihood->saveLikelihoodComponents();
+        // Set deletion probability to each node in the list
+        likelihood->setAllBetas(allnodes_postorder);
 
-    //likelihood->loadParametersOperative();
-    //likelihood->unloadParametersOperative();
+        // Set insertion histories on each node of the list
+        likelihood->setInsertionHistories(allnodes_postorder, *alignment);
 
-    // Compute the model likelihood
-    logLK = likelihood->computePartialLK_WholeAlignment(allnodes_postorder, *alignment);
-    VLOG(1) << "[Tree likelihood] -- full traversal -- " << logLK;
+        // set probability matrix -- exponential of substitution rates
+        likelihood->computePr(allnodes_postorder, alignment->align_alphabetsize);
 
+        // Initialise likelihood components on the tree
+        likelihood->computeFV(allnodes_postorder, *alignment); //TODO: Add weight per column
+
+        // Make a backup of the newly computed components
+        likelihood->saveLikelihoodComponents();
+
+        //likelihood->loadParametersOperative();
+        //likelihood->unloadParametersOperative();
+
+        // Compute the model likelihood
+        logLK = likelihood->computePartialLK_WholeAlignment(allnodes_postorder, *alignment);
+        VLOG(1) << "[Tree likelihood] -- full traversal -- " << logLK;
+    }
     //----------------------------------------------
     // Remove the root
     utree->removeVirtualRootNode();
@@ -348,16 +355,18 @@ int main(int argc, char *argv[]) {
             //utree->saveTreeOnFile("../data/test.txt");
             bool isLKImproved = false;
             bool computeMoveLikelihood = true;
+
             // ------------------------------------
-            if (computeMoveLikelihood) {
+            // Add the root
+            utree->addVirtualRootNode();
+            // ------------------------------------
+            if (computeMoveLikelihood && FLAGS_model_indels) {
 
                 // ------------------------------------
                 //utree->printAllNodesNeighbors();
                 //testSetAinRootPath(MSA_len, alignment, utree, list_vnode_to_root)
 
-                // ------------------------------------
-                // Add the root
-                utree->addVirtualRootNode();
+
 
                 // ------------------------------------
                 // Compute the full likelihood from the list of nodes involved in the rearrangment
@@ -389,11 +398,22 @@ int main(int argc, char *argv[]) {
                 rearrangmentList->getMove(i)->move_lk = logLK;
                 //VLOG(2) << "[Tree LK] Ater Brent: " << logLK;
 
-                // ------------------------------------
-                // Remove virtual root
-                utree->removeVirtualRootNode();
+
 
             }
+
+            if(!FLAGS_model_indels){
+                tree = UtreeBppUtils::convertTree_u2b(utree);
+                tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, true, false);
+                tl->initialize();
+                logLK = tl->getLogLikelihood();
+                rearrangmentList->getMove(i)->move_lk = logLK;
+            }
+
+
+            // ------------------------------------
+            // Remove virtual root
+            utree->removeVirtualRootNode();
 
             // ------------------------------------
             // Some abbellishments for the console output
@@ -431,25 +451,36 @@ int main(int argc, char *argv[]) {
 
             computeMoveLikelihood = false;
             // ------------------------------------
-            if (FLAGS_lkmove_bothways) {
+            if(FLAGS_model_indels) {
+                if (FLAGS_lkmove_bothways) {
 
-                // ------------------------------------
-                // Compute the full likelihood from the list of nodes involved in the rearrangment
-                likelihood->recombineAllFv(list_vnode_to_root);
-                likelihood->setInsertionHistories(list_vnode_to_root,*alignment);
+                    // ------------------------------------
+                    // Compute the full likelihood from the list of nodes involved in the rearrangment
+                    likelihood->recombineAllFv(list_vnode_to_root);
+                    likelihood->setInsertionHistories(list_vnode_to_root, *alignment);
 
-                logLK = LKFunc::LKRearrangment(*likelihood, allnodes_postorder, *alignment);
+                    logLK = LKFunc::LKRearrangment(*likelihood, allnodes_postorder, *alignment);
 
-                // ------------------------------------
-                // Store likelihood of the move
-                rearrangmentList->getMove(i)->move_lk = logLK;
+                    // ------------------------------------
+                    // Store likelihood of the move
+                    rearrangmentList->getMove(i)->move_lk = logLK;
 
-            }else{
+                } else {
 
-                likelihood->restoreLikelihoodComponents();
-                //likelihood->setInsertionHistories(allnodes_postorder,*alignment);
-                logLK = LKFunc::LKRearrangment(*likelihood, allnodes_postorder, *alignment);
+                    likelihood->restoreLikelihoodComponents();
+                    //likelihood->setInsertionHistories(allnodes_postorder,*alignment);
+                    logLK = LKFunc::LKRearrangment(*likelihood, allnodes_postorder, *alignment);
+                }
+
             }
+            if(!FLAGS_model_indels){
+                tree = UtreeBppUtils::convertTree_u2b(utree);
+                tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, true, false);
+                tl->initialize();
+                logLK = tl->getLogLikelihood();
+                rearrangmentList->getMove(i)->move_lk = logLK;
+            }
+
             // ------------------------------------
             // Remove virtual root
             utree->removeVirtualRootNode();
