@@ -187,11 +187,12 @@ int main(int argc, char *argv[]) {
     // INIT SubModels + Indel
 
     // Set the substitution model
-    bpp::SubstitutionModel *submodel, *submodel_complete;
+    bpp::SubstitutionModel *submodel;
     unique_ptr<bpp::GeneticCode> gCode;
-    map<std::string, std::string> modelmap;
-    TransitionModel *transmodel = 0;
-    DiscreteDistribution *rDist = 0;
+    map<std::string, std::string> parmap;
+    bpp::TransitionModel *transmodel = nullptr;
+    bpp::DiscreteDistribution *rDist = nullptr;
+    bpp::RHomogeneousTreeLikelihood *tl;
 
     Eigen::MatrixXd Q;
     Eigen::VectorXd pi;
@@ -200,13 +201,14 @@ int main(int argc, char *argv[]) {
 
     if(!FLAGS_model_substitution.empty()){
         unique_ptr<GeneticCode> gCode;
-        modelmap["model"] = FLAGS_model_substitution;
+        parmap["model"] = FLAGS_model_substitution;
 
-        transmodel = PhylogeneticsApplicationTools::getTransitionModel(&bpp::AlphabetTools::DNA_ALPHABET, gCode.get(), sites, modelmap, "", true,  false, 0);
-        transmodel->setFreqFromData(*sites);
+        submodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(&bpp::AlphabetTools::DNA_ALPHABET, gCode.get(), sites, parmap, "", true,  false, 0);
+        submodel->setFreqFromData(*sites);
 
         rDist = new bpp::ConstantRateDistribution();
-        SiteContainerTools::changeGapsToUnknownCharacters(*sites);
+        bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
+
 
     }
 
@@ -215,7 +217,6 @@ int main(int argc, char *argv[]) {
 
         lambda= 0.2;
         mu=0.1;
-
         submodel = new PIP_Nuc(&bpp::AlphabetTools::DNA_ALPHABET, lambda, mu, submodel);
 
         // Fill Q matrix
@@ -223,29 +224,31 @@ int main(int argc, char *argv[]) {
         pi = MatrixBppUtils::Vector2Eigen(submodel->getFrequencies());
 
     }
+
+
     bpp::StdStr s1;
-    bpp::PhylogeneticsApplicationTools::printParameters(transmodel, s1, 1, true);
-    //tl = new RHomogeneousMixedTreeLikelihood(*tree, *sites, model, rDist, checkTree, true, false);
+    bpp::PhylogeneticsApplicationTools::printParameters(submodel, s1, 1, true);
     VLOG(1) << s1.str();
 
-    tree = UtreeBppUtils::convertTree_u2b(utree);
-    bpp::RHomogeneousTreeLikelihood *tl;
+
+    //------------------------------------------------------------------------------------------------------------------
+    // INITIAL LIKELIHOOD COMPUTATION
+
+    double logLK = 0;
+    auto likelihood = new Likelihood();
+    std::vector<VirtualNode *> allnodes_postorder;
 
     if(!FLAGS_model_indels) {
-        tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, true, false);
+
+        transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(&bpp::AlphabetTools::DNA_ALPHABET, gCode.get(), sites, parmap, "", true,  false, 0);
+
+        tree = UtreeBppUtils::convertTree_u2b(utree);
+        tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
         tl->initialize();
         double logL = tl->getLogLikelihood();
         VLOG(1) << "LOG Likelihood under SubModel (without gaps) " << logL;
     }
-    //*newickReader = new bpp::Newick(false);
-    //std::ostream &objOstream = std::cerr;
-    //newickReader->write(&tree, &objOstream);
 
-    //------------------------------------------------------------------------------------------------------------------
-    // INITIAL LIKELIHOOD COMPUTATION
-    double logLK = 0;
-    auto likelihood = new Likelihood();
-    std::vector<VirtualNode *> allnodes_postorder;
 
     if(FLAGS_model_indels) {
 
@@ -404,7 +407,7 @@ int main(int argc, char *argv[]) {
 
             if(!FLAGS_model_indels){
                 tree = UtreeBppUtils::convertTree_u2b(utree);
-                tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, true, false);
+                tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
                 tl->initialize();
                 logLK = tl->getLogLikelihood();
                 rearrangmentList->getMove(i)->move_lk = logLK;
@@ -475,7 +478,7 @@ int main(int argc, char *argv[]) {
             }
             if(!FLAGS_model_indels){
                 tree = UtreeBppUtils::convertTree_u2b(utree);
-                tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, true, false);
+                tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
                 tl->initialize();
                 logLK = tl->getLogLikelihood();
                 rearrangmentList->getMove(i)->move_lk = logLK;
