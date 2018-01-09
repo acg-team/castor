@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     // INIT SubModels + Indel
 
     // Set the substitution model
-    bpp::SubstitutionModel *submodel;
+    bpp::SubstitutionModel *submodel = nullptr;
     unique_ptr<bpp::GeneticCode> gCode;
     map<std::string, std::string> parmap;
     bpp::TransitionModel *transmodel = nullptr;
@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
         tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
         tl->initialize();
         double logL = tl->getLogLikelihood();
-        VLOG(1) << "LOG Likelihood under SubModel (without gaps) " << logL;
+        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName()  << ") = " << logL;
     }
 
 
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
 
         // Compute the model likelihood
         logLK = likelihood->computePartialLK_WholeAlignment(allnodes_postorder, *alignment);
-        VLOG(1) << "[Tree likelihood] -- full traversal -- " << logLK;
+        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName()  << ") = " << logLK;
     }
     //----------------------------------------------
     // Remove the root
@@ -295,8 +295,7 @@ int main(int argc, char *argv[]) {
 
     //----------------------------------------------
     // Print tree structure on console
-    utree->printAllNodesNeighbors();
-
+    //utree->printAllNodesNeighbors();
 
 
     //------------------------------------------------------------------------------------------------------------------
@@ -305,15 +304,35 @@ int main(int argc, char *argv[]) {
 
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     unsigned long total_exec_moves = 0;
+    int min_radius;
+    int max_radius;
 
-    int min_radius = 3;  // Minimum radius for an NNI move is 3 nodes
-    int max_radius = utree->getMaxNodeDistance(); // Full tree traversing from any node of the tree
+    if(FLAGS_optim_topology.find("full-search") != std::string::npos){
+
+        min_radius = 3;  // Minimum radius for an NNI move is 3 nodes
+        max_radius = utree->getMaxNodeDistance(); // Full tree traversing from any node of the tree
+
+    }else if(FLAGS_optim_topology.find("nni-search") != std::string::npos){
+
+        min_radius = 3; max_radius = 3;
+
+    }else if(FLAGS_optim_topology.find("spr-search") != std::string::npos){
+
+        min_radius = 4;
+        max_radius = utree->getMaxNodeDistance();
+
+    }else{
+
+        LOG(FATAL) << "Exiting program without tree search optimisation";
+    }
+
+
 
     std::vector<VirtualNode *> list_vnode_to_root;
 
     // Print node description with neighbors
     for (auto &vnode:utree->listVNodes) {
-        VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
+        //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
         // Initialise a new rearrangement list
         auto rearrangmentList = new TreeRearrangment;
@@ -326,8 +345,8 @@ int main(int argc, char *argv[]) {
         // Print the list of moves for the current P node (source node)
         //rearrangmentList.printMoves();
 
-        VLOG(1) << "[tsh] Strategy " << rearrangmentList->mset_strategy << std::endl;
-        VLOG(1) << "[utree rearrangment] Found " << rearrangmentList->getNumberOfMoves() << " possible moves for node " << vnode->vnode_name << std::endl;
+        VLOG(1) << "[utree rearrangment] [strategy: " << rearrangmentList->mset_strategy <<"] Found " << rearrangmentList->getNumberOfMoves() << " candidate moves for node " <<
+                                                                                                                                                                      vnode->vnode_name;
 
         std::string start_col_line, end_col_line;
 
