@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     // Convert bpp::tree into thslib::utree
     auto ttTree = bpp::TreeTemplate<bpp::Node>(*tree);
     auto utree = new Utree();
-    UtreeBppUtils::convertUtree(&ttTree, utree);
+    UtreeBppUtils::convertTree_b2u(&ttTree, utree);
     LOG(INFO) << "[Initial Utree Topology] " << utree->printTreeNewick(true);
 
     delete tree;
@@ -229,8 +229,12 @@ int main(int argc, char *argv[]) {
     }
     bpp::StdStr s1;
     bpp::PhylogeneticsApplicationTools::printParameters(submodel, s1, 1, true);
-
+    //tl = new RHomogeneousMixedTreeLikelihood(*tree, *sites, model, rDist, checkTree, true, false);
     VLOG(1) << s1.str();
+
+
+
+
 
     //------------------------------------------------------------------------------------------------------------------
     // INITIAL LIKELIHOOD COMPUTATION
@@ -365,6 +369,9 @@ int main(int argc, char *argv[]) {
                 likelihood->setInsertionHistories(list_vnode_to_root,*alignment);
 
                 logLK = LKFunc::LKRearrangment(*likelihood, allnodes_postorder, *alignment);
+
+
+
 
                 //logLK = likelihood->computePartialLK(list_vnode_to_root, *alignment);
 

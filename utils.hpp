@@ -50,10 +50,11 @@
 
 namespace UtreeBppUtils{
 using namespace tshlib;
-    void convertUtree(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree);
-    void _traverseTree(Utree *in_tree, VirtualNode *target, bpp::Node *source);
+    void convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree);
+    void _traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source);
 
-
+    bpp::TreeTemplate<bpp::Node> *convertTree_u2b(Utree *in_tree);
+    void _traverseTree_u2b(bpp::Node *target, VirtualNode *source);
 }
 
 namespace MatrixBppUtils{

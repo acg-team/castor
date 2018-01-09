@@ -46,7 +46,7 @@
 
 
 
-void ::UtreeBppUtils::_traverseTree(Utree *in_tree, VirtualNode *target, bpp::Node *source) {
+void ::UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source) {
 
     std::string name;
 
@@ -69,7 +69,7 @@ void ::UtreeBppUtils::_traverseTree(Utree *in_tree, VirtualNode *target, bpp::No
 
             target->connectNode(ichild);
             in_tree->addMember(ichild);
-            _traverseTree(in_tree, ichild, bppNode);
+            _traverseTree_b2u(in_tree, ichild, bppNode);
 
         }else{
 
@@ -90,7 +90,7 @@ void ::UtreeBppUtils::_traverseTree(Utree *in_tree, VirtualNode *target, bpp::No
 }
 
 
-void ::UtreeBppUtils::convertUtree(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree) {
+void ::UtreeBppUtils::convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree) {
 
     bpp::Node * RootNode = in_tree->getRootNode();
     std::string name;
@@ -108,7 +108,7 @@ void ::UtreeBppUtils::convertUtree(bpp::TreeTemplate<bpp::Node> *in_tree, Utree 
         ichild->vnode_name = name;
         ichild->vnode_branchlength = bppNode->getDistanceToFather();
 
-        _traverseTree(out_tree, ichild, bppNode);
+        _traverseTree_b2u(out_tree, ichild, bppNode);
 
         // Add this node as starting point of the tree
         out_tree->addMember(ichild, true);
@@ -121,6 +121,47 @@ void ::UtreeBppUtils::convertUtree(bpp::TreeTemplate<bpp::Node> *in_tree, Utree 
 
     out_tree->startVNodes.at(0)->_setNodeUp(out_tree->startVNodes.at(1));
     out_tree->startVNodes.at(1)->_setNodeUp(out_tree->startVNodes.at(0));
+
+}
+
+
+bpp::TreeTemplate<bpp::Node>* UtreeBppUtils::convertTree_u2b(tshlib::Utree *in_tree) {
+
+    auto *RootNode = new bpp::Node;
+
+    RootNode->setName(in_tree->rootnode->getNodeName());
+    RootNode->setId(in_tree->rootnode->vnode_id);
+    RootNode->setDistanceToFather(in_tree->rootnode->vnode_branchlength);
+
+    _traverseTree_u2b(RootNode, in_tree->rootnode->getNodeLeft());
+    _traverseTree_u2b(RootNode, in_tree->rootnode->getNodeRight());
+
+    // Set root node on new bpp tree
+    auto *tree = new bpp::TreeTemplate<bpp::Node>();
+
+    tree->setRootNode(RootNode);
+
+    return tree;
+}
+
+void UtreeBppUtils::_traverseTree_u2b(bpp::Node *target, tshlib::VirtualNode *source) {
+
+    auto *child = new bpp::Node;
+
+    child->setName(source->getNodeName());
+    child->setId(source->vnode_id);
+    child->setDistanceToFather(source->vnode_branchlength);
+
+    if(!source->isTerminalNode()) {
+
+        _traverseTree_u2b(child, source->getNodeLeft());
+
+        _traverseTree_u2b(child, source->getNodeRight());
+
+    }
+
+    target->addSon(child);
+
 
 }
 
