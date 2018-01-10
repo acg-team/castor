@@ -87,9 +87,9 @@
 #include <TreeRearrangment.hpp>
 
 #include "Version.hpp"
-#include "utils.hpp"
+#include "Utilities.hpp"
 #include "PIP.hpp"
-#include "cli_parser.hpp"
+#include "CommandLineFlags.hpp"
 
 
 using namespace tshlib;
@@ -99,11 +99,13 @@ using namespace tshlib;
 int main(int argc, char *argv[]) {
 
     FLAGS_alsologtostderr = true;
-    google::InitGoogleLogging("JATI-minimal");
+    gflags::SetUsageMessage("some usage message");
+    gflags::SetVersionString(software::build);
+    google::InitGoogleLogging(software::name.c_str());
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    LOG(INFO) << softwarename;
-    bpp::BppApplication bppml(argc, argv, softwarename);
+    LOG(INFO) << software::desc;
+    bpp::BppApplication bppml(argc, argv, software::desc);
 
     //------------------------------------------------------------------------------------------------------------------
     // LOAD MSA FROM FILE
@@ -112,7 +114,7 @@ int main(int argc, char *argv[]) {
 
     auto alignment = new Alignment_DNA;
 
-    LOG(INFO) << "Input file: " << FLAGS_input_sequences;
+    LOG(INFO) << "[Input alignment file] " << FLAGS_input_sequences;
 
     bpp::Fasta seqReader;
     bpp::SequenceContainer *sequences = seqReader.readAlignment(FLAGS_input_sequences, &bpp::AlphabetTools::DNA_ALPHABET);
@@ -133,7 +135,7 @@ int main(int argc, char *argv[]) {
 
     size_t num_leaves = sequences->getNumberOfSequences();
 
-    LOG(INFO) << "[Sequences in MSA] Leaves: " << num_leaves;
+    LOG(INFO) << "[Sequences in alignment] " << num_leaves;
     std::string testSeq = sequences->getSequence(seqNames.at(0)).toString();
     bpp::Site testSite = nullptr;
 
@@ -160,6 +162,7 @@ int main(int argc, char *argv[]) {
     bpp::Tree *tree = nullptr;
     try {
         tree = newickReader->read(FLAGS_input_tree); // Tree in file MyTestTree.dnd
+        LOG(INFO) << "[Input tree file] " << FLAGS_input_tree ;
         LOG(INFO) << "[Tree parser] Input tree has " << tree->getNumberOfLeaves() << " leaves.";
     } catch (bpp::Exception e) {
         LOG(FATAL) << "[Tree parser] Error when reading tree due to: " << e.message();

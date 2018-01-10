@@ -49,11 +49,15 @@
 
 #include <string>
 
-std::string version(MINIJATI_VERSION);
-std::string releasedate(MINIJATI_REL_DATE);
+namespace software{
 
-std::string softwarename = "Jati - Joint Alignment Tree Inference " + version +  " release date: " + releasedate;
+    std::string version(MINIJATI_VERSION);
+    std::string releasedate(MINIJATI_REL_DATE);
+    std::string build = version +  " release date: " + releasedate;
+    std::string name = "Jati - Joint Alignment Tree Inference";
 
+    std::string desc = name + " " + build;
+}
 #endif //MINIJATI_VERSION_HPP
 
 
