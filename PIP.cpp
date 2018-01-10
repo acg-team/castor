@@ -103,7 +103,7 @@ void PIP_Nuc::updateMatrices() {
 
 double PIP_Nuc::Pij_t(size_t i, size_t j, double d) const {
 
-    return getPij_t(d)(i,j);
+    return getPij_t(d)(i, j);
 
 }
 
@@ -126,7 +126,7 @@ const bpp::Matrix<double> &PIP_Nuc::getPij_t(double d) const {
 
     MatrixTools::copy(generator_, md);
     MatrixTools::scale(md, d);
-    MatrixTools::exp(md,md);
+    MatrixTools::exp(md, md);
 
     return md;
 
@@ -148,3 +148,69 @@ const bpp::Matrix<double> &PIP_Nuc::getd2Pij_dt2(double d) const {
 }
 
 void PIP_Nuc::setFreq(std::map<int, double> &freqs) {}
+
+
+RHomogeneousTreeLikelihood_PIP::RHomogeneousTreeLikelihood_PIP(
+        const Tree &tree,
+        TransitionModel *model,
+        DiscreteDistribution *rDist,
+        bool checkRooted,
+        bool verbose,
+        bool usePatterns)
+throw(Exception) :
+        AbstractHomogeneousTreeLikelihood(tree, model, rDist, checkRooted, verbose),
+        likelihoodData_(0),
+        minusLogLik_(-1.) {
+    init_(usePatterns);
+}
+
+/******************************************************************************/
+
+RHomogeneousTreeLikelihood_PIP::RHomogeneousTreeLikelihood_PIP(
+        const Tree &tree,
+        const SiteContainer &data,
+        TransitionModel *model,
+        DiscreteDistribution *rDist,
+        bool checkRooted,
+        bool verbose,
+        bool usePatterns)
+throw(Exception) :
+        AbstractHomogeneousTreeLikelihood(tree, model, rDist, checkRooted, verbose),
+        likelihoodData_(0),
+        minusLogLik_(-1.) {
+    init_(usePatterns);
+    setData(data);
+}
+
+RHomogeneousTreeLikelihood_PIP::RHomogeneousTreeLikelihood_PIP(
+        const RHomogeneousTreeLikelihood_PIP &lik) :
+        AbstractHomogeneousTreeLikelihood(lik),
+        likelihoodData_(0),
+        minusLogLik_(lik.minusLogLik_) {
+    likelihoodData_ = dynamic_cast<DRASRTreeLikelihoodData *>(lik.likelihoodData_->clone());
+    likelihoodData_->setTree(tree_);
+}
+
+
+RHomogeneousTreeLikelihood_PIP& RHomogeneousTreeLikelihood_PIP::operator=(const RHomogeneousTreeLikelihood_PIP& lik) {
+    AbstractHomogeneousTreeLikelihood::operator=(lik);
+    if (likelihoodData_) delete likelihoodData_;
+    likelihoodData_ = dynamic_cast<DRASRTreeLikelihoodData*>(lik.likelihoodData_->clone());
+    likelihoodData_->setTree(tree_);
+    minusLogLik_ = lik.minusLogLik_;
+    return *this;
+}
+
+RHomogeneousTreeLikelihood_PIP::~RHomogeneousTreeLikelihood_PIP()
+{
+    delete likelihoodData_;
+}
+
+
+void RHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) throw (Exception)
+{
+    likelihoodData_ = new DRASRTreeLikelihoodData(
+            tree_,
+            rateDistribution_->getNumberOfCategories(),
+            usePatterns);
+}
