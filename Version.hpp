@@ -44,19 +44,24 @@
 #ifndef MINIJATI_VERSION_HPP
 #define MINIJATI_VERSION_HPP
 
-#define MINIJATI_VERSION "0.1.1"
-#define MINIJATI_REL_DATE "05/01/18"
+
 
 #include <string>
 
 namespace software{
 
-    std::string version(MINIJATI_VERSION);
-    std::string releasedate(MINIJATI_REL_DATE);
-    std::string build = version +  " release date: " + releasedate;
-    std::string name = "Jati - Joint Alignment Tree Inference";
+    //version 1.0.0 (master 1a8e6107, 16 Jun 2013, 17:50:26)
+    std::string version(PRJ_VERSION);
+    std::string releasegitbranch(PRJ_GITBRANCH);
+    std::string releasegitref(PRJ_GITREF);
+    std::string releasedate(PRJ_DATE);
+    std::string releasetime(PRJ_TIME);
 
-    std::string desc = name + " " + build;
+    std::string build = version +  " (" +releasegitbranch + " " + releasegitref + ", "+ releasedate + ", " + releasetime;
+    std::string name(PRJ_NAME);
+    std::string name_extended(PRJ_DESC);
+
+    std::string desc = name_extended + " ("+ name + ") " + build;
 }
 #endif //MINIJATI_VERSION_HPP
 
