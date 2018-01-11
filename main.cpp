@@ -91,6 +91,7 @@
 #include "Utilities.hpp"
 #include "PIP.hpp"
 #include "CommandLineFlags.hpp"
+#include "RHomogeneousTreeLikelihood_PIP.hpp"
 
 
 using namespace tshlib;
@@ -240,16 +241,19 @@ int main(int argc, char *argv[]) {
     auto likelihood = new Likelihood();
     std::vector<VirtualNode *> allnodes_postorder;
 
+    transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(&bpp::AlphabetTools::DNA_ALPHABET, gCode.get(), sites, parmap, "", true,  false, 0);
+    tree = UtreeBppUtils::convertTree_u2b(utree);
+
     if(!FLAGS_model_indels) {
-
-        transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(&bpp::AlphabetTools::DNA_ALPHABET, gCode.get(), sites, parmap, "", true,  false, 0);
-
-        tree = UtreeBppUtils::convertTree_u2b(utree);
         tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
-        tl->initialize();
-        double logL = tl->getLogLikelihood();
-        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName()  << ") = " << logL;
+    }else{
+        tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
     }
+
+    tl->initialize();
+    logLK = tl->getLogLikelihood();
+
+    VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName()  << ") = " << logLK;
 
 
     if(FLAGS_model_indels) {

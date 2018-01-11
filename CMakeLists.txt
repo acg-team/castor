@@ -130,7 +130,16 @@ find_package(bpp-phyl)
 
 
 set(SOURCES
-        main.cpp Utilities.cpp Utilities.hpp PIP.cpp PIP.hpp CommandLineFlags.hpp Version.hpp progressivePIP.hpp)
+        main.cpp
+        Utilities.cpp
+        Utilities.hpp
+        PIP.cpp
+        PIP.hpp
+        CommandLineFlags.hpp
+        Version.hpp
+        progressivePIP.hpp
+        RHomogeneousTreeLikelihood_PIP.cpp
+        RHomogeneousTreeLikelihood_PIP.hpp)
 
 
 add_executable(miniJATI ${SOURCES})
