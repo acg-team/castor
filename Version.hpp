@@ -57,7 +57,7 @@ namespace software{
     std::string releasedate(PRJ_DATE);
     std::string releasetime(PRJ_TIME);
 
-    std::string build = version +  " (" +releasegitbranch + " " + releasegitref + ", "+ releasedate + ", " + releasetime;
+    std::string build = version +  " (" +releasegitbranch + " " + releasegitref + ", "+ releasedate + ", " + releasetime + ")";
     std::string name(PRJ_NAME);
     std::string name_extended(PRJ_DESC);
 
