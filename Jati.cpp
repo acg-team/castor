@@ -97,7 +97,7 @@ void help() {
 
 int main(int args, char **argv) {
     ApplicationTools::displayMessage("**********************************************************************");
-    ApplicationTools::displayMessage("* "+ softwarename + " *");
+    ApplicationTools::displayMessage("* "+ software::name + " *");
     ApplicationTools::displayMessage("* Authors: Lorenzo Gatti & Massimo Maiolo                            *");
     ApplicationTools::displayMessage("*--------------------------------------------------------------------*");
     ApplicationTools::displayMessage("* Inspired on Bio++ Maximum Likelihood Computation                   *");
@@ -111,7 +111,7 @@ int main(int args, char **argv) {
     }
 
     try {
-        BppApplication jatiapp(args, argv, softwarename);
+        BppApplication jatiapp(args, argv, software::name);
         jatiapp.startTimer();
 
         Alphabet *alphabet = SequenceApplicationTools::getAlphabet(jatiapp.getParams(), "", false);
