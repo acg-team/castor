@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/miniJATI.dir/main.cpp.o"
-  "CMakeFiles/miniJATI.dir/utils.cpp.o"
+  "CMakeFiles/miniJATI.dir/Utilities.cpp.o"
   "CMakeFiles/miniJATI.dir/PIP.cpp.o"
   "miniJATI.pdb"
   "miniJATI"

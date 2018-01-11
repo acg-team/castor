@@ -92,6 +92,8 @@
 #include "PIP.hpp"
 #include "CommandLineFlags.hpp"
 
+#include "progressivePIP.hpp"
+
 
 using namespace tshlib;
 
@@ -232,7 +234,6 @@ int main(int argc, char *argv[]) {
     bpp::PhylogeneticsApplicationTools::printParameters(submodel, s1, 1, true);
     VLOG(1) << s1.str();
 
-
     //------------------------------------------------------------------------------------------------------------------
     // INITIAL LIKELIHOOD COMPUTATION
 
@@ -299,6 +300,23 @@ int main(int argc, char *argv[]) {
     // Print tree structure on console
     //utree->printAllNodesNeighbors();
 
+
+
+
+
+
+
+
+
+
+
+    //------------------------------------------------------------------------------------------------------------------
+    // GENERATE MSA
+    /*
+    VirtualNode *root=utree->rootnode;
+    auto alphabet = sites->getSite(0).getAlphabet();
+    progressivePIP::ProgressivePIPResult MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, alignment, alphabet, sites,1.0, true);
+    */
 
     //------------------------------------------------------------------------------------------------------------------
     // DEFINE, APPLY & REVERT TREE REARRANGEMENTS

@@ -4,20 +4,17 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/Users/lorenzogatti/Documents/projects/minijati/PIP.cpp" "/Users/lorenzogatti/Documents/projects/minijati/cmake-build-release/CMakeFiles/miniJATI.dir/PIP.cpp.o"
-  "/Users/lorenzogatti/Documents/projects/minijati/main.cpp" "/Users/lorenzogatti/Documents/projects/minijati/cmake-build-release/CMakeFiles/miniJATI.dir/main.cpp.o"
-  "/Users/lorenzogatti/Documents/projects/minijati/utils.cpp" "/Users/lorenzogatti/Documents/projects/minijati/cmake-build-release/CMakeFiles/miniJATI.dir/utils.cpp.o"
+  "/home/max/CLionProjects/miniJATI/PIP.cpp" "/home/max/CLionProjects/miniJATI/cmake-build-release/CMakeFiles/miniJATI.dir/PIP.cpp.o"
+  "/home/max/CLionProjects/miniJATI/Utilities.cpp" "/home/max/CLionProjects/miniJATI/cmake-build-release/CMakeFiles/miniJATI.dir/Utilities.cpp.o"
+  "/home/max/CLionProjects/miniJATI/main.cpp" "/home/max/CLionProjects/miniJATI/cmake-build-release/CMakeFiles/miniJATI.dir/main.cpp.o"
   )
-set(CMAKE_CXX_COMPILER_ID "AppleClang")
-
-# Preprocessor definitions for this target.
-set(CMAKE_TARGET_DEFINITIONS_CXX
-  "GFLAGS_IS_A_DLL=0"
-  )
+set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "/usr/local/include/eigen3"
+  "/usr/local/include/glog"
+  "/usr/local/include/gflags"
+  "/usr/include/eigen3"
   "/usr/local/include/tshlib"
   "/usr/local/include"
   )
