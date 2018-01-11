@@ -51,12 +51,9 @@
 #include <Bpp/Phyl/Likelihood/AbstractHomogeneousTreeLikelihood.h>
 #include <Bpp/Phyl/Likelihood/DRASRTreeLikelihoodData.h>
 
-
-
-
 using namespace bpp;
-
-class PIP_Nuc : public AbstractReversibleNucleotideSubstitutionModel {
+namespace bpp {
+    class PIP_Nuc : public AbstractReversibleNucleotideSubstitutionModel {
 private:
     double lambda_, mu_, tau_, nu_;
     std::string name_;
@@ -97,7 +94,6 @@ protected:
 
 };
 
-namespace bpp {
     class RHomogeneousTreeLikelihood_PIP : public AbstractHomogeneousTreeLikelihood {
     private:
 
@@ -181,15 +177,15 @@ namespace bpp {
          *
          * @{
          */
-        //void setData(const SiteContainer &sites) throw(Exception);
+        void setData(const SiteContainer &sites) throw(Exception);
 
-        //double getLikelihood() const;
+        double getLikelihood() const;
 
-        //double getLogLikelihood() const;
+        double getLogLikelihood() const;
 
-        //double getLikelihoodForASite(size_t site) const;
+        double getLikelihoodForASite(size_t site) const;
 
-        //double getLogLikelihoodForASite(size_t site) const;
+        double getLogLikelihoodForASite(size_t site) const;
         /** @} */
 
 
@@ -198,13 +194,13 @@ namespace bpp {
          *
          * @{
          */
-        //double getLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
+        double getLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
 
-        //double getLogLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
+        double getLogLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
 
-        //double getLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const;
+        double getLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const;
 
-        //double getLogLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const;
+        double getLogLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const;
         /** @} */
 
         /**
@@ -220,18 +216,18 @@ namespace bpp {
          *
          * @param parameters The parameter list to pass to the function.
          */
-        //void setParameters(const ParameterList &parameters) throw(ParameterNotFoundException, ConstraintException);
+        void setParameters(const ParameterList &parameters) throw(ParameterNotFoundException, ConstraintException);
 
-        //double getValue() const throw(Exception);
+        double getValue() const throw(Exception);
 
-        //size_t getSiteIndex(size_t site) const throw(IndexOutOfBoundsException) { return likelihoodData_->getRootArrayPosition(site); }
+        size_t getSiteIndex(size_t site) const throw(IndexOutOfBoundsException) { return likelihoodData_->getRootArrayPosition(site); }
 
         /**
          * @name DerivableFirstOrder interface.
          *
          * @{
          */
-        //double getFirstOrderDerivative(const std::string &variable) const throw(Exception);
+        double getFirstOrderDerivative(const std::string &variable) const throw(Exception) { return 0; }
         /** @} */
 
         /**
@@ -239,7 +235,7 @@ namespace bpp {
          *
          * @{
          */
-        //double getSecondOrderDerivative(const std::string &variable) const throw(Exception);
+        double getSecondOrderDerivative(const std::string &variable) const throw(Exception) { return 0; }
 
         //double getSecondOrderDerivative(const std::string &variable1, const std::string &variable2) const throw(Exception) { return 0; } // Not implemented for now.
         /** @} */

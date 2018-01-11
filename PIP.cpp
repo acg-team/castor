@@ -44,6 +44,7 @@
 #include "PIP.hpp"
 #include <Bpp/Numeric/Matrix/MatrixTools.h>
 #include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
+#include <Bpp/Phyl/PatternTools.h>
 
 PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, SubstitutionModel *basemodel) :
         AbstractParameterAliasable("PIP."),
@@ -164,7 +165,6 @@ throw(Exception) :
     init_(usePatterns);
 }
 
-/******************************************************************************/
 
 RHomogeneousTreeLikelihood_PIP::RHomogeneousTreeLikelihood_PIP(
         const Tree &tree,
@@ -192,25 +192,134 @@ RHomogeneousTreeLikelihood_PIP::RHomogeneousTreeLikelihood_PIP(
 }
 
 
-RHomogeneousTreeLikelihood_PIP& RHomogeneousTreeLikelihood_PIP::operator=(const RHomogeneousTreeLikelihood_PIP& lik) {
+RHomogeneousTreeLikelihood_PIP &RHomogeneousTreeLikelihood_PIP::operator=(const RHomogeneousTreeLikelihood_PIP &lik) {
     AbstractHomogeneousTreeLikelihood::operator=(lik);
     if (likelihoodData_) delete likelihoodData_;
-    likelihoodData_ = dynamic_cast<DRASRTreeLikelihoodData*>(lik.likelihoodData_->clone());
+    likelihoodData_ = dynamic_cast<DRASRTreeLikelihoodData *>(lik.likelihoodData_->clone());
     likelihoodData_->setTree(tree_);
     minusLogLik_ = lik.minusLogLik_;
     return *this;
 }
 
-RHomogeneousTreeLikelihood_PIP::~RHomogeneousTreeLikelihood_PIP()
-{
+RHomogeneousTreeLikelihood_PIP::~RHomogeneousTreeLikelihood_PIP() {
     delete likelihoodData_;
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) throw (Exception)
-{
-    likelihoodData_ = new DRASRTreeLikelihoodData(
-            tree_,
-            rateDistribution_->getNumberOfCategories(),
-            usePatterns);
+void RHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) throw(Exception) {
+    likelihoodData_ = new DRASRTreeLikelihoodData(tree_,
+                                                  rateDistribution_->getNumberOfCategories(),
+                                                  usePatterns);
+}
+
+
+void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(Exception) {
+
+    if (data_)
+        delete data_;
+
+    data_ = PatternTools::getSequenceSubset(sites, *tree_->getRootNode());
+
+    if (verbose_)
+        ApplicationTools::displayTask("Initializing data structure");
+
+    likelihoodData_->initLikelihoods(*data_, *model_);
+
+    if (verbose_)
+        ApplicationTools::displayTaskDone();
+
+    nbSites_ = likelihoodData_->getNumberOfSites();
+    nbDistinctSites_ = likelihoodData_->getNumberOfDistinctSites();
+    nbStates_ = likelihoodData_->getNumberOfStates();
+
+    if (verbose_)
+        ApplicationTools::displayResult("Number of distinct sites", TextTools::toString(nbDistinctSites_));
+
+    initialized_ = false;
+}
+
+double RHomogeneousTreeLikelihood_PIP::getLikelihood() const {
+    double l = 1.;
+    for (size_t i = 0; i < nbSites_; i++) {
+        l *= getLikelihoodForASite(i);
+    }
+    return l;
+}
+
+
+double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
+    double ll = 0;
+    std::vector<double> la(nbSites_);
+    for (size_t i = 0; i < nbSites_; i++) {
+        la[i] = getLogLikelihoodForASite(i);
+    }
+    std::sort(la.begin(), la.end());
+    for (size_t i = nbSites_; i > 0; i--) {
+        ll += la[i - 1];
+    }
+    return ll;
+}
+
+
+double RHomogeneousTreeLikelihood_PIP::getLikelihoodForASite(size_t site) const {
+    double l = 0;
+    for (size_t i = 0; i < nbClasses_; i++) {
+        l += getLikelihoodForASiteForARateClass(site, i) * rateDistribution_->getProbability(i);
+    }
+    return l;
+}
+
+
+double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodForASite(size_t site) const {
+    double l = 0;
+    for (size_t i = 0; i < nbClasses_; i++) {
+        double li = getLikelihoodForASiteForARateClass(site, i) * rateDistribution_->getProbability(i);
+        if (li > 0) l += li; //Corrects for numerical instabilities leading to slightly negative likelihoods
+    }
+    return log(l);
+}
+
+
+double RHomogeneousTreeLikelihood_PIP::getLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const {
+    double l = 0;
+    Vdouble *la = &likelihoodData_->getLikelihoodArray(tree_->getRootNode()->getId())[likelihoodData_->getRootArrayPosition(site)][rateClass];
+    for (size_t i = 0; i < nbStates_; i++) {
+        //cout << (*la)[i] << "\t" << rootFreqs_[i] << endl;
+        double li = (*la)[i] * rootFreqs_[i];
+        if (li > 0) l += li; //Corrects for numerical instabilities leading to slightly negative likelihoods
+    }
+    return l;
+}
+
+
+double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const {
+    double l = 0;
+    Vdouble *la = &likelihoodData_->getLikelihoodArray(tree_->getRootNode()->getId())[likelihoodData_->getRootArrayPosition(site)][rateClass];
+    for (size_t i = 0; i < nbStates_; i++) {
+        l += (*la)[i] * rootFreqs_[i];
+    }
+    //if(l <= 0.) cerr << "WARNING!!! Negative likelihood." << endl;
+    return log(l);
+}
+
+
+double RHomogeneousTreeLikelihood_PIP::getLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const {
+    return likelihoodData_->getLikelihoodArray(tree_->getRootNode()->getId())[likelihoodData_->getRootArrayPosition(site)][rateClass][static_cast<size_t>(state)];
+}
+
+
+double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const {
+    return log(likelihoodData_->getLikelihoodArray(tree_->getRootNode()->getId())[likelihoodData_->getRootArrayPosition(site)][rateClass][static_cast<size_t>(state)]);
+}
+
+
+void RHomogeneousTreeLikelihood_PIP::setParameters(const ParameterList &parameters)
+throw(ParameterNotFoundException, ConstraintException) {
+    setParametersValues(parameters);
+}
+
+double RHomogeneousTreeLikelihood_PIP::getValue() const
+throw(Exception) {
+    if (!isInitialized()) throw Exception("RHomogeneousTreeLikelihood::getValue(). Instance is not initialized.");
+    return minusLogLik_;
 }

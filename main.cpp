@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
     map<std::string, std::string> parmap;
     bpp::TransitionModel *transmodel = nullptr;
     bpp::DiscreteDistribution *rDist = nullptr;
-    bpp::RHomogeneousTreeLikelihood *tl;
+    bpp::TreeLikelihood *tl;
 
     Eigen::MatrixXd Q;
     Eigen::VectorXd pi;
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
 
 
     if(FLAGS_model_indels) {
-
+        //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
         likelihood->Init(utree, pi, Q, mu, lambda);
 
         // COMPUTE LK GIVEN TREE TOPOLOGY AND MSA
@@ -348,8 +348,9 @@ int main(int argc, char *argv[]) {
         // Print the list of moves for the current P node (source node)
         //rearrangmentList.printMoves();
 
-        VLOG(1) << "[utree rearrangment] [strategy: " << rearrangmentList->mset_strategy <<"] Found " << rearrangmentList->getNumberOfMoves() << " candidate moves for node " <<
-                                                                                                                                                                      vnode->vnode_name;
+        VLOG(1) << "[utree rearrangment] [" << rearrangmentList->mset_strategy <<"] Found "
+                << rearrangmentList->getNumberOfMoves() << " candidate moves for node "
+                << vnode->vnode_name;
 
         std::string start_col_line, end_col_line;
 
@@ -412,8 +413,8 @@ int main(int argc, char *argv[]) {
                 // ------------------------------------
                 // Apply brent -- test only
                 //VLOG(2) << "[Tree LK] Before Brent: " << logLK;
-                double max_lenght = pi[1] * 1.1;
-                double min_lenght = pi[1] * 0.9;
+                //double max_lenght = pi[1] * 1.1;
+                //double min_lenght = pi[1] * 0.9;
 
                 //isLKImproved = Generic_Brent_Lk(&likelihood->pi[1], min_lenght, max_lenght, SMALL, BRENT_ITMAX,
                 //                                LKFunc::LKcore , *likelihood, list_vnode_to_root, *alignment, logLK);
