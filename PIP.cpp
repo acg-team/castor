@@ -45,6 +45,7 @@
 #include <Bpp/Numeric/Matrix/MatrixTools.h>
 #include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
 #include <Bpp/Phyl/PatternTools.h>
+#include <glog/logging.h>
 
 PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, SubstitutionModel *basemodel) :
         AbstractParameterAliasable("PIP."),
@@ -322,4 +323,48 @@ double RHomogeneousTreeLikelihood_PIP::getValue() const
 throw(Exception) {
     if (!isInitialized()) throw Exception("RHomogeneousTreeLikelihood::getValue(). Instance is not initialized.");
     return minusLogLik_;
+}
+
+
+void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood()
+{
+    //computeSubtreeLikelihood(tree_->getRootNode());
+}
+
+void RHomogeneousTreeLikelihood_PIP::displayLikelihood(const Node* node)
+{
+    VLOG(2) << "Likelihoods at node " << node->getName() << ": ";
+    displayLikelihoodArray(likelihoodData_->getLikelihoodArray(node->getId()));
+    VLOG(2) << "                                         ***";
+}
+
+
+void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList& params)
+{
+    applyParameters();
+
+    if (rateDistribution_->getParameters().getCommonParametersWith(params).size() > 0
+        || model_->getParameters().getCommonParametersWith(params).size() > 0)
+    {
+        //Rate parameter changed, need to recompute all probs:
+        computeAllTransitionProbabilities();
+    }
+    else if (params.size() > 0)
+    {
+        //We may save some computations:
+        for (size_t i = 0; i < params.size(); i++)
+        {
+            std::string s = params[i].getName();
+            if (s.substr(0, 5) == "BrLen")
+            {
+                //Branch length parameter:
+                computeTransitionProbabilitiesForNode(nodes_[TextTools::to<size_t>(s.substr(5))]);
+            }
+        }
+        rootFreqs_ = model_->getFrequencies();
+    }
+
+    computeTreeLikelihood();
+
+    minusLogLik_ = -getLogLikelihood();
 }

@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3   CMakeFiles/miniJATI.dir/main.cpp.o CMakeFiles/miniJATI.dir/Utilities.cpp.o CMakeFiles/miniJATI.dir/PIP.cpp.o  -o miniJATI -Wl,-rpath,/usr/local/lib /usr/local/lib/libtshlib.so -lglog -lgflags /usr/local/lib/libbpp-phyl.so.11.0.0 /usr/local/lib/libbpp-seq.so.11.0.0 /usr/local/lib/libbpp-core.so.3.0.0 

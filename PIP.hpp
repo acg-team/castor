@@ -246,7 +246,7 @@ protected:
 
         //const DRASRTreeLikelihoodData *getLikelihoodData() const { return likelihoodData_; }
 
-        //void computeTreeLikelihood();
+        void computeTreeLikelihood();
 
         //virtual double getDLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
 
@@ -281,14 +281,14 @@ protected:
 
         //virtual void computeDownSubtreeD2Likelihood(const Node *);
 
-        //void fireParameterChanged(const ParameterList &params);
+        void fireParameterChanged(const ParameterList &params);
 
         /**
          * @brief This method is mainly for debugging purpose.
          *
          * @param node The node at which likelihood values must be displayed.
          */
-        //virtual void displayLikelihood(const Node *node);
+        virtual void displayLikelihood(const Node *node);
 
         //friend class RHomogeneousMixedTreeLikelihood;
     };
