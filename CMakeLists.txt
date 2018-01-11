@@ -30,6 +30,11 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     message(STATUS "Compilation will be performed under Linux")
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lstdc++ -ldl -pthread ")
     include_directories("/usr/local/include/glog")
+    include_directories("/usr/local/include/gflags")
+        find_library(gflags gflags)
+        message(STATUS "Found Gflags at ${gflags}")
+    #find_package(glog REQUIRED)
+    #find_package(gflags 2.2 REQUIRED)
 
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
@@ -62,7 +67,7 @@ find_package(bpp-phyl)
 
 
 set(SOURCES
-        main.cpp Utilities.cpp Utilities.hpp PIP.cpp PIP.hpp CommandLineFlags.hpp Version.hpp)
+        main.cpp Utilities.cpp Utilities.hpp PIP.cpp PIP.hpp CommandLineFlags.hpp Version.hpp progressivePIP.hpp)
 
 
 add_executable(miniJATI ${SOURCES})

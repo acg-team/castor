@@ -49,6 +49,7 @@
 #include <Bpp/Io/OutputStream.h>
 #include <Bpp/App/BppApplication.h>
 #include <Bpp/App/ApplicationTools.h>
+#include <Bpp/Exceptions.h>
 
 /*
 * From SeqLib:
@@ -81,7 +82,7 @@
 #include <unsupported/Eigen/MatrixFunctions>
 
 #include <glog/logging.h>
-
+#include <chrono>
 #include <Alignment.hpp>
 #include <Likelihood.hpp>
 #include <TreeRearrangment.hpp>
@@ -128,8 +129,6 @@ int main(int argc, char *argv[]) {
     alignment->align_num_characters.resize((unsigned long) alignment->align_length);
     alignment->align_alphabetsize += 1; // DNA +1 per PIP
     alignment->countNumberCharactersinColumn();
-
-
 
     bpp::SiteContainer *sites = new bpp::VectorSiteContainer(*sequences);
 
