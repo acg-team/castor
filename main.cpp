@@ -337,18 +337,12 @@ int main(int argc, char *argv[]) {
 
 
 
-
-
-
-
-
-
     //------------------------------------------------------------------------------------------------------------------
     // GENERATE MSA
 
-    VirtualNode *root=utree->rootnode;
-    auto alphabet = sites->getSite(0).getAlphabet();
-    progressivePIP::ProgressivePIPResult MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, alignment, alphabet, 1.0, true);
+    //VirtualNode *root=utree->rootnode;
+    //auto alphabet = sites->getSite(0).getAlphabet();
+    //progressivePIP::ProgressivePIPResult MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, alignment, alphabet, sites, 1.0, true);
 
 
     //------------------------------------------------------------------------------------------------------------------

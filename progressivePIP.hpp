@@ -1683,7 +1683,7 @@ namespace progressivePIP{
             }
             //***************************************************************************************
             //***************************************************************************************
-            size_tr=unsigned long(ceil((tr_down_i-tr_up_i+1)*(tr_up_j-tr_down_j+1+1)/2));
+            size_tr=(unsigned long)ceil((tr_down_i-tr_up_i+1)*(tr_up_j-tr_down_j+1+1)/2);
             TR[m] = new int[size_tr](); /*TODO: optimize size TR*/
             memset(TR[m],0,size_tr*sizeof(TR[m][0]));
             set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
@@ -1872,6 +1872,7 @@ namespace progressivePIP{
                                                      Likelihood *likelihood,
                                                      Alignment *alignment,
                                                      const bpp::Alphabet *alphabet,
+                                                     SiteContainer *sites,
                                                      double gamma_rate,
                                                      bool local_tree) {
 
@@ -1884,10 +1885,8 @@ namespace progressivePIP{
 
         } else{
 
-            ProgressivePIPResult result_L = compute_DP3D_PIP_tree_cross(tree->getNodeLeft(), likelihood, alignment, alphabet,sites,
-                                                                        gamma_rate, local_tree);
-            ProgressivePIPResult result_R = compute_DP3D_PIP_tree_cross(tree->getNodeRight(), likelihood, alignment, alphabet, sites,
-                                                                        gamma_rate, local_tree);
+            ProgressivePIPResult result_L = compute_DP3D_PIP_tree_cross(tree->getNodeLeft(), likelihood, alignment, alphabet, sites, gamma_rate, local_tree);
+            ProgressivePIPResult result_R = compute_DP3D_PIP_tree_cross(tree->getNodeRight(), likelihood, alignment, alphabet, sites, gamma_rate, local_tree);
 
             result = compute_DP3D_PIP(result_L, result_R, tree, likelihood, alignment, alphabet, gamma_rate, local_tree);
 
