@@ -86,6 +86,7 @@ throw(Exception) :
     init_(usePatterns);
     setData(data);
 
+
 }
 
 RHomogeneousTreeLikelihood_PIP::RHomogeneousTreeLikelihood_PIP(
@@ -220,12 +221,76 @@ throw(Exception) {
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood() {
 
-
-
-    //computeSubtreeLikelihood(tree_->getRootNode());
+    computeSubtreeLikelihood(tree_->getRootNode());
 
 
 }
+
+
+void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood(const Node *node) {
+
+    if (node->isLeaf()) return;
+
+    size_t nbSites = likelihoodData_->getLikelihoodArray(node->getId()).size();
+    size_t nbNodes = node->getNumberOfSons();
+
+    // Must reset the likelihood array first (i.e. set all of them to 1):
+    VVVdouble* _likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
+    for (size_t i = 0; i < nbSites; i++)
+    {
+        //For each site in the sequence,
+        VVdouble* _likelihoods_node_i = &(*_likelihoods_node)[i];
+        for (size_t c = 0; c < nbClasses_; c++)
+        {
+            //For each rate classe,
+            Vdouble* _likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
+            for (size_t x = 0; x < nbStates_; x++)
+            {
+                //For each initial state,
+                (*_likelihoods_node_i_c)[x] = 1.;
+            }
+        }
+    }
+
+
+    for (size_t l = 0; l < nbNodes; l++)
+    {
+        //For each son node,
+
+        const Node* son = node->getSon(l);
+
+        computeSubtreeLikelihood(son); //Recursive method:
+
+        VVVdouble* pxy__son = &pxy_[son->getId()];
+        std::vector<size_t> * _patternLinks_node_son = &likelihoodData_->getArrayPositions(node->getId(), son->getId());
+        VVVdouble* _likelihoods_son = &likelihoodData_->getLikelihoodArray(son->getId());
+
+        for (size_t i = 0; i < nbSites; i++)
+        {
+            //For each site in the sequence,
+            VVdouble* _likelihoods_son_i = &(*_likelihoods_son)[(*_patternLinks_node_son)[i]];
+            VVdouble* _likelihoods_node_i = &(*_likelihoods_node)[i];
+            for (size_t c = 0; c < nbClasses_; c++)
+            {
+                //For each rate classe,
+                Vdouble* _likelihoods_son_i_c = &(*_likelihoods_son_i)[c];
+                Vdouble* _likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
+                VVdouble* pxy__son_c = &(*pxy__son)[c];
+                for (size_t x = 0; x < nbStates_; x++)
+                {
+                    //For each initial state,
+                    Vdouble* pxy__son_c_x = &(*pxy__son_c)[x];
+                    double likelihood = 0;
+                    for (size_t y = 0; y < nbStates_; y++)
+                        likelihood += (*pxy__son_c_x)[y] * (*_likelihoods_son_i_c)[y];
+
+                    (*_likelihoods_node_i_c)[x] *= likelihood;
+                }
+            }
+        }
+    }
+}
+
 
 void RHomogeneousTreeLikelihood_PIP::displayLikelihood(const Node *node) {
     VLOG(2) << "Likelihoods at node " << node->getName() << ": ";

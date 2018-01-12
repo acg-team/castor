@@ -91,6 +91,7 @@
 #include "Utilities.hpp"
 #include "PIP.hpp"
 #include "CommandLineFlags.hpp"
+#include "ExtendedAlphabet.hpp"
 #include "RHomogeneousTreeLikelihood_PIP.hpp"
 
 
@@ -118,8 +119,17 @@ int main(int argc, char *argv[]) {
 
     LOG(INFO) << "[Input alignment file] " << FLAGS_input_sequences;
 
+    NucleicAlphabet *alpha;
+
+    if(FLAGS_model_indels){
+         alpha = new bpp::DNA_EXTENDED();
+        //alpha = new bpp::DNA();
+    }else{
+        alpha = new bpp::DNA();
+    }
+
     bpp::Fasta seqReader;
-    bpp::SequenceContainer *sequences = seqReader.readAlignment(FLAGS_input_sequences, &bpp::AlphabetTools::DNA_ALPHABET);
+    bpp::SequenceContainer *sequences = seqReader.readAlignment(FLAGS_input_sequences, alpha);
     std::vector<std::string> seqNames = sequences->getSequencesNames();
 
     for(int i=0; i<seqNames.size(); i++){
@@ -132,10 +142,10 @@ int main(int argc, char *argv[]) {
     alignment->countNumberCharactersinColumn();
 
     bpp::SiteContainer *sites = new bpp::VectorSiteContainer(*sequences);
-
     size_t num_leaves = sequences->getNumberOfSequences();
 
     LOG(INFO) << "[Sequences in alignment] " << num_leaves;
+
     std::string testSeq = sequences->getSequence(seqNames.at(0)).toString();
     bpp::Site testSite = nullptr;
 
@@ -206,8 +216,8 @@ int main(int argc, char *argv[]) {
         unique_ptr<GeneticCode> gCode;
         parmap["model"] = FLAGS_model_substitution;
 
-        submodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(&bpp::AlphabetTools::DNA_ALPHABET, gCode.get(), sites, parmap, "", true,  false, 0);
-        submodel->setFreqFromData(*sites);
+        submodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, parmap, "", true,  false, 0);
+        //submodel->setFreqFromData(*sites);
 
         rDist = new bpp::ConstantRateDistribution();
         bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
@@ -220,14 +230,22 @@ int main(int argc, char *argv[]) {
 
         lambda= 0.2;
         mu=0.1;
-        submodel = new PIP_Nuc(&bpp::AlphabetTools::DNA_ALPHABET, lambda, mu, submodel);
+        //VLOG(1) << alpha->getGapCharacterCode();
+        //auto testCS = new CanonicalStateMap(new bpp::DNA(), true);
+        //auto testCS_G = new CanonicalStateMap(new bpp::DNA_EXTENDED(), false);
+        //VLOG(1) << "size: " << testCS->getAlphabet()->getSize();
+
+        submodel = new PIP_Nuc(alpha, lambda, mu, submodel);
+        //submodel->setFreqFromData(*sites);
 
         // Fill Q matrix
         Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());
         pi = MatrixBppUtils::Vector2Eigen(submodel->getFrequencies());
+        std::cerr << Q << std::endl;
+        std::cerr << pi << std::endl;
 
     }
-
+    VLOG(1) << "This model supports " << submodel->getNumberOfStates() << " states";
 
     bpp::StdStr s1;
     bpp::PhylogeneticsApplicationTools::printParameters(submodel, s1, 1, true);
@@ -241,14 +259,24 @@ int main(int argc, char *argv[]) {
     auto likelihood = new Likelihood();
     std::vector<VirtualNode *> allnodes_postorder;
 
-    transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(&bpp::AlphabetTools::DNA_ALPHABET, gCode.get(), sites, parmap, "", true,  false, 0);
     tree = UtreeBppUtils::convertTree_u2b(utree);
 
     if(!FLAGS_model_indels) {
+
+        transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true,  false, 0);
         tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
+
     }else{
-        tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
+
+        unique_ptr<TransitionModel> test;
+        test.reset(submodel);
+        transmodel = test.release();
+
+        tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites,transmodel, rDist, false, true, false);
+
     }
+
+    VLOG(1) << "Number of states in the transition model " << (int) transmodel->getNumberOfStates();
 
     tl->initialize();
     logLK = tl->getLogLikelihood();

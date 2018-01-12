@@ -44,6 +44,7 @@
 #include "PIP.hpp"
 #include <Bpp/Numeric/Matrix/MatrixTools.h>
 #include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
+#include <Bpp/Seq/Container/SequenceContainerTools.h>
 #include <Bpp/Phyl/PatternTools.h>
 #include <glog/logging.h>
 
@@ -62,9 +63,9 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, Substit
 
     name_ = basemodel->getName() + "+PIP";
 
-    generator_.resize(alpha->getSize() + 1, alpha->getSize() + 1);
-    size_ = alpha->getSize() + 1;
-    freq_.resize(alpha->getSize() + 1);
+    //¨generator_.resize(alpha->getSize(), alpha->getSize());
+    //size_ = alpha->getSize();
+    //freq_.resize(alpha->getSize());
 
 
     // Copy the generator from substitution model + extend it
@@ -73,7 +74,8 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, Substit
     int cols = qmatrix.getNumberOfColumns();
     int rows = qmatrix.getNumberOfRows();
 
-    for (int i = 0; i < rows; i++) {
+
+    for (int i = 0; i < rows-1; i++) {
         for (int j = 0; j < cols; j++) {
 
             if (i == j) {
@@ -84,12 +86,13 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, Substit
             }
 
         }
-
-        generator_(i, cols) = mu;
+        generator_(i, cols-1) = mu;
     }
 
     // Add frequency for gap character
-    freq_.at(alpha->getSize()) = 0;
+
+    freq_ = basemodel->getFrequencies();
+    freq_[alpha->getGapCharacterCode()] = 0;
 
 
     addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
@@ -111,44 +114,85 @@ double PIP_Nuc::Pij_t(size_t i, size_t j, double d) const {
 
 double PIP_Nuc::dPij_dt(size_t i, size_t j, double d) const {
 
-    std::cerr << "PIP_Nuc::dPij_dt has been called";
+    std::cout << "PIP_Nuc::dPij_dt has been called";
     return 0;
 }
 
 double PIP_Nuc::d2Pij_dt2(size_t i, size_t j, double d) const {
 
-    std::cerr << "PIP_Nuc::d2Pij_dt2 has been called";
+    std::cout << "PIP_Nuc::d2Pij_dt2 has been called";
     return 0;
 
 }
 
+/*
 const bpp::Matrix<double> &PIP_Nuc::getPij_t(double d) const {
 
-    RowMatrix<double> md;
+    MatrixTools::getId(size_, pijt_);
 
-    MatrixTools::copy(generator_, md);
-    MatrixTools::scale(md, d);
-    MatrixTools::exp(md, md);
+    MatrixTools::copy(generator_, pijt_);
+    MatrixTools::scale(pijt_, d);
+    MatrixTools::exp(pijt_, pijt_);
 
-    return md;
-
-
-}
-
-const bpp::Matrix<double> &PIP_Nuc::getdPij_dt(double d) const {
-
-    std::cerr << "PIP_Nuc::getdPij_dt has been called";
+    return pijt_;
 
 
 }
+*/
+//const bpp::Matrix<double> &PIP_Nuc::getdPij_dt(double d) const {
 
-const bpp::Matrix<double> &PIP_Nuc::getd2Pij_dt2(double d) const {
+    //std::cerr << "PIP_Nuc::getdPij_dt has been called";
 
-    std::cerr << "PIP_Nuc::getd2dPij_dt2 has been called";
 
+//}
+
+//const bpp::Matrix<double> &PIP_Nuc::getd2Pij_dt2(double d) const {
+
+    //std::cerr << "PIP_Nuc::getd2dPij_dt2 has been called";
+
+
+//}
+
+void PIP_Nuc::setFreq(std::map<int, double> &freqs) {
+    std::vector<double> values;
+    for (auto const& element : freqs) {
+        values.push_back(element.second);
+    }
+    freq_ = values;
 
 }
 
-void PIP_Nuc::setFreq(std::map<int, double> &freqs) {}
+void PIP_Nuc::setFreqFromData(const SequenceContainer& data, double pseudoCount) {
+    std::map<int, int> counts;
+    SequenceContainerTools::getCounts(data, counts);
+    std::map<int, double> freqs;
 
+    int gapkey = data.getAlphabet()->getGapCharacterCode();
+    std::map<int,int>::iterator iter = counts.find(gapkey);
+    if( iter != counts.end() )
+        counts.erase( iter );
+    else puts( "not found" ) ;
+
+
+    std::vector<int> retval;
+    for (auto const& element : counts) {
+        retval.push_back(element.first);
+    }
+
+    double t = 0;
+    for (auto& ci : counts)
+        t+=ci.second;
+
+    t+= pseudoCount*(double)counts.size();
+
+    //for (int i = 0; i < static_cast<int>(size_)-1; i++)
+    for (auto &key:retval)
+    {
+        freqs[key] = (static_cast<double>(counts[key]) + pseudoCount) / t;
+    }
+
+    freqs[data.getAlphabet()->getGapCharacterCode()] = 0;
+    // Re-compute generator and eigen values:
+    setFreq(freqs);
+}
 

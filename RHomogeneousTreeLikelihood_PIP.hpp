@@ -236,7 +236,7 @@ namespace bpp {
          *
          * @param node The root of the subtree.
          */
-        //virtual void computeSubtreeLikelihood(const Node *node); //Recursive method.
+        virtual void computeSubtreeLikelihood(const Node *node); //Recursive method.
         //virtual void computeDownSubtreeDLikelihood(const Node *);
 
         //virtual void computeDownSubtreeD2Likelihood(const Node *);

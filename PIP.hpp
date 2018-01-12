@@ -76,12 +76,15 @@ public:
 
     double d2Pij_dt2(size_t i, size_t j, double d) const;
 
-    const Matrix<double> &getPij_t(double d) const;
+    //const Matrix<double> &getPij_t(double d) const;
 
-    const Matrix<double> &getdPij_dt(double d) const;
+    //const Matrix<double> &getdPij_dt(double d) const;
 
-    const Matrix<double> &getd2Pij_dt2(double d) const;
+    //const Matrix<double> &getd2Pij_dt2(double d) const;
 
+    void setFreqFromData(const SequenceContainer& data, double pseudoCount);
+
+    size_t getNumberOfStates() const { return stateMap_.get()->getNumberOfModelStates(); }
 
     std::string getName() const { return name_; }
 
