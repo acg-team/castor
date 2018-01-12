@@ -146,6 +146,7 @@ int main(int argc, char *argv[]) {
 
     LOG(INFO) << "[Sequences in alignment] " << num_leaves;
 
+    /*
     std::string testSeq = sequences->getSequence(seqNames.at(0)).toString();
     bpp::Site testSite = nullptr;
 
@@ -162,7 +163,7 @@ int main(int argc, char *argv[]) {
     }
 
     alignment->align_num_characters = countCharNumber;
-
+    */
     delete sequences;
 
     //------------------------------------------------------------------------------------------------------------------
@@ -217,7 +218,7 @@ int main(int argc, char *argv[]) {
         parmap["model"] = FLAGS_model_substitution;
 
         submodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, parmap, "", true,  false, 0);
-        //submodel->setFreqFromData(*sites);
+        submodel->setFreqFromData(*sites);
 
         rDist = new bpp::ConstantRateDistribution();
         bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
@@ -241,8 +242,8 @@ int main(int argc, char *argv[]) {
         // Fill Q matrix
         Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());
         pi = MatrixBppUtils::Vector2Eigen(submodel->getFrequencies());
-        std::cerr << Q << std::endl;
-        std::cerr << pi << std::endl;
+        //std::cerr << Q << std::endl;
+        //std::cerr << pi << std::endl;
 
     }
     VLOG(1) << "This model supports " << submodel->getNumberOfStates() << " states";
@@ -272,7 +273,7 @@ int main(int argc, char *argv[]) {
         test.reset(submodel);
         transmodel = test.release();
 
-        tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites,transmodel, rDist, false, true, false);
+        tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites,transmodel, rDist, false, false, false);
 
     }
 
