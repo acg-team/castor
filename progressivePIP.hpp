@@ -31,8 +31,9 @@
 #include <sstream>
 #include <cstdlib>
 #include <algorithm>
+#include <Eigen/Core>
 #include <Eigen/Dense>
-#include <Eigen/Sparse>
+#include <unsupported/Eigen/MatrixFunctions>
 #include <random>
 #include <set>
 #include <chrono>
@@ -44,7 +45,8 @@ using namespace tshlib;
 
 namespace progressivePIP{
 
-#define ERR_STATE 0
+#define ERR_STATE (-999)
+
 #define MATCH_STATE 1
 #define GAP_X_STATE 2
 #define GAP_Y_STATE 3
@@ -54,103 +56,45 @@ namespace progressivePIP{
 #define GAP_X_CHAR '2'
 #define GAP_Y_CHAR '3'
 
-//DP-PIP
-    struct CompareFirst
-    {
-        CompareFirst(std::string val) : val_(val) {}
-        bool operator()(const std::pair<std::string,std::string>& elem) const {
-            return val_ == elem.first;
-        }
-    private:
-        std::string val_;
-    };
-
-    const char mytable[256] = { -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, 2, -1, 1, -1, -1, -1, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, -1, 0, 0, -1, -1, 5, -1, -1, -1, -1, -1, -1, -1, -1, 2, -1, 1,
-                                -1, -1, -1, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0,
-                                -1, -1, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-
-    const char mytableAA[256] = { -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, 0, 20, 1, 2, 3, 4, 5, 6, 7, 20, 8, 9, 10, 11, 20, 12, 13, 14,
-                                  15, 16, 20, 17, 18, 20, 19, 20, -1, -1, -1, -1, -1, -1, 0, 20, 1, 2, 3,
-                                  4, 5, 6, 7, 20, 8, 9, 10, 11, 20, 12, 13, 14, 15, 16, 20, 17, 18, 20,
-                                  19, 20, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                  -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-
-
     struct ProgressivePIPResult;
 
     struct ProgressivePIPResult{
-        std::vector<std::pair<std::string,std::string > > MSA;
+        //std::vector<std::pair<std::string,std::string > > MSA;
         std::vector< std::pair<std::string,std::string> > MSAs;
         std::string traceback_path;
         double score;
-        //Eigen::VectorXd Pc;
-        std::map<std::string,Eigen::VectorXd> fv_map;
-        double lk_gap;
-        double pc0;
+        //std::map<std::string,Eigen::VectorXd> fv_map;
+        //double lk_gap;
+        //double pc0;
     };
-//DP-PIP
-/*    void dealloc_3D_matrix(long double ***mat,int depth,int height){
-
-        for(int k=(depth-1); k>=0; k--){
-            for(int j=(height-1); j>=0; j--){
-                delete[] mat[k][j];
-            }
-            delete[] mat[k];
-        }
-        delete[] mat;
-
-        mat=NULL;
-    }*/
-
-    Eigen::VectorXd fv_observed(std::string &s,int &idx,char *mapping_table,int alphabetSize){
+    //DP-PIP
+    Eigen::VectorXd fv_observed(std::string &s, unsigned long &idx,int alphabetSize,const bpp::Alphabet *alphabet){
         int ii;
+        char ch=s[idx];
+        Eigen::VectorXd fv = Eigen::VectorXd::Zero(alphabetSize+1);
 
-        Eigen::VectorXd fv=Eigen::VectorXd::Zero(alphabetSize+1);
-
-        ii=mapping_table[(int)s[idx]];
+        ii=alphabet->charToInt(&ch);
         ii=ii<0?alphabetSize:ii;
 
-        fv((unsigned int)ii)=1.0;
+        fv[ii]=1.0;
         idx++;
 
         return fv;
     }
-//DP-PIP
-    Eigen::VectorXd go_down(VirtualNode *tree,std::string &s,int &idx,char *mapping_table,int alphabetSize){
+    //DP-PIP
+    Eigen::VectorXd go_down(VirtualNode *tree,std::string &s, unsigned long &idx,int alphabetSize,const bpp::Alphabet *alphabet){
         Eigen::VectorXd fv;
         Eigen::VectorXd fvL;
         Eigen::VectorXd fvR;
 
         if(tree->isTerminalNode()){
 
-            fv=fv_observed(s,idx,mapping_table,alphabetSize);
+            fv=fv_observed(s,idx,alphabetSize,alphabet);
 
         }else{
 
-            fvL=go_down(tree->getNodeLeft(),s,idx,mapping_table,alphabetSize);
-            fvR=go_down(tree->getNodeRight(),s,idx,mapping_table,alphabetSize);
+            fvL=go_down(tree->getNodeLeft(),s,idx,alphabetSize,alphabet);
+            fvR=go_down(tree->getNodeRight(),s,idx,alphabetSize,alphabet);
 
             fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
 
@@ -158,9 +102,10 @@ namespace progressivePIP{
 
         return fv;
     }
-//DP-PIP
-    void reset_corner(int &up_corner_i,int &up_corner_j,int &bot_corner_i, int &bot_corner_j,int h,int w){
-        int delta;
+    //DP-PIP
+    void reset_corner(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
+                      unsigned long &bot_corner_j,unsigned long h,unsigned long w){
+        unsigned long delta;
 
         if(up_corner_j>=w){
             delta=up_corner_j-w+1;
@@ -174,20 +119,19 @@ namespace progressivePIP{
         }
 
     }
-//DP-PIP
-    std::string create_col_MSA_gap(int len){
+    //DP-PIP
+    std::string create_col_MSA_gap(unsigned long len){
 
         std::string colMSA (len,'-');
 
         return colMSA;
     }
-//DP-PIP
+    //DP-PIP
     int index_of_max(double m, double x, double y,double epsilon,
                      std::default_random_engine &generator,
                      std::uniform_real_distribution<double> &distribution){
-        double random_number;
 
-        int ERR=-1;
+        double random_number;
 
         if(not(std::isinf(m)) & not(std::isinf(x)) & (fabs(m-x)<epsilon)){
             x=m;
@@ -270,9 +214,8 @@ namespace progressivePIP{
             }
         }
 
-        return ERR;
     }
-//DP-PIP
+    //DP-PIP
     double max_of_three(double a, double b, double c,double epsilon){
 
         //------------------------------------
@@ -305,7 +248,7 @@ namespace progressivePIP{
         }
 
     }
-//DP-PIP
+    //DP-PIP
     double compute_nu(double tau,double lambda,double mu){
 
         if(fabs(mu)<1e-8){
@@ -314,11 +257,10 @@ namespace progressivePIP{
 
         return lambda*(tau+1/mu);
     }
-//DP-PIP
-    bool is_inside(int x0,int y0,int xf,int yf,int xt,int yt){
+    //DP-PIP
+    bool is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned long yf,unsigned long xt,unsigned long yt){
 
         if((xt<x0) || (yt>y0) || (xt>xf) || (yt<yf)){
-
             return false;
         }
 
@@ -328,8 +270,9 @@ namespace progressivePIP{
 
         return true;
     }
-//DP-PIP
-    void set_indeces_M(int &up_corner_i,int &up_corner_j,int &bot_corner_i, int &bot_corner_j,int level,int h,int w){
+    //DP-PIP
+    void set_indeces_M(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
+                       unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w){
 
         if(level==0){
             up_corner_i=0;
@@ -344,8 +287,9 @@ namespace progressivePIP{
         }
 
     }
-//DP-PIP
-    void set_indeces_X(int &up_corner_i,int &up_corner_j,int &bot_corner_i, int &bot_corner_j,int level,int h,int w){
+    //DP-PIP
+    void set_indeces_X(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
+                       unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w){
 
         if(level==0){
             up_corner_i=0;
@@ -360,8 +304,9 @@ namespace progressivePIP{
         }
 
     }
-//DP-PIP
-    void set_indeces_Y(int &up_corner_i,int &up_corner_j,int &bot_corner_i, int &bot_corner_j,int level,int h,int w){
+    //DP-PIP
+    void set_indeces_Y(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
+                       unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w){
 
         if(level==0){
             up_corner_i=0;
@@ -376,26 +321,27 @@ namespace progressivePIP{
         }
 
     }
-//DP-PIP
-    void set_indeces_T(int &up_corner_i,int &up_corner_j,int &bot_corner_i, int &bot_corner_j,int level,int h,int w){
+    //DP-PIP
+    void set_indeces_T(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
+                       unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w){
 
-        int up_corner_i_x;
-        int up_corner_i_y;
+        unsigned long up_corner_i_x;
+        unsigned long up_corner_i_y;
 
-        int up_corner_j_x;
-        int up_corner_j_y;
+        unsigned long up_corner_j_x;
+        unsigned long up_corner_j_y;
 
-        int bot_corner_i_x;
-        int bot_corner_i_y;
+        unsigned long bot_corner_i_x;
+        unsigned long bot_corner_i_y;
 
-        int bot_corner_j_x;
-        int bot_corner_j_y;
+        unsigned long bot_corner_j_x;
+        unsigned long bot_corner_j_y;
 
         set_indeces_X(up_corner_i_x,up_corner_j_x,bot_corner_i_x,bot_corner_j_x,level,h,w);
 
         set_indeces_Y(up_corner_i_y,up_corner_j_y,bot_corner_i_y,bot_corner_j_y,level,h,w);
 
-        int delta_i,delta_j;
+        unsigned long delta_i,delta_j;
 
         delta_i=bot_corner_i_x-up_corner_i_y;
         delta_j=up_corner_j_y-bot_corner_j_x;
@@ -413,16 +359,17 @@ namespace progressivePIP{
         }
 
     }
-//DP-PIP
-    int get_indices_M(int nx,int ny,int up_corner_i,int up_corner_j,int bot_corner_i,int bot_corner_j,int m,int h,int w){
+    //DP-PIP
+    unsigned long get_indices_M(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
+                      unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w){
 
-        int idx;
+        unsigned long idx;
 
         set_indeces_M(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
 
         if(is_inside(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,nx,ny)){
 
-            int dx,sx;
+            unsigned long dx,sx;
 
             dx=nx-up_corner_i+1;
 
@@ -430,22 +377,23 @@ namespace progressivePIP{
 
             idx=sx+(ny-up_corner_j);
         }else{
-            idx=-999;
+            idx=ERR_STATE;
         }
 
         return idx;
 
     }
-//DP-PIP
-    int get_indices_X(int nx,int ny,int up_corner_i,int up_corner_j,int bot_corner_i,int bot_corner_j,int m,int h,int w){
+    //DP-PIP
+    unsigned long get_indices_X(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
+                      unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w){
 
-        int idx;
+        unsigned long idx;
 
         set_indeces_X(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
 
         if(is_inside(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,nx,ny)){
 
-            int dx,sx;
+            unsigned long dx,sx;
 
             dx=nx-up_corner_i+1;
 
@@ -453,22 +401,23 @@ namespace progressivePIP{
 
             idx=sx+(ny-up_corner_j);
         }else{
-            idx=-999;
+            idx=ERR_STATE;
         }
 
         return idx;
 
     }
-//DP-PIP
-    int get_indices_Y(int nx,int ny,int up_corner_i,int up_corner_j,int bot_corner_i,int bot_corner_j,int m,int h,int w){
+    //DP-PIP
+    unsigned long get_indices_Y(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
+                      unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w){
 
-        int idx;
+        unsigned long idx;
 
         set_indeces_Y(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
 
         if(is_inside(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,nx,ny)){
 
-            int dx,sx;
+            unsigned long dx,sx;
 
             dx=nx-up_corner_i+1;
 
@@ -476,21 +425,22 @@ namespace progressivePIP{
 
             idx=sx+(ny-up_corner_j);
         }else{
-            idx=-999;
+            idx=ERR_STATE;
         }
 
         return idx;
 
     }
-//DP-PIP
-    int get_indices_T(int nx,int ny,int up_corner_i,int up_corner_j,int bot_corner_i,int bot_corner_j,int m,int h,int w){
+    //DP-PIP
+    unsigned long get_indices_T(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
+                      unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w){
 
         set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
 
         reset_corner(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w);
 
-        int idx;
-        int dx,sx;
+        unsigned long idx;
+        unsigned long dx,sx;
 
         dx=nx-up_corner_i+1;
 
@@ -501,8 +451,8 @@ namespace progressivePIP{
         return idx;
 
     }
-//DP-PIP
-    void allgaps(VirtualNode *tree,std::string &s,int &idx,bool &flag){
+    //DP-PIP
+    void allgaps(VirtualNode *tree,std::string &s, unsigned long &idx,bool &flag){
 
         if(tree->isTerminalNode()){
             char ch=s[idx];
@@ -519,13 +469,13 @@ namespace progressivePIP{
         }
 
     }
-//DP-PIP
-    double compute_lk_gap_down(VirtualNode *tree,std::string &s,Eigen::MatrixXd &pi,char *mapping_table,int alphabetSize){
+    //DP-PIP
+    double compute_lk_gap_down(VirtualNode *tree,std::string &s,Eigen::VectorXd const &pi,int alphabetSize,const bpp::Alphabet *alphabet){
 
         double pr=0;
         double pL=0;
         double pR=0;
-        int idx;
+        unsigned long idx;
         Eigen::VectorXd fvL;
         Eigen::VectorXd fvR;
         Eigen::VectorXd fv;
@@ -533,14 +483,14 @@ namespace progressivePIP{
 
         if(tree->isTerminalNode()){
             idx=0;
-            fv=go_down(tree,s,idx,mapping_table,alphabetSize);
+            fv=go_down(tree,s,idx,alphabetSize,alphabet);
             fv0=fv.dot(pi);
             pr=tree->getIota()-tree->getIota()*tree->getBeta()+tree->getIota()*tree->getBeta()*fv0;
 
             return pr;
         }else{
             idx=0;
-            fv=go_down(tree,s,idx,mapping_table,alphabetSize);
+            fv=go_down(tree,s,idx,alphabetSize,alphabet);
             fv0=fv.dot(pi);
             pr=tree->getIota()-tree->getIota()*tree->getBeta()+tree->getIota()*tree->getBeta()*fv0;
 
@@ -548,24 +498,25 @@ namespace progressivePIP{
             bool flagR=true;
             idx=0;
             allgaps(tree->getNodeLeft(),s,idx,flagL);
-            int ixx=idx;
+            unsigned long ixx=idx;
             allgaps(tree->getNodeRight(),s,idx,flagR);
-            int len;
+            unsigned long len;
 
-            std::string sL;//=stringFromSequence(s);
+            std::string sL;
             len=ixx;
             sL=s.substr(0,len);
-            pL=compute_lk_gap_down(tree->getNodeLeft(),sL,pi,mapping_table,alphabetSize);
+            pL=compute_lk_gap_down(tree->getNodeLeft(),sL,pi,alphabetSize,alphabet);
 
-            std::string sR;//=stringFromSequence(s);
+            std::string sR;
             sR=s.substr(ixx);
-            pR=compute_lk_gap_down(tree->getNodeRight(),sR,pi,mapping_table,alphabetSize);
+            pR=compute_lk_gap_down(tree->getNodeRight(),sR,pi,alphabetSize,alphabet);
         }
 
         return pr+pL+pR;
     }
-//DP-PIP
-    bool checkboundary(int up_corner_i,int up_corner_j,int bot_corner_i,int bot_corner_j,int h,int w){
+    //DP-PIP
+    bool checkboundary(unsigned long up_corner_i,unsigned long up_corner_j,unsigned long bot_corner_i,
+                       unsigned long bot_corner_j,unsigned long h,unsigned long w){
 
         if( (up_corner_i  >=0) & (up_corner_i  <h) &\
 	   (up_corner_j  >=0) & (up_corner_j  <w) &\
@@ -576,8 +527,8 @@ namespace progressivePIP{
 
         return false;
     }
-//DP-PIP
-    std::string create_col_MSA(std::vector<std::pair<std::string,std::string>> &result,int index){
+    //DP-PIP
+    std::string create_col_MSA(std::vector<std::pair<std::string,std::string>> &result, unsigned long index){
         std::string colMSA;
 
         for(unsigned int i=0;i<result.size();i++){
@@ -586,7 +537,7 @@ namespace progressivePIP{
 
         return colMSA;
     }
-//DP-PIP
+    //DP-PIP
     std::vector<std::pair<std::string,std::string>> align_seq_left(	std::vector<std::pair<std::string,std::string>> &MSA_in,
                                                                        std::string &traceback_path){
 
@@ -625,20 +576,20 @@ namespace progressivePIP{
                 }
             }
 
-            MSA_out.push_back(std::make_pair(seq_name,seq_aligned));
+            MSA_out.emplace_back(std::make_pair(seq_name,seq_aligned));
         }
 
         return MSA_out;
     }
-//DP-PIP
+    //DP-PIP
     std::vector<std::pair<std::string,std::string>> align_seq_right(std::vector<std::pair<std::string,std::string>> &result,
                                                                     std::string &traceback_path){
         unsigned int idx;
 
         std::vector<std::pair<std::string,std::string>> MSA_out;
 
-        typedef typename std::vector<std::pair<std::string,std::string>>::iterator vect_iterator;
-        for (vect_iterator iter = result.begin(); iter != result.end(); iter++){
+        //typedef typename std::vector<std::pair<std::string,std::string>>::iterator vect_iterator;
+        for (auto iter = result.begin(); iter != result.end(); iter++){
 
             std::pair<std::string,std::string> seq = (*iter);
 
@@ -668,12 +619,12 @@ namespace progressivePIP{
                 }
             }
 
-            MSA_out.push_back(std::make_pair(seq_name,seq_aligned));
+            MSA_out.emplace_back(std::make_pair(seq_name,seq_aligned));
         }
 
         return MSA_out;
     }
-//DP-PIP
+    //DP-PIP
     static std::vector<std::pair<std::string,std::string>> build_MSA(std::string traceback_path,std::vector<std::pair<std::string,std::string>> &MSA_L,std::vector<std::pair<std::string,std::string>> &MSA_R){
         std::vector<std::pair<std::string,std::string>> MSA;
         std::vector<std::pair<std::string,std::string>> MSA_L_out;
@@ -692,11 +643,11 @@ namespace progressivePIP{
 
         return MSA;
     }
-//DP-PIP
-    double compute_lk_down(VirtualNode *tree,std::string &s,Eigen::MatrixXd &pi,char *mapping_table,int alphabetSize){
+    //DP-PIP
+    double compute_lk_down(VirtualNode *tree,std::string &s,Eigen::VectorXd &pi,int alphabetSize,const bpp::Alphabet *alphabet){
 
         double pr;
-        int idx;
+        unsigned long idx;
         Eigen::VectorXd fvL;
         Eigen::VectorXd fvR;
         Eigen::VectorXd fv;
@@ -705,7 +656,7 @@ namespace progressivePIP{
         if(tree->isTerminalNode()){
 
             idx=0;
-            fv=go_down(tree,s,idx,mapping_table,alphabetSize);
+            fv=go_down(tree,s,idx,alphabetSize,alphabet);
             fv0=fv.dot(pi);
             pr=tree->getIota()*tree->getBeta()*fv0;
 
@@ -714,7 +665,7 @@ namespace progressivePIP{
         }else{
 
             idx=0;
-            fv=go_down(tree,s,idx,mapping_table,alphabetSize);
+            fv=go_down(tree,s,idx,alphabetSize,alphabet);
             fv0=fv.dot(pi);
             pr=tree->getIota()*tree->getBeta()*fv0;
 
@@ -722,47 +673,47 @@ namespace progressivePIP{
             bool flagR=true;
             idx=0;
             allgaps(tree->getNodeLeft(),s,idx,flagL);
-            int ixx=idx;
+            unsigned long ixx=idx;
             allgaps(tree->getNodeRight(),s,idx,flagR);
 
-            int len;
+            unsigned long len;
             if(flagR){
                 std::string sL;//=stringFromSequence(s);
                 len=ixx;
                 sL=s.substr(0,len);
-                return pr + compute_lk_down(tree->getNodeLeft(),sL,pi,mapping_table,alphabetSize);
+                return pr + compute_lk_down(tree->getNodeLeft(),sL,pi,alphabetSize,alphabet);
             }
 
             if(flagL){
                 std::string sR;//=stringFromSequence(s);
                 sR=s.substr(ixx);
-                return pr + compute_lk_down(tree->getNodeRight(),sR,pi,mapping_table,alphabetSize);
+                return pr + compute_lk_down(tree->getNodeRight(),sR,pi,alphabetSize,alphabet);
             }
 
         }
 
         return pr;
     }
-//DP-PIP
+    //DP-PIP
     double compute_pr_gap_all_edges_s(	  VirtualNode *tree,
                                             std::string &sL,
                                             std::string &sR,
-                                            Eigen::MatrixXd &pi,
-                                            char *mapping_table,
-                                            int alphabetSize){
+                                            Eigen::VectorXd &pi,
+                                            int alphabetSize,
+                                            const bpp::Alphabet *alphabet){
 
         double fv0;
         double pr;
         Eigen::VectorXd fvL;
         Eigen::VectorXd fvR;
         Eigen::VectorXd fv;
-        int idx;
+        unsigned long idx;
 
         idx=0;
-        fvL=go_down(tree->getNodeLeft(),sL,idx,mapping_table,alphabetSize);
+        fvL=go_down(tree->getNodeLeft(),sL,idx,alphabetSize,alphabet);
 
         idx=0;
-        fvR=go_down(tree->getNodeRight(),sR,idx,mapping_table,alphabetSize);
+        fvR=go_down(tree->getNodeRight(),sR,idx,alphabetSize,alphabet);
 
         fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
 
@@ -776,8 +727,8 @@ namespace progressivePIP{
 
 
         double pL,pR;
-        pL=compute_lk_gap_down(tree->getNodeLeft(),sL,pi,mapping_table,alphabetSize);
-        pR=compute_lk_gap_down(tree->getNodeRight(),sR,pi,mapping_table,alphabetSize);
+        pL=compute_lk_gap_down(tree->getNodeLeft(),sL,pi,alphabetSize,alphabet);
+        pR=compute_lk_gap_down(tree->getNodeRight(),sR,pi,alphabetSize,alphabet);
 
         pr=pr+pL+pR;
 
@@ -791,7 +742,7 @@ namespace progressivePIP{
 
             fv0=fv.dot(pi);
 
-            if(p_tree->getNodeUp()->getNodeUp()==NULL){
+            if(p_tree->getNodeUp()->getNodeUp()== nullptr){
                 pr+=(p_tree->getNodeUp()->getIota()*fv0);
             }else{
                 //TODO:controllare parentesi
@@ -806,26 +757,26 @@ namespace progressivePIP{
 
         return pr;
     }
-//DP-PIP
+    //DP-PIP
     double compute_pr_gap_local_tree_s(VirtualNode *tree,
                                        std::string &sL,
                                        std::string &sR,
-                                       Eigen::MatrixXd &pi,
-                                       char *mapping_table,
-                                       int alphabetSize){
+                                       Eigen::VectorXd &pi,
+                                       int alphabetSize,
+                                       const bpp::Alphabet *alphabet){
 
         double fv0;
         double pr;
         Eigen::VectorXd fvL;
         Eigen::VectorXd fvR;
         Eigen::VectorXd fv;
-        int idx;
+        unsigned long idx;
 
         idx=0;
-        fvL=go_down(tree->getNodeLeft(),sL,idx,mapping_table,alphabetSize);
+        fvL=go_down(tree->getNodeLeft(),sL,idx,alphabetSize,alphabet);
 
         idx=0;
-        fvR=go_down(tree->getNodeRight(),sR,idx,mapping_table,alphabetSize);
+        fvR=go_down(tree->getNodeRight(),sR,idx,alphabetSize,alphabet);
 
         fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
 
@@ -834,14 +785,14 @@ namespace progressivePIP{
         pr=tree->getIota()*fv0;
 
         double pL,pR;
-        pL=compute_lk_gap_down(tree->getNodeLeft(),sL,pi,mapping_table,alphabetSize);
-        pR=compute_lk_gap_down(tree->getNodeRight(),sR,pi,mapping_table,alphabetSize);
+        pL=compute_lk_gap_down(tree->getNodeLeft(),sL,pi,alphabetSize,alphabet);
+        pR=compute_lk_gap_down(tree->getNodeRight(),sR,pi,alphabetSize,alphabet);
 
         pr=pr+pL+pR;
 
         return pr;
     }
-//DP-PIP
+    //DP-PIP
     double computeLK_M_all_edges_s_opt(double valM,
                                        double valX,
                                        double valY,
@@ -849,23 +800,24 @@ namespace progressivePIP{
                                        VirtualNode *tree,
                                        std::string &sL,
                                        std::string &sR,
-                                       Eigen::MatrixXd &pi,
-                                       int m,
+                                       Eigen::VectorXd &pi,
+                                       unsigned long m,
                                        std::map<std::string,double> &lkM,
-                                       char *mapping_table,
-                                       int alphabetSize){
+                                       int alphabetSize,
+                                       const bpp::Alphabet *alphabet){
 
 
         double pr;
         double val;
         //------------------------------------------------------------------------------------------
-        typedef typename std::map<std::string,double>::iterator MapIterator;
+        //typedef typename std::map<std::string,double>::iterator MapIterator;
         std::string s;
 
         s.append(sL);
         s.append(sR);
 
-        MapIterator it=lkM.find(s);
+        //MapIterator it=lkM.find(s);
+        auto it=lkM.find(s);
         if(it == lkM.end()){
 
             //------------------------------------------------------------------------------------------
@@ -874,12 +826,12 @@ namespace progressivePIP{
             Eigen::VectorXd fvR;
             Eigen::VectorXd fv;
             double fv0;
-            int idx;
+            unsigned long idx;
 
             idx=0;
-            fvL=go_down(tree->getNodeLeft(),sL,idx,mapping_table,alphabetSize);
+            fvL=go_down(tree->getNodeLeft(),sL,idx,alphabetSize,alphabet);
             idx=0;
-            fvR=go_down(tree->getNodeRight(),sR,idx,mapping_table,alphabetSize);
+            fvR=go_down(tree->getNodeRight(),sR,idx,alphabetSize,alphabet);
 
             fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
 
@@ -891,7 +843,7 @@ namespace progressivePIP{
             VirtualNode *p_tree=tree;
 
             //TODO:controllare se torna null
-            while(p_tree->getNodeUp()!=NULL){
+            while(p_tree->getNodeUp()!= nullptr){
 
                 fv=(p_tree->getPr()*fv);
 
@@ -911,11 +863,11 @@ namespace progressivePIP{
             pr=it->second;
         }
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,(double)DBL_EPSILON);
+        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
         return val;
     }
-//DP-PIP
+    //DP-PIP
     double computeLK_M_local_tree_s_opt(double valM,
                                         double valX,
                                         double valY,
@@ -923,37 +875,35 @@ namespace progressivePIP{
                                         VirtualNode *tree,
                                         std::string &sL,
                                         std::string &sR,
-                                        Eigen::MatrixXd &pi,
-                                        int m,
+                                        Eigen::VectorXd &pi,
+                                        unsigned long m,
                                         std::map<std::string,double> &lkM,
-                                        char *mapping_table,
-                                        int alphabetSize){
+                                        int alphabetSize,
+                                        const bpp::Alphabet *alphabet){
 
 
         double pr;
         double val;
         //------------------------------------------------------------------------------------------
-        typedef typename std::map<std::string,double>::iterator MapIterator;
+        //typedef typename std::map<std::string,double>::iterator MapIterator;
         std::string s;
         Eigen::VectorXd fvL;
         Eigen::VectorXd fvR;
         Eigen::VectorXd fv;
         double fv0;
-        int idx;
+        unsigned long idx;
 
         s.append(sL);
         s.append(sR);
 
-        MapIterator it=lkM.find(s);
+        auto it=lkM.find(s);
         if(it == lkM.end()){
 
             //------------------------------------------------------------------------------------------
-
-
             idx=0;
-            fvL=go_down(tree->getNodeLeft(),sL,idx,mapping_table,alphabetSize);
+            fvL=go_down(tree->getNodeLeft(),sL,idx,alphabetSize,alphabet);
             idx=0;
-            fvR=go_down(tree->getNodeRight(),sR,idx,mapping_table,alphabetSize);
+            fvR=go_down(tree->getNodeRight(),sR,idx,alphabetSize,alphabet);
 
             fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
 
@@ -972,15 +922,11 @@ namespace progressivePIP{
         }
         //------------------------------------------------------------------------------------------
 
-#ifdef VERBOSE
-        std::cout<<"prM("<<sL<<":"<<sR<<")"; printf(" %18.16lf\n",pr);
-#endif
-
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,(double)DBL_EPSILON);
+        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
         return val;
     }
-//DP-PIP
+    //DP-PIP
     double computeLK_X_all_edges_s_opt(double valM,
                                        double valX,
                                        double valY,
@@ -988,37 +934,37 @@ namespace progressivePIP{
                                        VirtualNode *tree,
                                        std::string &sL,
                                        std::string &col_gap_R,
-                                       Eigen::MatrixXd &pi,
-                                       int m,
+                                       Eigen::VectorXd &pi,
+                                       unsigned long m,
                                        std::map<std::string,double> &lkX,
-                                       char *mapping_table,
-                                       int alphabetSize){
+                                       int alphabetSize,
+                                       const bpp::Alphabet *alphabet){
 
 
         double pr;
         double val;
         //------------------------------------------------------------------------------------------
-        typedef typename std::map<std::string,double>::iterator MapIterator;
+        //typedef typename std::map<std::string,double>::iterator MapIterator;
         std::string s;
 
         s.append(sL);
         s.append(col_gap_R);
 
-        MapIterator it=lkX.find(s);
+        auto it=lkX.find(s);
         if(it == lkX.end()){
 
             //------------------------------------------------------------------------------------------
             Eigen::VectorXd fvL;
             Eigen::VectorXd fvR;
             Eigen::VectorXd fv;
-            int idx;
+            unsigned long idx;
             double fv0;
 
             idx=0;
-            fvL=go_down(tree->getNodeLeft(),sL,idx,mapping_table,alphabetSize);
+            fvL=go_down(tree->getNodeLeft(),sL,idx,alphabetSize,alphabet);
 
             idx=0;
-            fvR=go_down(tree->getNodeRight(),col_gap_R,idx,mapping_table,alphabetSize);
+            fvR=go_down(tree->getNodeRight(),col_gap_R,idx,alphabetSize,alphabet);
 
             fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
             fv0=fv.dot(pi);
@@ -1028,7 +974,7 @@ namespace progressivePIP{
             double pL;
 
             //------------------------------------------------------------------------------------------
-            pL=compute_lk_down(tree->getNodeLeft(),sL,pi,mapping_table,alphabetSize);
+            pL=compute_lk_down(tree->getNodeLeft(),sL,pi,alphabetSize,alphabet);
             //------------------------------------------------------------------------------------------
 
             pr+=pL;
@@ -1039,7 +985,7 @@ namespace progressivePIP{
             VirtualNode *p_tree=tree;
 
             //TODO: controllare se torna null
-            while(p_tree->getNodeUp()!=NULL){
+            while(p_tree->getNodeUp()!= nullptr){
 
                 fv=(p_tree->getPr()*fv);
 
@@ -1060,11 +1006,11 @@ namespace progressivePIP{
         }
         //------------------------------------------------------------------------------------------
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,(double)DBL_EPSILON);
+        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
         return val;
     }
-//DP-PIP
+    //DP-PIP
     double computeLK_X_local_tree_s_opt(double valM,
                                         double valX,
                                         double valY,
@@ -1072,38 +1018,38 @@ namespace progressivePIP{
                                         VirtualNode *tree,
                                         std::string &sL,
                                         std::string &col_gap_R,
-                                        Eigen::MatrixXd &pi,
-                                        int m,
+                                        Eigen::VectorXd &pi,
+                                        unsigned long m,
                                         std::map<std::string,double> &lkX,
-                                        char *mapping_table,
-                                        int alphabetSize){
+                                        int alphabetSize,
+                                        const bpp::Alphabet *alphabet){
 
 
         double pr;
         double val;
         //------------------------------------------------------------------------------------------
-        typedef typename std::map<std::string,double>::iterator MapIterator;
+        //typedef typename std::map<std::string,double>::iterator MapIterator;
         std::string s;
         Eigen::VectorXd fvL;
         Eigen::VectorXd fvR;
         Eigen::VectorXd fv;
-        int idx;
+        unsigned long idx;
         double fv0;
 
         s.append(sL);
         s.append(col_gap_R);
 
-        MapIterator it=lkX.find(s);
+        auto it=lkX.find(s);
         if(it == lkX.end()){
 
             //------------------------------------------------------------------------------------------
 
 
             idx=0;
-            fvL=go_down(tree->getNodeLeft(),sL,idx,mapping_table,alphabetSize);
+            fvL=go_down(tree->getNodeLeft(),sL,idx,alphabetSize,alphabet);
 
             idx=0;
-            fvR=go_down(tree->getNodeRight(),col_gap_R,idx,mapping_table,alphabetSize);
+            fvR=go_down(tree->getNodeRight(),col_gap_R,idx,alphabetSize,alphabet);
 
             fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
             fv0=fv.dot(pi);
@@ -1113,7 +1059,7 @@ namespace progressivePIP{
             double pL;
 
             //------------------------------------------------------------------------------------------
-            pL=compute_lk_down(tree->getNodeLeft(),sL,pi,mapping_table,alphabetSize);
+            pL=compute_lk_down(tree->getNodeLeft(),sL,pi,alphabetSize,alphabet);
             //------------------------------------------------------------------------------------------
 
             pr+=pL;
@@ -1128,11 +1074,11 @@ namespace progressivePIP{
         }
         //------------------------------------------------------------------------------------------
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,(double)DBL_EPSILON);
+        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
         return val;
     }
-//DP-PIP
+    //DP-PIP
     double computeLK_Y_all_edges_s_opt(double valM,
                                        double valX,
                                        double valY,
@@ -1140,23 +1086,23 @@ namespace progressivePIP{
                                        VirtualNode *tree,
                                        std::string &col_gap_L,
                                        std::string &sR,
-                                       Eigen::MatrixXd &pi,
-                                       int m,
+                                       Eigen::VectorXd &pi,
+                                       unsigned long m,
                                        std::map<std::string,double> &lkY,
-                                       char *mapping_table,
-                                       int alphabetSize){
+                                       int alphabetSize,
+                                       const bpp::Alphabet *alphabet){
 
 
         double pr;
         double val;
         //------------------------------------------------------------------------------------------
-        typedef typename std::map<std::string,double>::iterator MapIterator;
+        //typedef typename std::map<std::string,double>::iterator MapIterator;
         std::string s;
 
         s.append(col_gap_L);
         s.append(sR);
 
-        MapIterator it=lkY.find(s);
+        auto it=lkY.find(s);
         if(it == lkY.end()){
 
             //------------------------------------------------------------------------------------------
@@ -1164,11 +1110,11 @@ namespace progressivePIP{
             Eigen::VectorXd fvR;
             Eigen::VectorXd fv;
             double fv0;
-            int idx=0;
-            fvL=go_down(tree->getNodeLeft(),col_gap_L,idx,mapping_table,alphabetSize);
+            unsigned long idx=0;
+            fvL=go_down(tree->getNodeLeft(),col_gap_L,idx,alphabetSize,alphabet);
 
             idx=0;
-            fvR=go_down(tree->getNodeRight(),sR,idx,mapping_table,alphabetSize);
+            fvR=go_down(tree->getNodeRight(),sR,idx,alphabetSize,alphabet);
 
             fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
             //------------------------------------------------------------------------------------------
@@ -1180,7 +1126,7 @@ namespace progressivePIP{
             double pR;
 
             //------------------------------------------------------------------------------------------
-            pR=compute_lk_down(tree->getNodeRight(),sR,pi,mapping_table,alphabetSize);
+            pR=compute_lk_down(tree->getNodeRight(),sR,pi,alphabetSize,alphabet);
             //------------------------------------------------------------------------------------------
 
             pr+=pR;
@@ -1189,7 +1135,7 @@ namespace progressivePIP{
             VirtualNode *p_tree=tree;
 
             //TODO:controllare che torni null
-            while(p_tree->getNodeUp()!=NULL){
+            while(p_tree->getNodeUp()!= nullptr){
 
                 fv=(p_tree->getPr()*fv);
 
@@ -1210,11 +1156,11 @@ namespace progressivePIP{
         }
         //------------------------------------------------------------------------------------------
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,(double)DBL_EPSILON);
+        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
         return val;
     }
-//DP-PIP
+    //DP-PIP
     double computeLK_Y_local_tree_s_opt(double valM,
                                         double valX,
                                         double valY,
@@ -1222,36 +1168,36 @@ namespace progressivePIP{
                                         VirtualNode *tree,
                                         std::string &col_gap_L,
                                         std::string &sR,
-                                        Eigen::MatrixXd &pi,
-                                        int m,
+                                        Eigen::VectorXd &pi,
+                                        unsigned long m,
                                         std::map<std::string,double> &lkY,
-                                        char *mapping_table,
-                                        int alphabetSize){
+                                        int alphabetSize,
+                                        const bpp::Alphabet *alphabet){
 
 
         double pr;
         double val;
         //------------------------------------------------------------------------------------------
-        typedef typename std::map<std::string,double>::iterator MapIterator;
+        //typedef typename std::map<std::string,double>::iterator MapIterator;
         std::string s;
         Eigen::VectorXd fvL;
         Eigen::VectorXd fvR;
         Eigen::VectorXd fv;
         double fv0;
-        int idx=0;
+        unsigned long idx=0;
 
         s.append(col_gap_L);
         s.append(sR);
 
-        MapIterator it=lkY.find(s);
+        auto it=lkY.find(s);
         if(it == lkY.end()){
 
             //------------------------------------------------------------------------------------------
 
-            fvL=go_down(tree->getNodeLeft(),col_gap_L,idx,mapping_table,alphabetSize);
+            fvL=go_down(tree->getNodeLeft(),col_gap_L,idx,alphabetSize,alphabet);
 
             idx=0;
-            fvR=go_down(tree->getNodeRight(),sR,idx,mapping_table,alphabetSize);
+            fvR=go_down(tree->getNodeRight(),sR,idx,alphabetSize,alphabet);
 
             fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
             //------------------------------------------------------------------------------------------
@@ -1263,7 +1209,7 @@ namespace progressivePIP{
             double pR;
 
             //------------------------------------------------------------------------------------------
-            pR=compute_lk_down(tree->getNodeRight(),sR,pi,mapping_table,alphabetSize);
+            pR=compute_lk_down(tree->getNodeRight(),sR,pi,alphabetSize,alphabet);
             //------------------------------------------------------------------------------------------
 
             pr+=pR;
@@ -1278,63 +1224,16 @@ namespace progressivePIP{
         //------------------------------------------------------------------------------------------
 
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,(double)DBL_EPSILON);
+        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
 
         return val;
     }
 //DP-PIP
-/*    void fill_scores(double lk,double &max_lk,double &prev_max_lk,int &level_max_lk,
-                     int &last_d,int m,bool &flag_exit,double *scores,int &counter,
-                     bool CENTER,int num_subopt,int &index0){
-
-        if (lk>max_lk){
-            prev_max_lk=max_lk;
-            max_lk=lk;
-            level_max_lk=m;
-
-            if (CENTER){
-                if(std::isinf(prev_max_lk)){
-                    scores[0]=max_lk;
-                    counter=1;
-                    index0=m;
-                }else{
-                    if(num_subopt>2){
-                        scores[0]=prev_max_lk;
-                        scores[1]=max_lk;
-                        counter=2;
-                        index0=m-1;
-                    }else{
-                        scores[0]=max_lk;
-                        counter=1;
-                        index0=m;
-                    }
-                }
-            }else{
-                scores[0]=max_lk;
-                counter=1;
-                index0=m;
-            }
-
-        }else{
-
-            if (counter>=num_subopt){
-                flag_exit=true;
-                last_d=m;
-                return;
-            }
-
-            scores[counter]=lk;
-            counter=counter+1;
-
-        }
-
-    }*/
-//DP-PIP
     bool check_uniform_len_s(std::vector<std::pair<std::string,std::string>> &result){
-        unsigned int len;
+        unsigned long len;
 
-        if(result.size()==0){
+        if(result.empty()){
             return false;
         }
 
@@ -1348,10 +1247,10 @@ namespace progressivePIP{
 
         return true;
     }
-//DP-PIP
-    int get_length_seq_s(std::vector<std::pair<std::string,std::string>> &result){
+    //DP-PIP
+    unsigned long get_length_seq_s(std::vector<std::pair<std::string,std::string>> &result){
 
-        if(result.size()==0){
+        if(result.empty()){
             return 0;
         }
 
@@ -1361,26 +1260,27 @@ namespace progressivePIP{
 
         return result.at(0).second.length();
     }
-//DP-PIP
+    //DP-PIP
     static ProgressivePIPResult compute_DP3D_PIP(ProgressivePIPResult &result_L,
                                                  ProgressivePIPResult &result_R,
                                                  VirtualNode *tree,
-                                                 Likelihood &likelihood,
-                                                 Alignment &alignment,
+                                                 Likelihood *likelihood,
+                                                 Alignment *alignment,
+                                                 const bpp::Alphabet *alphabet,
                                                  double gamma_rate,
                                                  bool local){
 
+        ProgressivePIPResult result;
+
+
         double tau;
         double nu;
-        int alphabetSize;
-        char *mapping_table; //alignment.table;
 
-        //TODO: +1?
-        alphabetSize=alignment.align_alphabetsize;
+        int alphabetSize=alphabet->getSize();
 
         //@gamma_distribution
-        double lambda_gamma=likelihood.lambda*gamma_rate;
-        double mu_gamma=likelihood.mu*gamma_rate;
+        double lambda_gamma=likelihood->lambda*gamma_rate;
+        double mu_gamma=likelihood->mu*gamma_rate;
 
         if(local){
             //TODO: calcola tau dal nodo attuale
@@ -1393,24 +1293,23 @@ namespace progressivePIP{
             //tree.set_iota_local(tau,mu_gamma);
             //tree.set_beta_local(tau,mu_gamma);
         }else{
-            tau=likelihood.tau;
-            nu=likelihood.nu;
+            tau=likelihood->tau;
+            nu=likelihood->nu;
         }
 
 
-        int up_corner_i;
-        int up_corner_j;
-        int bot_corner_i;
-        int bot_corner_j;
-        int lw;
-        int h,w;
+        unsigned long up_corner_i;
+        unsigned long up_corner_j;
+        unsigned long bot_corner_i;
+        unsigned long bot_corner_j;
+        unsigned long lw;
+        unsigned long h,w;
 
         h=get_length_seq_s(result_L.MSAs)+1;
         w=get_length_seq_s(result_R.MSAs)+1;
-        int d=(h-1)+(w-1)+1;
+        unsigned long d=(h-1)+(w-1)+1;
 
-        //TODO: vectorXd to matrixXd
-        Eigen::MatrixXd pi = likelihood.pi;
+        Eigen::VectorXd pi = likelihood->pi;
 
         double pc0;
         //.-----.------.------.-------.------.-------.-------.--------.-------.--------.//
@@ -1423,7 +1322,7 @@ namespace progressivePIP{
         col_gap_Rs=create_col_MSA_gap(result_R.MSAs.size());
         //.-----.------.------.-------.------.-------.-------.--------.-------.--------.//
 //	std::cout<<"random generator ON\n";
-        unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
+        signed long seed = std::chrono::system_clock::now().time_since_epoch().count();
         std::default_random_engine generator(seed);
         std::uniform_real_distribution<double> distribution(0.0,1.0);
         //.-----.------.------.//
@@ -1433,7 +1332,7 @@ namespace progressivePIP{
 //	std::uniform_real_distribution<double> distribution(0.0,1.0);
         //.-----.------.------.-------.------.-------.-------.--------.-------.--------.//
 
-        double epsilon=DBL_EPSILON;
+        auto epsilon=DBL_EPSILON;
 
         //***************************************************************************************
         //***************************************************************************************
@@ -1442,25 +1341,23 @@ namespace progressivePIP{
                                             col_gap_Ls,
                                             col_gap_Rs,
                                             pi,
-                                            mapping_table,
-                                            alphabetSize);
+                                            alphabetSize,alphabet);
         }else{
             pc0=compute_pr_gap_all_edges_s(tree,
                                            col_gap_Ls,
                                            col_gap_Rs,
                                            pi,
-                                           mapping_table,
-                                           alphabetSize);
+                                           alphabetSize,alphabet);
         }
 
         //***************************************************************************************
         //***************************************************************************************
 
-        double** LogM = new double*[2];
-        double** LogX = new double*[2];
-        double** LogY = new double*[2];
+        auto** LogM = new double*[2];
+        auto** LogX = new double*[2];
+        auto** LogY = new double*[2];
 
-        int** TR = new int*[d];
+        auto** TR = new int*[d];
 
         LogM[0] = new double[int((w*(h+1))/2)];
         LogX[0] = new double[int((w*(h+1))/2)];
@@ -1479,45 +1376,39 @@ namespace progressivePIP{
         double max_of_3;
         double max_lk=-INFINITY;
         double prev_max_lk=-INFINITY;
-        int level_max_lk=INT_MIN;
+        signed long level_max_lk=INT_MIN;
         double val;
-        int m_binary_this;
-        int m_binary_prev;
+        unsigned long m_binary_this;
+        unsigned long m_binary_prev;
 
         double valM;
         double valX;
         double valY;
 
-        int idx;
+        unsigned long idx;
 
-        int coordSeq_1;
-        int coordSeq_2;
-        int coordTriangle_this_i;
-        int coordTriangle_this_j;
-        int coordTriangle_prev_i;
-        int coordTriangle_prev_j;
+        unsigned long coordSeq_1;
+        unsigned long coordSeq_2;
+        unsigned long coordTriangle_this_i;
+        unsigned long coordTriangle_this_j;
+        unsigned long coordTriangle_prev_i;
+        unsigned long coordTriangle_prev_j;
 
-        int counter;
+        //int counter;
 
-        //double *scores = new double[num_subopt];
-        double scores;// = new double[num_subopt];
-        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        bool CENTER = true;
-        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+        double scores;
         int start_depth;
-        int depth;
-
+        unsigned long depth;
 
         bool flag_exit=false;
-        int last_d=d-1;
-        int size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
+        unsigned long last_d=d-1;
+        unsigned long size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
         std::map<std::string,double> lkM;
         std::map<std::string,double> lkX;
         std::map<std::string,double> lkY;
 
-        counter=0;
-        for(int m=1;m<d;m++){
+        //counter=0;
+        for(unsigned long m=1;m<d;m++){
 
             if(flag_exit){
                 break;
@@ -1532,12 +1423,13 @@ namespace progressivePIP{
             if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)){
 
                 lw=0;
-                for(int i=up_corner_i;i<=bot_corner_i;i++){
+                for(unsigned long i=up_corner_i;i<=bot_corner_i;i++){
 
                     coordTriangle_this_i=i;
                     coordSeq_1=coordTriangle_this_i-1;
                     coordTriangle_prev_i=coordTriangle_this_i-1;
                     sLs=create_col_MSA(result_L.MSAs,coordSeq_1);
+
 
                     for(int j=0;j<=lw;j++){
 
@@ -1581,8 +1473,7 @@ namespace progressivePIP{
                                                                  pi,
                                                                  m,
                                                                  lkM,
-                                                                 mapping_table,
-                                                                 alphabetSize);
+                                                                 alphabetSize,alphabet);
                         }else{
                             val=computeLK_M_all_edges_s_opt(	valM,
                                                                 valX,
@@ -1593,8 +1484,7 @@ namespace progressivePIP{
                                                                 pi,
                                                                 m,
                                                                 lkM,
-                                                                mapping_table,
-                                                                alphabetSize);
+                                                                alphabetSize,alphabet);
                         }
 
                         if(std::isinf(val)){
@@ -1622,7 +1512,7 @@ namespace progressivePIP{
             if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)){
 
                 lw=0;
-                for(int i=up_corner_i;i<=bot_corner_i;i++){
+                for(unsigned long i=up_corner_i;i<=bot_corner_i;i++){
 
                     coordTriangle_this_i=i;
                     coordTriangle_prev_i=coordTriangle_this_i-1;
@@ -1672,8 +1562,7 @@ namespace progressivePIP{
                                                              pi,
                                                              m,
                                                              lkX,
-                                                             mapping_table,
-                                                             alphabetSize);
+                                                             alphabetSize,alphabet);
                         }else{
                             val=computeLK_X_all_edges_s_opt(valM,
                                                             valX,
@@ -1684,8 +1573,7 @@ namespace progressivePIP{
                                                             pi,
                                                             m,
                                                             lkX,
-                                                            mapping_table,
-                                                            alphabetSize);
+                                                            alphabetSize,alphabet);
                         }
 
                         if(std::isinf(val)){
@@ -1713,7 +1601,7 @@ namespace progressivePIP{
             if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)){
 
                 lw=0;
-                for(int i=up_corner_i;i<=bot_corner_i;i++){
+                for(unsigned long i=up_corner_i;i<=bot_corner_i;i++){
                     coordTriangle_this_i=i;
                     coordTriangle_prev_i=coordTriangle_this_i;
                     for(int j=0;j<=lw;j++){
@@ -1761,8 +1649,7 @@ namespace progressivePIP{
                                                              pi,
                                                              m,
                                                              lkY,
-                                                             mapping_table,
-                                                             alphabetSize);
+                                                             alphabetSize,alphabet);
                         }else{
                             val=computeLK_Y_all_edges_s_opt(valM,
                                                             valX,
@@ -1773,8 +1660,7 @@ namespace progressivePIP{
                                                             pi,
                                                             m,
                                                             lkY,
-                                                            mapping_table,
-                                                            alphabetSize);
+                                                            alphabetSize,alphabet);
                         }
 
                         if(std::isinf(val)){
@@ -1797,7 +1683,7 @@ namespace progressivePIP{
             }
             //***************************************************************************************
             //***************************************************************************************
-            size_tr=int(ceil((tr_down_i-tr_up_i+1)*(tr_up_j-tr_down_j+1+1)/2));
+            size_tr=unsigned long(ceil((tr_down_i-tr_up_i+1)*(tr_up_j-tr_down_j+1+1)/2));
             TR[m] = new int[size_tr](); /*TODO: optimize size TR*/
             memset(TR[m],0,size_tr*sizeof(TR[m][0]));
             set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
@@ -1805,7 +1691,7 @@ namespace progressivePIP{
             if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)){
 
                 lw=0;
-                for(int i=up_corner_i;i<=bot_corner_i;i++){
+                for(unsigned long i=up_corner_i;i<=bot_corner_i;i++){
                     coordTriangle_this_i=i;
                     for(int j=0;j<=lw;j++){
                         coordTriangle_this_j=up_corner_j-j;
@@ -1893,7 +1779,7 @@ namespace progressivePIP{
         //    break;
         //}
 
-        ProgressivePIPResult result;
+
         //result.score=scores[k];
         result.score=scores;
 
@@ -1905,9 +1791,9 @@ namespace progressivePIP{
 
         //std::string traceback_path(depth,ALPHABET::unknow);
         std::string traceback_path (depth, ' ');
-        int id1=h-1;
-        int id2=w-1;
-        for(int lev=depth;lev>0;lev--){
+        unsigned long id1=h-1;
+        unsigned long id2=w-1;
+        for(unsigned long lev=depth;lev>0;lev--){
             set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,lev,h,w);
             idx=get_indices_T(id1,id2,up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,lev,h,w);
             switch(TR[lev][idx]){
@@ -1949,7 +1835,7 @@ namespace progressivePIP{
         free(LogY[0]);
         free(LogY);
 
-        for(int i=last_d;i>=0;i--){
+        for(unsigned long i=last_d;i>=0;i--){
             free(TR[i]);
         }
         free(TR);
@@ -1958,77 +1844,52 @@ namespace progressivePIP{
         //return result_v;
         return result;
     }
-//DP-PIP
-//    ProgressivePIPResult compute_DP3D_PIP_cross(ProgressivePIPResult &result_L,
-//                                                ProgressivePIPResult &result_R,
-//                                                VirtualNode *tree,
-//                                                Likelihood &likelihood,
-//                                                double gamma_rate,
-//                                                int num_subopt,
-//                                                bool local_tree,
-//                                                bool stoch_backtracking_flag,
-//                                                int ugglyflag,
-//                                                std::ostream* &out_score,int alphabetSize){
-//
-//        ProgressivePIPResult result;
-//
-//        result=compute_DP3D_PIP(result_L,result_R,
-//                                tree,likelihood,tau,
-//                                nu,gamma_rate,num_subopt,local_tree,ugglyflag,out_score,alphabetSize);
-//
-//        return result;
-//    }
-//DP-PIP
-    void add_sequence_to_vector_string(std::vector< std::pair<std::string,std::string> > &result,
-                                       std::string name,
-                                       std::vector< std::pair<std::string,std::string> > &sequences){
+    void add_sequence_to_alignment(ProgressivePIPResult &result,
+                                   VirtualNode *tree,
+                                   Alignment *alignment){
 
-        typedef typename std::vector<std::pair<std::string,std::string>> ::iterator vect_iter;
-        vect_iter iter = std::find_if(sequences.begin(),sequences.end(),CompareFirst(name));
-        //std::string s=stringFromSequence(iter->second);
-        std::string s=iter->second;
-        result.push_back(std::make_pair(iter->first,s));
+        unsigned long index=0;
+        bool is_found=false;
+        for(unsigned long i=0;i<alignment->align_dataset.size();i++){
+            if(tree->vnode_name.compare(alignment->align_dataset.at(i)->seq_name)==0){
+                index=i;
+                is_found=true;
+                break;
+            }
+        }
+
+        if(!is_found){
+            perror("ERROR: sequence not found\n");
+            exit(EXIT_FAILURE);
+        }
+
+        result.MSAs.emplace_back(std::make_pair(alignment->align_dataset.at(index)->seq_name,alignment->align_dataset.at(index)->seq_data));
 
     }
-//DP-PIP
+
+    //DP-PIP
     ProgressivePIPResult compute_DP3D_PIP_tree_cross(VirtualNode *tree,
-                                                     Likelihood &likelihood,
-                                                     Alignment &alignment,
-                                                     std::vector<std::pair<std::string,std::string>> &sequences,
+                                                     Likelihood *likelihood,
+                                                     Alignment *alignment,
+                                                     const bpp::Alphabet *alphabet,
                                                      double gamma_rate,
                                                      bool local_tree) {
+
 
         ProgressivePIPResult result;
 
         if (tree->isTerminalNode()) {
 
-            int index;
-            bool is_found=false;
-            for(int i=0;i<alignment.align_dataset.size();i++){
-                if(tree->vnode_name.compare(alignment.align_dataset.at(i)->seq_name)==0){
-                    index=i;
-                    is_found=true;
-                    break;
-                }
-            }
+            add_sequence_to_alignment(result, tree, alignment);
 
-            if(!is_found){
-                perror("ERROR: sequence not found\n");
-                exit(EXIT_FAILURE);
-            }
-
-            result.MSAs.push_back(std::make_pair(alignment.align_dataset.at(index)->seq_name,alignment.align_dataset.at(index)->seq_data));
-
-
-            //add_sequence_to_vector_string(result.MSAs, tree->getNodeName(), sequences);
         } else{
 
-            ProgressivePIPResult result_L = compute_DP3D_PIP_tree_cross(tree->getNodeLeft(), likelihood, alignment,
-                                                                        sequences, gamma_rate, local_tree);
-            ProgressivePIPResult result_R = compute_DP3D_PIP_tree_cross(tree->getNodeRight(), likelihood, alignment,
-                                                                        sequences, gamma_rate, local_tree);
+            ProgressivePIPResult result_L = compute_DP3D_PIP_tree_cross(tree->getNodeLeft(), likelihood, alignment, alphabet,sites,
+                                                                        gamma_rate, local_tree);
+            ProgressivePIPResult result_R = compute_DP3D_PIP_tree_cross(tree->getNodeRight(), likelihood, alignment, alphabet, sites,
+                                                                        gamma_rate, local_tree);
 
-            result = compute_DP3D_PIP(result_L, result_R, tree, likelihood, alignment, gamma_rate, local_tree);
+            result = compute_DP3D_PIP(result_L, result_R, tree, likelihood, alignment, alphabet, gamma_rate, local_tree);
 
         }
 
