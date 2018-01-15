@@ -167,6 +167,33 @@ void UtreeBppUtils::_traverseTree_u2b(bpp::Node *target, tshlib::VirtualNode *so
 
 }
 
+void UtreeBppUtils::associateNode2Alignment(bpp::SequenceContainer *sequences, tshlib::Utree *in_tree) {
+
+    for(auto &node:in_tree->listVNodes){
+
+        if(node->isTerminalNode()){
+
+            std::vector<std::string> seqnames = sequences->getSequencesNames();
+
+            for(int i=0;i<seqnames.size(); i++){
+
+                if(seqnames.at(i).compare(node->vnode_name)==0){
+                    node->vnode_seqid = i;
+                    break;
+                }
+
+            }
+
+
+        }
+
+    }
+
+
+
+
+}
+
 Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix) {
 
     size_t rows, cols;

@@ -132,53 +132,53 @@ int main(int argc, char *argv[]) {
 
     bpp::Fasta seqReader;
     bpp::SequenceContainer *sequences;
+    bpp::SiteContainer *sites;
 
     if(FLAGS_alignment){
         sequences = seqReader.readSequences(FLAGS_input_sequences, alpha);
-        VLOG(1) << sequences->getSequence("A").getValue(0);
-        exit(1);
 
     }else{
         sequences  = seqReader.readAlignment(FLAGS_input_sequences, alpha);
+        seqReader.readSequences(FLAGS_input_sequences, alpha);
+        std::vector<std::string> seqNames = sequences->getSequencesNames();
 
-    }
-
-    seqReader.readSequences(FLAGS_input_sequences, alpha);
-    std::vector<std::string> seqNames = sequences->getSequencesNames();
-
-    for(int i=0; i<seqNames.size(); i++){
-        std::string stringSeq = sequences->getSequence(seqNames.at(i)).toString();
-        alignment->addSequence(seqNames.at(i),stringSeq);
-    }
-    alignment->getAlignmentSize();
-    alignment->align_num_characters.resize((unsigned long) alignment->align_length);
-    alignment->align_alphabetsize += 1; // DNA +1 per PIP
-    alignment->countNumberCharactersinColumn();
-
-    bpp::SiteContainer *sites = new bpp::VectorSiteContainer(*sequences);
-    size_t num_leaves = sequences->getNumberOfSequences();
-
-    LOG(INFO) << "[Alignment] Input alignmetn has " << num_leaves << " sequences";
-
-    /*
-    std::string testSeq = sequences->getSequence(seqNames.at(0)).toString();
-    bpp::Site testSite = nullptr;
-
-    std::vector<int> countCharNumber(sites->getNumberOfSites(), 0);
-
-    for (int i=0; i<sites->getNumberOfSites(); i++){
-       testSite = sites->getSite((size_t) i);
-        for (int j=0; j<testSite.size(); j++){
-            if(testSite.getValue(j)>=0){
-                countCharNumber.at(i) += 1;
-            }
-
+        for(int i=0; i<seqNames.size(); i++){
+            std::string stringSeq = sequences->getSequence(seqNames.at(i)).toString();
+            alignment->addSequence(seqNames.at(i),stringSeq);
         }
+        alignment->getAlignmentSize();
+        alignment->align_num_characters.resize((unsigned long) alignment->align_length);
+        alignment->align_alphabetsize += 1; // DNA +1 per PIP
+        alignment->countNumberCharactersinColumn();
+
+        sites = new bpp::VectorSiteContainer(*sequences);
+        size_t num_leaves = sequences->getNumberOfSequences();
+
+        LOG(INFO) << "[Alignment] Input alignmetn has " << num_leaves << " sequences";
+
+        /*
+        std::string testSeq = sequences->getSequence(seqNames.at(0)).toString();
+        bpp::Site testSite = nullptr;
+
+        std::vector<int> countCharNumber(sites->getNumberOfSites(), 0);
+
+        for (int i=0; i<sites->getNumberOfSites(); i++){
+           testSite = sites->getSite((size_t) i);
+            for (int j=0; j<testSite.size(); j++){
+                if(testSite.getValue(j)>=0){
+                    countCharNumber.at(i) += 1;
+                }
+
+            }
+        }
+
+        alignment->align_num_characters = countCharNumber;
+        */
+
     }
 
-    alignment->align_num_characters = countCharNumber;
-    */
-    delete sequences;
+
+
 
     //------------------------------------------------------------------------------------------------------------------
     // INIT ROOTED TREE
@@ -202,14 +202,23 @@ int main(int argc, char *argv[]) {
     delete tree;
     delete newickReader;
 
+    //------------------------------------------------------------------------------------------------------------------
 
-    utree->prepareSetADesCountOnNodes((int) alignment->getAlignmentSize(), alignment->align_alphabetsize);
-    UtreeUtils::associateNode2Alignment(alignment, utree);
+    if(!FLAGS_alignment) {
+        utree->prepareSetADesCountOnNodes((int) alignment->getAlignmentSize(), alignment->align_alphabetsize);
+        UtreeUtils::associateNode2Alignment(alignment, utree);
 
-    // Add the root
-    utree->addVirtualRootNode();
-    utree->rootnode->initialiseLikelihoodComponents((int) alignment->getAlignmentSize(), alignment->align_alphabetsize);
+        // Add the root
+        utree->addVirtualRootNode();
+        utree->rootnode->initialiseLikelihoodComponents((int) alignment->getAlignmentSize(),
+                                                        alignment->align_alphabetsize);
+    }else{
 
+        UtreeBppUtils::associateNode2Alignment(sequences, utree);
+        utree->addVirtualRootNode();
+
+
+    }
 
     //------------------------------------------------------------------------------------------------------------------
     // INIT SubModels + Indel
@@ -232,10 +241,10 @@ int main(int argc, char *argv[]) {
         parmap["model"] = FLAGS_model_substitution;
 
         submodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, parmap, "", true,  false, 0);
-        submodel->setFreqFromData(*sites);
+        if(!FLAGS_alignment){submodel->setFreqFromData(*sites);}
 
         rDist = new bpp::ConstantRateDistribution();
-        bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
+        if(!FLAGS_alignment){bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);}
 
 
     }
@@ -272,65 +281,35 @@ int main(int argc, char *argv[]) {
     double logLK = 0;
     auto likelihood = new Likelihood();
     std::vector<VirtualNode *> allnodes_postorder;
+    if(!FLAGS_alignment) {
+        tree = UtreeBppUtils::convertTree_u2b(utree);
 
-    tree = UtreeBppUtils::convertTree_u2b(utree);
+
+        if (!FLAGS_model_indels) {
+
+            transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "",
+                                                                                true, false, 0);
+            tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
+
+        } else {
+
+            unique_ptr<TransitionModel> test;
+            test.reset(submodel);
+            transmodel = test.release();
+
+            tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
+
+        }
 
 
-    if(FLAGS_model_indels) {
-        //------------------------------------------------------------------------------------------------------------------
-        // GENERATE MSA
+        VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
 
-        //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
-        likelihood->Init(utree, pi, Q, mu, lambda);
+        tl->initialize();
+        logLK = tl->getLogLikelihood();
 
-        // COMPUTE LK GIVEN TREE TOPOLOGY AND MSA
-        logLK = 0.0;
-
-        // Traverse the tree in post-order filling a list of node ready for traversal
-        likelihood->compileNodeList_postorder(allnodes_postorder, utree->rootnode);
-
-        // Set survival probability to each node in the list
-        likelihood->setAllIotas(allnodes_postorder);
-
-        // Set deletion probability to each node in the list
-        likelihood->setAllBetas(allnodes_postorder);
-
-        // Set insertion histories on each node of the list
-        //likelihood->setInsertionHistories(allnodes_postorder, *alignment);
-
-        // set probability matrix -- exponential of substitution rates
-        likelihood->computePr(allnodes_postorder, alignment->align_alphabetsize);
-
-        VirtualNode *root=utree->rootnode;
-        auto alphabet = sites->getSite(0).getAlphabet();
-        progressivePIP::ProgressivePIPResult MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, alignment, alphabet, sites, 1.0, true);
+        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << logLK
+                << " \t[BPP METHODS]";
     }
-
-
-
-
-    if(!FLAGS_model_indels) {
-
-        transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true,  false, 0);
-        tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
-
-    }else{
-
-        unique_ptr<TransitionModel> test;
-        test.reset(submodel);
-        transmodel = test.release();
-
-        tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites,transmodel, rDist, false, false, false);
-
-    }
-
-    VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
-
-    tl->initialize();
-    logLK = tl->getLogLikelihood();
-
-    VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName()  << ") = " << logLK << " \t[BPP METHODS]";
-
 
     if(FLAGS_model_indels) {
         //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
@@ -347,6 +326,16 @@ int main(int argc, char *argv[]) {
 
         // Set deletion probability to each node in the list
         likelihood->setAllBetas(allnodes_postorder);
+
+
+        if(FLAGS_alignment){
+
+
+            VirtualNode *root=utree->rootnode;
+            progressivePIP::ProgressivePIPResult MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, alignment, alpha, sites, 1.0, true);
+
+        }
+
 
         // Set insertion histories on each node of the list
         likelihood->setInsertionHistories(allnodes_postorder, *alignment);
@@ -629,7 +618,7 @@ int main(int argc, char *argv[]) {
 
     //treesearchheuristics::testTSH(utree, TreeSearchHeuristics::classic_Mixed);
 
-
+    delete sequences;
     exit(0);
 
 }

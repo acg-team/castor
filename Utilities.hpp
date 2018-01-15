@@ -55,6 +55,8 @@ using namespace tshlib;
 
     bpp::TreeTemplate<bpp::Node> *convertTree_u2b(Utree *in_tree);
     void _traverseTree_u2b(bpp::Node *target, VirtualNode *source);
+
+    void associateNode2Alignment(bpp::SequenceContainer *sequences, Utree *in_tree);
 }
 
 namespace MatrixBppUtils{
