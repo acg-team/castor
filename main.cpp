@@ -341,8 +341,49 @@ int main(int argc, char *argv[]) {
         if (FLAGS_alignment) {
 
 
-            VirtualNode *root = utree->rootnode;
-            MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, sequences, alpha, 1.0, true);
+            //VirtualNode *root = utree->rootnode;
+            //MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, sequences, alpha, 1.0, true);
+
+
+            int dim=20;
+            int num_times=100;
+            bpp::ColMatrix<double> AA;
+            AA.resize(dim,dim);
+
+            Eigen::MatrixXd A;
+
+            A.resize(dim,dim);
+            for(int i=0;i<dim;i++){
+                for(int j=0;j<dim;j++){
+                    double val = (double)(i/10+j/10);
+                    A(i,j) = val;
+                    AA(i,j) = val;
+                }
+            }
+
+            bpp::ColMatrix<double> BB;
+            BB.resize(dim,dim);
+            std::chrono::high_resolution_clock::time_point t1_BPP = std::chrono::high_resolution_clock::now();
+            for(int i=0;i<num_times;i++){
+                bpp::MatrixTools::exp(AA,BB);
+            }
+            std::chrono::high_resolution_clock::time_point t2_BPP = std::chrono::high_resolution_clock::now();
+            auto durationBPP = std::chrono::duration_cast<std::chrono::microseconds>(t2_BPP - t1_BPP).count();
+            VLOG(0) << "Elapsed time (BPP): " << durationBPP << " microseconds" << std::endl;
+
+            Eigen::MatrixXd B;
+            B.resize(dim,dim);
+            std::chrono::high_resolution_clock::time_point t1_EIG = std::chrono::high_resolution_clock::now();
+            for(int i=0;i<10;i++){
+                B=A.exp();
+            }
+            std::chrono::high_resolution_clock::time_point t2_EIG = std::chrono::high_resolution_clock::now();
+            auto durationEIG = std::chrono::duration_cast<std::chrono::microseconds>(t2_EIG - t1_EIG).count();
+            VLOG(0) << "Elapsed time (EIGEN): " << durationEIG << " microseconds" << std::endl;
+
+            //std::cout<<B;
+            //std::cout<<std::endl;
+            exit(1);
 
         }
 
