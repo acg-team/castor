@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     bpp::SiteContainer *sites = new bpp::VectorSiteContainer(*sequences);
     size_t num_leaves = sequences->getNumberOfSequences();
 
-    LOG(INFO) << "[Sequences in alignment] " << num_leaves;
+    LOG(INFO) << "[Alignment] Input alignmetn has " << num_leaves << " sequences";
 
     /*
     std::string testSeq = sequences->getSequence(seqNames.at(0)).toString();
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
         //std::cerr << pi << std::endl;
 
     }
-    VLOG(1) << "This model supports " << submodel->getNumberOfStates() << " states";
+    VLOG(1) << "[Substitution model] Number of states: " << (int) submodel->getNumberOfStates();
 
     bpp::StdStr s1;
     bpp::PhylogeneticsApplicationTools::printParameters(submodel, s1, 1, true);
@@ -278,12 +278,12 @@ int main(int argc, char *argv[]) {
 
     }
 
-    VLOG(1) << "Number of states in the transition model " << (int) transmodel->getNumberOfStates();
+    VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
 
     tl->initialize();
     logLK = tl->getLogLikelihood();
 
-    VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName()  << ") = " << logLK;
+    VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName()  << ") = " << logLK << " \t[BPP METHODS]";
 
 
     if(FLAGS_model_indels) {
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
 
         // Compute the model likelihood
         logLK = likelihood->computePartialLK_WholeAlignment(allnodes_postorder, *alignment);
-        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName()  << ") = " << logLK;
+        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName()  << ") = " << logLK << " \t[TSHLIB METHODS]" ;
     }
     //----------------------------------------------
     // Remove the root
