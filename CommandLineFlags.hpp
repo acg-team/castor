@@ -80,6 +80,7 @@ DEFINE_validator(optim_topology, &ValidateOptimTopology);
 // 3. Models
 DEFINE_string(model_substitution, "GTR", "Substitution model to apply on the input data");
 DEFINE_bool(model_indels, false, "Extend the substitution model to include Insertion & Deletion events (PIP)");
+DEFINE_bool(model_setfreqsfromdata, false, "Set substitution model frequencies from data");
 
 
 // Compute likelihood
@@ -95,6 +96,7 @@ DEFINE_bool(alignment, false, "Compute alignment of the given fasta file");
 // Declarations
 DECLARE_string(model_substitution);
 DECLARE_bool(model_indels);
+DECLARE_bool(model_setfreqsfromdata);
 DECLARE_bool(lkmove_bothways);
 DECLARE_bool(alignment);
 DECLARE_string(input_sequences);

@@ -92,7 +92,7 @@ protected:
 
     void setFreq(std::map<int, double> &freqs);
 
-    void updateMatrices();
+    void updateMatrices(SubstitutionModel *basemodel);
 
 };
 
