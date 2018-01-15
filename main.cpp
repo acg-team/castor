@@ -284,13 +284,6 @@ int main(int argc, char *argv[]) {
         if (!FLAGS_model_indels) {
 
             transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
-
-            testProb = transmodel->getPij_t(0);
-            testProb = transmodel->getPij_t(1);
-            testProb = transmodel->getPij_t(2);
-            testProb = transmodel->getPij_t(3);
-
-            transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
             tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
 
         } else {
@@ -298,12 +291,6 @@ int main(int argc, char *argv[]) {
             unique_ptr<TransitionModel> test;
             test.reset(submodel);
             transmodel = test.release();
-
-            testProb = transmodel->getPij_t(0);
-            testProb = transmodel->getPij_t(1);
-            testProb = transmodel->getPij_t(2);
-            testProb = transmodel->getPij_t(3);
-            testProb = transmodel->getPij_t(4);
 
             tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
 
