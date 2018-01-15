@@ -151,7 +151,7 @@ double RHomogeneousTreeLikelihood_PIP::getLikelihood() const {
 
 double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
     double ll = 0;
-    std::__1::vector<double> la(nbSites_);
+    std::vector<double> la(nbSites_);
     for (size_t i = 0; i < nbSites_; i++) {
         la[i] = getLogLikelihoodForASite(i);
     }
@@ -308,7 +308,7 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
     } else if (params.size() > 0) {
         //We may save some computations:
         for (size_t i = 0; i < params.size(); i++) {
-            std::__1::string s = params[i].getName();
+            std::string s = params[i].getName();
             if (s.substr(0, 5) == "BrLen") {
                 //Branch length parameter:
                 computeTransitionProbabilitiesForNode(nodes_[TextTools::to<size_t>(s.substr(5))]);
