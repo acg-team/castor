@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
         parmap["model"] = FLAGS_model_substitution;
 
         submodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
-        if (!FLAGS_alignment) { submodel->setFreqFromData(*sites); }
+        if (!FLAGS_alignment) { if(FLAGS_model_setfreqsfromdata) submodel->setFreqFromData(*sites); }
         //submodel->setFreqFromData(*sites);
 
         rDist = new bpp::ConstantRateDistribution();
@@ -280,47 +280,44 @@ int main(int argc, char *argv[]) {
     if (!FLAGS_alignment) {
         tree = UtreeBppUtils::convertTree_u2b(utree);
 
+        bpp::RowMatrix<double> testProb;
         if (!FLAGS_model_indels) {
 
-            tree = UtreeBppUtils::convertTree_u2b(utree);
-            bpp::RowMatrix<double> testProb;
-            if (!FLAGS_model_indels) {
+            transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
 
-                transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
+            testProb = transmodel->getPij_t(0);
+            testProb = transmodel->getPij_t(1);
+            testProb = transmodel->getPij_t(2);
+            testProb = transmodel->getPij_t(3);
 
-                testProb = transmodel->getPij_t(0);
-                testProb = transmodel->getPij_t(1);
-                testProb = transmodel->getPij_t(2);
-                testProb = transmodel->getPij_t(3);
+            transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
+            tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
 
-                transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
-                tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
+        } else {
 
-            } else {
+            unique_ptr<TransitionModel> test;
+            test.reset(submodel);
+            transmodel = test.release();
 
-                unique_ptr<TransitionModel> test;
-                test.reset(submodel);
-                transmodel = test.release();
+            testProb = transmodel->getPij_t(0);
+            testProb = transmodel->getPij_t(1);
+            testProb = transmodel->getPij_t(2);
+            testProb = transmodel->getPij_t(3);
+            testProb = transmodel->getPij_t(4);
 
-                testProb = transmodel->getPij_t(0);
-                testProb = transmodel->getPij_t(1);
-                testProb = transmodel->getPij_t(2);
-                testProb = transmodel->getPij_t(3);
-                testProb = transmodel->getPij_t(4);
+            tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
 
-                tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
-
-            }
-
-
-            VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
-
-            tl->initialize();
-            logLK = tl->getLogLikelihood();
-
-            VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << logLK << " \t[BPP METHODS]";
         }
+
+
+        VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
+
+        tl->initialize();
+        logLK = tl->getLogLikelihood();
+
+        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << logLK << " \t[BPP METHODS]";
     }
+
 
     if (FLAGS_model_indels) {
         //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);

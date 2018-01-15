@@ -46,7 +46,6 @@
 #include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
 #include <Bpp/Seq/Container/SequenceContainerTools.h>
 #include <Bpp/Phyl/PatternTools.h>
-#include <glog/logging.h>
 
 PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, SubstitutionModel *basemodel) :
         AbstractParameterAliasable("PIP."),
@@ -68,6 +67,27 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, Substit
     //freq_.resize(alpha->getSize());
 
 
+
+    addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
+    addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
+
+    updateMatrices(basemodel);
+}
+
+void PIP_Nuc::updateMatrices(SubstitutionModel *basemodel) {
+
+    lambda_ = getParameterValue("lambda");
+    mu_ = getParameterValue("mu");
+
+
+    //AbstractReversibleSubstitutionModel::updateMatrices();
+
+    // Add frequency for gap character
+
+    freq_ = basemodel->getFrequencies();
+    freq_[alphabet_->getGapCharacterCode()] = 0; // hack for updateMatrices()
+
+
     // Copy the generator from substitution model + extend it
     const bpp::Matrix<double> &qmatrix = basemodel->getGenerator();
 
@@ -75,34 +95,70 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, Substit
     int rows = qmatrix.getNumberOfRows();
 
 
-    for (int i = 0; i < rows-1; i++) {
+    for (int i = 0; i < rows - 1; i++) {
         for (int j = 0; j < cols; j++) {
 
             if (i == j) {
-                generator_(i, j) = qmatrix(i, j) - mu;
+                generator_(i, j) = qmatrix(i, j) - mu_;
             } else {
 
                 generator_(i, j) = qmatrix(i, j);
             }
 
         }
-        generator_(i, cols-1) = mu;
+        generator_(i, cols - 1) = mu_;
     }
 
-    // Add frequency for gap character
-
-    freq_ = basemodel->getFrequencies();
-    freq_[alpha->getGapCharacterCode()] = 0;
 
 
-    addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
-    addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
+    // Copy the exchangeability from substitution model + extend it
+    const bpp::Matrix<double> &exMatrix = basemodel->getExchangeabilityMatrix();
 
-    //updateMatrices();
-}
+    // Exchangeability
+    for (int i = 0; i < rows - 1; i++) {
+        for (int j = 0; j < cols - 1; j++) {
 
-void PIP_Nuc::updateMatrices() {
+            if (i == j) {
+                exchangeability_(i, j) = exMatrix(i, j) - mu_;
+            } else {
+                exchangeability_(i, j) = exMatrix(i, j);
+            }
 
+        }
+
+        exchangeability_(i, cols - 1) = mu_;
+    }
+
+    // Normalization:
+    setDiagonal();
+    //normalize();
+
+
+    // Compute eigen values and vectors:
+    if (enableEigenDecomposition()) {
+        EigenValue<double> ev(generator_);
+        rightEigenVectors_ = ev.getV();
+        eigenValues_ = ev.getRealEigenValues();
+        iEigenValues_ = ev.getImagEigenValues();
+        try {
+            MatrixTools::inv(rightEigenVectors_, leftEigenVectors_);
+            isNonSingular_ = true;
+            isDiagonalizable_ = true;
+            for (size_t i = 0; i < size_ && isDiagonalizable_; i++) {
+                if (abs(iEigenValues_[i]) > NumConstants::TINY())
+                    isDiagonalizable_ = false;
+            }
+        }
+        catch (ZeroDivisionException &e) {
+            ApplicationTools::displayMessage("Singularity during diagonalization. Taylor series used instead.");
+
+            isNonSingular_ = false;
+            isDiagonalizable_ = false;
+            MatrixTools::Taylor(generator_, 30, vPowGen_);
+        }
+    }
+
+    //freq_[alphabet_->getGapCharacterCode()] = 0;
 
 }
 
@@ -141,53 +197,52 @@ const bpp::Matrix<double> &PIP_Nuc::getPij_t(double d) const {
 */
 //const bpp::Matrix<double> &PIP_Nuc::getdPij_dt(double d) const {
 
-    //std::cerr << "PIP_Nuc::getdPij_dt has been called";
+//std::cerr << "PIP_Nuc::getdPij_dt has been called";
 
 
 //}
 
 //const bpp::Matrix<double> &PIP_Nuc::getd2Pij_dt2(double d) const {
 
-    //std::cerr << "PIP_Nuc::getd2dPij_dt2 has been called";
+//std::cerr << "PIP_Nuc::getd2dPij_dt2 has been called";
 
 
 //}
 
 void PIP_Nuc::setFreq(std::map<int, double> &freqs) {
     std::vector<double> values;
-    for (auto const& element : freqs) {
+    for (auto const &element : freqs) {
         values.push_back(element.second);
     }
     freq_ = values;
 
 }
 
-void PIP_Nuc::setFreqFromData(const SequenceContainer& data, double pseudoCount) {
+void PIP_Nuc::setFreqFromData(const SequenceContainer &data, double pseudoCount) {
     std::map<int, int> counts;
     SequenceContainerTools::getCounts(data, counts);
     std::map<int, double> freqs;
 
     int gapkey = data.getAlphabet()->getGapCharacterCode();
-    std::map<int,int>::iterator iter = counts.find(gapkey);
-    if( iter != counts.end() )
-        counts.erase( iter );
-    else puts( "not found" ) ;
+    std::map<int, int>::iterator iter = counts.find(gapkey);
+    if (iter != counts.end())
+        counts.erase(iter);
+    else puts("not found");
 
 
     std::vector<int> retval;
-    for (auto const& element : counts) {
+    for (auto const &element : counts) {
         retval.push_back(element.first);
     }
 
     double t = 0;
-    for (auto& ci : counts)
-        t+=ci.second;
+    for (auto &ci : counts)
+        t += ci.second;
 
-    t+= pseudoCount*(double)counts.size();
+    t += pseudoCount * (double) counts.size();
 
     //for (int i = 0; i < static_cast<int>(size_)-1; i++)
-    for (auto &key:retval)
-    {
+    for (auto &key:retval) {
         freqs[key] = (static_cast<double>(counts[key]) + pseudoCount) / t;
     }
 

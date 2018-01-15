@@ -44,8 +44,6 @@
 
 #include <Bpp/Numeric/Matrix/MatrixTools.h>
 #include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
-#include <Bpp/Text/TextTools.h>
-#include <Bpp/App/ApplicationTools.h>
 #include <Bpp/Phyl/PatternTools.h>
 #include <glog/logging.h>
 
@@ -98,23 +96,27 @@ RHomogeneousTreeLikelihood_PIP::RHomogeneousTreeLikelihood_PIP(
     likelihoodData_->setTree(tree_);
 }
 
+
 RHomogeneousTreeLikelihood_PIP &RHomogeneousTreeLikelihood_PIP::operator=(const RHomogeneousTreeLikelihood_PIP &lik) {
     AbstractHomogeneousTreeLikelihood::operator=(lik);
     if (likelihoodData_) delete likelihoodData_;
-    likelihoodData_ = dynamic_cast<DRASRTreeLikelihoodData*>(lik.likelihoodData_->clone());
+    likelihoodData_ = dynamic_cast<DRASRTreeLikelihoodData *>(lik.likelihoodData_->clone());
     likelihoodData_->setTree(tree_);
     minusLogLik_ = lik.minusLogLik_;
     return *this;
 }
 
+
 RHomogeneousTreeLikelihood_PIP::~RHomogeneousTreeLikelihood_PIP() {
     delete likelihoodData_;
 }
+
 
 void RHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) throw(Exception) {
     // This call initialises the data structure to compute the partial likelihoods of the nodes (it allows for ASRV distributions to be added on top of the s.m.)
     likelihoodData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);
 }
+
 
 void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(Exception) {
 
@@ -141,6 +143,7 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     initialized_ = false;
 }
 
+
 double RHomogeneousTreeLikelihood_PIP::getLikelihood() const {
     double l = 1.;
     for (size_t i = 0; i < nbSites_; i++) {
@@ -148,6 +151,7 @@ double RHomogeneousTreeLikelihood_PIP::getLikelihood() const {
     }
     return l;
 }
+
 
 double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
     double ll = 0;
@@ -162,6 +166,7 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
     return ll;
 }
 
+
 double RHomogeneousTreeLikelihood_PIP::getLikelihoodForASite(size_t site) const {
     double l = 0;
     for (size_t i = 0; i < nbClasses_; i++) {
@@ -169,6 +174,7 @@ double RHomogeneousTreeLikelihood_PIP::getLikelihoodForASite(size_t site) const 
     }
     return l;
 }
+
 
 double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodForASite(size_t site) const {
     double l = 0;
@@ -178,6 +184,7 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodForASite(size_t site) con
     }
     return log(l);
 }
+
 
 double RHomogeneousTreeLikelihood_PIP::getLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const {
     double l = 0;
@@ -190,6 +197,7 @@ double RHomogeneousTreeLikelihood_PIP::getLikelihoodForASiteForARateClass(size_t
     return l;
 }
 
+
 double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const {
     double l = 0;
     Vdouble *la = &likelihoodData_->getLikelihoodArray(tree_->getRootNode()->getId())[likelihoodData_->getRootArrayPosition(site)][rateClass];
@@ -200,24 +208,29 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodForASiteForARateClass(siz
     return log(l);
 }
 
+
 double RHomogeneousTreeLikelihood_PIP::getLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const {
     return likelihoodData_->getLikelihoodArray(tree_->getRootNode()->getId())[likelihoodData_->getRootArrayPosition(site)][rateClass][static_cast<size_t>(state)];
 }
 
+
 double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const {
     return log(likelihoodData_->getLikelihoodArray(tree_->getRootNode()->getId())[likelihoodData_->getRootArrayPosition(site)][rateClass][static_cast<size_t>(state)]);
 }
+
 
 void RHomogeneousTreeLikelihood_PIP::setParameters(const ParameterList &parameters)
 throw(ParameterNotFoundException, ConstraintException) {
     setParametersValues(parameters);
 }
 
+
 double RHomogeneousTreeLikelihood_PIP::getValue() const
 throw(Exception) {
     if (!isInitialized()) throw Exception("RHomogeneousTreeLikelihood::getValue(). Instance is not initialized.");
     return minusLogLik_;
 }
+
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood() {
 
@@ -235,17 +248,14 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood(const Node *node) 
     size_t nbNodes = node->getNumberOfSons();
 
     // Must reset the likelihood array first (i.e. set all of them to 1):
-    VVVdouble* _likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
-    for (size_t i = 0; i < nbSites; i++)
-    {
+    VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
+    for (size_t i = 0; i < nbSites; i++) {
         //For each site in the sequence,
-        VVdouble* _likelihoods_node_i = &(*_likelihoods_node)[i];
-        for (size_t c = 0; c < nbClasses_; c++)
-        {
+        VVdouble *_likelihoods_node_i = &(*_likelihoods_node)[i];
+        for (size_t c = 0; c < nbClasses_; c++) {
             //For each rate classe,
-            Vdouble* _likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
-            for (size_t x = 0; x < nbStates_; x++)
-            {
+            Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
+            for (size_t x = 0; x < nbStates_; x++) {
                 //For each initial state,
                 (*_likelihoods_node_i_c)[x] = 1.;
             }
@@ -253,33 +263,29 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood(const Node *node) 
     }
 
 
-    for (size_t l = 0; l < nbNodes; l++)
-    {
+    for (size_t l = 0; l < nbNodes; l++) {
         //For each son node,
 
-        const Node* son = node->getSon(l);
+        const Node *son = node->getSon(l);
 
         computeSubtreeLikelihood(son); //Recursive method:
 
-        VVVdouble* pxy__son = &pxy_[son->getId()];
-        std::vector<size_t> * _patternLinks_node_son = &likelihoodData_->getArrayPositions(node->getId(), son->getId());
-        VVVdouble* _likelihoods_son = &likelihoodData_->getLikelihoodArray(son->getId());
+        VVVdouble *pxy__son = &pxy_[son->getId()];
+        std::vector<size_t> *_patternLinks_node_son = &likelihoodData_->getArrayPositions(node->getId(), son->getId());
+        VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(son->getId());
 
-        for (size_t i = 0; i < nbSites; i++)
-        {
+        for (size_t i = 0; i < nbSites; i++) {
             //For each site in the sequence,
-            VVdouble* _likelihoods_son_i = &(*_likelihoods_son)[(*_patternLinks_node_son)[i]];
-            VVdouble* _likelihoods_node_i = &(*_likelihoods_node)[i];
-            for (size_t c = 0; c < nbClasses_; c++)
-            {
+            VVdouble *_likelihoods_son_i = &(*_likelihoods_son)[(*_patternLinks_node_son)[i]];
+            VVdouble *_likelihoods_node_i = &(*_likelihoods_node)[i];
+            for (size_t c = 0; c < nbClasses_; c++) {
                 //For each rate classe,
-                Vdouble* _likelihoods_son_i_c = &(*_likelihoods_son_i)[c];
-                Vdouble* _likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
-                VVdouble* pxy__son_c = &(*pxy__son)[c];
-                for (size_t x = 0; x < nbStates_; x++)
-                {
+                Vdouble *_likelihoods_son_i_c = &(*_likelihoods_son_i)[c];
+                Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
+                VVdouble *pxy__son_c = &(*pxy__son)[c];
+                for (size_t x = 0; x < nbStates_; x++) {
                     //For each initial state,
-                    Vdouble* pxy__son_c_x = &(*pxy__son_c)[x];
+                    Vdouble *pxy__son_c_x = &(*pxy__son_c)[x];
                     double likelihood = 0;
                     for (size_t y = 0; y < nbStates_; y++)
                         likelihood += (*pxy__son_c_x)[y] * (*_likelihoods_son_i_c)[y];
@@ -297,6 +303,7 @@ void RHomogeneousTreeLikelihood_PIP::displayLikelihood(const Node *node) {
     displayLikelihoodArray(likelihoodData_->getLikelihoodArray(node->getId()));
     VLOG(2) << "                                         ***";
 }
+
 
 void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &params) {
     applyParameters();
