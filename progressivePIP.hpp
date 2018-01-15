@@ -41,6 +41,12 @@
 #include <Alignment.hpp>
 #include <TreeRearrangment.hpp>
 
+
+#include <limits>
+
+double inf = std::numeric_limits<double>::infinity();
+
+
 using namespace tshlib;
 
 namespace progressivePIP{
@@ -133,15 +139,15 @@ namespace progressivePIP{
 
         double random_number;
 
-        if(not(std::isinf(m)) & not(std::isinf(x)) & (fabs(m-x)<epsilon)){
+        if(not(std::isinf(m)) & not(std::isinf(x)) & (fabs((long double)(m-x))<epsilon)){
             x=m;
         }
 
-        if(not(std::isinf(m)) & not(std::isinf(y)) & (fabs(m-y)<epsilon)){
+        if(not(std::isinf(m)) & not(std::isinf(y)) & (fabs((long double)(m-y))<epsilon)){
             y=m;
         }
 
-        if(not(std::isinf(x)) & not(std::isinf(y)) & (fabs(x-y)<epsilon)){
+        if(not(std::isinf(x)) & not(std::isinf(y)) & (fabs((long double)(x-y))<epsilon)){
             y=x;
         }
 
@@ -219,14 +225,17 @@ namespace progressivePIP{
     double max_of_three(double a, double b, double c,double epsilon){
 
         //------------------------------------
-        if(fabs(a)<epsilon){
-            a=-INFINITY;
+        if(fabs((long double)a)<epsilon){
+            //a=-INFINITY;
+            a=-inf;
         }
-        if(fabs(b)<epsilon){
-            b=-INFINITY;
+        if(fabs((long double)b)<epsilon){
+            //b=-INFINITY;
+            b=-inf;
         }
-        if(fabs(c)<epsilon){
-            c=-INFINITY;
+        if(fabs((long double)c)<epsilon){
+            //c=-INFINITY;
+            c=-inf;
         }
         //------------------------------------
 
@@ -251,7 +260,7 @@ namespace progressivePIP{
     //DP-PIP
     double compute_nu(double tau,double lambda,double mu){
 
-        if(fabs(mu)<1e-8){
+        if(fabs((long double)mu)<1e-8){
             perror("ERROR in compute_nu: mu too small");
         }
 
@@ -855,7 +864,7 @@ namespace progressivePIP{
             }
             //------------------------------------------------------------------------------------------
 
-            pr=log(pr);
+            pr=log((long double)pr);
 
             lkM[s]=pr;
 
@@ -863,7 +872,7 @@ namespace progressivePIP{
             pr=it->second;
         }
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
+        val=-log((long double)m)+log((long double)nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
         return val;
     }
@@ -913,7 +922,7 @@ namespace progressivePIP{
 
             //------------------------------------------------------------------------------------------
 
-            pr=log(pr);
+            pr=log((long double)pr);
 
             lkM[s]=pr;
 
@@ -922,7 +931,7 @@ namespace progressivePIP{
         }
         //------------------------------------------------------------------------------------------
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
+        val=-log((long double)m)+log((long double)nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
         return val;
     }
@@ -997,7 +1006,7 @@ namespace progressivePIP{
             }
             //******************************************************************************************
 
-            pr=log(pr);
+            pr=log((long double)pr);
 
             lkX[s]=pr;
 
@@ -1006,7 +1015,7 @@ namespace progressivePIP{
         }
         //------------------------------------------------------------------------------------------
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
+        val=-log((long double)m)+log((long double)nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
         return val;
     }
@@ -1065,7 +1074,7 @@ namespace progressivePIP{
             pr+=pL;
             //------------------------------------------------------------------------------------------
 
-            pr=log(pr);
+            pr=log((long double)pr);
 
             lkX[s]=pr;
 
@@ -1074,7 +1083,7 @@ namespace progressivePIP{
         }
         //------------------------------------------------------------------------------------------
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
+        val=-log((long double)m)+log((long double)nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
         return val;
     }
@@ -1147,7 +1156,7 @@ namespace progressivePIP{
             }
             //*******************************************************************************************
 
-            pr=log(pr);
+            pr=log((long double)pr);
 
             lkY[s]=pr;
 
@@ -1156,7 +1165,7 @@ namespace progressivePIP{
         }
         //------------------------------------------------------------------------------------------
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
+        val=-log((long double)m)+log((long double)nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
         return val;
     }
@@ -1214,7 +1223,7 @@ namespace progressivePIP{
 
             pr+=pR;
 
-            pr=log(pr);
+            pr=log((long double)pr);
 
             lkY[s]=pr;
 
@@ -1224,7 +1233,7 @@ namespace progressivePIP{
         //------------------------------------------------------------------------------------------
 
 
-        val=-log(double(m))+log(nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
+        val=-log((long double)m)+log((long double)nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
 
 
         return val;
@@ -1265,7 +1274,7 @@ namespace progressivePIP{
                                                  ProgressivePIPResult &result_R,
                                                  VirtualNode *tree,
                                                  Likelihood *likelihood,
-                                                 Alignment *alignment,
+                                                 bpp::SequenceContainer *sequences,
                                                  const bpp::Alphabet *alphabet,
                                                  double gamma_rate,
                                                  bool local){
@@ -1276,7 +1285,7 @@ namespace progressivePIP{
         double tau;
         double nu;
 
-        int alphabetSize=alphabet->getSize();
+        int originalAlphabetSize=alphabet->getSize()-1;
 
         //@gamma_distribution
         double lambda_gamma=likelihood->lambda*gamma_rate;
@@ -1341,13 +1350,15 @@ namespace progressivePIP{
                                             col_gap_Ls,
                                             col_gap_Rs,
                                             pi,
-                                            alphabetSize,alphabet);
+                                            originalAlphabetSize,
+                                            alphabet);
         }else{
             pc0=compute_pr_gap_all_edges_s(tree,
                                            col_gap_Ls,
                                            col_gap_Rs,
                                            pi,
-                                           alphabetSize,alphabet);
+                                           originalAlphabetSize,
+                                           alphabet);
         }
 
         //***************************************************************************************
@@ -1374,8 +1385,10 @@ namespace progressivePIP{
         TR[0][0]=STOP_STATE;
 
         double max_of_3;
-        double max_lk=-INFINITY;
-        double prev_max_lk=-INFINITY;
+        //double max_lk=-INFINITY;
+        double max_lk=-inf;
+        //double prev_max_lk=-INFINITY;
+        double prev_max_lk=-inf;
         signed long level_max_lk=INT_MIN;
         double val;
         unsigned long m_binary_this;
@@ -1396,7 +1409,7 @@ namespace progressivePIP{
 
         //int counter;
 
-        double scores;
+        double scores=-inf;
         int start_depth;
         unsigned long depth;
 
@@ -1442,21 +1455,24 @@ namespace progressivePIP{
                         if(idx>=0){
                             valM=LogM[m_binary_prev][idx];
                         }else{
-                            valM=-INFINITY;
+                            //valM=-INFINITY;
+                            valM=-inf;
                         }
 
                         idx=get_indices_X(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
                         if(idx>=0){
                             valX=LogX[m_binary_prev][idx];
                         }else{
-                            valX=-INFINITY;
+                            //valX=-INFINITY;
+                            valX=-inf;
                         }
 
                         idx=get_indices_Y(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
                         if(idx>=0){
                             valY=LogY[m_binary_prev][idx];
                         }else{
-                            valY=-INFINITY;
+                            //valY=-INFINITY;
+                            valY=-inf;
                         }
 
                         if(std::isinf(valM) && std::isinf(valX) && std::isinf(valY)){
@@ -1473,7 +1489,7 @@ namespace progressivePIP{
                                                                  pi,
                                                                  m,
                                                                  lkM,
-                                                                 alphabetSize,alphabet);
+                                                                 originalAlphabetSize,alphabet);
                         }else{
                             val=computeLK_M_all_edges_s_opt(	valM,
                                                                 valX,
@@ -1484,7 +1500,7 @@ namespace progressivePIP{
                                                                 pi,
                                                                 m,
                                                                 lkM,
-                                                                alphabetSize,alphabet);
+                                                                originalAlphabetSize,alphabet);
                         }
 
                         if(std::isinf(val)){
@@ -1529,7 +1545,8 @@ namespace progressivePIP{
                         if(idx>=0){
                             valM=LogM[m_binary_prev][idx];
                         }else{
-                            valM=-INFINITY;
+                            //valM=-INFINITY;
+                            valM=-inf;
                         }
 
                         idx=get_indices_X(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
@@ -1537,7 +1554,8 @@ namespace progressivePIP{
                         if(idx>=0){
                             valX=LogX[m_binary_prev][idx];
                         }else{
-                            valX=-INFINITY;
+                            //valX=-INFINITY;
+                            valX=-inf;
                         }
 
                         idx=get_indices_Y(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
@@ -1545,7 +1563,8 @@ namespace progressivePIP{
                         if(idx>=0){
                             valY=LogY[m_binary_prev][idx];
                         }else{
-                            valY=-INFINITY;
+                            //valY=-INFINITY;
+                            valY=-inf;
                         }
 
                         if(std::isinf(valM) && std::isinf(valX) && std::isinf(valY)){
@@ -1562,7 +1581,7 @@ namespace progressivePIP{
                                                              pi,
                                                              m,
                                                              lkX,
-                                                             alphabetSize,alphabet);
+                                                             originalAlphabetSize,alphabet);
                         }else{
                             val=computeLK_X_all_edges_s_opt(valM,
                                                             valX,
@@ -1573,7 +1592,7 @@ namespace progressivePIP{
                                                             pi,
                                                             m,
                                                             lkX,
-                                                            alphabetSize,alphabet);
+                                                            originalAlphabetSize,alphabet);
                         }
 
                         if(std::isinf(val)){
@@ -1616,7 +1635,8 @@ namespace progressivePIP{
                         if(idx>=0){
                             valM=LogM[m_binary_prev][idx];
                         }else{
-                            valM=-INFINITY;
+                            //valM=-INFINITY;
+                            valM=-inf;
                         }
 
                         idx=get_indices_X(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
@@ -1624,7 +1644,8 @@ namespace progressivePIP{
                         if(idx>=0){
                             valX=LogX[m_binary_prev][idx];
                         }else{
-                            valX=-INFINITY;
+                            //valX=-INFINITY;
+                            valX=-inf;
                         }
 
                         idx=get_indices_Y(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
@@ -1632,7 +1653,8 @@ namespace progressivePIP{
                         if(idx>=0){
                             valY=LogY[m_binary_prev][idx];
                         }else{
-                            valY=-INFINITY;
+                            //valY=-INFINITY;
+                            valY=-inf;
                         }
 
                         if(std::isinf(valM) && std::isinf(valX) && std::isinf(valY)){
@@ -1649,7 +1671,7 @@ namespace progressivePIP{
                                                              pi,
                                                              m,
                                                              lkY,
-                                                             alphabetSize,alphabet);
+                                                             originalAlphabetSize,alphabet);
                         }else{
                             val=computeLK_Y_all_edges_s_opt(valM,
                                                             valX,
@@ -1660,7 +1682,7 @@ namespace progressivePIP{
                                                             pi,
                                                             m,
                                                             lkY,
-                                                            alphabetSize,alphabet);
+                                                            originalAlphabetSize,alphabet);
                         }
 
                         if(std::isinf(val)){
@@ -1705,7 +1727,8 @@ namespace progressivePIP{
                         if(idx>=0){
                             mval=LogM[m_binary_this][idx];
                         }else{
-                            mval=-INFINITY;
+                            //mval=-INFINITY;
+                            mval=-inf;
                         }
 
                         idx=get_indices_X(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
@@ -1713,7 +1736,8 @@ namespace progressivePIP{
                         if(idx>=0){
                             xval=LogX[m_binary_this][idx];
                         }else{
-                            xval=-INFINITY;
+                            //xval=-INFINITY;
+                            xval=-inf;
                         }
 
                         idx=get_indices_Y(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
@@ -1721,12 +1745,16 @@ namespace progressivePIP{
                         if(idx>=0){
                             yval=LogY[m_binary_this][idx];
                         }else{
-                            yval=-INFINITY;
+                            //yval=-INFINITY;
+                            yval=-inf;
                         }
 
-                        mval=fabs(mval)<epsilon?-INFINITY:mval;
-                        xval=fabs(xval)<epsilon?-INFINITY:xval;
-                        yval=fabs(yval)<epsilon?-INFINITY:yval;
+                        //mval=fabs((long double)mval)<epsilon?-INFINITY:mval;
+                        //xval=fabs((long double)xval)<epsilon?-INFINITY:xval;
+                        //yval=fabs((long double)yval)<epsilon?-INFINITY:yval;
+                        mval=fabs((long double)mval)<epsilon?-inf:mval;
+                        xval=fabs((long double)xval)<epsilon?-inf:xval;
+                        yval=fabs((long double)yval)<epsilon?-inf:yval;
 
                         //.-----.------.------.-------.------.-------.-------.--------.-------.--------.//
                         int ttrr;
@@ -1754,9 +1782,13 @@ namespace progressivePIP{
                             //fill_scores(max_of_3,max_lk,prev_max_lk,level_max_lk,last_d,m,flag_exit,
                             //            scores,counter,CENTER,num_subopt,start_depth);
 
-                            prev_max_lk=max_lk;
-                            max_lk=max_of_3;
-                            level_max_lk=m;
+                            //prev_max_lk=max_lk;
+                            //max_lk=max_of_3;
+                            if(max_of_3>scores){
+                                scores=max_of_3;
+                                level_max_lk=m;
+                            }
+
 
 
                         }
@@ -1773,7 +1805,8 @@ namespace progressivePIP{
         //std::vector<ProgressivePIPResult> result_v;
         //for(int k=0;k<num_subopt;k++){
         //depth=start_depth+k;
-        depth=start_depth;
+        //depth=start_depth;
+        depth=level_max_lk;
 
         //if(depth>=d){
         //    break;
@@ -1815,6 +1848,9 @@ namespace progressivePIP{
                     exit(EXIT_FAILURE);
             }
         }
+
+        //VLOG(1)<<traceback_path;
+
         result.traceback_path=traceback_path;
         result.MSAs=build_MSA(traceback_path,result_L.MSAs,result_R.MSAs);
         //result_v.push_back(result);
@@ -1835,7 +1871,7 @@ namespace progressivePIP{
         free(LogY[0]);
         free(LogY);
 
-        for(unsigned long i=last_d;i>=0;i--){
+        for(signed long i=last_d;i>=0;i--){
             free(TR[i]);
         }
         free(TR);
@@ -1846,33 +1882,36 @@ namespace progressivePIP{
     }
     void add_sequence_to_alignment(ProgressivePIPResult &result,
                                    VirtualNode *tree,
-                                   Alignment *alignment){
+                                   bpp::SequenceContainer *sequences){
 
-        unsigned long index=0;
-        bool is_found=false;
-        for(unsigned long i=0;i<alignment->align_dataset.size();i++){
-            if(tree->vnode_name.compare(alignment->align_dataset.at(i)->seq_name)==0){
-                index=i;
-                is_found=true;
-                break;
-            }
-        }
+//        unsigned long index=0;
+//        bool is_found=false;
+//        for(unsigned long i=0;i<alignment->align_dataset.size();i++){
+//            if(tree->vnode_name.compare(alignment->align_dataset.at(i)->seq_name)==0){
+//                index=i;
+//                is_found=true;
+//                break;
+//            }
+//        }
+//
+//        if(!is_found){
+//            perror("ERROR: sequence not found\n");
+//            exit(EXIT_FAILURE);
+//        }
 
-        if(!is_found){
-            perror("ERROR: sequence not found\n");
-            exit(EXIT_FAILURE);
-        }
+        std::string seqname = sequences->getSequencesNames().at(tree->vnode_seqid);
+        std::string seqdata = sequences->getSequence(seqname).toString();
 
-        result.MSAs.emplace_back(std::make_pair(alignment->align_dataset.at(index)->seq_name,alignment->align_dataset.at(index)->seq_data));
+
+        result.MSAs.emplace_back(std::make_pair(seqname,seqdata));
 
     }
 
     //DP-PIP
     ProgressivePIPResult compute_DP3D_PIP_tree_cross(VirtualNode *tree,
                                                      Likelihood *likelihood,
-                                                     Alignment *alignment,
+                                                     bpp::SequenceContainer *sequences,
                                                      const bpp::Alphabet *alphabet,
-                                                     SiteContainer *sites,
                                                      double gamma_rate,
                                                      bool local_tree) {
 
@@ -1881,14 +1920,14 @@ namespace progressivePIP{
 
         if (tree->isTerminalNode()) {
 
-            add_sequence_to_alignment(result, tree, alignment);
+            add_sequence_to_alignment(result, tree, sequences);
 
         } else{
 
-            ProgressivePIPResult result_L = compute_DP3D_PIP_tree_cross(tree->getNodeLeft(), likelihood, alignment, alphabet, sites, gamma_rate, local_tree);
-            ProgressivePIPResult result_R = compute_DP3D_PIP_tree_cross(tree->getNodeRight(), likelihood, alignment, alphabet, sites, gamma_rate, local_tree);
+            ProgressivePIPResult result_L = compute_DP3D_PIP_tree_cross(tree->getNodeLeft(), likelihood, sequences, alphabet, gamma_rate, local_tree);
+            ProgressivePIPResult result_R = compute_DP3D_PIP_tree_cross(tree->getNodeRight(),likelihood, sequences, alphabet, gamma_rate, local_tree);
 
-            result = compute_DP3D_PIP(result_L, result_R, tree, likelihood, alignment, alphabet, gamma_rate, local_tree);
+            result = compute_DP3D_PIP(result_L, result_R, tree, likelihood, sequences, alphabet, gamma_rate, local_tree);
 
         }
 

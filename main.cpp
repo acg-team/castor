@@ -276,6 +276,7 @@ int main(int argc, char *argv[]) {
     double logLK = 0;
     auto likelihood = new Likelihood();
     std::vector<VirtualNode *> allnodes_postorder;
+    progressivePIP::ProgressivePIPResult MSA;
     if (!FLAGS_alignment) {
         tree = UtreeBppUtils::convertTree_u2b(utree);
 
@@ -337,21 +338,20 @@ int main(int argc, char *argv[]) {
         // Set deletion probability to each node in the list
         likelihood->setAllBetas(allnodes_postorder);
 
+        // set probability matrix -- exponential of substitution rates
+        likelihood->computePr(allnodes_postorder, alignment->align_alphabetsize);
 
         if (FLAGS_alignment) {
 
 
             VirtualNode *root = utree->rootnode;
-            progressivePIP::ProgressivePIPResult MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, alignment, alpha, sites, 1.0, true);
+            MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, sequences, alpha, 1.0, true);
 
         }
 
 
         // Set insertion histories on each node of the list
         likelihood->setInsertionHistories(allnodes_postorder, *alignment);
-
-        // set probability matrix -- exponential of substitution rates
-        likelihood->computePr(allnodes_postorder, alignment->align_alphabetsize);
 
         // Initialise likelihood components on the tree
         likelihood->computeFV(allnodes_postorder, *alignment); //TODO: Add weight per column
