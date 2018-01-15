@@ -49,7 +49,6 @@
 #include <Bpp/Io/OutputStream.h>
 #include <Bpp/App/BppApplication.h>
 #include <Bpp/App/ApplicationTools.h>
-#include <Bpp/Exceptions.h>
 
 /*
 * From SeqLib:
@@ -63,7 +62,6 @@
 * From PhylLib:
 */
 #include <Bpp/Phyl/App/PhylogeneticsApplicationTools.h>
-#include <Bpp/Phyl/Model/SubstitutionModel.h>
 #include <Bpp/Phyl/Model/Nucleotide/JCnuc.h>
 #include <Bpp/Phyl/Model/Nucleotide/K80.h>
 #include <Bpp/Phyl/Model/Nucleotide/GTR.h>
@@ -73,16 +71,12 @@
 #include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
 #include <Bpp/Phyl/Distance/BioNJ.h>
 #include <Bpp/Phyl/Io/Newick.h>
-#include <Bpp/Phyl/Tree.h>
-#include <Bpp/Phyl/TreeTemplate.h>
-#include <Bpp/Phyl/BipartitionList.h>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
 
 #include <glog/logging.h>
-#include <chrono>
 #include <Alignment.hpp>
 #include <Likelihood.hpp>
 #include <TreeRearrangment.hpp>
@@ -98,7 +92,6 @@
 
 
 using namespace tshlib;
-
 
 
 int main(int argc, char *argv[]) {
@@ -123,10 +116,10 @@ int main(int argc, char *argv[]) {
 
     NucleicAlphabet *alpha;
 
-    if(FLAGS_model_indels){
-         alpha = new bpp::DNA_EXTENDED();
+    if (FLAGS_model_indels) {
+        alpha = new bpp::DNA_EXTENDED();
         //alpha = new bpp::DNA();
-    }else{
+    } else {
         alpha = new bpp::DNA();
     }
 
@@ -134,17 +127,17 @@ int main(int argc, char *argv[]) {
     bpp::SequenceContainer *sequences;
     bpp::SiteContainer *sites;
 
-    if(FLAGS_alignment){
+    if (FLAGS_alignment) {
         sequences = seqReader.readSequences(FLAGS_input_sequences, alpha);
 
-    }else{
-        sequences  = seqReader.readAlignment(FLAGS_input_sequences, alpha);
+    } else {
+        sequences = seqReader.readAlignment(FLAGS_input_sequences, alpha);
         seqReader.readSequences(FLAGS_input_sequences, alpha);
         std::vector<std::string> seqNames = sequences->getSequencesNames();
 
-        for(int i=0; i<seqNames.size(); i++){
+        for (int i = 0; i < seqNames.size(); i++) {
             std::string stringSeq = sequences->getSequence(seqNames.at(i)).toString();
-            alignment->addSequence(seqNames.at(i),stringSeq);
+            alignment->addSequence(seqNames.at(i), stringSeq);
         }
         alignment->getAlignmentSize();
         alignment->align_num_characters.resize((unsigned long) alignment->align_length);
@@ -183,11 +176,11 @@ int main(int argc, char *argv[]) {
     //------------------------------------------------------------------------------------------------------------------
     // INIT ROOTED TREE
 
-    auto * newickReader = new bpp::Newick(false); //No comment allowed!
+    auto *newickReader = new bpp::Newick(false); //No comment allowed!
     bpp::Tree *tree = nullptr;
     try {
         tree = newickReader->read(FLAGS_input_tree); // Tree in file MyTestTree.dnd
-        LOG(INFO) << "[Input tree file] " << FLAGS_input_tree ;
+        LOG(INFO) << "[Input tree file] " << FLAGS_input_tree;
         LOG(INFO) << "[Tree parser] Input tree has " << tree->getNumberOfLeaves() << " leaves.";
     } catch (bpp::Exception e) {
         LOG(FATAL) << "[Tree parser] Error when reading tree due to: " << e.message();
@@ -204,7 +197,7 @@ int main(int argc, char *argv[]) {
 
     //------------------------------------------------------------------------------------------------------------------
 
-    if(!FLAGS_alignment) {
+    if (!FLAGS_alignment) {
         utree->prepareSetADesCountOnNodes((int) alignment->getAlignmentSize(), alignment->align_alphabetsize);
         UtreeUtils::associateNode2Alignment(alignment, utree);
 
@@ -212,7 +205,7 @@ int main(int argc, char *argv[]) {
         utree->addVirtualRootNode();
         utree->rootnode->initialiseLikelihoodComponents((int) alignment->getAlignmentSize(),
                                                         alignment->align_alphabetsize);
-    }else{
+    } else {
 
         UtreeBppUtils::associateNode2Alignment(sequences, utree);
         utree->addVirtualRootNode();
@@ -236,24 +229,25 @@ int main(int argc, char *argv[]) {
     double lambda;
     double mu;
 
-    if(!FLAGS_model_substitution.empty()){
+    if (!FLAGS_model_substitution.empty()) {
         unique_ptr<GeneticCode> gCode;
         parmap["model"] = FLAGS_model_substitution;
 
-        submodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, parmap, "", true,  false, 0);
-        if(!FLAGS_alignment){submodel->setFreqFromData(*sites);}
+        submodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
+        if (!FLAGS_alignment) { submodel->setFreqFromData(*sites); }
+        //submodel->setFreqFromData(*sites);
 
         rDist = new bpp::ConstantRateDistribution();
-        if(!FLAGS_alignment){bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);}
+        if (!FLAGS_alignment) { bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites); }
 
 
     }
 
     // Extend the substitution model with PIP
-    if(FLAGS_model_indels){
+    if (FLAGS_model_indels) {
 
-        lambda= 0.2;
-        mu=0.1;
+        lambda = 0.2;
+        mu = 0.1;
         //VLOG(1) << alpha->getGapCharacterCode();
         //auto testCS = new CanonicalStateMap(new bpp::DNA(), true);
         //auto testCS_G = new CanonicalStateMap(new bpp::DNA_EXTENDED(), false);
@@ -281,37 +275,52 @@ int main(int argc, char *argv[]) {
     double logLK = 0;
     auto likelihood = new Likelihood();
     std::vector<VirtualNode *> allnodes_postorder;
-    if(!FLAGS_alignment) {
+    if (!FLAGS_alignment) {
         tree = UtreeBppUtils::convertTree_u2b(utree);
-
 
         if (!FLAGS_model_indels) {
 
-            transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "",
-                                                                                true, false, 0);
-            tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
+            tree = UtreeBppUtils::convertTree_u2b(utree);
+            bpp::RowMatrix<double> testProb;
+            if (!FLAGS_model_indels) {
 
-        } else {
+                transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
 
-            unique_ptr<TransitionModel> test;
-            test.reset(submodel);
-            transmodel = test.release();
+                testProb = transmodel->getPij_t(0);
+                testProb = transmodel->getPij_t(1);
+                testProb = transmodel->getPij_t(2);
+                testProb = transmodel->getPij_t(3);
 
-            tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
+                transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
+                tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
 
+            } else {
+
+                unique_ptr<TransitionModel> test;
+                test.reset(submodel);
+                transmodel = test.release();
+
+                testProb = transmodel->getPij_t(0);
+                testProb = transmodel->getPij_t(1);
+                testProb = transmodel->getPij_t(2);
+                testProb = transmodel->getPij_t(3);
+                testProb = transmodel->getPij_t(4);
+
+                tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
+
+            }
+
+
+            VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
+
+            tl->initialize();
+            logLK = tl->getLogLikelihood();
+
+            VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << logLK << " \t[BPP METHODS]";
         }
-
-
-        VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
-
-        tl->initialize();
-        logLK = tl->getLogLikelihood();
-
-        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << logLK
-                << " \t[BPP METHODS]";
     }
 
-    if(FLAGS_model_indels) {
+    if (FLAGS_model_indels) {
         //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
         likelihood->Init(utree, pi, Q, mu, lambda);
 
@@ -328,10 +337,10 @@ int main(int argc, char *argv[]) {
         likelihood->setAllBetas(allnodes_postorder);
 
 
-        if(FLAGS_alignment){
+        if (FLAGS_alignment) {
 
 
-            VirtualNode *root=utree->rootnode;
+            VirtualNode *root = utree->rootnode;
             progressivePIP::ProgressivePIPResult MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, alignment, alpha, sites, 1.0, true);
 
         }
@@ -354,7 +363,7 @@ int main(int argc, char *argv[]) {
 
         // Compute the model likelihood
         logLK = likelihood->computePartialLK_WholeAlignment(allnodes_postorder, *alignment);
-        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName()  << ") = " << logLK << " \t[TSHLIB METHODS]" ;
+        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << logLK << " \t[TSHLIB METHODS]";
     }
     //----------------------------------------------
     // Remove the root
@@ -377,25 +386,25 @@ int main(int argc, char *argv[]) {
     int min_radius;
     int max_radius;
 
-    if(FLAGS_optim_topology.find("full-search") != std::string::npos){
+    if (FLAGS_optim_topology.find("full-search") != std::string::npos) {
 
         min_radius = 3;  // Minimum radius for an NNI move is 3 nodes
         max_radius = utree->getMaxNodeDistance(); // Full tree traversing from any node of the tree
 
-    }else if(FLAGS_optim_topology.find("nni-search") != std::string::npos){
+    } else if (FLAGS_optim_topology.find("nni-search") != std::string::npos) {
 
-        min_radius = 3; max_radius = 3;
+        min_radius = 3;
+        max_radius = 3;
 
-    }else if(FLAGS_optim_topology.find("spr-search") != std::string::npos){
+    } else if (FLAGS_optim_topology.find("spr-search") != std::string::npos) {
 
         min_radius = 4;
         max_radius = utree->getMaxNodeDistance();
 
-    }else{
+    } else {
 
         LOG(FATAL) << "Exiting program without tree search optimisation";
     }
-
 
 
     std::vector<VirtualNode *> list_vnode_to_root;
@@ -415,7 +424,7 @@ int main(int argc, char *argv[]) {
         // Print the list of moves for the current P node (source node)
         //rearrangmentList.printMoves();
 
-        VLOG(1) << "[utree rearrangment] [" << rearrangmentList->mset_strategy <<"] Found "
+        VLOG(1) << "[utree rearrangment] [" << rearrangmentList->mset_strategy << "] Found "
                 << rearrangmentList->getNumberOfMoves() << " candidate moves for node "
                 << vnode->vnode_name;
 
@@ -468,7 +477,7 @@ int main(int argc, char *argv[]) {
 
 
                 likelihood->recombineAllFv(list_vnode_to_root);
-                likelihood->setInsertionHistories(list_vnode_to_root,*alignment);
+                likelihood->setInsertionHistories(list_vnode_to_root, *alignment);
 
                 logLK = LKFunc::LKRearrangment(*likelihood, allnodes_postorder, *alignment);
 
@@ -495,7 +504,7 @@ int main(int argc, char *argv[]) {
 
             }
 
-            if(!FLAGS_model_indels){
+            if (!FLAGS_model_indels) {
                 tree = UtreeBppUtils::convertTree_u2b(utree);
                 tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
                 tl->initialize();
@@ -510,10 +519,10 @@ int main(int argc, char *argv[]) {
 
             // ------------------------------------
             // Some abbellishments for the console output
-            if(rearrangmentList->getMove(i)->move_lk>0){
+            if (rearrangmentList->getMove(i)->move_lk > 0) {
                 start_col_line = "\033[1;34m";
                 end_col_line = "\033[0m";
-            }else{
+            } else {
                 start_col_line = "";
                 end_col_line = "";
 
@@ -521,7 +530,7 @@ int main(int argc, char *argv[]) {
 
             // Move exection details
             VLOG(2) << "[apply  move]\t" << rearrangmentList->getMove(i)->move_class << "." << std::setfill('0') << std::setw(3) << i
-                    << " | (" << isLKImproved <<") " << start_col_line<< rearrangmentList->getMove(i)->move_lk<<end_col_line << "\t"
+                    << " | (" << isLKImproved << ") " << start_col_line << rearrangmentList->getMove(i)->move_lk << end_col_line << "\t"
                     << " | (" << rearrangmentList->getSourceNode()->vnode_name << "->" << rearrangmentList->getMove(i)->getTargetNode()->vnode_name << ")"
                     << "\t[" << rearrangmentList->getMove(i)->move_radius << "] | "
                     << utree->printTreeNewick(true) << std::endl;
@@ -544,7 +553,7 @@ int main(int argc, char *argv[]) {
 
             computeMoveLikelihood = false;
             // ------------------------------------
-            if(FLAGS_model_indels) {
+            if (FLAGS_model_indels) {
                 if (FLAGS_lkmove_bothways) {
 
                     // ------------------------------------
@@ -566,7 +575,7 @@ int main(int argc, char *argv[]) {
                 }
 
             }
-            if(!FLAGS_model_indels){
+            if (!FLAGS_model_indels) {
                 tree = UtreeBppUtils::convertTree_u2b(utree);
                 tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
                 tl->initialize();
@@ -579,17 +588,17 @@ int main(int argc, char *argv[]) {
             utree->removeVirtualRootNode();
             // ------------------------------------
             // Some abbellishments for the console output
-            if(logLK>0){
+            if (logLK > 0) {
                 start_col_line = "\033[1;34m";
                 end_col_line = "\033[0m";
-            }else{
+            } else {
                 start_col_line = "";
                 end_col_line = "";
 
             }
             // Move exection details
             VLOG(2) << "[revert move]\t" << rearrangmentList->getMove(i)->move_class << "." << std::setfill('0') << std::setw(3) << i
-                    << " | (" << isLKImproved <<") " << start_col_line<< logLK <<end_col_line << "\t"
+                    << " | (" << isLKImproved << ") " << start_col_line << logLK << end_col_line << "\t"
                     << " | (" << rearrangmentList->getMove(i)->getTargetNode()->vnode_name << "->" << rearrangmentList->getSourceNode()->vnode_name << ")"
                     << "\t[" << rearrangmentList->getMove(i)->move_radius << "] | "
                     << utree->printTreeNewick(true) << std::endl;
