@@ -85,12 +85,18 @@ DEFINE_bool(model_indels, false, "Extend the substitution model to include Inser
 // Compute likelihood
 DEFINE_bool(lkmove_bothways, false, "Compute likelihood of the model for each topology rearrangment (apply and revert)");
 
+// Compute alignment
+DEFINE_bool(alignment, false, "Compute alignment of the given fasta file");
+
+
+
 
 
 // Declarations
 DECLARE_string(model_substitution);
 DECLARE_bool(model_indels);
 DECLARE_bool(lkmove_bothways);
+DECLARE_bool(alignment);
 DECLARE_string(input_sequences);
 DECLARE_string(input_tree);
 

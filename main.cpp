@@ -131,7 +131,19 @@ int main(int argc, char *argv[]) {
     }
 
     bpp::Fasta seqReader;
-    bpp::SequenceContainer *sequences = seqReader.readAlignment(FLAGS_input_sequences, alpha);
+    bpp::SequenceContainer *sequences;
+
+    if(FLAGS_alignment){
+        sequences = seqReader.readSequences(FLAGS_input_sequences, alpha);
+        VLOG(1) << sequences->getSequence("A").getValue(0);
+        exit(1);
+
+    }else{
+        sequences  = seqReader.readAlignment(FLAGS_input_sequences, alpha);
+
+    }
+
+    seqReader.readSequences(FLAGS_input_sequences, alpha);
     std::vector<std::string> seqNames = sequences->getSequencesNames();
 
     for(int i=0; i<seqNames.size(); i++){
@@ -263,6 +275,40 @@ int main(int argc, char *argv[]) {
 
     tree = UtreeBppUtils::convertTree_u2b(utree);
 
+
+    if(FLAGS_model_indels) {
+        //------------------------------------------------------------------------------------------------------------------
+        // GENERATE MSA
+
+        //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
+        likelihood->Init(utree, pi, Q, mu, lambda);
+
+        // COMPUTE LK GIVEN TREE TOPOLOGY AND MSA
+        logLK = 0.0;
+
+        // Traverse the tree in post-order filling a list of node ready for traversal
+        likelihood->compileNodeList_postorder(allnodes_postorder, utree->rootnode);
+
+        // Set survival probability to each node in the list
+        likelihood->setAllIotas(allnodes_postorder);
+
+        // Set deletion probability to each node in the list
+        likelihood->setAllBetas(allnodes_postorder);
+
+        // Set insertion histories on each node of the list
+        //likelihood->setInsertionHistories(allnodes_postorder, *alignment);
+
+        // set probability matrix -- exponential of substitution rates
+        likelihood->computePr(allnodes_postorder, alignment->align_alphabetsize);
+
+        VirtualNode *root=utree->rootnode;
+        auto alphabet = sites->getSite(0).getAlphabet();
+        progressivePIP::ProgressivePIPResult MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, alignment, alphabet, sites, 1.0, true);
+    }
+
+
+
+
     if(!FLAGS_model_indels) {
 
         transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true,  false, 0);
@@ -332,18 +378,6 @@ int main(int argc, char *argv[]) {
     //----------------------------------------------
     // Print tree structure on console
     //utree->printAllNodesNeighbors();
-
-
-
-
-
-    //------------------------------------------------------------------------------------------------------------------
-    // GENERATE MSA
-
-    //VirtualNode *root=utree->rootnode;
-    //auto alphabet = sites->getSite(0).getAlphabet();
-    //progressivePIP::ProgressivePIPResult MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, alignment, alphabet, sites, 1.0, true);
-
 
     //------------------------------------------------------------------------------------------------------------------
     // DEFINE, APPLY & REVERT TREE REARRANGEMENTS
