@@ -77,6 +77,7 @@
 #include <unsupported/Eigen/MatrixFunctions>
 
 #include <glog/logging.h>
+#include <chrono>
 #include <Alignment.hpp>
 #include <Likelihood.hpp>
 #include <TreeRearrangment.hpp>
