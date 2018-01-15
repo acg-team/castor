@@ -115,6 +115,8 @@ RHomogeneousTreeLikelihood_PIP::~RHomogeneousTreeLikelihood_PIP() {
 void RHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) throw(Exception) {
     // This call initialises the data structure to compute the partial likelihoods of the nodes (it allows for ASRV distributions to be added on top of the s.m.)
     likelihoodData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);
+
+
 }
 
 
@@ -136,6 +138,59 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     nbSites_ = likelihoodData_->getNumberOfSites();
     nbDistinctSites_ = likelihoodData_->getNumberOfDistinctSites();
     nbStates_ = likelihoodData_->getNumberOfStates();
+
+
+    //bpp::Node *root = tree_->getRootNode();
+
+    // Add vectors for storing SetA array
+    for(int i=0;i<nbSites_;i++){
+        for(bpp::Node *node:tree_->getNodes()){
+            std::vector<int> descCount_;
+            std::vector<bool> setA_;
+            descCount_.resize(nbSites_);
+            setA_.resize(nbSites_);
+
+            descCountData_.insert(std::make_pair(node->getId(),std::make_pair(descCount_,node)));
+            setAData_.insert(std::make_pair(node->getId(),std::make_pair(setA_,node)));
+
+            if (node->isLeaf()){
+
+                descCountData_[node->getId()].first.at(i) = (sites.getSequence(node->getName()).getValue(i) == sites.getAlphabet()->getGapCharacterCode() ? 0:1);
+
+                //vnode->vnode_descCount_operative.at(i) = (MSA.align_dataset.at(vnode->vnode_seqid)->seq_data.at(i) == '-' ? 0 : 1);
+
+            }else{
+
+                for(auto &son: node->getSons()){
+
+                    descCountData_[node->getId()].first.at(i) += getNodeDescCountForASite(son,i); //descCountData_[son->getId()].first.at(i);
+
+                }
+
+            }
+
+            int nonGaps_ = 0;
+            int siteValue = 0;
+            int gapValue = sites.getAlphabet()->getGapCharacterCode();
+            for(int s=0;s<sites.getNumberOfSequences();s++ ){
+
+                siteValue = sites.getSite(i).getValue(s);
+
+                if (gapValue != sites.getSite(i).getValue(s)){
+                    nonGaps_++;
+                }
+            }
+
+            setAData_[node->getId()].first.at(i) = (getNodeDescCountForASite(node,i) == nonGaps_);
+
+            //vnode->vnode_setA_operative.at(i) = (vnode->vnode_descCount_operative.at(i) == MSA.align_num_characters.at(i));
+
+
+
+        }
+    }
+
+
 
     if (verbose_)
         ApplicationTools::displayResult("Number of distinct sites", TextTools::toString(nbDistinctSites_));

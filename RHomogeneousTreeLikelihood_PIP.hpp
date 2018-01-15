@@ -58,6 +58,10 @@ namespace bpp {
     private:
 
         mutable DRASRTreeLikelihoodData *likelihoodData_;
+        mutable std::map<int, std::pair<std::vector<int>, bpp::Node*>> descCountData_;
+        mutable std::map<int, std::pair<std::vector<bool>, bpp::Node*>> setAData_;
+
+
 
     protected:
         double minusLogLik_;
@@ -201,6 +205,12 @@ namespace bpp {
         /** @} */
 
     public:    // Specific methods:
+
+        std::vector<int> getNodeDescCounts(bpp::Node *node, int siteId){ return descCountData_[node->getId()].first;}
+
+        int getNodeDescCountForASite(bpp::Node *node, int siteId){ return descCountData_[node->getId()].first.at(siteId);}
+
+        bool getSetAForANodeForASite(bpp::Node *node, int siteId){ return setAData_[node->getId()].first.at(siteId);}
 
         DRASRTreeLikelihoodData *getLikelihoodData() { return likelihoodData_; }
 
