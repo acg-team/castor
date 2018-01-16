@@ -58,6 +58,7 @@ namespace bpp {
     private:
 
         mutable DRASRTreeLikelihoodData *likelihoodData_;
+        mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;
         mutable std::map<int, std::pair<std::vector<int>, bpp::Node*>> descCountData_;
         mutable std::map<int, std::pair<std::vector<bool>, bpp::Node*>> setAData_;
         mutable std::map<bpp::Node*, double> iotasData_;
