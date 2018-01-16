@@ -60,7 +60,8 @@ namespace bpp {
         mutable DRASRTreeLikelihoodData *likelihoodData_;
         mutable std::map<int, std::pair<std::vector<int>, bpp::Node*>> descCountData_;
         mutable std::map<int, std::pair<std::vector<bool>, bpp::Node*>> setAData_;
-
+        mutable std::map<bpp::Node*, double> iotasData_;
+        mutable std::map<bpp::Node*, double> betasData_;
 
 
     protected:
@@ -259,6 +260,15 @@ namespace bpp {
          * @param node The node at which likelihood values must be displayed.
          */
         virtual void displayLikelihood(const Node *node);
+
+
+        /**
+         * @brief This method sets the iota value for all the nodes in the tree
+         */
+        virtual void setAllIotas();
+
+        virtual void setAllBetas();
+
 
         //friend class RHomogeneousMixedTreeLikelihood;
     };

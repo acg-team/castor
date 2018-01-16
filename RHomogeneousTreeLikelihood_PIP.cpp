@@ -140,11 +140,17 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     nbStates_ = likelihoodData_->getNumberOfStates();
 
 
-    //bpp::Node *root = tree_->getRootNode();
+    // Initialise iotas and betas maps
+    for(bpp::Node *node:tree_->getNodes()) {
+        iotasData_.insert(std::make_pair(node, 0));
+        betasData_.insert(std::make_pair(node, 0));
+    }
 
     // Add vectors for storing SetA array
     for(int i=0;i<nbSites_;i++){
         for(bpp::Node *node:tree_->getNodes()){
+
+            // Initialize vectors descCount_ and setA_
             std::vector<int> descCount_;
             std::vector<bool> setA_;
             descCount_.resize(nbSites_);
@@ -153,11 +159,10 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
             descCountData_.insert(std::make_pair(node->getId(),std::make_pair(descCount_,node)));
             setAData_.insert(std::make_pair(node->getId(),std::make_pair(setA_,node)));
 
+            // Computing descCount + setA
             if (node->isLeaf()){
 
                 descCountData_[node->getId()].first.at(i) = (sites.getSequence(node->getName()).getValue(i) == sites.getAlphabet()->getGapCharacterCode() ? 0:1);
-
-                //vnode->vnode_descCount_operative.at(i) = (MSA.align_dataset.at(vnode->vnode_seqid)->seq_data.at(i) == '-' ? 0 : 1);
 
             }else{
 
@@ -169,28 +174,24 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
 
             }
 
+            // Compute the total number of characters (exc. gap) for the current site
             int nonGaps_ = 0;
-            int siteValue = 0;
-            int gapValue = sites.getAlphabet()->getGapCharacterCode();
+
             for(int s=0;s<sites.getNumberOfSequences();s++ ){
-
-                siteValue = sites.getSite(i).getValue(s);
-
-                if (gapValue != sites.getSite(i).getValue(s)){
-                    nonGaps_++;
-                }
+                //siteValue = sites.getSite(i).getValue(s);
+                if (sites.getAlphabet()->getGapCharacterCode() != sites.getSite(i).getValue(s)) nonGaps_++;
             }
 
             setAData_[node->getId()].first.at(i) = (getNodeDescCountForASite(node,i) == nonGaps_);
 
-            //vnode->vnode_setA_operative.at(i) = (vnode->vnode_descCount_operative.at(i) == MSA.align_num_characters.at(i));
-
-
-
         }
     }
 
+    // Set all iotas
+    setAllIotas();
 
+    // Set all betas
+    setAllBetas();
 
     if (verbose_)
         ApplicationTools::displayResult("Number of distinct sites", TextTools::toString(nbDistinctSites_));
@@ -383,3 +384,64 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
 
     minusLogLik_ = -getLogLikelihood();
 }
+
+
+void RHomogeneousTreeLikelihood_PIP::setAllIotas() {
+
+    Parameter mu_ = model_->getParameter("mu");
+    double tau_ = tree_->getTotalLength();
+    double T_;
+
+    if (fabs(mu_.getValue()) < 1e-8) {
+        perror("ERROR in set_iota: mu too small");
+    }
+
+    // Compute tau value;
+    T_ = tau_ + 1 / mu_.getValue();
+
+    if (fabs(T_) < 1e-8) {
+        perror("ERROR in set_iota: T too small");
+    }
+
+    for (auto &node:tree_->getNodes()) {
+
+        if (!node->hasFather()){
+
+            iotasData_[node] = (1 / mu_.getValue()) / T_;
+
+        } else {
+
+            iotasData_[node] = node->getDistanceToFather() / T_;
+
+        }
+
+    }
+
+}
+
+
+void RHomogeneousTreeLikelihood_PIP::setAllBetas() {
+
+    Parameter mu_ = model_->getParameter("mu");
+
+    if (fabs(mu_.getValue()) < 1e-8) {
+        perror("ERROR in set_iota: mu too small");
+    }
+
+
+    for (auto &node:tree_->getNodes()) {
+
+        if (!node->hasFather()){
+
+            betasData_[node] = 1.0;
+
+        } else {
+            betasData_[node] = (1.0 - exp(mu_.getValue() * node->getDistanceToFather())) / (mu_.getValue() * node->getDistanceToFather());
+            //node->vnode_beta = (1.0 - exp(-this->mu * vnode->vnode_branchlength)) / (this->mu * vnode->vnode_branchlength);
+        }
+
+    }
+
+}
+
+
