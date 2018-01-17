@@ -130,7 +130,6 @@ int main(int argc, char *argv[]) {
 
     if (FLAGS_alignment) {
         sequences = seqReader.readSequences(FLAGS_input_sequences, alpha);
-
     } else {
         sequences = seqReader.readAlignment(FLAGS_input_sequences, alpha);
         seqReader.readSequences(FLAGS_input_sequences, alpha);
@@ -328,13 +327,24 @@ int main(int argc, char *argv[]) {
         if (FLAGS_alignment) {
 
 
-            //VirtualNode *root = utree->rootnode;
-            //MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, sequences, alpha, 1.0, true);
+            VirtualNode *root = utree->rootnode;
+            MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, sequences, alpha, 1.0, true);
 
 
+            for (int i = 0; i < MSA.MSAs.size(); i++) {
+                alignment->addSequence(MSA.MSAs.at(i).first,MSA.MSAs.at(i).second);
+            }
+            alignment->getAlignmentSize();
+            alignment->align_num_characters.resize((unsigned long) alignment->align_length);
+            alignment->align_alphabetsize += 1; // DNA +1 per PIP
+            alignment->countNumberCharactersinColumn();
+
+            exit(1);
+
+            /*
             int dim=20;
-            int num_times=100;
-            bpp::ColMatrix<double> AA;
+            int num_times=10;
+            bpp::RowMatrix<double> AA;
             AA.resize(dim,dim);
 
             Eigen::MatrixXd A;
@@ -348,7 +358,7 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            bpp::ColMatrix<double> BB;
+            bpp::RowMatrix<double> BB;
             BB.resize(dim,dim);
             std::chrono::high_resolution_clock::time_point t1_BPP = std::chrono::high_resolution_clock::now();
             for(int i=0;i<num_times;i++){
@@ -361,7 +371,7 @@ int main(int argc, char *argv[]) {
             Eigen::MatrixXd B;
             B.resize(dim,dim);
             std::chrono::high_resolution_clock::time_point t1_EIG = std::chrono::high_resolution_clock::now();
-            for(int i=0;i<10;i++){
+            for(int i=0;i<num_times;i++){
                 B=A.exp();
             }
             std::chrono::high_resolution_clock::time_point t2_EIG = std::chrono::high_resolution_clock::now();
@@ -371,6 +381,7 @@ int main(int argc, char *argv[]) {
             //std::cout<<B;
             //std::cout<<std::endl;
             exit(1);
+            */
 
         }
 
