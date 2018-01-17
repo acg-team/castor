@@ -91,6 +91,17 @@ DEFINE_bool(alignment, false, "Compute alignment of the given fasta file");
 
 
 
+// 3.1 PIP params
+DEFINE_double(lambda_PIP, 1.0, "insertion rate (lambda)");
+DEFINE_double(mu_PIP, 1.0, "deletion rate (mu)");
+
+// 4. Output
+
+// 4.1 MSA
+DEFINE_string(output_msa, "path/to/fasta.fa", "File path for output MSA [FASTA]");
+
+// 4.2 LK
+DEFINE_string(output_lk, "path/to/lk", "File path for output lk");
 
 
 // Declarations
@@ -102,5 +113,9 @@ DECLARE_bool(alignment);
 DECLARE_string(input_sequences);
 DECLARE_string(input_tree);
 
+DECLARE_string(output_msa);
+DECLARE_string(output_lk);
+DECLARE_double(lambda_PIP);
+DECLARE_double(mu_PIP);
 
 #endif //MINIJATI_CLI_PARSER_HPP
