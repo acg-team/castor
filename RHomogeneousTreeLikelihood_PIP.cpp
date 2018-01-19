@@ -926,7 +926,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
 
 
                 if (setAData_[node->getId()].first.at(i)) {
-
+                    VLOG(3) << "Likelihood for setA of " << node->getName() << "@"<<i;
                     if (!node->isLeaf()) {
                         // this compresses the vector into a scalar (dot product)
                         double partialLK = 0;
