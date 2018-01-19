@@ -66,6 +66,10 @@ namespace bpp {
         mutable std::map<int, std::pair<std::vector<bool>, bpp::Node*>> setAData_;
         mutable std::map<const bpp::Node*, double> iotasData_;
         mutable std::map<const bpp::Node*, double> betasData_;
+
+        //TODO: @max please add vector of integers for character at the leaf for each (LG: done it already!)
+        mutable std::map<const bpp::Node*, std::vector<std::vector<int>>> indicatorFun_;
+
         mutable double nu_;
         mutable double tau_;
 
@@ -318,6 +322,9 @@ namespace bpp {
 
 
         void printFV(Node *node, VVVdouble *likelihoodvector);
+
+
+        double computeLikelihoodWholeAlignment()const;
 
 
         //friend class RHomogeneousMixedTreeLikelihood;

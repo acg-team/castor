@@ -159,17 +159,23 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     for(bpp::Node *node:tree_->getNodes()) {
         iotasData_.insert(std::make_pair(node, 0));
         betasData_.insert(std::make_pair(node, 0));
+        indicatorFun_[node].resize(nbSites_);
     }
 
     // Add vectors for storing SetA array
     for(int i=0;i<nbSites_;i++){
+
+        unsigned long idxSite = likelihoodData_->getRootArrayPositions().at(i);
+
         for(bpp::Node *node:tree_->getNodes()){
 
-            // Initialize vectors descCount_ and setA_
+            // Initialize vectors descCount_ and setA_ and indicatorFunctionVector
             std::vector<int> descCount_;
             std::vector<bool> setA_;
             descCount_.resize(nbSites_);
             setA_.resize(nbSites_);
+            indicatorFun_[node].at(i).resize(nbStates_);
+
 
             descCountData_.insert(std::make_pair(node->getId(),std::make_pair(descCount_,node)));
             setAData_.insert(std::make_pair(node->getId(),std::make_pair(setA_,node)));
@@ -178,6 +184,8 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
             if (node->isLeaf()){
 
                 descCountData_[node->getId()].first.at(i) = (sites.getSequence(node->getName()).getValue(i) == sites.getAlphabet()->getGapCharacterCode() ? 0:1);
+
+                indicatorFun_[node].at(i).at(sites.getSequence(node->getName()).getValue(i))=1;
 
             }else{
 
@@ -226,145 +234,8 @@ double RHomogeneousTreeLikelihood_PIP::getLikelihood() const {
 
 double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
 
-    double ll = 0;
-    double ll_empty = 0;
+    return computeLikelihoodWholeAlignment();
 
-    // Initialise vector of likelihood per each site
-    std::vector<double> la(nbSites_);
-    std::vector<double> la_empty(1);
-
-    for (size_t i = 0; i < nbSites_; i++) {
-
-        double lk_site = 0;
-        double lk_site_empty = 0;
-
-        for(auto &node:likelihoodNodes_) {
-
-            for (size_t c = 0; c < nbClasses_; c++) {
-
-                double fv_site = 0;
-                double fv_empty = 0;
-
-                Vdouble *lknode_i_c = &likelihoodData_->getLikelihoodArray(node->getId())[likelihoodData_->getRootArrayPosition(i)][c];
-                Vdouble *lknode_c_empty = &likelihoodEmptyData_->getLikelihoodArray(node->getId())[likelihoodEmptyData_->getRootArrayPosition(0)][c];
-
-                // this compresses the vector into a scalar (dot product)
-                for (size_t s = 0; s < nbStates_; s++) {
-
-                    // If the setA is active for the node and the site, then multiply each entry of the fv vector for its frequency
-                    if (setAData_[node->getId()].first.at(i)) {
-                        fv_site += (*lknode_i_c)[s] * rootFreqs_[s];                        // this produces a scalar
-                    } else {
-                        fv_site += (*lknode_i_c)[s];            //* rootFreqs_[i];          // this produces a scalar
-                        fv_empty += (*lknode_c_empty)[0];       //* rootFreqs_[i];          // this produces a scalar
-                    }
-                }
-
-                // If the setA is active for the node and the site, then add iota and beta too
-                if (setAData_[node->getId()].first.at(i)) {
-                    fv_site *= iotasData_[node] * betasData_[node];                         // this produces a scalar
-                }
-
-                // Multiply the likelihood value of the site for the ASVR category probability
-                double li = fv_site * rateDistribution_->getProbability(c);
-                double li_empty = fv_empty * rateDistribution_->getProbability(c);
-
-                // Corrects for negative likelihood values
-                if (li > 0) lk_site += li;
-                if (li_empty > 0) lk_site_empty += li_empty;
-
-
-            }
-        }
-
-        la[i] = log(lk_site);
-        la_empty[0] = log(lk_site_empty);
-    }
-
-
-    // Sum the likelihood value for each site
-    sort(la.begin(), la.end());
-    for (size_t i = nbSites_; i > 0; i--) {
-        ll += la[i - 1];
-    }
-
-
-    // Empty column
-    ll_empty = la_empty[0];
-
-    // compute PHi
-    double log_phi_value = computePhi(ll_empty);
-    ll += log_phi_value;
-
-    return ll;
-
-        /*
-        >vnode_setA_operative.at(alignment_column)) {
-
-            VLOG(3) << "Likelhood for setA of  " << vnode->vnode_name;
-
-            if (vnode->isTerminalNode()) {
-
-                lk_col += vnode->getIota() * vnode->getBeta() * vnode->vnode_Fv_terminal.at(alignment_column);
-
-            } else {
-                Eigen::VectorXd &Left = vnode->getNodeLeft()->vnode_Fv_operative.at(alignment_column);
-                Eigen::VectorXd &Right = vnode->getNodeRight()->vnode_Fv_operative.at(alignment_column);
-                lk_col += vnode->getIota() * vnode->getBeta() * ((Left).cwiseProduct(Right)).dot(this->pi);
-
-            }
-
-        }
-         */
-
-
-
-
-    // Per each site of the alignment compress the likelihood of each node and each asvr category
-    for (size_t i = 0; i < nbSites_; i++) {
-
-        double lic = 0;
-        double lic_empty = 0;
-
-        for (size_t c = 0; c < nbClasses_; c++) {
-
-            double l = 0;
-            double l_empty = 0;
-
-            Vdouble *la = &likelihoodData_->getLikelihoodArray(tree_->getRootNode()->getId())[likelihoodData_->getRootArrayPosition(i)][c];
-            Vdouble *la_empty = &likelihoodEmptyData_->getLikelihoodArray(tree_->getRootNode()->getId())[likelihoodEmptyData_->getRootArrayPosition(0)][c];
-
-            for (size_t i = 0; i < nbStates_; i++) {
-
-                l += (*la)[i] * rootFreqs_[i];
-                l_empty += (*la_empty)[0] * rootFreqs_[i];
-
-            }
-
-            double li = l * rateDistribution_->getProbability(c);
-            double li_empty = l_empty * rateDistribution_->getProbability(c);
-
-            if (li > 0) lic += li;
-            if (li_empty > 0) lic_empty += li_empty;
-        }
-        la[i] = log(lic);
-        la_empty[0] = log(lic_empty);
-    }
-
-    // Sum the likelihood value for each site
-    sort(la.begin(), la.end());
-    for (size_t i = nbSites_; i > 0; i--) {
-        ll += la[i - 1];
-    }
-
-    // Empty column
-    ll_empty = la_empty[0];
-
-    // compute PHi
-    log_phi_value = computePhi(ll_empty);
-    ll += log_phi_value;
-
-    return ll;
 }
 
 
@@ -1024,6 +895,156 @@ void RHomogeneousTreeLikelihood_PIP::printFV(Node *node, VVVdouble *likelihoodve
     }
     VLOG(3) << "-----------------------------------------------------";
 
+
+}
+
+double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
+
+    double ll = 0;
+    double ll_empty = 0;
+
+    // Initialise vector of likelihood per each site
+    std::vector<double> la(nbSites_);
+    std::vector<double> la_empty(1);
+
+    for (size_t i = 0; i < nbSites_; i++) {
+
+        //unsigned long idxSite = likelihoodData_->getRootArrayPosition(i);
+
+        double lk_site = 0;
+        double lk_site_empty = 0;
+
+        for (auto &node:likelihoodNodes_) {
+
+            for (size_t c = 0; c < nbClasses_; c++) {
+
+                double fv_site = 0;
+                double fv_empty = 0;
+
+                Vdouble *lknode_i_c = &likelihoodData_->getLikelihoodArray(node->getId())[likelihoodData_->getRootArrayPosition(i)][c];
+                Vdouble *lknode_c_empty = &likelihoodEmptyData_->getLikelihoodArray(node->getId())[likelihoodEmptyData_->getRootArrayPosition(0)][c];
+
+
+                if (setAData_[node->getId()].first.at(i)) {
+
+                    if (!node->isLeaf()) {
+                        // this compresses the vector into a scalar (dot product)
+                        double partialLK = 0;
+
+                        for (size_t s = 0; s < nbStates_; s++) {
+
+                            partialLK += (*lknode_i_c)[s] * rootFreqs_[s];                        // this produces a scalar
+                        }
+                        fv_site += iotasData_[node] * betasData_[node] * partialLK;
+
+                    } else {
+                        double partialLK = 0;
+                        //TODO: The rootFreq should be equal to the true site/node  @MAX  LG: DONE!
+                        for (size_t s = 0; s < nbStates_; s++) {
+
+                            partialLK += indicatorFun_[node][i][s] * rootFreqs_[s];                        // this produces a scalar
+                        }
+                        fv_site += (iotasData_[node] * betasData_[node]) * partialLK;
+                    }
+
+
+                    // If the setA is active for the node and the site, then multiply each entry of the fv vector for its frequency
+
+                }
+
+
+                // empty
+                if(node->isLeaf()) {
+                    double partialLK = 0;
+                    for (size_t s = 0; s < nbStates_; s++) {
+
+                        partialLK += indicatorFun_[node][i][s] * rootFreqs_[s];                        // this produces a scalar
+                    }
+
+                    fv_empty += iotasData_[node] * (1 - betasData_[node] + betasData_[node] * partialLK);
+
+
+                }else{
+
+                    double partialLK = 0;
+                    for (size_t s = 0; s < nbStates_; s++) {
+                        //TODO: The rootFreq should be equal to the true site/node  @MAX
+                        partialLK += (*lknode_c_empty)[s] * rootFreqs_[s];                        // this produces a scalar
+                    }
+
+                    fv_empty += iotasData_[node] * (1 - betasData_[node] + betasData_[node] * partialLK);
+
+                }
+
+
+                // Multiply the likelihood value of the site for the ASVR category probability
+                double li = fv_site * rateDistribution_->getProbability(c);
+                double li_empty = fv_empty * rateDistribution_->getProbability(c);
+                lk_site = li;
+                lk_site_empty = li_empty;
+            }
+
+        }
+
+        la[i] = log(lk_site);
+        la_empty[0] = (lk_site_empty);
+
+    }
+
+
+    // Corrects for negative likelihood values
+    //if (li > 0) lk_site += li;
+    //if (li_empty > 0) lk_site_empty += li_empty;
+
+    /*                  } else {
+                          fv_site += (*lknode_i_c)[s];            //* rootFreqs_[i];          // this produces a scalar
+                      }
+
+                      fv_empty += (*lknode_c_empty)[s] * rootFreqs_[s];       //* rootFreqs_[i];          // this produces a scalar
+
+                  }
+              }else{
+
+                  // If the setA is active for the node and the site, then add iota and beta too
+                  if (setAData_[node->getId()].first.at(i)) {
+                      fv_site *= iotasData_[node] * betasData_[node];                         // this produces a scalar
+                  }
+
+              }
+
+
+
+              fv_empty *= betasData_[node];
+              fv_empty += (iotasData_[node] * (1-betasData_[node]));
+
+
+
+      la[i] = log(lk_site);
+      la_empty[0] = (lk_site_empty);
+  }
+
+*/
+  // Sum the likelihood value for each site
+  sort(la.begin(), la.end());
+  for (size_t i = nbSites_; i > 0; i--) {
+      ll += la[i - 1];
+  }
+
+
+  VLOG(3) << "LK Sites [BPP] "<< ll;
+
+
+
+  // Empty column
+  ll_empty = la_empty[0];
+
+  VLOG(3) << "LK Empty [BPP] "<< ll_empty;
+
+  // compute PHi
+  double log_phi_value = computePhi(ll_empty);
+  ll += log_phi_value;
+
+    return ll;
 
 }
 

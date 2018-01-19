@@ -53,7 +53,7 @@ static bool ValidateString(const char* flagname, const std::string& path) {
 
 static bool ValidateOptimTopology(const char* flagname, const std::string& option) {
     bool status = false;
-    if(option == "full-search" || option == "smart-search" || option == "nni-search" || option == "spr-search"){
+    if(option == "full-search" || option == "smart-search" || option == "nni-search" || option == "spr-search" || option == "no-search"){
         status = true;
     }
 
@@ -73,7 +73,7 @@ DEFINE_validator(input_tree, &ValidateString);
 // 2. Optimisations
 
 // Topology
-DEFINE_string(optim_topology, "full-search,smart-search,nni-search,spr-search", "Topology optimisation under a predefined scheme");
+DEFINE_string(optim_topology, "full-search,smart-search,nni-search,spr-search,no-search", "Topology optimisation under a predefined scheme");
 DEFINE_validator(optim_topology, &ValidateOptimTopology);
 
 
