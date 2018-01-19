@@ -59,10 +59,15 @@ namespace bpp {
 
         mutable DRASRTreeLikelihoodData *likelihoodData_;
         mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;
+
+        mutable std::vector<Node *> likelihoodNodes_;
+
         mutable std::map<int, std::pair<std::vector<int>, bpp::Node*>> descCountData_;
         mutable std::map<int, std::pair<std::vector<bool>, bpp::Node*>> setAData_;
-        mutable std::map<bpp::Node*, double> iotasData_;
-        mutable std::map<bpp::Node*, double> betasData_;
+        mutable std::map<const bpp::Node*, double> iotasData_;
+        mutable std::map<const bpp::Node*, double> betasData_;
+        mutable double nu_;
+        mutable double tau_;
 
 
     protected:
@@ -152,6 +157,14 @@ namespace bpp {
         double getLikelihoodForASite(size_t site) const;
 
         double getLogLikelihoodForASite(size_t site) const;
+
+
+
+        double getLogLikelihoodSubtree(const Node *node) const;
+        double getLogLikelihoodSubtreeForASite(size_t site) const;
+        double getLogLikelihoodSubtreeForASiteForARateClass(size_t site, size_t rateClass) const;
+
+
         /** @} */
 
 
@@ -218,7 +231,14 @@ namespace bpp {
 
         const DRASRTreeLikelihoodData *getLikelihoodData() const { return likelihoodData_; }
 
+
         void computeTreeLikelihood();
+
+        /**
+         * @brief This method computes the likelihood of the tree for a list of nodes computed using a postorder-traversal
+         * @param nodeList
+         */
+        void computeTreeLikelihood(std::vector<Node *> nodeList);
 
         //virtual double getDLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
 
@@ -240,6 +260,9 @@ namespace bpp {
 
         //virtual void computeTreeD2Likelihood(const std::string &variable);
 
+        double recomputeLikelihood(std::vector<Node *> nodeList);
+
+        void computePostOrderNodeList(Node *startNode);
 
     protected:
 
@@ -248,7 +271,8 @@ namespace bpp {
          *
          * @param node The root of the subtree.
          */
-        virtual void computeSubtreeLikelihood(const Node *node); //Recursive method.
+        //virtual void computeSubtreeLikelihood(const Node *node); //Recursive method.
+        virtual void computeSubtreeLikelihood();
         //virtual void computeDownSubtreeDLikelihood(const Node *);
 
         //virtual void computeDownSubtreeD2Likelihood(const Node *);
@@ -268,7 +292,32 @@ namespace bpp {
          */
         virtual void setAllIotas();
 
+        /**
+         * @brief This method sets the beta value for all the nodes in the tree
+         */
         virtual void setAllBetas();
+
+        /**
+         * @brief This method sets to 1 all the likelihood arrays recursively from a starting node
+         * @param node The node at which the likelihood arrays must be reset
+         */
+        virtual void resetNodeLikelihoodArrays(const Node *node);
+
+        /**
+         * @brief This method updates the likelihood arrays recursively from a starting node for a
+         *        subtree
+         * @param nodelist The postorder list of nodes at which the likelihood arrays must be updated
+         */
+        virtual void recomputeFVarrays(const std::vector<Node *> nodelist);
+
+
+        double computePhi(double lkEmptyColumn) const;
+
+
+        void computeNu();
+
+
+        void printFV(Node *node, VVVdouble *likelihoodvector);
 
 
         //friend class RHomogeneousMixedTreeLikelihood;

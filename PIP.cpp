@@ -134,6 +134,10 @@ void PIP_Nuc::updateMatrices(SubstitutionModel *basemodel) {
     //normalize();
 
 
+
+
+
+
     // Compute eigen values and vectors:
     if (enableEigenDecomposition()) {
         EigenValue<double> ev(generator_);
