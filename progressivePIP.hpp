@@ -1398,7 +1398,7 @@ namespace progressivePIP{
         double valX;
         double valY;
 
-        unsigned long idx;
+        int idx;
 
         unsigned long coordSeq_1;
         unsigned long coordSeq_2;
@@ -1824,11 +1824,12 @@ namespace progressivePIP{
 
         //std::string traceback_path(depth,ALPHABET::unknow);
         std::string traceback_path (depth, ' ');
-        unsigned long id1=h-1;
-        unsigned long id2=w-1;
-        for(unsigned long lev=depth;lev>0;lev--){
+        int id1=h-1;
+        int id2=w-1;
+        for(int lev=depth;lev>0;lev--){
             set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,lev,h,w);
             idx=get_indices_T(id1,id2,up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,lev,h,w);
+            int state = TR[lev][idx];
             switch(TR[lev][idx]){
                 case MATCH_STATE:
                     id1=id1-1;
@@ -1871,7 +1872,7 @@ namespace progressivePIP{
         free(LogY[0]);
         free(LogY);
 
-        for(signed long i=last_d;i>=0;i--){
+        for(int i=last_d;i>=0;i--){
             free(TR[i]);
         }
         free(TR);

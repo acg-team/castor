@@ -50,6 +50,14 @@ void ::UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp
 
     std::string name;
 
+
+    if(source->isLeaf()){
+        target->vnode_leaf=true;
+    }else{
+        target->vnode_leaf=false;
+    }
+
+
     for(auto &bppNode:source->getSons()){
 
         auto ichild = new VirtualNode();
@@ -66,6 +74,8 @@ void ::UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp
         ichild->vnode_branchlength = bppNode->getDistanceToFather();
 
         if(!bppNode->isLeaf()){
+
+            ichild->vnode_leaf = false;
 
             target->connectNode(ichild);
             in_tree->addMember(ichild);

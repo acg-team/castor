@@ -43,6 +43,7 @@
  */
 
 #include <iostream>
+#include <fstream>
 /*
 * From Core:
 */
@@ -130,7 +131,6 @@ int main(int argc, char *argv[]) {
 
     if (FLAGS_alignment) {
         sequences = seqReader.readSequences(FLAGS_input_sequences, alpha);
-
     } else {
         sequences = seqReader.readAlignment(FLAGS_input_sequences, alpha);
         seqReader.readSequences(FLAGS_input_sequences, alpha);
@@ -147,6 +147,7 @@ int main(int argc, char *argv[]) {
 
         sites = new bpp::VectorSiteContainer(*sequences);
         size_t num_leaves = sequences->getNumberOfSequences();
+
 
         LOG(INFO) << "[Alignment] Input alignmetn has " << num_leaves << " sequences";
 
@@ -249,6 +250,10 @@ int main(int argc, char *argv[]) {
 
         lambda = 0.2;
         mu = 0.1;
+
+        lambda=FLAGS_lambda_PIP;
+        mu=FLAGS_mu_PIP;
+
         //VLOG(1) << alpha->getGapCharacterCode();
         //auto testCS = new CanonicalStateMap(new bpp::DNA(), true);
         //auto testCS_G = new CanonicalStateMap(new bpp::DNA_EXTENDED(), false);
@@ -260,8 +265,8 @@ int main(int argc, char *argv[]) {
         // Fill Q matrix
         Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());
         pi = MatrixBppUtils::Vector2Eigen(submodel->getFrequencies());
-        //std::cerr << Q << std::endl;
-        //std::cerr << pi << std::endl;
+        std::cerr << Q << std::endl;
+        std::cerr << pi << std::endl;
 
     }
     VLOG(1) << "[Substitution model] Number of states: " << (int) submodel->getNumberOfStates();
@@ -327,14 +332,42 @@ int main(int argc, char *argv[]) {
 
         if (FLAGS_alignment) {
 
+            VLOG(1) << "[ProPIP] starting MSA inference...";
 
-            //VirtualNode *root = utree->rootnode;
-            //MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, sequences, alpha, 1.0, true);
+            VirtualNode *root = utree->rootnode;
+            MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, sequences, alpha, 1.0, false);
+            //sites = new bpp::VectorSiteContainer(*sequences);
 
+            sequences = new bpp::VectorSequenceContainer(alpha);
 
+            for (int i = 0; i < MSA.MSAs.size(); i++) {
+                //auto sequence = new bpp::BasicSequence(MSA.MSAs.at(i).first,MSA.MSAs.at(i).second,alpha);
+                //sequences->setSequence(MSA.MSAs.at(i).first,*sequence,true);
+                sequences->addSequence(*(new bpp::BasicSequence(MSA.MSAs.at(i).first,MSA.MSAs.at(i).second,alpha)), true);
+            }
+
+            sites = new bpp::VectorSiteContainer(*sequences);
+
+            delete sequences;
+
+            bpp::Fasta seqWriter;
+            seqWriter.writeAlignment(FLAGS_output_msa,*sites,true);
+
+            std::ofstream lkFile;
+            lkFile.open (FLAGS_output_lk);
+            lkFile << MSA.score;
+            lkFile.close();
+
+            VLOG(1) << "LK ProPIP" << MSA.score;
+
+            VLOG(1) << "[ProPIP] ...done";
+
+            exit(EXIT_SUCCESS);
+
+            /*
             int dim=20;
-            int num_times=100;
-            bpp::ColMatrix<double> AA;
+            int num_times=10;
+            bpp::RowMatrix<double> AA;
             AA.resize(dim,dim);
 
             Eigen::MatrixXd A;
@@ -348,7 +381,7 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            bpp::ColMatrix<double> BB;
+            bpp::RowMatrix<double> BB;
             BB.resize(dim,dim);
             std::chrono::high_resolution_clock::time_point t1_BPP = std::chrono::high_resolution_clock::now();
             for(int i=0;i<num_times;i++){
@@ -361,7 +394,7 @@ int main(int argc, char *argv[]) {
             Eigen::MatrixXd B;
             B.resize(dim,dim);
             std::chrono::high_resolution_clock::time_point t1_EIG = std::chrono::high_resolution_clock::now();
-            for(int i=0;i<10;i++){
+            for(int i=0;i<num_times;i++){
                 B=A.exp();
             }
             std::chrono::high_resolution_clock::time_point t2_EIG = std::chrono::high_resolution_clock::now();
@@ -371,6 +404,7 @@ int main(int argc, char *argv[]) {
             //std::cout<<B;
             //std::cout<<std::endl;
             exit(1);
+            */
 
         }
 
