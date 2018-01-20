@@ -500,7 +500,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                                 (*_likelihoods_node_i_c)[col] = (*pxy__node_c)[col][row];
                                 // For empty column (to be opened only at the first site of the alignment)
                                 if (i == 0) {
-                                    (*_likelihoods_empty_node_i_c) = (*pxy__node_c)[row];
+                                    (*_likelihoods_empty_node_i_c)[col] = (*pxy__node_c)[col][nbStates_-1];
                                 }
                             }
                             break;
@@ -511,6 +511,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
         }
         printFV(node, _likelihoods_node);
+        printFV(node, _likelihoods_empty_node);
     }
 
 }
