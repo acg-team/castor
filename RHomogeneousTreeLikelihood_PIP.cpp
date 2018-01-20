@@ -366,7 +366,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
 
             size_t nbNodes = node->getNumberOfSons();
-
+            Vdouble testLK_node_c_i;
 
             for (size_t l = 0; l < nbNodes; l++) {
                 //For each son node,
@@ -385,7 +385,6 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                     //VVdouble *_likelihoods_son_i = &(*_likelihoods_son)[(*_patternLinks_node_son)[i]];
                     VVdouble *_likelihoods_son_i = &(*_likelihoods_son)[i];
                     VVdouble *_likelihoods_node_i = &(*_likelihoods_node)[i];
-
                     // For empty column (only one site)
                     VVdouble *_likelihoods_empty_son_i = &(*_likelihoods_empty_son)[0];
                     VVdouble *_likelihoods_empty_node_i = &(*_likelihoods_empty_node)[0];
@@ -396,7 +395,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                         //For each rate classe,
                         Vdouble *_likelihoods_son_i_c = &(*_likelihoods_son_i)[c];
                         Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
-
+                        testLK_node_c_i = (*_likelihoods_node_i_c);
                         // For empty column (to be opened only at the first site of the alignment)
                         if (i == 0) {
                             //For each rate class,
@@ -413,6 +412,8 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                             // For empty column (to be opened only at the first site of the alignment)
                             if (i == 0) (*_likelihoods_empty_node_i_c)[x] *= (*_likelihoods_empty_son_i_c)[x];
                         }
+
+
                     }
                 }
 
@@ -430,7 +431,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                         //For each rate classe,
                         Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
                         VVdouble *pxy__node_c = &(*pxy__node)[c];
-
+                        if(i==0) printPrMatrix(node, &(*pxy__node_c));
                         Vdouble temp_fv = (*_likelihoods_node_i_c);
 
                         if (i == 0) {
@@ -483,7 +484,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                     //Vdouble lk_node_i_c = (*_likelihoods_node_i)[c];  // <- debug
 
                     //VVdouble prob_node_c = (*pxy__node)[c];       // <- debug
-                    //printPrMatrix(&(*pxy__node)[c]);              // <- debug
+                    if(i==0) printPrMatrix(node, &(*pxy__node)[c]);              // <- debug
 
                     // For empty column (to be opened only at the first site of the alignment)
                     if (i == 0) {
@@ -898,8 +899,9 @@ void RHomogeneousTreeLikelihood_PIP::printFV(Node *node, VVVdouble *likelihoodve
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::printPrMatrix(VVdouble *pr){
+void RHomogeneousTreeLikelihood_PIP::printPrMatrix(Node *node, VVdouble *pr){
     std::ostringstream sout;
+    VLOG(3) << "Node: " << node->getName() << " - distance [" << node->getDistanceToFather() << "]";
 
     for(size_t x=0; x<nbStates_; x++) {
         for (size_t y = 0; y < nbStates_; y++) {

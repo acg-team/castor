@@ -248,9 +248,6 @@ int main(int argc, char *argv[]) {
     // Extend the substitution model with PIP
     if (FLAGS_model_indels) {
 
-        lambda = 0.2;
-        mu = 0.1;
-
         lambda=FLAGS_lambda_PIP;
         mu=FLAGS_mu_PIP;
 
