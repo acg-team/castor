@@ -1006,9 +1006,10 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
                 double t2 = (1 - betasData_[node] + t);
 
                 nodelk = iotasData_[node] * t2;
+                nodelk = cwiseFV;
 
             }
-            VLOG(3) << "LK Empty [class " << c <<  "] for node " << node->getName() << " = " << nodelk;
+            VLOG(3) << "LK Empty [class " << c <<  "] for node " << node->getName() << " = " << nodelk << " | iota: " << iotasData_[node] << " beta: "<< betasData_[node];
 
             lk_site_empty_class += nodelk;
             lk_site_empty = lk_site_empty_class * rateDistribution_->getProbability(c);
