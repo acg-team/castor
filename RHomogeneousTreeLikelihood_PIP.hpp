@@ -324,6 +324,9 @@ namespace bpp {
         void printFV(Node *node, VVVdouble *likelihoodvector);
 
 
+        void printPrMatrix(VVdouble *pr);
+
+
         double computeLikelihoodWholeAlignment()const;
 
 
