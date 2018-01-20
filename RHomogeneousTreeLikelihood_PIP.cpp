@@ -928,24 +928,22 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
 
     // Initialise vector of likelihood per each site
     std::vector<double> la(nbSites_);
-    std::vector<double> la_empty(1);
+    double la_empty;
 
     for (size_t i = 0; i < nbSites_; i++) {
 
         //unsigned long idxSite = likelihoodData_->getRootArrayPosition(i);
 
         double lk_site = 0;
-        double lk_site_empty = 0;
+
 
         for (auto &node:likelihoodNodes_) {
 
             for (size_t c = 0; c < nbClasses_; c++) {
 
                 double fv_site = 0;
-                double fv_empty = 0;
 
                 Vdouble *lknode_i_c = &likelihoodData_->getLikelihoodArray(node->getId())[likelihoodData_->getRootArrayPosition(i)][c];
-                Vdouble *lknode_c_empty = &likelihoodEmptyData_->getLikelihoodArray(node->getId())[likelihoodEmptyData_->getRootArrayPosition(0)][c];
 
 
                 if (setAData_[node->getId()].first.at(i)) {
@@ -971,51 +969,55 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
                     }
 
 
-                    // If the setA is active for the node and the site, then multiply each entry of the fv vector for its frequency
-
-                }
-
-
-                // empty
-                if(node->isLeaf()) {
-                    double partialLK = 0;
-                    for (size_t s = 0; s < nbStates_; s++) {
-
-                        partialLK += indicatorFun_[node][i][s] * rootFreqs_[s];                        // this produces a scalar
-                    }
-
-                    fv_empty += iotasData_[node] * (1 - betasData_[node] + betasData_[node] * partialLK);
-
-
-                }else{
-
-                    double partialLK = 0;
-                    for (size_t s = 0; s < nbStates_; s++) {
-                        //TODO: The rootFreq should be equal to the true site/node  @MAX
-                        partialLK += (*lknode_c_empty)[s] * rootFreqs_[s];                        // this produces a scalar
-                    }
-
-                    fv_empty += iotasData_[node] * (1 - betasData_[node] + betasData_[node] * partialLK);
-
                 }
 
 
                 // Multiply the likelihood value of the site for the ASVR category probability
                 double li = fv_site * rateDistribution_->getProbability(c);
-                double li_empty = fv_empty * rateDistribution_->getProbability(c);
                 lk_site = li;
-                lk_site_empty = li_empty;
             }
 
         }
 
         la[i] = log(lk_site);
-        la_empty[0] = (lk_site_empty);
-
     }
 
 
-  // Sum the likelihood value for each site
+    // Compute likelihood empty column
+    // The likelihood of the empty column must be computed only once (i.e. on the first site)
+    double lk_site_empty = 0;
+    for (auto &node:likelihoodNodes_) {
+        VVVdouble *lknode_c_empty = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
+        double nodelk=0;
+        for (size_t c = 0; c < nbClasses_; c++) {
+            double lk_site_empty_class = 0;
+
+            if (node->isLeaf()) {
+                nodelk = iotasData_[node] * (1 - betasData_[node]);
+
+            } else {
+
+                double cwiseFV = 0;
+                for (size_t s = 0; s < nbStates_; s++) {
+                    cwiseFV += (*lknode_c_empty)[0][c][s] * rootFreqs_[s];                        // this produces a scalar
+                }
+
+                double t = betasData_[node] * cwiseFV;
+                double t2 = (1 - betasData_[node] + t);
+
+                nodelk = iotasData_[node] * t2;
+
+            }
+            VLOG(3) << "LK Empty [class " << c <<  "] for node " << node->getName() << " = " << nodelk;
+
+            lk_site_empty_class += nodelk;
+            lk_site_empty = lk_site_empty_class * rateDistribution_->getProbability(c);
+
+        }
+
+    }
+
+    // Sum the likelihood value for each site
   sort(la.begin(), la.end());
   for (size_t i = nbSites_; i > 0; i--) {
       ll += la[i - 1];
@@ -1024,10 +1026,8 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
 
   VLOG(3) << "LK Sites [BPP] "<< ll;
 
-
-
   // Empty column
-  ll_empty = la_empty[0];
+  ll_empty = lk_site_empty;
 
   VLOG(3) << "LK Empty [BPP] "<< ll_empty;
 
