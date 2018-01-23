@@ -330,6 +330,10 @@ void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood(std::vector<Node *> n
 
 
 
+
+//#define VERSION_1
+
+#ifdef VERSION_1
 void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
     for(auto &node:likelihoodNodes_) {
@@ -358,6 +362,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                         (*_likelihoods_node_i_c)[x] = 1.;
 
                         if (i == 0) {
+                            //MAX
                             (*_likelihoods_empty_node)[i][c][x] = 1.;
                         }
                     }
@@ -379,23 +384,31 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                 // For empty column
                 VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(son->getId());
 
+                // For empty column (only one site)
+                VVdouble *_likelihoods_empty_son_i = &(*_likelihoods_empty_son)[0];
+                VVdouble *_likelihoods_empty_node_i = &(*_likelihoods_empty_node)[0];
+                Vdouble *_likelihoods_empty_son_i_c;
+                Vdouble *_likelihoods_empty_node_i_c;
+
                 for (size_t i = 0; i < nbSites_; i++) {
                     //For each site in the sequence,
                     // size_t patternid = (*_patternLinks_node_son)[i];     // <- debug
                     //VVdouble *_likelihoods_son_i = &(*_likelihoods_son)[(*_patternLinks_node_son)[i]];
                     VVdouble *_likelihoods_son_i = &(*_likelihoods_son)[i];
                     VVdouble *_likelihoods_node_i = &(*_likelihoods_node)[i];
-                    // For empty column (only one site)
-                    VVdouble *_likelihoods_empty_son_i = &(*_likelihoods_empty_son)[0];
-                    VVdouble *_likelihoods_empty_node_i = &(*_likelihoods_empty_node)[0];
-                    Vdouble *_likelihoods_empty_son_i_c;
-                    Vdouble *_likelihoods_empty_node_i_c;
 
                     for (size_t c = 0; c < nbClasses_; c++) {
                         //For each rate classe,
                         Vdouble *_likelihoods_son_i_c = &(*_likelihoods_son_i)[c];
                         Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
                         testLK_node_c_i = (*_likelihoods_node_i_c);
+
+                        //--------------------------------------------------
+                        //MAX
+                        VVVdouble *pxy__node_son = &pxy_[son->getId()];
+                        VVdouble *pxy__node_son_c = &(*pxy__node_son)[c];
+                        //--------------------------------------------------
+
                         // For empty column (to be opened only at the first site of the alignment)
                         if (i == 0) {
                             //For each rate class,
@@ -403,14 +416,38 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                             _likelihoods_empty_node_i_c = &(*_likelihoods_empty_node_i)[c];
                         }
 
+                        //MAX
+                        double Z;
+
                         // All-against-all states
                         for (size_t x = 0; x < nbStates_; x++) {
+
+                            //--------------------------------------
+                            //MAX
+                            Z=0.0;
+                            //--------------------------------------
 
                             // store the likelihood value state-wise
                             (*_likelihoods_node_i_c)[x] *= (*_likelihoods_son_i_c)[x];
 
                             // For empty column (to be opened only at the first site of the alignment)
-                            if (i == 0) (*_likelihoods_empty_node_i_c)[x] *= (*_likelihoods_empty_son_i_c)[x];
+                            if (i == 0){
+
+                                //---------------------------------------------------------------------------------------------
+                                //MAX
+                                for (size_t y = 0; y < nbStates_; y++) {
+
+                                    double X = (*pxy__node_son_c)[x][y];
+                                    double Y = (*_likelihoods_empty_son_i_c)[y];
+
+                                    Z += (*pxy__node_son_c)[x][y] * (*_likelihoods_empty_son_i_c)[y];
+
+                                }
+                                //---------------------------------------------------------------------------------------------
+
+                                (*_likelihoods_empty_node_i_c)[x] *= Z;
+
+                            }
                         }
 
 
@@ -443,17 +480,10 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                             //double temp_x = 0;
                             (*_likelihoods_node_i_c)[x] = 0;
 
-                            if (i == 0) {
-                                (*_likelihoods_empty_node)[i][c][x] = 0;
-                            }
 
                             for (size_t y = 0; y < nbStates_; y++) {
 
                                 (*_likelihoods_node_i_c)[x] += (*pxy__node_c)[x][y] * temp_fv[y];
-
-                                if (i == 0) {
-                                    (*_likelihoods_empty_node)[i][c][x] += (*pxy__node_c)[x][y] * temp_fv_empty[y];
-                                }
 
                             }
 
@@ -498,10 +528,6 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
                             for (size_t col = 0; col < nbStates_; col++) {
                                 (*_likelihoods_node_i_c)[col] = (*pxy__node_c)[col][row];
-                                // For empty column (to be opened only at the first site of the alignment)
-                                if (i == 0) {
-                                    (*_likelihoods_empty_node_i_c)[col] = (*pxy__node_c)[col][nbStates_-1];
-                                }
                             }
                             break;
                         }
@@ -516,6 +542,219 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
 }
 
+#else
+
+void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
+
+    for(auto &node:likelihoodNodes_) {
+        //size_t nbSites = likelihoodData_->getLikelihoodArray(node->getId()).size();
+
+        // Retrieve the likelihood arrays for the current node (fv + empty-column)
+        VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
+        // For empty column
+        VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
+        // Transition probabilities for the current node
+        VVVdouble *pxy__node = &pxy_[node->getId()];
+
+
+        if (!node->isLeaf()) {
+
+            for (size_t i = 0; i < nbSites_; i++) {
+                //For each site in the sequence,
+                VVdouble *_likelihoods_node_i = &(*_likelihoods_node)[i];
+
+                for (size_t c = 0; c < nbClasses_; c++) {
+                    //For each rate classe,
+                    Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
+
+                    for (size_t x = 0; x < nbStates_; x++) {
+                        //For each initial state,
+                        (*_likelihoods_node_i_c)[x] = 1.;
+
+                        if (i == 0) {
+                            //MAX
+                            (*_likelihoods_empty_node)[i][c][x] = 1.;
+                        }
+                    }
+                }
+            }
+
+
+            size_t nbNodes = node->getNumberOfSons();
+            Vdouble testLK_node_c_i;
+
+            for (size_t l = 0; l < nbNodes; l++) {
+                //For each son node,
+
+                const Node *son = node->getSon(l);
+                //std::vector<size_t> *_patternLinks_node_son = &likelihoodData_->getArrayPositions(node->getId(), son->getId());
+
+                VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(son->getId());
+
+                // For empty column
+                VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(son->getId());
+
+                // For empty column (only one site)
+                VVdouble *_likelihoods_empty_son_i = &(*_likelihoods_empty_son)[0];
+                VVdouble *_likelihoods_empty_node_i = &(*_likelihoods_empty_node)[0];
+                Vdouble *_likelihoods_empty_son_i_c;
+                Vdouble *_likelihoods_empty_node_i_c;
+
+                for (size_t i = 0; i < nbSites_; i++) {
+                    //For each site in the sequence,
+                    // size_t patternid = (*_patternLinks_node_son)[i];     // <- debug
+                    //VVdouble *_likelihoods_son_i = &(*_likelihoods_son)[(*_patternLinks_node_son)[i]];
+                    VVdouble *_likelihoods_son_i = &(*_likelihoods_son)[i];
+                    VVdouble *_likelihoods_node_i = &(*_likelihoods_node)[i];
+
+                    for (size_t c = 0; c < nbClasses_; c++) {
+                        //For each rate classe,
+                        Vdouble *_likelihoods_son_i_c = &(*_likelihoods_son_i)[c];
+                        Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
+                        testLK_node_c_i = (*_likelihoods_node_i_c);
+
+                        // For empty column (to be opened only at the first site of the alignment)
+                        if (i == 0) {
+                            //For each rate class,
+                            _likelihoods_empty_son_i_c = &(*_likelihoods_empty_son_i)[c];
+                            _likelihoods_empty_node_i_c = &(*_likelihoods_empty_node_i)[c];
+                        }
+
+                        // All-against-all states
+                        for (size_t x = 0; x < nbStates_; x++) {
+
+                            // store the likelihood value state-wise
+                            (*_likelihoods_node_i_c)[x] *= (*_likelihoods_son_i_c)[x];
+
+                            // For empty column (to be opened only at the first site of the alignment)
+                            if (i == 0){
+                                //MAX
+                                (*_likelihoods_empty_node_i_c)[x] *= (*_likelihoods_empty_son_i_c)[x];
+                            }
+                        }
+
+
+                    }
+                }
+
+            }
+
+            if (node->hasFather()) {
+                VVVdouble *pxy__node = &pxy_[node->getId()];
+
+                Vdouble temp_fv_empty;
+                for (size_t i = 0; i < nbSites_; i++) {
+                    //For each site in the sequence,
+                    VVdouble *_likelihoods_node_i = &(*_likelihoods_node)[i];
+
+                    for (size_t c = 0; c < nbClasses_; c++) {
+                        //For each rate classe,
+                        Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
+                        VVdouble *pxy__node_c = &(*pxy__node)[c];
+                        if(i==0) printPrMatrix(node, &(*pxy__node_c));
+                        Vdouble temp_fv = (*_likelihoods_node_i_c);
+
+                        if (i == 0) {
+                            temp_fv_empty = (*_likelihoods_empty_node)[i][c];
+                        }
+
+                        for (size_t x = 0; x < nbStates_; x++) {
+                            //For each initial state,
+                            //double temp_x = 0;
+                            (*_likelihoods_node_i_c)[x] = 0;
+
+                            if (i == 0) {
+                                //MAX
+                                (*_likelihoods_empty_node)[i][c][x] = 0;
+                            }
+
+                            for (size_t y = 0; y < nbStates_; y++) {
+
+                                (*_likelihoods_node_i_c)[x] += (*pxy__node_c)[x][y] * temp_fv[y];
+
+                                if (i == 0) {
+                                    //MAX
+                                    (*_likelihoods_empty_node)[i][c][x] += (*pxy__node_c)[x][y] * temp_fv_empty[y];
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+
+
+            for(int x=0;x<5;x++) {
+                VLOG(3) << "_likelihoods_empty_node(" << node->getName() << ")->[" << x << "]:"
+                        << (*_likelihoods_empty_node)[0][0][x] << std::endl;
+            }
+
+        } else {
+
+
+            for (size_t i = 0; i < nbSites_; i++) {
+                //For each site in the sequence,
+                VVdouble *_likelihoods_node_i = &(*_likelihoods_node)[i];
+
+                // For empty column (only one site)
+                VVdouble *_likelihoods_empty_node_i = &(*_likelihoods_empty_node)[0];
+                Vdouble *_likelihoods_empty_node_i_c;
+
+                for (size_t c = 0; c < nbClasses_; c++) {
+                    //For each rate classe,
+                    Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
+                    VVdouble *pxy__node_c = &(*pxy__node)[c];
+
+                    //Vdouble lk_node_i_c = (*_likelihoods_node_i)[c];  // <- debug
+
+                    //VVdouble prob_node_c = (*pxy__node)[c];       // <- debug
+                    if(i==0) printPrMatrix(node, &(*pxy__node)[c]);              // <- debug
+
+                    // For empty column (to be opened only at the first site of the alignment)
+                    if (i == 0) {
+                        //For each rate class,
+                        _likelihoods_empty_node_i_c = &(*_likelihoods_empty_node_i)[c];
+                    }
+
+                    for (size_t row = 0; row < nbStates_; row++) {
+
+                        if ((*_likelihoods_node_i_c)[row] == 1) {
+
+                            for (size_t col = 0; col < nbStates_; col++) {
+                                (*_likelihoods_node_i_c)[col] = (*pxy__node_c)[col][row];
+                                // For empty column (to be opened only at the first site of the alignment)
+                                if (i == 0) {
+                                    //MAX
+                                    (*_likelihoods_empty_node_i_c)[col] = (*pxy__node_c)[col][nbStates_-1];
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+
+
+            for(int x=0;x<5;x++) {
+                VLOG(3) << "_likelihoods_empty_node(" << node->getName() << ")->[" << x << "]:"
+                        << (*_likelihoods_empty_node)[0][0][x] << std::endl;
+            }
+
+
+        }
+        printFV(node, _likelihoods_node);
+        printFV(node, _likelihoods_empty_node);
+    }
+
+}
+
+#endif
 
 void RHomogeneousTreeLikelihood_PIP::displayLikelihood(const Node *node) {
     VLOG(2) << "Likelihoods at node " << node->getName() << ": ";
@@ -921,6 +1160,10 @@ void RHomogeneousTreeLikelihood_PIP::printPrMatrix(Node *node, VVdouble *pr){
 }
 
 
+//#define VERSION_2
+
+#ifdef VERSION_2
+
 double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
 
     double ll = 0;
@@ -992,6 +1235,13 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
         for (size_t c = 0; c < nbClasses_; c++) {
             double lk_site_empty_class = 0;
 
+            //-------------------------------------------------------------------------------------------------------------------
+            //MAX
+            for (size_t s = 0; s < nbStates_; s++) {
+                VLOG(3) << "lknode_c_empty(" << node->getName() << ")[" << s << "]:" << (*lknode_c_empty)[0][c][s] << std::endl;
+            }
+            //-------------------------------------------------------------------------------------------------------------------
+
             if (node->isLeaf()) {
                 nodelk = iotasData_[node] * (1 - betasData_[node]);
 
@@ -999,6 +1249,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
 
                 double cwiseFV = 0;
                 for (size_t s = 0; s < nbStates_; s++) {
+
                     cwiseFV += (*lknode_c_empty)[0][c][s] * rootFreqs_[s];                        // this produces a scalar
                 }
 
@@ -1040,3 +1291,166 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
 
 }
 
+#else
+
+double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
+
+    double ll = 0;
+    double ll_empty = 0;
+
+    // Initialise vector of likelihood per each site
+    std::vector<double> la(nbSites_);
+    double la_empty;
+
+    for (size_t i = 0; i < nbSites_; i++) {
+
+        //unsigned long idxSite = likelihoodData_->getRootArrayPosition(i);
+
+        double lk_site = 0;
+
+
+        for (auto &node:likelihoodNodes_) {
+
+            for (size_t c = 0; c < nbClasses_; c++) {
+
+                double fv_site = 0;
+
+                Vdouble *lknode_i_c = &likelihoodData_->getLikelihoodArray(node->getId())[likelihoodData_->getRootArrayPosition(i)][c];
+
+
+                if (setAData_[node->getId()].first.at(i)) {
+                    VLOG(3) << "Likelihood for setA of " << node->getName() << "@"<<i;
+                    if (!node->isLeaf()) {
+                        // this compresses the vector into a scalar (dot product)
+                        double partialLK = 0;
+
+                        for (size_t s = 0; s < nbStates_; s++) {
+
+                            partialLK += (*lknode_i_c)[s] * rootFreqs_[s];                        // this produces a scalar
+                        }
+                        fv_site += iotasData_[node] * betasData_[node] * partialLK;
+
+                    } else {
+                        double partialLK = 0;
+                        //TODO: The rootFreq should be equal to the true site/node  @MAX  LG: DONE!
+                        for (size_t s = 0; s < nbStates_; s++) {
+
+                            partialLK += indicatorFun_[node][i][s] * rootFreqs_[s];                        // this produces a scalar
+                        }
+                        fv_site += (iotasData_[node] * betasData_[node]) * partialLK;
+                    }
+
+
+                }
+
+
+                // Multiply the likelihood value of the site for the ASVR category probability
+                double li = fv_site * rateDistribution_->getProbability(c);
+                lk_site = li;
+            }
+
+        }
+
+        la[i] = log(lk_site);
+    }
+
+
+    // Compute likelihood empty column
+    // The likelihood of the empty column must be computed only once (i.e. on the first site)
+    double lk_site_empty = 0;
+
+    std::vector<double> temp_fv_empty(nbStates_);
+
+    for (auto &node:likelihoodNodes_) {
+
+        for (size_t s = 0; s < nbStates_; s++) {
+            temp_fv_empty[s]=rootFreqs_[s];
+        }
+
+        size_t nbNodes = node->getNumberOfSons();
+        for (size_t l = 0; l < nbNodes; l++) {
+
+            const Node *son = node->getSon(l);
+
+            VVVdouble *lknode_son_c_empty = &likelihoodEmptyData_->getLikelihoodArray(son->getId());
+
+
+            for (size_t c = 0; c < nbClasses_; c++) {
+                for (size_t s = 0; s < nbStates_; s++) {
+                    temp_fv_empty[s] *= (*lknode_son_c_empty)[0][c][s];
+                }
+            }
+
+        }
+
+
+
+
+        double nodelk = 0;
+        for (size_t c = 0; c < nbClasses_; c++) {
+            double lk_site_empty_class = 0;
+
+            if (node->isLeaf()) {
+                nodelk = iotasData_[node] * (1 - betasData_[node]);
+
+            } else {
+
+                double cwiseFV = 0;
+                for (size_t s = 0; s < nbStates_; s++) {
+
+                    cwiseFV += temp_fv_empty[s];
+                                                    // this produces a scalar
+                }
+
+
+                VLOG(3) << "cwise("<<node->getName()<<")"<< cwiseFV<<std::endl;
+
+
+
+                double t2;
+                if(node->hasFather()) {
+                    double t = betasData_[node] * cwiseFV;
+                    t2 = (1 - betasData_[node] + t);
+                }else{
+                    t2 = betasData_[node]* cwiseFV;
+                }
+
+                nodelk = iotasData_[node] * t2;
+
+
+            }
+            VLOG(3) << "LK Empty [class " << c << "] for node " << node->getName() << " = " << nodelk << " | iota: "
+                    << iotasData_[node] << " beta: " << betasData_[node];
+
+            lk_site_empty_class += nodelk;
+            lk_site_empty += lk_site_empty_class * rateDistribution_->getProbability(c);
+
+        }
+
+
+
+    }
+
+    // Sum the likelihood value for each site
+  sort(la.begin(), la.end());
+  for (size_t i = nbSites_; i > 0; i--) {
+      ll += la[i - 1];
+  }
+
+
+  VLOG(3) << "LK Sites [BPP] "<< ll;
+
+  // Empty column
+  ll_empty = lk_site_empty;
+
+  VLOG(3) << "LK Empty [BPP] "<< ll_empty;
+
+  // compute PHi
+  double log_phi_value = computePhi(ll_empty);
+  ll += log_phi_value;
+
+    return ll;
+
+}
+
+#endif

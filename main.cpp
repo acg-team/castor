@@ -351,6 +351,7 @@ int main(int argc, char *argv[]) {
             seqWriter.writeAlignment(FLAGS_output_msa,*sites,true);
 
             std::ofstream lkFile;
+            lkFile << std::setprecision(18);
             lkFile.open (FLAGS_output_lk);
             lkFile << MSA.score;
             lkFile.close();
@@ -359,7 +360,7 @@ int main(int argc, char *argv[]) {
 
             VLOG(1) << "[ProPIP] ...done";
 
-            exit(EXIT_SUCCESS);
+            //exit(EXIT_SUCCESS);
 
             /*
             int dim=20;
