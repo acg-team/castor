@@ -257,3 +257,31 @@ bpp::Matrix<double> MatrixBppUtils::Eigen2Matrix(Eigen::MatrixXd &inMatrix) {
     return outMatrix;
 }
 */
+
+double MatrixBppUtils::dotProd(std::vector<double> *x,std::vector<double> *y){
+
+    double val;
+
+    if(x->size() != y->size()){
+        perror("ERROR: MatrixBppUtils::dotProd");
+    }
+
+    val=0.0;
+    for(unsigned  long i=0;i<x->size();i++){
+        val += (x->at(i) * y->at(i));
+    }
+
+    return val;
+}
+
+double MatrixBppUtils::sumVector(std::vector<double> *x){
+
+    double val;
+
+    val=0.0;
+    for(unsigned  long i=0;i<x->size();i++){
+        val += x->at(i);
+    }
+
+    return val;
+}

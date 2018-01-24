@@ -46,6 +46,7 @@
 #include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
 #include <Bpp/Phyl/PatternTools.h>
 #include <glog/logging.h>
+#include "Utilities.hpp"
 
 using namespace bpp;
 
@@ -1051,21 +1052,28 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
                     VLOG(3) << "Likelihood for setA of " << node->getName() << "@"<<i;
                     if (!node->isLeaf()) {
                         // this compresses the vector into a scalar (dot product)
+                        /*
                         double partialLK = 0;
 
                         for (size_t s = 0; s < nbStates_; s++) {
 
                             partialLK += (*lknode_i_c)[s] * rootFreqs_[s];                        // this produces a scalar
                         }
+                        */
+                        double partialLK = MatrixBppUtils::dotProd(lknode_i_c,&rootFreqs_);
                         fv_site += iotasData_[node] * betasData_[node] * partialLK;
 
                     } else {
+                        /*
                         double partialLK = 0;
                         //TODO: The rootFreq should be equal to the true site/node  @MAX  LG: DONE!
                         for (size_t s = 0; s < nbStates_; s++) {
 
                             partialLK += indicatorFun_[node][i][s] * rootFreqs_[s];                        // this produces a scalar
                         }
+                         */
+                        std::vector *indFun = &indicatorFun_[node][i];
+                        double partialLK = MatrixBppUtils::dotProd(indFun,&rootFreqs_);
                         fv_site += (iotasData_[node] * betasData_[node]) * partialLK;
                     }
 
@@ -1125,25 +1133,19 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
                     // this produces a scalar
                 }
 
+                //VLOG(3) << "cwise("<<node->getName()<<")"<< cwiseFV<<std::endl;
 
-                VLOG(3) << "cwise("<<node->getName()<<")"<< cwiseFV<<std::endl;
-
-
-
-                double t2;
                 if(node->hasFather()) {
-                    double t = betasData_[node] * cwiseFV;
-                    t2 = (1 - betasData_[node] + t);
+                    nodelk = iotasData_[node] * (1 - betasData_[node] + betasData_[node] * cwiseFV);
                 }else{
-                    t2 = betasData_[node]* cwiseFV;
+                    nodelk = iotasData_[node] * betasData_[node] * cwiseFV;
                 }
 
-                nodelk = iotasData_[node] * t2;
-
-
             }
+            /*
             VLOG(3) << "LK Empty [class " << c << "] for node " << node->getName() << " = " << nodelk << " | iota: "
                     << iotasData_[node] << " beta: " << betasData_[node];
+            */
 
             lk_site_empty_class += nodelk;
             lk_site_empty += lk_site_empty_class * rateDistribution_->getProbability(c);
@@ -1155,10 +1157,14 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
     }
 
     // Sum the likelihood value for each site
+    /*
     sort(lk_sites.begin(), lk_sites.end());
     for (size_t i = nbSites_; i > 0; i--) {
         logLK += lk_sites[i - 1];
     }
+    */
+
+    logLK=MatrixBppUtils::sumVector(&lk_sites);
 
 
     VLOG(3) << "LK Sites [BPP] "<< logLK;
