@@ -191,8 +191,16 @@ int main(int argc, char *argv[]) {
     // Convert bpp::tree into thslib::utree
     auto ttTree = bpp::TreeTemplate<bpp::Node>(*tree);
     auto utree = new Utree();
-    UtreeBppUtils::convertTree_b2u(&ttTree, utree);
+    UtreeBppUtils::treemap tm;
+    UtreeBppUtils::convertTree_b2u(&ttTree, utree, tm);
     LOG(INFO) << "[Initial Utree Topology] " << utree->printTreeNewick(true);
+
+    VLOG(3) << "Bidirectional map size: "<<  tm.size();
+    UtreeBppUtils::treemap::left_map& map_view = tm.left;
+    for (UtreeBppUtils::treemap::left_map::const_iterator it(map_view.begin()), end(map_view.end()); it != end; ++it)
+    {
+        VLOG(3) << (*it).first->getId() << " --> " << (*it).second->getNodeName();
+    }
 
     delete tree;
     delete newickReader;

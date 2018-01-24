@@ -106,6 +106,10 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     find_package(gflags REQUIRED)
 endif ()
 
+find_package(Boost 1.56 REQUIRED COMPONENTS date_time filesystem iostreams)
+if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+endif()
 
 
 
@@ -148,6 +152,7 @@ target_link_libraries(miniJATI tshlib)
 target_link_libraries(miniJATI glog)
 target_link_libraries(miniJATI gflags)
 target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
+target_link_libraries(miniJATI ${Boost_LIBRARIES})
 
 
 SET(SOURCES_EXTBPP  Jati.cpp PIP.cpp PIP.hpp Version.hpp Jati.cpp)

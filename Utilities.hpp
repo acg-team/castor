@@ -43,20 +43,28 @@
  */
 #ifndef MINIJATI_UTILS_HPP
 #define MINIJATI_UTILS_HPP
-#include <Utree.hpp>
 
+
+#include <Utree.hpp>
+#include <boost/bimap.hpp>
 #include <Bpp/Phyl/Tree.h>
 #include <Bpp/Phyl/TreeTemplate.h>
 
+
 namespace UtreeBppUtils{
 using namespace tshlib;
-    void convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree);
-    void _traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source);
+
+    typedef boost::bimap< bpp::Node *, tshlib::VirtualNode *> treemap;
+    typedef treemap::value_type nodeassoc;
+
+    void convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree, treemap &tm);
+    void _traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source, treemap &tm);
 
     bpp::TreeTemplate<bpp::Node> *convertTree_u2b(Utree *in_tree);
     void _traverseTree_u2b(bpp::Node *target, VirtualNode *source);
 
     void associateNode2Alignment(bpp::SequenceContainer *sequences, Utree *in_tree);
+
 }
 
 namespace MatrixBppUtils{

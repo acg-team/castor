@@ -42,11 +42,12 @@
  * @see For more information visit: 
  */
 #include <glog/logging.h>
+
 #include "Utilities.hpp"
 
 
 
-void ::UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source) {
+void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source, treemap &tm) {
 
     std::string name;
 
@@ -61,6 +62,9 @@ void ::UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp
     for(auto &bppNode:source->getSons()){
 
         auto ichild = new VirtualNode();
+
+        // Filling the bidirectional map
+        tm.insert(nodeassoc(bppNode, ichild)); // TODO: avoid the map at all costs
 
         ichild->vnode_id = bppNode->getId();
 
@@ -79,7 +83,7 @@ void ::UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp
 
             target->connectNode(ichild);
             in_tree->addMember(ichild);
-            _traverseTree_b2u(in_tree, ichild, bppNode);
+            _traverseTree_b2u(in_tree, ichild, bppNode, tm);
 
         }else{
 
@@ -100,7 +104,7 @@ void ::UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp
 }
 
 
-void ::UtreeBppUtils::convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree) {
+void UtreeBppUtils::convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree, treemap &tm) {
 
     bpp::Node * RootNode = in_tree->getRootNode();
     std::string name;
@@ -108,6 +112,8 @@ void ::UtreeBppUtils::convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utr
     for (auto &bppNode:RootNode->getSons()) {
 
         auto ichild = new VirtualNode;
+        // Filling the bidirectional map
+        tm.insert(nodeassoc(bppNode, ichild)); // TODO: avoid the map at all costs
 
         ichild->vnode_id = bppNode->getId();
         if(bppNode->hasName()){
@@ -118,7 +124,7 @@ void ::UtreeBppUtils::convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utr
         ichild->vnode_name = name;
         ichild->vnode_branchlength = bppNode->getDistanceToFather();
 
-        _traverseTree_b2u(out_tree, ichild, bppNode);
+        _traverseTree_b2u(out_tree, ichild, bppNode, tm);
 
         // Add this node as starting point of the tree
         out_tree->addMember(ichild, true);
