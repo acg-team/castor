@@ -143,6 +143,23 @@ namespace bpp {
          */
         void init_(bool usePatterns) throw(Exception);
 
+
+        void initializeLikelihoodMatrix_(VVVdouble *_likelihoods_node);
+
+        void initializeLikelihoodEmptyMatrix_(VVVdouble *_likelihoods_empty_node);
+
+        void hadamardMultFvSons_(Node *node);
+
+        void hadamardMultFvEmptySons_(Node *node);
+
+        void computePrTimesFv_(Node *node);
+
+        void computePrTimesFvEmpty_(Node *node);
+
+        void computePrTimesIndicator_(Node *node);
+
+        void computePrTimesIndicatorEmpty_(Node *node);
+
     public:
 
         /**
@@ -289,6 +306,15 @@ namespace bpp {
          */
         virtual void displayLikelihood(const Node *node);
 
+        /**
+         * @brief This method sets DescCount (number of characters different from gap per column) value for all the nodes in the tree
+         */
+        virtual void setAllDescCountData(const SiteContainer &sites);
+
+        /**
+         * @brief This method sets the setA (setA=1: possible insertion on that edge) value for all the nodes in the tree
+         */
+        virtual void setAllSetAData(const SiteContainer &sites);
 
         /**
          * @brief This method sets the iota value for all the nodes in the tree
