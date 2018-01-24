@@ -525,14 +525,6 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
                 }
             }
 
-
-
-            for(int x=0;x<5;x++) {
-                VLOG(3) << "_likelihoods_empty_node(" << node->getName() << ")->[" << x << "]:"
-                        << (*_likelihoods_empty_node)[0][0][x] << std::endl;
-            }
-
-
         }
         printFV(node, _likelihoods_node);
         printFV(node, _likelihoods_empty_node);
