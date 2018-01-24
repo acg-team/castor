@@ -195,15 +195,16 @@ int main(int argc, char *argv[]) {
     UtreeBppUtils::convertTree_b2u(&ttTree, utree, tm);
     LOG(INFO) << "[Initial Utree Topology] " << utree->printTreeNewick(true);
 
-    VLOG(3) << "Bidirectional map size: "<<  tm.size();
-    UtreeBppUtils::treemap::left_map& map_view = tm.left;
-    for (UtreeBppUtils::treemap::left_map::const_iterator it(map_view.begin()), end(map_view.end()); it != end; ++it)
-    {
-        VLOG(3) << (*it).first->getId() << " --> " << (*it).second->getNodeName();
-    }
-
     delete tree;
     delete newickReader;
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Printing of the bidirectional map [test]
+    VLOG(3) << "Bidirectional map size: "<<  tm.size();
+    UtreeBppUtils::treemap::left_map& map_view = tm.left;
+    for (UtreeBppUtils::treemap::left_map::const_iterator it(map_view.begin()), end(map_view.end()); it != end; ++it) {
+        VLOG(3) << (*it).first->getFather()->getId() << " --> " << (*it).second->getNodeUp()->getNodeName();
+    }
 
     //------------------------------------------------------------------------------------------------------------------
 
