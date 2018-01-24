@@ -174,7 +174,7 @@ namespace bpp {
 
         /**
          * @name The DiscreteRatesAcrossSites interface implementation:
-         *
+         * @deprecated at the moment these methods are not used
          * @{
          */
         double getLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
@@ -236,6 +236,14 @@ namespace bpp {
         const DRASRTreeLikelihoodData *getLikelihoodData() const { return likelihoodData_; }
 
 
+        /**
+         * @name Interface to compute the likelihood components
+         * @{
+         */
+
+        /**
+         * @brief This method computes the likelihood of the tree  generating automatically postorder-traversal node list
+         */
         void computeTreeLikelihood();
 
         /**
@@ -243,25 +251,17 @@ namespace bpp {
          * @param nodeList
          */
         void computeTreeLikelihood(std::vector<Node *> nodeList);
+        /** @} */
 
         //virtual double getDLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
-
         //virtual double getDLikelihoodForASite(size_t site) const;
-
         //virtual double getDLogLikelihoodForASite(size_t site) const;
-
         //virtual double getDLogLikelihood() const;
-
         //virtual void computeTreeDLikelihood(const std::string &variable);
-
         //virtual double getD2LikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
-
         //virtual double getD2LikelihoodForASite(size_t site) const;
-
         //virtual double getD2LogLikelihoodForASite(size_t site) const;
-
         //virtual double getD2LogLikelihood() const;
-
         //virtual void computeTreeD2Likelihood(const std::string &variable);
 
         double recomputeLikelihood(std::vector<Node *> nodeList);
@@ -275,10 +275,9 @@ namespace bpp {
          *
          * @param node The root of the subtree.
          */
-        //virtual void computeSubtreeLikelihood(const Node *node); //Recursive method.
         virtual void computeSubtreeLikelihood();
-        //virtual void computeDownSubtreeDLikelihood(const Node *);
 
+        //virtual void computeDownSubtreeDLikelihood(const Node *);
         //virtual void computeDownSubtreeD2Likelihood(const Node *);
 
         void fireParameterChanged(const ParameterList &params);

@@ -567,6 +567,7 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
         rootFreqs_ = model_->getFrequencies();
     }
 
+    // Calls the routine to compute the FV values
     computeTreeLikelihood();
 
     minusLogLik_ = -getLogLikelihood();
