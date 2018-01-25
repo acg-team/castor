@@ -463,6 +463,40 @@ void RHomogeneousTreeLikelihood_PIP::hadamardMultFvEmptySons_(Node *node) {
 
 }
 
+void RHomogeneousTreeLikelihood_PIP::SingleRateCategoryHadamardMultFvSons_(Node *node,unsigned long site,unsigned long rate,Vdouble *fv_out) const {
+
+    size_t nbNodes = node->getNumberOfSons();
+
+    double val;
+    for (size_t x = 0; x < nbStates_; x++) {
+        val=1.0;
+        for (size_t l = 0; l < nbNodes; l++) {
+            const Node *son = node->getSon(l);
+            VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(son->getId());
+            val *= (*_likelihoods_son)[site][rate][x];
+        }
+        (*fv_out)[x] = val;
+    }
+
+}
+
+void RHomogeneousTreeLikelihood_PIP::SingleRateCategoryHadamardMultFvEmptySons_(Node *node,unsigned long rate,Vdouble *fv_out) const {
+
+    size_t nbNodes = node->getNumberOfSons();
+
+    double val;
+    for (size_t x = 0; x < nbStates_; x++) {
+        val=1.0;
+        for (size_t l = 0; l < nbNodes; l++) {
+            const Node *son = node->getSon(l);
+            VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(son->getId());
+            val *= (*_likelihoods_empty_son)[0][rate][x];
+        }
+        (*fv_out)[x] = val;
+    }
+
+}
+
 void RHomogeneousTreeLikelihood_PIP::computePrTimesFv_(Node *node) {
 
     VVVdouble *pxy__node = &pxy_[node->getId()];
@@ -619,9 +653,6 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
         if (!node->isLeaf()) {
 
-            //VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
-            //VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
-
             hadamardMultFvSons_(node);
             hadamardMultFvEmptySons_(node);
 
@@ -636,12 +667,14 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
         }
 
         //--------------------------------------------------------------------------------------------
+
         // debug
         VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
         VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
 
         printFV(node, _likelihoods_node);
         printFV(node, _likelihoods_empty_node);
+
         //--------------------------------------------------------------------------------------------
 
     }
@@ -1114,64 +1147,45 @@ void RHomogeneousTreeLikelihood_PIP::printPrMatrix(Node *node, VVdouble *pr){
 double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
 
     double logLK = 0;
-    double logLK_empty = 0;
+    //double logLK_empty = 0;
+
+    auto fv_sons = new Vdouble(nbStates_);
 
     // Initialise vector of likelihood per each site
     std::vector<double> lk_sites(nbSites_);
 
     for (size_t i = 0; i < nbSites_; i++) {
 
-        //unsigned long idxSite = likelihoodData_->getRootArrayPosition(i);
-
         double lk_site = 0;
 
         for (auto &node:likelihoodNodes_) {
 
+            double fv_site = 0;
+
             for (size_t c = 0; c < nbClasses_; c++) {
-
-                double fv_site = 0;
-
-                Vdouble *lknode_i_c = &likelihoodData_->getLikelihoodArray(node->getId())[likelihoodData_->getRootArrayPosition(i)][c];
-
 
                 if (setAData_[node->getId()].first.at(i)) {
 
-                    //VLOG(3) << "Likelihood for setA of " << node->getName() << "@"<<i;
-
                     if (!node->isLeaf()) {
-                        // this compresses the vector into a scalar (dot product)
-                        /*
-                        double partialLK = 0;
 
-                        for (size_t s = 0; s < nbStates_; s++) {
+                        //Vdouble *lknode_i_c = &likelihoodData_->getLikelihoodArray(node->getId())[likelihoodData_->getRootArrayPosition(i)][c];
 
-                            partialLK += (*lknode_i_c)[s] * rootFreqs_[s];                        // this produces a scalar
-                        }
-                        */
-                        double partialLK = MatrixBppUtils::dotProd(lknode_i_c,&rootFreqs_);
+                        SingleRateCategoryHadamardMultFvSons_(node,i,c,fv_sons);
+
+                        double partialLK = MatrixBppUtils::dotProd(fv_sons,&rootFreqs_);
                         fv_site += iotasData_[node] * betasData_[node] * partialLK;
 
                     } else {
-                        /*
-                        double partialLK = 0;
-                        //TODO: The rootFreq should be equal to the true site/node  @MAX  LG: DONE!
-                        for (size_t s = 0; s < nbStates_; s++) {
-
-                            partialLK += indicatorFun_[node][i][s] * rootFreqs_[s];                        // this produces a scalar
-                        }
-                         */
                         std::vector<double> *indFun = &indicatorFun_[node][i];
                         double partialLK = MatrixBppUtils::dotProd(indFun,&rootFreqs_);
                         fv_site += (iotasData_[node] * betasData_[node]) * partialLK;
                     }
 
-
                 }
-
 
                 // Multiply the likelihood value of the site for the ASVR category probability
                 double li = fv_site * rateDistribution_->getProbability(c);
-                lk_site = li;
+                lk_site += li;
             }
 
         }
@@ -1180,117 +1194,49 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
     }
 
 
-    // Compute likelihood empty column
-    // The likelihood of the empty column must be computed only once (i.e. on the first site)
-    double lk_site_empty = 0;
+    for (size_t i = 0; i < nbSites_; i++) {
+        VLOG(3) << "log_lk["<<i<<"]="<<lk_sites[i]<<std::endl;
+    }
 
-    //std::vector<double> temp_fv_empty(nbStates_);
+
+    double lk_site = 0;
 
     for (auto &node:likelihoodNodes_) {
 
-        if (node->isLeaf()) {
+        double fv_site = 0;
 
-            double nodelk = 0;
-            for (size_t c = 0; c < nbClasses_; c++) {
-                double lk_site_empty_class = 0;
-                nodelk = iotasData_[node] * (1 - betasData_[node]);
-                lk_site_empty_class += nodelk;  //TODO: += or = ? I would say =
-                lk_site_empty += lk_site_empty_class * rateDistribution_->getProbability(c);
-            }
-
-        } else {
-
-            double nodelk = 0;
-            double cwiseFV;
-
-            //hadamardMultFvEmptySons_(node);
-            //cwiseFV = MatrixBppUtils::dotProd(v,&rootFreqs_);
-
-            for (size_t c = 0; c < nbClasses_; c++) {
-                double lk_site_empty_class = 0;
-                if (node->hasFather()) {
-                    nodelk = iotasData_[node] * (1 - betasData_[node] + betasData_[node] * cwiseFV);
-                } else {
-                    nodelk = iotasData_[node] * betasData_[node] * cwiseFV;
-                }
-                lk_site_empty_class += nodelk;  //TODO: += or = ? I would say =
-                lk_site_empty += lk_site_empty_class * rateDistribution_->getProbability(c);
-            }
-
-        }
-
-
-        /*
-        double nodelk = 0;
         for (size_t c = 0; c < nbClasses_; c++) {
 
-            double lk_site_empty_class = 0;
+            if (!node->isLeaf()) {
 
-            if (node->isLeaf()) {
-                nodelk = iotasData_[node] * (1 - betasData_[node]);
+                //Vdouble *lknode_i_c = &likelihoodEmptyData_->getLikelihoodArray(node->getId())[likelihoodEmptyData_->getRootArrayPosition(0)][c];
+
+                SingleRateCategoryHadamardMultFvEmptySons_(node,c,fv_sons);
+
+                double partialLK = MatrixBppUtils::dotProd(fv_sons,&rootFreqs_);
+
+                if (node->hasFather()) {
+                    fv_site += iotasData_[node] * (1 - betasData_[node] + betasData_[node] * partialLK);
+                } else {
+                    fv_site += iotasData_[node] * betasData_[node] * partialLK;
+                }
+
 
             } else {
-
-                double cwiseFV;
-
-
-                for (size_t s = 0; s < nbStates_; s++) {
-                    temp_fv_empty[s]=rootFreqs_[s];
-                }
-
-                size_t nbNodes = node->getNumberOfSons();
-                for (size_t l = 0; l < nbNodes; l++) {
-
-                    const Node *son = node->getSon(l);
-
-                    VVVdouble *lknode_son_c_empty = &likelihoodEmptyData_->getLikelihoodArray(son->getId());
-
-                    for (size_t s = 0; s < nbStates_; s++) {
-                        temp_fv_empty[s] *= (*lknode_son_c_empty)[0][c][s];
-                    }
-                }
-
-                cwiseFV = 0;
-                for (size_t s = 0; s < nbStates_; s++) {
-
-                    cwiseFV += temp_fv_empty[s];
-                    // this produces a scalar
-                }
-
-                //VLOG(3) << "cwise("<<node->getName()<<")"<< cwiseFV<<std::endl;
-
-                if(node->hasFather()) {
-                    nodelk = iotasData_[node] * (1 - betasData_[node] + betasData_[node] * cwiseFV);
-                }else{
-                    nodelk = iotasData_[node] * betasData_[node] * cwiseFV;
-                }
-
+                fv_site += iotasData_[node] * (1 - betasData_[node]);
             }
 
 
-
-            VLOG(3) << "LK Empty [class " << c << "] for node " << node->getName() << " = " << nodelk << " | iota: "
-                    << iotasData_[node] << " beta: " << betasData_[node];
+            VLOG(3) << "lk empty at node["<<node->getName()<<"] -> "<<fv_site<<std::endl;
 
 
-
-            lk_site_empty_class += nodelk;  //TODO: += or = ? I would say =
-            lk_site_empty += lk_site_empty_class * rateDistribution_->getProbability(c);
-
-
+            double li = fv_site * rateDistribution_->getProbability(c);
+            lk_site += li;
         }
-        */
-
 
     }
 
-    // Sum the likelihood value for each site
-    /*
-    sort(lk_sites.begin(), lk_sites.end());
-    for (size_t i = nbSites_; i > 0; i--) {
-        logLK += lk_sites[i - 1];
-    }
-    */
+    double lk_site_empty=lk_site;
 
     logLK=MatrixBppUtils::sumVector(&lk_sites);
 
@@ -1298,12 +1244,12 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
     VLOG(3) << "LK Sites [BPP] "<< logLK;
 
     // Empty column
-    logLK_empty = lk_site_empty;
+    //logLK_empty = lk_site_empty;
 
-    VLOG(3) << "LK Empty [BPP] "<< logLK_empty;
+    VLOG(3) << "LK Empty [BPP] "<< lk_site_empty;
 
     // compute PHi
-    double log_phi_value = computePhi(logLK_empty);
+    double log_phi_value = computePhi(lk_site_empty);
     logLK += log_phi_value;
 
     return logLK;

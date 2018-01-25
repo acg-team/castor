@@ -152,6 +152,10 @@ namespace bpp {
 
         void hadamardMultFvEmptySons_(Node *node);
 
+        void SingleRateCategoryHadamardMultFvSons_(Node *node,unsigned long site,unsigned long rate,Vdouble *fv_out) const;
+
+        void SingleRateCategoryHadamardMultFvEmptySons_(Node *node,unsigned long rate,Vdouble *fv_out) const;
+
         void computePrTimesFv_(Node *node);
 
         void computePrTimesFvEmpty_(Node *node);
