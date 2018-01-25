@@ -68,7 +68,7 @@ namespace bpp {
         mutable std::map<const bpp::Node*, double> betasData_;
 
         //TODO: @max please add vector of integers for character at the leaf for each (LG: done it already!)
-        mutable std::map<const bpp::Node*, std::vector<std::vector<int>>> indicatorFun_;
+        mutable std::map<const bpp::Node*, std::vector<std::vector<double>>> indicatorFun_;
 
         mutable double nu_;
         mutable double tau_;

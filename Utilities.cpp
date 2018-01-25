@@ -258,7 +258,7 @@ bpp::Matrix<double> MatrixBppUtils::Eigen2Matrix(Eigen::MatrixXd &inMatrix) {
 }
 */
 
-double MatrixBppUtils::dotProd(std::vector<double> *x,std::vector<double> *y){
+double MatrixBppUtils::dotProd(const std::vector<double> *x,const std::vector<double> *y){
 
     double val;
 

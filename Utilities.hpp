@@ -67,7 +67,7 @@ namespace MatrixBppUtils{
 
     Eigen::VectorXd Vector2Eigen(const std::vector<double> &inVector);
 
-    double dotProd(std::vector<double> *x,std::vector<double> *y);
+    double dotProd(const std::vector<double> *x,const std::vector<double> *y);
 
     double sumVector(std::vector<double> *x);
 
