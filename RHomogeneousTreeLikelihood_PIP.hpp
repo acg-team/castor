@@ -70,7 +70,7 @@ namespace bpp {
         mutable std::map<const bpp::Node*, double> betasData_;
 
         //TODO: @max please add vector of integers for character at the leaf for each (LG: done it already!)
-        mutable std::map<const bpp::Node*, std::vector<std::vector<int>>> indicatorFun_;
+        mutable std::map<const bpp::Node*, std::vector<std::vector<double>>> indicatorFun_;
 
         mutable double nu_;
         mutable double tau_;
@@ -144,6 +144,27 @@ namespace bpp {
          * @brief Method called by constructors.
          */
         void init_(bool usePatterns) throw(Exception);
+
+
+        void initializeLikelihoodMatrix_(VVVdouble *_likelihoods_node);
+
+        void initializeLikelihoodEmptyMatrix_(VVVdouble *_likelihoods_empty_node);
+
+        void hadamardMultFvSons_(Node *node);
+
+        void hadamardMultFvEmptySons_(Node *node);
+
+        void SingleRateCategoryHadamardMultFvSons_(Node *node,unsigned long site,unsigned long rate,Vdouble *fv_out) const;
+
+        void SingleRateCategoryHadamardMultFvEmptySons_(Node *node,unsigned long rate,Vdouble *fv_out) const;
+
+        void computePrTimesFv_(Node *node);
+
+        void computePrTimesFvEmpty_(Node *node);
+
+        void computePrTimesIndicator_(Node *node);
+
+        void computePrTimesIndicatorEmpty_(Node *node);
 
     public:
 
@@ -305,6 +326,15 @@ namespace bpp {
          */
         virtual void displayLikelihood(const Node *node);
 
+        /**
+         * @brief This method sets DescCount (number of characters different from gap per column) value for all the nodes in the tree
+         */
+        virtual void setAllDescCountData(const SiteContainer &sites);
+
+        /**
+         * @brief This method sets the setA (setA=1: possible insertion on that edge) value for all the nodes in the tree
+         */
+        virtual void setAllSetAData(const SiteContainer &sites);
 
         /**
          * @brief This method sets the iota value for all the nodes in the tree

@@ -310,6 +310,7 @@ int main(int argc, char *argv[]) {
 
         VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
 
+
         tl->initialize();
         logLK = tl->getValue();
 
