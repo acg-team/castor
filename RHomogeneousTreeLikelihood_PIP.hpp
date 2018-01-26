@@ -52,6 +52,8 @@
 
 using namespace bpp;
 
+#include "Utilities.hpp"
+
 namespace bpp {
 
     class RHomogeneousTreeLikelihood_PIP : public AbstractHomogeneousTreeLikelihood {
@@ -157,6 +159,9 @@ namespace bpp {
         double getLikelihood() const;
 
         double getLogLikelihood() const;
+
+        double getLogLikelihood(std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm) const;
+
 
         double getLikelihoodForASite(size_t site) const;
 
@@ -266,6 +271,17 @@ namespace bpp {
 
         double recomputeLikelihood(std::vector<Node *> nodeList);
 
+
+        /**
+         * @brief This method computes the likelihood after a tree rearrangment
+         * @return The likelihood value using the intermediate partial values
+         */
+        double computeLikelihoodOnTreeRearrangment(std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm) const;
+
+        /**
+         * @brief This method computes a list of nodes traversing the tree in postorder
+         *
+         */
         void computePostOrderNodeList(Node *startNode);
 
     protected:
@@ -328,6 +344,8 @@ namespace bpp {
 
         double computeLikelihoodWholeAlignment()const;
 
+
+        void ExtendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<tshlib::VirtualNode *> &listNodes, unsigned long alignColumn, UtreeBppUtils::treemap *tm) const;
 
         //friend class RHomogeneousMixedTreeLikelihood;
     };

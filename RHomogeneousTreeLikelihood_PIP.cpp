@@ -1090,3 +1090,77 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignment()const {
 
 }
 
+double RHomogeneousTreeLikelihood_PIP::computeLikelihoodOnTreeRearrangment(std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm) const {
+
+    std::vector<tshlib::VirtualNode *> tempExtendedNodeList;
+
+    double lk_log = 0;
+
+    //double lk_empty = lk.computePartialEmptyLK(list_node_complete, alignment);
+
+    //for (int i = 0; i < alignment.getAlignmentSize(); i++) {
+    unsigned long i = 0;
+    ExtendNodeListOnSetA(listNodes.back(), tempExtendedNodeList, i, tm);
+    // call to function which retrives the lk value for each site
+    //lk_log += log(lk.computePartialLK(temp_list, alignment, i));
+
+    tempExtendedNodeList.clear();
+
+
+
+    return 0;
+}
+
+void RHomogeneousTreeLikelihood_PIP::ExtendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<tshlib::VirtualNode *> &listNodes, unsigned long site,
+                                                          UtreeBppUtils::treemap *tm) const {
+
+    tshlib::VirtualNode *temp = qnode;
+    // Get the corresponding node on the BPP tree
+    //UtreeBppUtils::treemap::right_iterator it = tm->right->find(temp);
+    bpp::Node *node = tm->right.at(temp);
+
+
+    //bpp::Node *node = it.first().;
+
+    listNodes.push_back(temp);
+
+    do {
+
+        if (node->isLeaf()) {
+            break;
+        }
+
+
+        //tshlib::VirtualNode *left =
+        //tshlib::VirtualNode *right = temp->getNodeRight();
+        //setAData_[node->getId()].first.at(site);
+
+
+        if (setAData_[tm->right.at(temp->getNodeLeft())->getId()].first.at(site)) {
+
+            temp = temp->getNodeLeft();
+
+        } else if (setAData_[tm->right.at(temp->getNodeRight())->getId()].first.at(site)) {
+
+            temp = temp->getNodeRight();
+
+        } else {
+
+            break;
+        }
+
+        listNodes.push_back(temp);
+
+
+    } while (setAData_[tm->right.at(temp)->getId()].first.at(site));
+
+}
+
+double RHomogeneousTreeLikelihood_PIP::getLogLikelihood(std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm) const {
+    return computeLikelihoodOnTreeRearrangment(listNodes, tm);
+}
+
+
+
+
+
