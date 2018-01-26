@@ -271,8 +271,8 @@ int main(int argc, char *argv[]) {
         // Fill Q matrix
         Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());
         pi = MatrixBppUtils::Vector2Eigen(submodel->getFrequencies());
-        std::cerr << Q << std::endl;
-        std::cerr << pi << std::endl;
+        //std::cerr << Q << std::endl;
+        //std::cerr << pi << std::endl;
 
     }
     VLOG(1) << "[Substitution model] Number of states: " << (int) submodel->getNumberOfStates();
@@ -313,7 +313,10 @@ int main(int argc, char *argv[]) {
         tl->initialize();
         logLK = tl->getValue();
 
+
         VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << -logLK << " \t[BPP METHODS]";
+
+
     }
 
 
@@ -546,7 +549,12 @@ int main(int argc, char *argv[]) {
                 likelihood->recombineAllFv(list_vnode_to_root);
                 likelihood->setInsertionHistories(list_vnode_to_root, *alignment);
 
-                logLK = LKFunc::LKRearrangment(*likelihood, allnodes_postorder, *alignment);
+                logLK = LKFunc::LKRearrangment(*likelihood, list_vnode_to_root, *alignment);
+
+
+
+                //std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm
+                //logLK = tl->computeLikelihoodOnTreeRearrangment(list_vnode_to_root, tm);
 
 
 
@@ -628,7 +636,7 @@ int main(int argc, char *argv[]) {
                     likelihood->recombineAllFv(list_vnode_to_root);
                     likelihood->setInsertionHistories(list_vnode_to_root, *alignment);
 
-                    logLK = LKFunc::LKRearrangment(*likelihood, allnodes_postorder, *alignment);
+                    logLK = LKFunc::LKRearrangment(*likelihood, list_vnode_to_root, *alignment);
 
                     // ------------------------------------
                     // Store likelihood of the move
