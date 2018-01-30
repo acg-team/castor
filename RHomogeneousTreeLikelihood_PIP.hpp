@@ -293,9 +293,6 @@ namespace bpp {
         //virtual double getD2LogLikelihood() const;
         //virtual void computeTreeD2Likelihood(const std::string &variable);
 
-        double recomputeLikelihood(std::vector<Node *> nodeList);
-
-
         /**
          * @brief This method computes the likelihood after a tree rearrangment
          * @return The likelihood value using the intermediate partial values
@@ -361,7 +358,10 @@ namespace bpp {
          *        subtree
          * @param nodelist The postorder list of nodes at which the likelihood arrays must be updated
          */
-        virtual void recomputeFVarrays(const std::vector<Node *> nodelist);
+
+        virtual void recombineFvAfterMove();
+
+        virtual void recombineFvAtNode(Node *node);
 
 
         double computePhi(double lkEmptyColumn) const;
