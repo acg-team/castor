@@ -166,9 +166,6 @@ int main(int argc, char *argv[]) {
         LOG(FATAL) << "[Tree parser] Error when reading tree due to: " << e.message();
     }
 
-    // Convert bpp::tree into thslib::utree
-    //auto ttTree = bpp::TreeTemplate<bpp::Node>(*tree);
-
     // Rename internal nodes with standard Vxx * where xx is a progressive number
     tree->setNodeName(tree->getRootId(),"root");
 
@@ -184,13 +181,8 @@ int main(int argc, char *argv[]) {
 
             tree->setNodeName(nodeId, stringName);
 
-
-
         }
-        VLOG(2) << tree->getNodeName(nodeId);
     }
-
-
 
 
     auto utree = new Utree();
@@ -205,17 +197,7 @@ int main(int argc, char *argv[]) {
     // Printing of the bidirectional map [test]
     VLOG(3) << "Bidirectional map size: "<<  tm.size();
 
-    //UtreeBppUtils::treemap::left_map& map_view = tm.left;
-    //for (UtreeBppUtils::treemap::left_map::const_iterator it(map_view.begin()), end(map_view.end()); it != end; ++it) {
-    //    VLOG(3) << (*it).first->getFather()->getId() << " --> " << (*it).second->getNodeUp()->getNodeName();
-    //}
-    //tshlib::VirtualNode *query = utree->listVNodes.at(1);
-    //bpp::Node *extracted = tm.right.at(query);
-
-
-
     //------------------------------------------------------------------------------------------------------------------
-
     if (!FLAGS_alignment) {
         utree->prepareSetADesCountOnNodes((int) alignment->getAlignmentSize(), alignment->align_alphabetsize);
         UtreeUtils::associateNode2Alignment(alignment, utree);
@@ -225,22 +207,15 @@ int main(int argc, char *argv[]) {
         utree->rootnode->initialiseLikelihoodComponents((int) alignment->getAlignmentSize(),
                                                         alignment->align_alphabetsize);
     } else {
-
         UtreeBppUtils::associateNode2Alignment(sequences, utree);
         utree->addVirtualRootNode();
-
-
     }
 
     // Once the tree has the root, then map it as well
     tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode));
-    //tm.insert(UtreeBppUtils::nodeassoc(ttTree.getRootNode(), utree->rootnode));
-    //bpp::Node *query_2 = ttTree.getRootNode()->getSons().at(1);
-    //tshlib::VirtualNode *result = tm.left.at(query_2);
 
     //------------------------------------------------------------------------------------------------------------------
     // INIT SubModels + Indel
-
     // Set the substitution model
     bpp::SubstitutionModel *submodel = nullptr;
     unique_ptr<bpp::GeneticCode> gCode;
@@ -264,7 +239,6 @@ int main(int argc, char *argv[]) {
 
         rDist = new bpp::ConstantRateDistribution();
         if (!FLAGS_alignment) { bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites); }
-
 
     }
 
@@ -321,19 +295,13 @@ int main(int argc, char *argv[]) {
 
         }
 
-
         VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
-
 
         tl->initialize();
         logLK = tl->getValue();
 
-
         VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << -logLK << " \t[BPP METHODS]";
-
-
     }
-
 
     if (FLAGS_model_indels) {
         //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
