@@ -148,31 +148,9 @@ int main(int argc, char *argv[]) {
         sites = new bpp::VectorSiteContainer(*sequences);
         size_t num_leaves = sequences->getNumberOfSequences();
 
-
         LOG(INFO) << "[Alignment] Input alignmetn has " << num_leaves << " sequences";
 
-        /*
-        std::string testSeq = sequences->getSequence(seqNames.at(0)).toString();
-        bpp::Site testSite = nullptr;
-
-        std::vector<int> countCharNumber(sites->getNumberOfSites(), 0);
-
-        for (int i=0; i<sites->getNumberOfSites(); i++){
-           testSite = sites->getSite((size_t) i);
-            for (int j=0; j<testSite.size(); j++){
-                if(testSite.getValue(j)>=0){
-                    countCharNumber.at(i) += 1;
-                }
-
-            }
-        }
-
-        alignment->align_num_characters = countCharNumber;
-        */
-
     }
-
-
 
 
     //------------------------------------------------------------------------------------------------------------------
@@ -205,6 +183,8 @@ int main(int argc, char *argv[]) {
     for (UtreeBppUtils::treemap::left_map::const_iterator it(map_view.begin()), end(map_view.end()); it != end; ++it) {
         VLOG(3) << (*it).first->getFather()->getId() << " --> " << (*it).second->getNodeUp()->getNodeName();
     }
+    tshlib::VirtualNode *query = utree->listVNodes.at(1);
+    bpp::Node *extracted = tm.right.at(query);
 
     //------------------------------------------------------------------------------------------------------------------
 
@@ -224,6 +204,10 @@ int main(int argc, char *argv[]) {
 
     }
 
+    // Once the tree has the root, then map it as well
+
+    tm.insert(UtreeBppUtils::nodeassoc(ttTree.getRootNode(), utree->rootnode));
+
     //------------------------------------------------------------------------------------------------------------------
     // INIT SubModels + Indel
 
@@ -233,7 +217,7 @@ int main(int argc, char *argv[]) {
     map<std::string, std::string> parmap;
     bpp::TransitionModel *transmodel = nullptr;
     bpp::DiscreteDistribution *rDist = nullptr;
-    bpp::TreeLikelihood *tl;
+    bpp::AbstractHomogeneousTreeLikelihood *tl;
 
     Eigen::MatrixXd Q;
     Eigen::VectorXd pi;
@@ -286,7 +270,7 @@ int main(int argc, char *argv[]) {
 
     double logLK = 0;
     auto likelihood = new Likelihood();
-    std::vector<VirtualNode *> allnodes_postorder;
+    std::vector<VirtualNode *> fullTraversalNodes;
     progressivePIP::ProgressivePIPResult MSA;
     if (!FLAGS_alignment) {
         tree = UtreeBppUtils::convertTree_u2b(utree);
@@ -329,16 +313,16 @@ int main(int argc, char *argv[]) {
         logLK = 0.0;
 
         // Traverse the tree in post-order filling a list of node ready for traversal
-        likelihood->compileNodeList_postorder(allnodes_postorder, utree->rootnode);
+        likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
 
         // Set survival probability to each node in the list
-        likelihood->setAllIotas(allnodes_postorder);
+        likelihood->setAllIotas(fullTraversalNodes);
 
         // Set deletion probability to each node in the list
-        likelihood->setAllBetas(allnodes_postorder);
+        likelihood->setAllBetas(fullTraversalNodes);
 
         // set probability matrix -- exponential of substitution rates
-        likelihood->computePr(allnodes_postorder, alignment->align_alphabetsize);
+        likelihood->computePr(fullTraversalNodes, alignment->align_alphabetsize);
 
         if (FLAGS_alignment) {
 
@@ -421,10 +405,10 @@ int main(int argc, char *argv[]) {
 
 
         // Set insertion histories on each node of the list
-        likelihood->setInsertionHistories(allnodes_postorder, *alignment);
+        likelihood->setInsertionHistories(fullTraversalNodes, *alignment);
 
         // Initialise likelihood components on the tree
-        likelihood->computeFV(allnodes_postorder, *alignment); //TODO: Add weight per column
+        likelihood->computeFV(fullTraversalNodes, *alignment); //TODO: Add weight per column
 
         // Make a backup of the newly computed components
         likelihood->saveLikelihoodComponents();
@@ -433,7 +417,7 @@ int main(int argc, char *argv[]) {
         //likelihood->unloadParametersOperative();
 
         // Compute the model likelihood
-        logLK = likelihood->computePartialLK_WholeAlignment(allnodes_postorder, *alignment);
+        logLK = likelihood->computePartialLK_WholeAlignment(fullTraversalNodes, *alignment);
         VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << logLK << " \t[TSHLIB METHODS]";
     }
     //----------------------------------------------
@@ -478,7 +462,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    std::vector<VirtualNode *> list_vnode_to_root;
+    std::vector<VirtualNode *> listNodesWithinPath;
 
     // Print node description with neighbors
     for (auto &vnode:utree->listVNodes) {
@@ -509,11 +493,10 @@ int main(int argc, char *argv[]) {
             VirtualNode *qnode = rearrangmentList->getMove(i)->getTargetNode();
 
             // ------------------------------------
-            // Prepare the list of nodes involved in the move
-            // TODO: This list belongs specifically to the tree-rearrangement definition -> move to TreeRearrangment class
-            list_vnode_to_root.clear();
-            list_vnode_to_root = utree->computePathBetweenNodes(pnode, qnode);
-            list_vnode_to_root.push_back(utree->rootnode);
+            // Prepare the list of nodes involved in the move (Required here!)
+            listNodesWithinPath.clear();
+            listNodesWithinPath = utree->computePathBetweenNodes(pnode, qnode);
+            listNodesWithinPath.push_back(utree->rootnode);
 
             // ------------------------------------
             // Apply the move
@@ -526,12 +509,15 @@ int main(int argc, char *argv[]) {
             // ------------------------------------
             // Print tree on file
             //utree->saveTreeOnFile("../data/test.txt");
+
+            // ------------------------------------
             bool isLKImproved = false;
             bool computeMoveLikelihood = true;
 
             // ------------------------------------
             // Add the root
             utree->addVirtualRootNode();
+
             // ------------------------------------
             if (computeMoveLikelihood && FLAGS_model_indels) {
 
@@ -539,45 +525,20 @@ int main(int argc, char *argv[]) {
                 //utree->printAllNodesNeighbors();
                 //testSetAinRootPath(MSA_len, alignment, utree, list_vnode_to_root)
 
+                likelihood->recombineAllFv(listNodesWithinPath);
+                likelihood->setInsertionHistories(listNodesWithinPath, *alignment);
 
+                logLK = LKFunc::LKRearrangment(*likelihood, listNodesWithinPath, *alignment);
 
-                // ------------------------------------
-                // Compute the full likelihood from the list of nodes involved in the rearrangment
-                allnodes_postorder.clear();
-                likelihood->compileNodeList_postorder(allnodes_postorder, utree->rootnode);
-
-
-                likelihood->recombineAllFv(list_vnode_to_root);
-                likelihood->setInsertionHistories(list_vnode_to_root, *alignment);
-
-                logLK = LKFunc::LKRearrangment(*likelihood, list_vnode_to_root, *alignment);
-
-
-
-                //std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm
-                //logLK = tl->computeLikelihoodOnTreeRearrangment(list_vnode_to_root, tm);
-
-
-
-
-                //logLK = likelihood->computePartialLK(list_vnode_to_root, *alignment);
-
-                // ------------------------------------
-                // Apply brent -- test only
-                //VLOG(2) << "[Tree LK] Before Brent: " << logLK;
-                //double max_lenght = pi[1] * 1.1;
-                //double min_lenght = pi[1] * 0.9;
-
-                //isLKImproved = Generic_Brent_Lk(&likelihood->pi[1], min_lenght, max_lenght, SMALL, BRENT_ITMAX,
-                //                                LKFunc::LKcore , *likelihood, list_vnode_to_root, *alignment, logLK);
-
+                if (FLAGS_model_indels) {
+                    // the dynamic_cast is necessary to access to those methods which belong to the class itself and not the parent class
+                    // in this case the class is the RHomogeneousTreeLikelihood derived class for PIP.
+                    bpp::RHomogeneousTreeLikelihood_PIP* ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP*>(tl);
+                    VLOG(2) << "BPP::LogLK move " << ttl->getLogLikelihoodR(listNodesWithinPath, &tm);
+                }
                 // ------------------------------------
                 // Store likelihood of the move
                 rearrangmentList->getMove(i)->move_lk = logLK;
-                //VLOG(2) << "[Tree LK] Ater Brent: " << logLK;
-
-
-
             }
 
             if (!FLAGS_model_indels) {
@@ -604,6 +565,7 @@ int main(int argc, char *argv[]) {
 
             }
 
+            // ------------------------------------
             // Move exection details
             VLOG(2) << "[apply  move]\t" << rearrangmentList->getMove(i)->move_class << "." << std::setfill('0') << std::setw(3) << i
                     << " | (" << isLKImproved << ") " << start_col_line << rearrangmentList->getMove(i)->move_lk << end_col_line << "\t"
@@ -627,17 +589,18 @@ int main(int argc, char *argv[]) {
             // Add the root
             utree->addVirtualRootNode();
 
+            // ------------------------------------
             computeMoveLikelihood = false;
+
             // ------------------------------------
             if (FLAGS_model_indels) {
                 if (FLAGS_lkmove_bothways) {
 
                     // ------------------------------------
                     // Compute the full likelihood from the list of nodes involved in the rearrangment
-                    likelihood->recombineAllFv(list_vnode_to_root);
-                    likelihood->setInsertionHistories(list_vnode_to_root, *alignment);
-
-                    logLK = LKFunc::LKRearrangment(*likelihood, list_vnode_to_root, *alignment);
+                    likelihood->recombineAllFv(listNodesWithinPath);
+                    likelihood->setInsertionHistories(listNodesWithinPath, *alignment);
+                    logLK = LKFunc::LKRearrangment(*likelihood, listNodesWithinPath, *alignment);
 
                     // ------------------------------------
                     // Store likelihood of the move
@@ -646,8 +609,12 @@ int main(int argc, char *argv[]) {
                 } else {
 
                     likelihood->restoreLikelihoodComponents();
+                    // ------------------------------------
+                    // Compute the list of nodes for a full traversal
+                    fullTraversalNodes.clear();
+                    likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
                     //likelihood->setInsertionHistories(allnodes_postorder,*alignment);
-                    logLK = LKFunc::LKRearrangment(*likelihood, allnodes_postorder, *alignment);
+                    logLK = LKFunc::LKRearrangment(*likelihood, fullTraversalNodes, *alignment);
                 }
 
             }
