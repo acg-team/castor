@@ -167,24 +167,52 @@ int main(int argc, char *argv[]) {
     }
 
     // Convert bpp::tree into thslib::utree
-    auto ttTree = bpp::TreeTemplate<bpp::Node>(*tree);
+    //auto ttTree = bpp::TreeTemplate<bpp::Node>(*tree);
+
+    // Rename internal nodes with standard Vxx * where xx is a progressive number
+    tree->setNodeName(tree->getRootId(),"root");
+
+    for(auto &nodeId:tree->getNodesId()){
+
+        if(!tree->hasNodeName(nodeId)){
+
+            std::string stringId;
+            std::string stringName;
+
+            stringId = std::to_string(nodeId);
+            stringName = "V" + stringId;
+
+            tree->setNodeName(nodeId, stringName);
+
+
+
+        }
+        VLOG(2) << tree->getNodeName(nodeId);
+    }
+
+
+
+
     auto utree = new Utree();
     UtreeBppUtils::treemap tm;
-    UtreeBppUtils::convertTree_b2u(&ttTree, utree, tm);
+    UtreeBppUtils::convertTree_b2u(tree, utree, tm);
     LOG(INFO) << "[Initial Utree Topology] " << utree->printTreeNewick(true);
 
-    delete tree;
+    //delete tree;
     delete newickReader;
 
     //------------------------------------------------------------------------------------------------------------------
     // Printing of the bidirectional map [test]
     VLOG(3) << "Bidirectional map size: "<<  tm.size();
-    UtreeBppUtils::treemap::left_map& map_view = tm.left;
-    for (UtreeBppUtils::treemap::left_map::const_iterator it(map_view.begin()), end(map_view.end()); it != end; ++it) {
-        VLOG(3) << (*it).first->getFather()->getId() << " --> " << (*it).second->getNodeUp()->getNodeName();
-    }
-    tshlib::VirtualNode *query = utree->listVNodes.at(1);
-    bpp::Node *extracted = tm.right.at(query);
+
+    //UtreeBppUtils::treemap::left_map& map_view = tm.left;
+    //for (UtreeBppUtils::treemap::left_map::const_iterator it(map_view.begin()), end(map_view.end()); it != end; ++it) {
+    //    VLOG(3) << (*it).first->getFather()->getId() << " --> " << (*it).second->getNodeUp()->getNodeName();
+    //}
+    //tshlib::VirtualNode *query = utree->listVNodes.at(1);
+    //bpp::Node *extracted = tm.right.at(query);
+
+
 
     //------------------------------------------------------------------------------------------------------------------
 
@@ -205,8 +233,10 @@ int main(int argc, char *argv[]) {
     }
 
     // Once the tree has the root, then map it as well
-
-    tm.insert(UtreeBppUtils::nodeassoc(ttTree.getRootNode(), utree->rootnode));
+    tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode));
+    //tm.insert(UtreeBppUtils::nodeassoc(ttTree.getRootNode(), utree->rootnode));
+    //bpp::Node *query_2 = ttTree.getRootNode()->getSons().at(1);
+    //tshlib::VirtualNode *result = tm.left.at(query_2);
 
     //------------------------------------------------------------------------------------------------------------------
     // INIT SubModels + Indel
@@ -273,7 +303,7 @@ int main(int argc, char *argv[]) {
     std::vector<VirtualNode *> fullTraversalNodes;
     progressivePIP::ProgressivePIPResult MSA;
     if (!FLAGS_alignment) {
-        tree = UtreeBppUtils::convertTree_u2b(utree);
+        //tree = UtreeBppUtils::convertTree_u2b(utree);
 
         bpp::RowMatrix<double> testProb;
         if (!FLAGS_model_indels) {

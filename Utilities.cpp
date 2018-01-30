@@ -46,7 +46,7 @@
 #include "Utilities.hpp"
 
 
-
+/*
 void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source, treemap &tm) {
 
     std::string name;
@@ -102,11 +102,82 @@ void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::
 
 
 }
+ */
+
+void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Tree *refTree, int nodeId, treemap &tm) {
 
 
+    if(refTree->isLeaf(nodeId)){
+        target->vnode_leaf=true;
+    }else{
+        target->vnode_leaf=false;
+    }
+
+    for(auto &sonId:refTree->getSonsId(nodeId)) {
+        auto ichild = new VirtualNode();
+        // Filling the bidirectional map
+        tm.insert(nodeassoc(sonId, ichild));
+        ichild->vnode_id = sonId;
+        ichild->vnode_name = refTree->getNodeName(sonId);
+        ichild->vnode_branchlength = refTree->getDistanceToFather(sonId);
+
+        if (!refTree->isLeaf(sonId)) {
+
+            ichild->vnode_leaf = false;
+
+            target->connectNode(ichild);
+            in_tree->addMember(ichild);
+            _traverseTree_b2u(in_tree, ichild, refTree, sonId, tm);
+
+
+        } else {
+
+            // Set all the other directions to null
+            ichild->_setNodeLeft(nullptr);
+            ichild->_setNodeRight(nullptr);
+
+            // Set the LEAF flag to true
+            ichild->vnode_leaf = true;
+            in_tree->addMember(ichild);
+            target->connectNode(ichild);
+        }
+    }
+}
+
+void UtreeBppUtils::convertTree_b2u(bpp::Tree *in_tree, Utree *out_tree, treemap &tm) {
+    int rootId = in_tree->getRootId();
+    for(auto &sonId:in_tree->getSonsId(rootId)){
+
+        auto ichild = new VirtualNode;
+        // Filling the bidirectional map
+        tm.insert(nodeassoc(sonId, ichild));
+        // Filling the bidirectional map
+
+        ichild->vnode_id = sonId;
+        ichild->vnode_name = in_tree->getNodeName(sonId);
+        ichild->vnode_branchlength = in_tree->getDistanceToFather(sonId);
+
+        _traverseTree_b2u(out_tree, ichild, in_tree, sonId, tm);
+
+        // Add this node as starting point of the tree
+        out_tree->addMember(ichild, true);
+
+    }
+
+    // Collapse multiforcating trees to star tree pointing to the same pseudoroot
+    // Pick root node at random within the node-vector
+
+    out_tree->startVNodes.at(0)->_setNodeUp(out_tree->startVNodes.at(1));
+    out_tree->startVNodes.at(1)->_setNodeUp(out_tree->startVNodes.at(0));
+
+}
+
+
+/*
 void UtreeBppUtils::convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree, treemap &tm) {
 
     bpp::Node * RootNode = in_tree->getRootNode();
+
     std::string name;
     // For each node descending the root, create either a new VirtualNode
     for (auto &bppNode:RootNode->getSons()) {
@@ -140,6 +211,7 @@ void UtreeBppUtils::convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree
 
 }
 
+ */
 
 bpp::TreeTemplate<bpp::Node>* UtreeBppUtils::convertTree_u2b(tshlib::Utree *in_tree) {
 

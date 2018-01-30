@@ -54,11 +54,14 @@
 namespace UtreeBppUtils{
 using namespace tshlib;
 
-    typedef boost::bimap< bpp::Node *, tshlib::VirtualNode *> treemap;
+    typedef boost::bimap< int, tshlib::VirtualNode *> treemap;
     typedef treemap::value_type nodeassoc;
 
-    void convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree, treemap &tm);
-    void _traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source, treemap &tm);
+    //void convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree, treemap &tm);
+    void convertTree_b2u(bpp::Tree *in_tree, Utree *out_tree, treemap &tm);
+    void _traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Tree *refTree, int nodeId, treemap &tm);
+
+    // void _traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source, treemap &tm);
 
     bpp::TreeTemplate<bpp::Node> *convertTree_u2b(Utree *in_tree);
     void _traverseTree_u2b(bpp::Node *target, VirtualNode *source);
