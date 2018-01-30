@@ -363,7 +363,7 @@ void RHomogeneousTreeLikelihood_PIP::initializeLikelihoodEmptyMatrix_(VVVdouble 
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::hadamardMultFvSons_(Node *node) {
+void RHomogeneousTreeLikelihood_PIP::hadamardMultFvSons_(Node *node) const{
 
     VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
 
@@ -392,7 +392,7 @@ void RHomogeneousTreeLikelihood_PIP::hadamardMultFvSons_(Node *node) {
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::hadamardMultFvEmptySons_(Node *node) {
+void RHomogeneousTreeLikelihood_PIP::hadamardMultFvEmptySons_(Node *node) const {
 
     VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
 
@@ -485,7 +485,7 @@ void RHomogeneousTreeLikelihood_PIP::SingleRateCategoryHadamardMultFvEmptySons_(
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::computePrTimesFv_(Node *node) {
+void RHomogeneousTreeLikelihood_PIP::computePrTimesFv_(Node *node) const{
 
     VVVdouble *pxy__node = &pxy_[node->getId()];
 
@@ -533,7 +533,7 @@ void RHomogeneousTreeLikelihood_PIP::computePrTimesFv_(Node *node) {
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::computePrTimesFvEmpty_(Node *node) {
+void RHomogeneousTreeLikelihood_PIP::computePrTimesFvEmpty_(Node *node) const {
 
     VVVdouble *pxy__node = &pxy_[node->getId()];
 
@@ -556,7 +556,7 @@ void RHomogeneousTreeLikelihood_PIP::computePrTimesFvEmpty_(Node *node) {
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::computePrTimesIndicator_(Node *node) {
+void RHomogeneousTreeLikelihood_PIP::computePrTimesIndicator_(Node *node) const {
 
     VVVdouble *pxy__node = &pxy_[node->getId()];
 
@@ -609,7 +609,7 @@ void RHomogeneousTreeLikelihood_PIP::computePrTimesIndicator_(Node *node) {
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::computePrTimesIndicatorEmpty_(Node *node) {
+void RHomogeneousTreeLikelihood_PIP::computePrTimesIndicatorEmpty_(Node *node) const {
 
     VVVdouble *pxy__node = &pxy_[node->getId()];
 
@@ -638,37 +638,34 @@ void RHomogeneousTreeLikelihood_PIP::computePrTimesIndicatorEmpty_(Node *node) {
 
 }
 
-void RHomogeneousTreeLikelihood_PIP::recombineFvAfterMove(){
+void RHomogeneousTreeLikelihood_PIP::recombineFvAfterMove() const{
 
-
+    for (auto &node:likelihoodNodes_) {
+        //std::cout << "[RecombineFV]" << vnode->printNeighbours() << std::endl;
+        recombineFvAtNode(node);
+        //vnode->recombineFv();
+        //vnode->_printFV();
+    }
 }
 
-void RHomogeneousTreeLikelihood_PIP::recombineFvAtNode(Node *node){
-/*
-    // For each internal node
-    if (!this->isTerminalNode()) {
+void RHomogeneousTreeLikelihood_PIP::recombineFvAtNode(Node *node) const{
 
-        // For each column of the alignment
-        for (unsigned int k = 0; k < this->vnode_Fv_operative.size(); k++) {
+    if (!node->isLeaf()) {
+        // Internal node
+        hadamardMultFvSons_(node);
+        hadamardMultFvEmptySons_(node);
 
-            Eigen::VectorXd &fvL = this->getNodeLeft()->vnode_Fv_operative.at(k);
-            Eigen::VectorXd &fvR = this->getNodeRight()->vnode_Fv_operative.at(k);
-
-            this->vnode_Fv_operative.at(k) = this->getPr() * (fvL).cwiseProduct(fvR);
-
+        if (node->hasFather()) {
+            // Root --> special case for internal node
+            computePrTimesFv_(node);
+            computePrTimesFvEmpty_(node);
         }
 
-        // Before moving to the next node, recompute the empty column fv quantities
-        Eigen::VectorXd &fvE_L = this->getNodeLeft()->vnode_Fv_empty_operative;
-        Eigen::VectorXd &fvE_R = this->getNodeRight()->vnode_Fv_empty_operative;
-
-        this->vnode_Fv_empty_operative = this->getPr() * (fvE_L).cwiseProduct(fvE_R);
-
-
+    } else {
+        // Leaf node
+        computePrTimesIndicator_(node);
+        computePrTimesIndicatorEmpty_(node);
     }
-*/
-
-
 
 }
 
@@ -1232,17 +1229,21 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodSite(size_t i) const {
 double RHomogeneousTreeLikelihood_PIP::computeLikelihoodOnTreeRearrangment(std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm) const {
     double logLK;
 
-    // 1. convert the list of tshlib::VirtualNodes into bpp::Node
+    // 0. convert the list of tshlib::VirtualNodes into bpp::Node
     auto listBppNodes = remapVirtualNodeLists(listNodes, tm);
-    std::vector<Node *> tempExtendedNodeList;
+    likelihoodNodes_ = listBppNodes;
 
-    std::vector<double> lk_sites(nbSites_);
+    // 1. Recombine FV arrays after move
+    recombineFvAfterMove();
+
+    // 2. Compute the lk of the empty column
     likelihoodNodes_.clear();
     computePostOrderNodeList(tree_->getRootNode());
-
     double lk_site_empty = computeLikelihoodWholeAlignmentEmptyColumn(tm);
 
-    //double lk_empty = lk.computePartialEmptyLK(list_node_complete, alignment);
+    // 3. Compute the likelihood of each site
+    std::vector<double> lk_sites(nbSites_);
+    std::vector<Node *> tempExtendedNodeList;
 
     for(unsigned long i = 0; i<nbSites_;i++) {
 

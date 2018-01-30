@@ -150,9 +150,9 @@ namespace bpp {
 
         void initializeLikelihoodEmptyMatrix_(VVVdouble *_likelihoods_empty_node);
 
-        void hadamardMultFvSons_(Node *node);
+        void hadamardMultFvSons_(Node *node) const;
 
-        void hadamardMultFvEmptySons_(Node *node);
+        void hadamardMultFvEmptySons_(Node *node) const ;
 
         void SingleRateCategoryHadamardMultFvSons_(Node *node,unsigned long site,unsigned long rate,Vdouble *fv_out) const;
 
@@ -162,13 +162,13 @@ namespace bpp {
 
         void SingleRateCategoryHadamardMultFvEmptySons_(Node *node,unsigned long rate,Vdouble *fv_out, UtreeBppUtils::treemap *tm) const;
 
-        void computePrTimesFv_(Node *node);
+        void computePrTimesFv_(Node *node) const;
 
-        void computePrTimesFvEmpty_(Node *node);
+        void computePrTimesFvEmpty_(Node *node) const;
 
-        void computePrTimesIndicator_(Node *node);
+        void computePrTimesIndicator_(Node *node) const;
 
-        void computePrTimesIndicatorEmpty_(Node *node);
+        void computePrTimesIndicatorEmpty_(Node *node) const;
 
     public:
 
@@ -359,9 +359,9 @@ namespace bpp {
          * @param nodelist The postorder list of nodes at which the likelihood arrays must be updated
          */
 
-        virtual void recombineFvAfterMove();
+        virtual void recombineFvAfterMove() const;
 
-        virtual void recombineFvAtNode(Node *node);
+        virtual void recombineFvAtNode(Node *node) const;
 
 
         double computePhi(double lkEmptyColumn) const;
