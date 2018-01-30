@@ -156,7 +156,11 @@ namespace bpp {
 
         void SingleRateCategoryHadamardMultFvSons_(Node *node,unsigned long site,unsigned long rate,Vdouble *fv_out) const;
 
+        void SingleRateCategoryHadamardMultFvSons_(Node *node,unsigned long site,unsigned long rate,Vdouble *fv_out, UtreeBppUtils::treemap *tm) const;
+
         void SingleRateCategoryHadamardMultFvEmptySons_(Node *node,unsigned long rate,Vdouble *fv_out) const;
+
+        void SingleRateCategoryHadamardMultFvEmptySons_(Node *node,unsigned long rate,Vdouble *fv_out, UtreeBppUtils::treemap *tm) const;
 
         void computePrTimesFv_(Node *node);
 
@@ -180,8 +184,7 @@ namespace bpp {
         double getLikelihood() const;
 
         double getLogLikelihood() const;
-
-        double getLogLikelihood(std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm) const;
+        double getLogLikelihoodR(std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm) const;
 
 
         double getLikelihoodForASite(size_t site) const;
@@ -303,12 +306,13 @@ namespace bpp {
          * @brief This method computes a list of nodes traversing the tree in postorder
          *
          */
-        void computePostOrderNodeList(Node *startNode);
+        void computePostOrderNodeList(Node *startNode) const;
 
     protected:
 
         /**
          * @brief Compute the likelihood for a subtree defined by the Tree::Node <i>node</i>.
+         *        This function should be called only for filling the likelihood arrays (i.e. first traversal, parameter change -- but not topology changes).
          *
          * @param node The root of the subtree.
          */
@@ -371,13 +375,20 @@ namespace bpp {
 
         void printPrMatrix(Node *node, VVdouble *pr);
 
-
         double computeLikelihoodWholeAlignment()const;
 
+        std::vector<Node *> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList, UtreeBppUtils::treemap *tm) const;
 
-        void ExtendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<tshlib::VirtualNode *> &listNodes, unsigned long alignColumn, UtreeBppUtils::treemap *tm) const;
+        void ExtendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<Node *> &listNodes, unsigned long site, UtreeBppUtils::treemap *tm) const;
 
         //friend class RHomogeneousMixedTreeLikelihood;
+        double computeLikelihoodSite(size_t i) const;
+
+        double computeLikelihoodWholeAlignmentEmptyColumn() const;
+
+        double computeLikelihoodWholeAlignmentEmptyColumn(UtreeBppUtils::treemap *tm) const;
+
+        double computeLikelihoodWholeSites() const;
     };
 }
 #endif //MINIJATI_RHOMOGENEOUSTREELIKELIHOOD_PIP_HPP
