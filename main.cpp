@@ -291,8 +291,7 @@ int main(int argc, char *argv[]) {
             test.reset(submodel);
             transmodel = test.release();
 
-            tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
-
+            tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, &tm, false, false, false);
         }
 
         VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
@@ -529,10 +528,11 @@ int main(int argc, char *argv[]) {
                 logLK = LKFunc::LKRearrangment(*likelihood, listNodesWithinPath, *alignment);
 
                 if (FLAGS_model_indels) {
-                    // the dynamic_cast is necessary to access to those methods which belong to the class itself and not the parent class
-                    // in this case the class is the RHomogeneousTreeLikelihood derived class for PIP.
+                    // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
+                    // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
                     bpp::RHomogeneousTreeLikelihood_PIP* ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP*>(tl);
-                    VLOG(2) << "BPP::LogLK move " << ttl->getLogLikelihoodR(listNodesWithinPath, &tm);
+                    // we use a map to navigate between utree and bpp tree. The map is constant.
+                    VLOG(2) << "BPP::LogLK move apply " << ttl->getLogLikelihood(listNodesWithinPath);
                 }
                 // ------------------------------------
                 // Store likelihood of the move
@@ -604,6 +604,11 @@ int main(int argc, char *argv[]) {
                     // Store likelihood of the move
                     rearrangmentList->getMove(i)->move_lk = logLK;
 
+                    // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
+                    // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
+                    bpp::RHomogeneousTreeLikelihood_PIP* ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP*>(tl);
+                    // we use a map to navigate between utree and bpp tree. The map is constant.
+                    VLOG(2) << "BPP::LogLK move revert " << ttl->getLogLikelihood(listNodesWithinPath);
                 } else {
 
                     likelihood->restoreLikelihoodComponents();

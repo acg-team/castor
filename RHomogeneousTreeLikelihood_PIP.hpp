@@ -75,6 +75,7 @@ namespace bpp {
         mutable double nu_;
         mutable double tau_;
 
+        mutable UtreeBppUtils::treemap treemap_;
 
     protected:
         double minusLogLik_;
@@ -99,6 +100,7 @@ namespace bpp {
                 const Tree &tree,
                 TransitionModel *model,
                 DiscreteDistribution *rDist,
+                UtreeBppUtils::treemap *tm,
                 bool checkRooted = true,
                 bool verbose = true,
                 bool usePatterns = true)
@@ -124,6 +126,7 @@ namespace bpp {
                 const SiteContainer &data,
                 TransitionModel *model,
                 DiscreteDistribution *rDist,
+                UtreeBppUtils::treemap *tm,
                 bool checkRooted = true,
                 bool verbose = true,
                 bool usePatterns = true)
@@ -156,11 +159,7 @@ namespace bpp {
 
         void SingleRateCategoryHadamardMultFvSons_(Node *node,unsigned long site,unsigned long rate,Vdouble *fv_out) const;
 
-        void SingleRateCategoryHadamardMultFvSons_(Node *node,unsigned long site,unsigned long rate,Vdouble *fv_out, UtreeBppUtils::treemap *tm) const;
-
         void SingleRateCategoryHadamardMultFvEmptySons_(Node *node,unsigned long rate,Vdouble *fv_out) const;
-
-        void SingleRateCategoryHadamardMultFvEmptySons_(Node *node,unsigned long rate,Vdouble *fv_out, UtreeBppUtils::treemap *tm) const;
 
         void computePrTimesFv_(Node *node) const;
 
@@ -184,7 +183,7 @@ namespace bpp {
         double getLikelihood() const;
 
         double getLogLikelihood() const;
-        double getLogLikelihoodR(std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm) const;
+        double getLogLikelihood(std::vector<tshlib::VirtualNode *> &listNodes) const;
 
 
         double getLikelihoodForASite(size_t site) const;
@@ -256,14 +255,13 @@ namespace bpp {
 
         std::vector<int> getNodeDescCounts(bpp::Node *node, int siteId){ return descCountData_[node->getId()].first;}
 
-        int getNodeDescCountForASite(bpp::Node *node, int siteId){ return descCountData_[node->getId()].first.at(siteId);}
+        int getNodeDescCountForASite(bpp::Node *node, int siteId) const{ return descCountData_[node->getId()].first.at(siteId);}
 
         bool getSetAForANodeForASite(bpp::Node *node, int siteId){ return setAData_[node->getId()].first.at(siteId);}
 
         DRASRTreeLikelihoodData *getLikelihoodData() { return likelihoodData_; }
 
         const DRASRTreeLikelihoodData *getLikelihoodData() const { return likelihoodData_; }
-
 
         /**
          * @name Interface to compute the likelihood components
@@ -297,7 +295,7 @@ namespace bpp {
          * @brief This method computes the likelihood after a tree rearrangment
          * @return The likelihood value using the intermediate partial values
          */
-        double computeLikelihoodOnTreeRearrangment(std::vector<tshlib::VirtualNode *> &listNodes, UtreeBppUtils::treemap *tm) const;
+        double computeLikelihoodOnTreeRearrangment(std::vector<tshlib::VirtualNode *> &listNodes) const;
 
         /**
          * @brief This method computes a list of nodes traversing the tree in postorder
@@ -330,12 +328,12 @@ namespace bpp {
         /**
          * @brief This method sets DescCount (number of characters different from gap per column) value for all the nodes in the tree
          */
-        virtual void setAllDescCountData(const SiteContainer &sites);
+        virtual void setAllDescCountData(const SiteContainer &sites) const;
 
         /**
          * @brief This method sets the setA (setA=1: possible insertion on that edge) value for all the nodes in the tree
          */
-        virtual void setAllSetAData(const SiteContainer &sites);
+        virtual void setAllSetAData(const SiteContainer &sites) const;
 
         /**
          * @brief This method sets the iota value for all the nodes in the tree
@@ -377,16 +375,14 @@ namespace bpp {
 
         double computeLikelihoodWholeAlignment()const;
 
-        std::vector<Node *> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList, UtreeBppUtils::treemap *tm) const;
+        std::vector<Node *> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const;
 
-        void ExtendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<Node *> &listNodes, unsigned long site, UtreeBppUtils::treemap *tm) const;
+        void ExtendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<Node *> &listNodes, unsigned long site) const;
 
         //friend class RHomogeneousMixedTreeLikelihood;
         double computeLikelihoodSite(size_t i) const;
 
         double computeLikelihoodWholeAlignmentEmptyColumn() const;
-
-        double computeLikelihoodWholeAlignmentEmptyColumn(UtreeBppUtils::treemap *tm) const;
 
         double computeLikelihoodWholeSites() const;
     };
