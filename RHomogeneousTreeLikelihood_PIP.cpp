@@ -173,6 +173,9 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     // Set all betas
     setAllBetas();
 
+    // Initialise vectors for storing insertion histories values
+    InitialiseInsertionHistories();
+    
     // Add vectors for storing SetA array
     setAllDescCountData(sites);
 
@@ -662,6 +665,7 @@ void RHomogeneousTreeLikelihood_PIP::computePrTimesIndicatorEmpty_(Node *node) c
 
 }
 
+
 void RHomogeneousTreeLikelihood_PIP::recombineFvAfterMove() const{
 
     for (auto &node:likelihoodNodes_) {
@@ -671,6 +675,7 @@ void RHomogeneousTreeLikelihood_PIP::recombineFvAfterMove() const{
         //vnode->_printFV();
     }
 }
+
 
 void RHomogeneousTreeLikelihood_PIP::recombineFvAtNode(Node *node) const{
 
@@ -692,7 +697,6 @@ void RHomogeneousTreeLikelihood_PIP::recombineFvAtNode(Node *node) const{
     }
 
 }
-
 
 
 void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
@@ -759,6 +763,25 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
     computeTreeLikelihood();
 
     minusLogLik_ = -getLogLikelihood();
+}
+
+
+void RHomogeneousTreeLikelihood_PIP::InitialiseInsertionHistories() const{
+
+    for (int i = 0;i < nbSites_;i++) {
+        for ( bpp::Node *node:tree_->getNodes()) {
+
+            // Initialize vectors descCount_ and setA_ and indicatorFunctionVector
+            std::vector<int> descCount_;
+            std::vector<bool> setA_;
+            descCount_.resize(nbSites_);
+            setA_.resize(nbSites_);
+            indicatorFun_[node].at(i).resize(nbStates_);
+
+            descCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node)));
+            setAData_.insert(std::make_pair(node->getId(), std::make_pair(setA_, node)));
+        }
+    }
 }
 
 

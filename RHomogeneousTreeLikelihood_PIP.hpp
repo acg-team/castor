@@ -169,6 +169,8 @@ namespace bpp {
 
         void computePrTimesIndicatorEmpty_(Node *node) const;
 
+        void InitialiseInsertionHistories() const;
+
     public:
 
         /**
