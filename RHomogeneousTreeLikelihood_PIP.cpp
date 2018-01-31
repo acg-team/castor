@@ -167,66 +167,18 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
         indicatorFun_[node].resize(nbSites_);
     }
 
+    // Set all iotas
+    setAllIotas();
+
+    // Set all betas
+    setAllBetas();
+
     // Add vectors for storing SetA array
     setAllDescCountData(sites);
 
     // Set all setA
     setAllSetAData(sites);
 
-    /*
-    for(int i=0;i<nbSites_;i++){
-
-        unsigned long idxSite = likelihoodData_->getRootArrayPositions().at(i);
-
-        for(bpp::Node *node:tree_->getNodes()){
-
-            // Initialize vectors descCount_ and setA_ and indicatorFunctionVector
-            std::vector<int> descCount_;
-            std::vector<bool> setA_;
-            descCount_.resize(nbSites_);
-            setA_.resize(nbSites_);
-            indicatorFun_[node].at(i).resize(nbStates_);
-
-
-            descCountData_.insert(std::make_pair(node->getId(),std::make_pair(descCount_,node)));
-            setAData_.insert(std::make_pair(node->getId(),std::make_pair(setA_,node)));
-
-            // Computing descCount + setA
-            if (node->isLeaf()){
-
-                descCountData_[node->getId()].first.at(i) = (sites.getSequence(node->getName()).getValue(i) == sites.getAlphabet()->getGapCharacterCode() ? 0:1);
-
-                indicatorFun_[node].at(i).at(sites.getSequence(node->getName()).getValue(i))=1;
-
-            }else{
-
-                for(auto &son: node->getSons()){
-
-                    descCountData_[node->getId()].first.at(i) += getNodeDescCountForASite(son,i); //descCountData_[son->getId()].first.at(i);
-
-                }
-
-            }
-
-            // Compute the total number of characters (exc. gap) for the current site
-            int nonGaps_ = 0;
-
-            for(int s=0;s<sites.getNumberOfSequences();s++ ){
-                //siteValue = sites.getSite(i).getValue(s);
-                if (sites.getAlphabet()->getGapCharacterCode() != sites.getSite(i).getValue(s)) nonGaps_++;
-            }
-
-            setAData_[node->getId()].first.at(i) = (getNodeDescCountForASite(node,i) == nonGaps_);
-
-        }
-    }
-    */
-
-    // Set all iotas
-    setAllIotas();
-
-    // Set all betas
-    setAllBetas();
 
     if (verbose_)
         ApplicationTools::displayResult("Number of distinct sites", TextTools::toString(nbDistinctSites_));

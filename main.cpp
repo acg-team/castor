@@ -400,12 +400,11 @@ int main(int argc, char *argv[]) {
 
         }
 
-
         // Set insertion histories on each node of the list
         likelihood->setInsertionHistories(fullTraversalNodes, *alignment);
 
         // Initialise likelihood components on the tree
-        likelihood->computeFV(fullTraversalNodes, *alignment); //TODO: Add weight per column
+        likelihood->computeFV(fullTraversalNodes, *alignment);
 
         // Make a backup of the newly computed components
         likelihood->saveLikelihoodComponents();
