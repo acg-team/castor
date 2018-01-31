@@ -167,6 +167,10 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
         indicatorFun_[node].resize(nbSites_);
     }
 
+    // Initialise vector of likelihood nodes
+    //likelihoodNodes_.clear();
+    //computePostOrderNodeList(tree_->getRootNode());
+
     // Set all iotas
     setAllIotas();
 
@@ -175,12 +179,6 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
 
     // Initialise vectors for storing insertion histories values
     InitialiseInsertionHistories();
-
-    // Add vectors for storing SetA array
-    setAllDescCountData(sites);
-
-    // Set all setA
-    //setAllSetAData(sites);
 
 
     if (verbose_)
@@ -274,26 +272,24 @@ throw(Exception) {
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood() {
 
-    //std::vector<Node *> postOrderList_Complete;
-
     computePostOrderNodeList(tree_->getRootNode());
 
-    computeSubtreeLikelihood();
+    // Set insertion histories
+    setInsertionHistories(*data_);
 
-    //computeSubtreeLikelihood(tree_->getRootNode());
+    computeSubtreeLikelihood();
 
 }
 
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood(std::vector<Node *> nodeList) {
 
-
     likelihoodNodes_ = nodeList;
 
-    //computePostOrderNodeList(tree_->getRootNode());
+    // Set insertion histories
+    setInsertionHistories(*data_);
 
     computeSubtreeLikelihood();
-
 
 }
 
@@ -769,7 +765,7 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
 void RHomogeneousTreeLikelihood_PIP::InitialiseInsertionHistories() const{
 
     for (int i = 0;i < nbSites_;i++) {
-        for ( bpp::Node *node:tree_->getNodes()) {
+        for (auto &node:tree_->getNodes()) {
 
             // Initialize vectors descCount_ and setA_ and indicatorFunctionVector
             std::vector<int> descCount_;
@@ -785,7 +781,7 @@ void RHomogeneousTreeLikelihood_PIP::InitialiseInsertionHistories() const{
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::setAllDescCountData(const SiteContainer &sites) const{
+void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &sites) const {
 
     for(int i=0;i<nbSites_;i++){
 
@@ -799,7 +795,7 @@ void RHomogeneousTreeLikelihood_PIP::setAllDescCountData(const SiteContainer &si
             }
         }
 
-        for(bpp::Node *node:tree_->getNodes()){
+        for (auto &node:likelihoodNodes_) {
 
             // Computing descCount + setA
             if (node->isLeaf()){
@@ -819,6 +815,7 @@ void RHomogeneousTreeLikelihood_PIP::setAllDescCountData(const SiteContainer &si
 
                 //for(auto &son: node->getSons()){
                 for (size_t l = 0; l < nbNodes; l++) {
+
                     descCountData_[node->getId()].first.at(i) += getNodeDescCountForASite(tree_->getNode(sonsIDs.at(l)),i); //descCountData_[son->getId()].first.at(i);
                 }
 
@@ -831,7 +828,7 @@ void RHomogeneousTreeLikelihood_PIP::setAllDescCountData(const SiteContainer &si
 
 }
 
-
+/*
 void RHomogeneousTreeLikelihood_PIP::setAllSetAData(const SiteContainer &sites) const {
 
     for(int i=0;i<nbSites_;i++){
@@ -853,7 +850,7 @@ void RHomogeneousTreeLikelihood_PIP::setAllSetAData(const SiteContainer &sites) 
     }
 
 }
-
+*/
 
 void RHomogeneousTreeLikelihood_PIP::setAllIotas() {
 
@@ -912,8 +909,6 @@ void RHomogeneousTreeLikelihood_PIP::setAllBetas() {
     }
 
 }
-
-
 
 
 void RHomogeneousTreeLikelihood_PIP::resetNodeLikelihoodArrays(const Node *node) {
@@ -1243,8 +1238,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodOnTreeRearrangment(std::
     double logLK;
 
     // 0. convert the list of tshlib::VirtualNodes into bpp::Node
-    auto listBppNodes = remapVirtualNodeLists(listNodes);
-    likelihoodNodes_ = listBppNodes;
+    likelihoodNodes_ = remapVirtualNodeLists(listNodes);
 
     // 1. Recombine FV arrays after move
     recombineFvAfterMove();
@@ -1255,24 +1249,17 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodOnTreeRearrangment(std::
     double lk_site_empty = computeLikelihoodWholeAlignmentEmptyColumn();
 
     // Set ancestral histories
-    // Add vectors for storing SetA array
-    //setAllDescCountData(*data_);
-
-    // Set all setA
-    //setAllSetAData(*data_);
+    setInsertionHistories(*data_);
 
     // 3. Compute the likelihood of each site
     std::vector<double> lk_sites(nbSites_);
     std::vector<Node *> tempExtendedNodeList;
 
-
-
     for(unsigned long i = 0; i<nbSites_;i++) {
 
-        // Copy list
-        //tempExtendedNodeList = listBppNodes;
         // Extend it
         ExtendNodeListOnSetA(listNodes.back(), tempExtendedNodeList, i);
+
         // Overwrite the list of nodes on which computing the likelihood
         //likelihoodNodes_ = tempExtendedNodeList;
 
@@ -1335,6 +1322,7 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood(std::vector<tshlib::Virt
     return computeLikelihoodOnTreeRearrangment(listNodes);
 }
 
+
 std::vector<Node *> RHomogeneousTreeLikelihood_PIP::remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const {
 
     std::vector<Node *> newList;
@@ -1346,6 +1334,7 @@ std::vector<Node *> RHomogeneousTreeLikelihood_PIP::remapVirtualNodeLists(std::v
 
     return newList;
 }
+
 
 void RHomogeneousTreeLikelihood_PIP::SingleRateCategoryHadamardMultFvEmptySons_(Node *node, unsigned long rate, Vdouble *fv_out) const {
 

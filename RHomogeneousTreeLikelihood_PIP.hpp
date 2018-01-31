@@ -330,12 +330,12 @@ namespace bpp {
         /**
          * @brief This method sets DescCount (number of characters different from gap per column) value for all the nodes in the tree
          */
-        virtual void setAllDescCountData(const SiteContainer &sites) const;
+        virtual void setInsertionHistories(const SiteContainer &sites) const;
 
         /**
          * @brief This method sets the setA (setA=1: possible insertion on that edge) value for all the nodes in the tree
          */
-        virtual void setAllSetAData(const SiteContainer &sites) const;
+        /*virtual void setAllSetAData(const SiteContainer &sites) const;*/
 
         /**
          * @brief This method sets the iota value for all the nodes in the tree
