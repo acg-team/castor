@@ -175,12 +175,12 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
 
     // Initialise vectors for storing insertion histories values
     InitialiseInsertionHistories();
-    
+
     // Add vectors for storing SetA array
     setAllDescCountData(sites);
 
     // Set all setA
-    setAllSetAData(sites);
+    //setAllSetAData(sites);
 
 
     if (verbose_)
@@ -788,17 +788,18 @@ void RHomogeneousTreeLikelihood_PIP::InitialiseInsertionHistories() const{
 void RHomogeneousTreeLikelihood_PIP::setAllDescCountData(const SiteContainer &sites) const{
 
     for(int i=0;i<nbSites_;i++){
+
+        // Compute the total number of characters (exc. gap) for the current site
+        int nonGaps_ = 0;
+
+        for(int s=0;s<sites.getNumberOfSequences();s++ ){
+            //siteValue = sites.getSite(i).getValue(s);
+            if (sites.getAlphabet()->getGapCharacterCode() != sites.getSite(i).getValue(s)){
+                nonGaps_++;
+            }
+        }
+
         for(bpp::Node *node:tree_->getNodes()){
-
-            // Initialize vectors descCount_ and setA_ and indicatorFunctionVector
-            std::vector<int> descCount_;
-            std::vector<bool> setA_;
-            descCount_.resize(nbSites_);
-            setA_.resize(nbSites_);
-            indicatorFun_[node].at(i).resize(nbStates_);
-
-            descCountData_.insert(std::make_pair(node->getId(),std::make_pair(descCount_,node)));
-            setAData_.insert(std::make_pair(node->getId(),std::make_pair(setA_,node)));
 
             // Computing descCount + setA
             if (node->isLeaf()){
@@ -822,6 +823,8 @@ void RHomogeneousTreeLikelihood_PIP::setAllDescCountData(const SiteContainer &si
                 }
 
             }
+
+            setAData_[node->getId()].first.at(i) = (getNodeDescCountForASite(node,i) == nonGaps_);
 
         }
     }
