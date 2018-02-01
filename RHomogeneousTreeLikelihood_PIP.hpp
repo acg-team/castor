@@ -358,20 +358,17 @@ namespace bpp {
          *        subtree
          * @param nodelist The postorder list of nodes at which the likelihood arrays must be updated
          */
-
         virtual void recombineFvAfterMove() const;
 
         virtual void recombineFvAtNode(Node *node) const;
 
+        void setIndicatorFunction(const SiteContainer &sites) const;
 
         double computePhi(double lkEmptyColumn) const;
 
-
         void computeNu();
 
-
         void printFV(Node *node, VVVdouble *likelihoodvector);
-
 
         void printPrMatrix(Node *node, VVdouble *pr);
 
@@ -387,6 +384,8 @@ namespace bpp {
         double computeLikelihoodWholeAlignmentEmptyColumn() const;
 
         double computeLikelihoodWholeSites() const;
+
+        int countNonGapCharacterInSite(const SiteContainer &sites, int siteID) const;
     };
 }
 #endif //MINIJATI_RHOMOGENEOUSTREELIKELIHOOD_PIP_HPP

@@ -180,6 +180,9 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     // Initialise vectors for storing insertion histories values
     InitialiseInsertionHistories();
 
+    // Set indicator function on leafs
+    setIndicatorFunction(sites);
+
 
     if (verbose_)
         ApplicationTools::displayResult("Number of distinct sites", TextTools::toString(nbDistinctSites_));
@@ -786,22 +789,13 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
     for(int i=0;i<nbSites_;i++){
 
         // Compute the total number of characters (exc. gap) for the current site
-        int nonGaps_ = 0;
-
-        for(int s=0;s<sites.getNumberOfSequences();s++ ){
-            //siteValue = sites.getSite(i).getValue(s);
-            if (sites.getAlphabet()->getGapCharacterCode() != sites.getSite(i).getValue(s)){
-                nonGaps_++;
-            }
-        }
+        int nonGaps_ = countNonGapCharacterInSite(sites, i);
 
         for (auto &node:likelihoodNodes_) {
 
-            // Computing descCount + setA
+            // Computing descCount
             if (node->isLeaf()){
                 descCountData_[node->getId()].first.at(i) = (sites.getSequence(node->getName()).getValue(i) == sites.getAlphabet()->getGapCharacterCode() ? 0:1);
-
-                indicatorFun_[node].at(i).at(sites.getSequence(node->getName()).getValue(i))=1;
 
             }else{
 
@@ -813,19 +807,35 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
                 sonsIDs.push_back(treemap_.right.at(vnode_right));
                 size_t nbNodes = sonsIDs.size();
 
-                //for(auto &son: node->getSons()){
-                for (size_t l = 0; l < nbNodes; l++) {
+                // Reset value stored at the internal node
+                descCountData_[node->getId()].first.at(i) = 0;
 
-                    descCountData_[node->getId()].first.at(i) += getNodeDescCountForASite(tree_->getNode(sonsIDs.at(l)),i); //descCountData_[son->getId()].first.at(i);
+                // Recompute it
+                for (size_t l = 0; l < nbNodes; l++) {
+                    descCountData_[node->getId()].first.at(i) += getNodeDescCountForASite(tree_->getNode(sonsIDs.at(l)), i);
                 }
 
             }
 
+            // Activate or deactivate set A
             setAData_[node->getId()].first.at(i) = (getNodeDescCountForASite(node,i) == nonGaps_);
+            VLOG(3) << "setInsertionHistories [BPP] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << setAData_[node->getId()].first.at(i);
+
 
         }
     }
 
+}
+
+int RHomogeneousTreeLikelihood_PIP::countNonGapCharacterInSite(const SiteContainer &sites, int siteID) const {
+    int nonGaps_ = 0;
+    for (int s = 0; s < sites.getNumberOfSequences(); s++) {
+        //siteValue = sites.getSite(i).getValue(s);
+        if (sites.getAlphabet()->getGapCharacterCode() != sites.getSite(siteID).getValue(s)) {
+            nonGaps_++;
+        }
+    }
+    return nonGaps_;
 }
 
 /*
@@ -1238,7 +1248,8 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodOnTreeRearrangment(std::
     double logLK;
 
     // 0. convert the list of tshlib::VirtualNodes into bpp::Node
-    likelihoodNodes_ = remapVirtualNodeLists(listNodes);
+    std::vector<Node *> rearrangedNodes = remapVirtualNodeLists(listNodes);
+    likelihoodNodes_ = rearrangedNodes;
 
     // 1. Recombine FV arrays after move
     recombineFvAfterMove();
@@ -1249,6 +1260,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodOnTreeRearrangment(std::
     double lk_site_empty = computeLikelihoodWholeAlignmentEmptyColumn();
 
     // Set ancestral histories
+    likelihoodNodes_ = rearrangedNodes;
     setInsertionHistories(*data_);
 
     // 3. Compute the likelihood of each site
@@ -1363,6 +1375,19 @@ void RHomogeneousTreeLikelihood_PIP::SingleRateCategoryHadamardMultFvEmptySons_(
 
         (*fv_out)[x] = val;
     }
+
+}
+
+void RHomogeneousTreeLikelihood_PIP::setIndicatorFunction(const SiteContainer &sites) const {
+
+    for (int i = 0; i < nbSites_; i++) {
+        for (auto &node:tree_->getNodes()) {
+            if (node->isLeaf()) {
+                indicatorFun_[node].at(i).at(sites.getSequence(node->getName()).getValue(i)) = 1;
+            }
+        }
+    }
+
 
 }
 
