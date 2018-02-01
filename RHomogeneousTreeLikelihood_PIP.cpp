@@ -1217,7 +1217,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodSite(size_t i) const {
             for (size_t c = 0; c < nbClasses_; c++) {
                 //setAData_[treemap_.left.at(node->getId())].first.at(site)
                 if (setAData_[node->getId()].first.at(i)) {
-
+                    VLOG(3) << "[BPP] Likelhood for setA (" << i << ") @node " << node->getName();
                     if (!node->isLeaf()) {
 
                         auto fv_sons = new Vdouble(nbStates_);
@@ -1273,7 +1273,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodOnTreeRearrangment(std::
         ExtendNodeListOnSetA(listNodes.back(), tempExtendedNodeList, i);
 
         // Overwrite the list of nodes on which computing the likelihood
-        //likelihoodNodes_ = tempExtendedNodeList;
+        likelihoodNodes_ = tempExtendedNodeList;
 
         // call to function which retrives the lk value for each site
         lk_sites[i] =  log(computeLikelihoodSite(i));
