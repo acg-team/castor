@@ -521,18 +521,19 @@ int main(int argc, char *argv[]) {
                 //utree->printAllNodesNeighbors();
                 //testSetAinRootPath(MSA_len, alignment, utree, list_vnode_to_root)
 
-                likelihood->recombineAllFv(listNodesWithinPath);
-                likelihood->setInsertionHistories(listNodesWithinPath, *alignment);
+                //likelihood->recombineAllFv(listNodesWithinPath);
+                //likelihood->setInsertionHistories(listNodesWithinPath, *alignment);
 
-                logLK = LKFunc::LKRearrangment(*likelihood, listNodesWithinPath, *alignment);
+                //logLK = LKFunc::LKRearrangment(*likelihood, listNodesWithinPath, *alignment);
 
-                if (FLAGS_model_indels) {
-                    // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
-                    // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
-                    bpp::RHomogeneousTreeLikelihood_PIP* ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP*>(tl);
-                    // we use a map to navigate between utree and bpp tree. The map is constant.
-                    VLOG(2) << "BPP::LogLK move apply " << ttl->getLogLikelihood(listNodesWithinPath);
-                }
+                //if (FLAGS_model_indels) {
+                // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
+                // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
+                bpp::RHomogeneousTreeLikelihood_PIP *ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(tl);
+                // we use a map to navigate between utree and bpp tree. The map is constant.
+                logLK = ttl->getLogLikelihood(listNodesWithinPath);
+                //VLOG(2) << "BPP::LogLK move apply " << logLK;
+                //}
                 // ------------------------------------
                 // Store likelihood of the move
                 rearrangmentList->getMove(i)->move_lk = logLK;
@@ -595,19 +596,24 @@ int main(int argc, char *argv[]) {
 
                     // ------------------------------------
                     // Compute the full likelihood from the list of nodes involved in the rearrangment
-                    likelihood->recombineAllFv(listNodesWithinPath);
-                    likelihood->setInsertionHistories(listNodesWithinPath, *alignment);
-                    logLK = LKFunc::LKRearrangment(*likelihood, listNodesWithinPath, *alignment);
+                    //likelihood->recombineAllFv(listNodesWithinPath);
+                    //likelihood->setInsertionHistories(listNodesWithinPath, *alignment);
+                    //logLK = LKFunc::LKRearrangment(*likelihood, listNodesWithinPath, *alignment);
+
+                    // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
+                    // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
+                    bpp::RHomogeneousTreeLikelihood_PIP *ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(tl);
+                    // we use a map to navigate between utree and bpp tree. The map is constant.
+
+                    logLK = ttl->getLogLikelihood(listNodesWithinPath);
+                    //VLOG(2) << "BPP::LogLK move revert " <<
+
 
                     // ------------------------------------
                     // Store likelihood of the move
                     rearrangmentList->getMove(i)->move_lk = logLK;
 
-                    // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
-                    // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
-                    bpp::RHomogeneousTreeLikelihood_PIP* ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP*>(tl);
-                    // we use a map to navigate between utree and bpp tree. The map is constant.
-                    VLOG(2) << "BPP::LogLK move revert " << ttl->getLogLikelihood(listNodesWithinPath);
+
                 } else {
 
                     likelihood->restoreLikelihoodComponents();
