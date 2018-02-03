@@ -68,14 +68,20 @@ namespace bpp {
         mutable std::map<int, std::pair<std::vector<bool>, bpp::Node*>> setAData_;
         mutable std::map<const bpp::Node*, double> iotasData_;
         mutable std::map<const bpp::Node*, double> betasData_;
-
-        //TODO: @max please add vector of integers for character at the leaf for each (LG: done it already!)
         mutable std::map<const bpp::Node*, std::vector<std::vector<double>>> indicatorFun_;
 
         mutable double nu_;
+    public:
+
+        double getNu() const { return nu_; }
+
+
+    private:
         mutable double tau_;
 
         mutable UtreeBppUtils::treemap treemap_;
+    public:
+        const UtreeBppUtils::treemap &getTreemap() const { return treemap_; }
 
     protected:
         double minusLogLik_;

@@ -1272,8 +1272,12 @@ namespace progressivePIP{
     //DP-PIP
     static ProgressivePIPResult compute_DP3D_PIP(ProgressivePIPResult &result_L,
                                                  ProgressivePIPResult &result_R,
-                                                 VirtualNode *tree,
-                                                 Likelihood *likelihood,
+                                                 VirtualNode *node,
+                                                 bpp::Tree *tree,
+                                                 UtreeBppUtils::treemap *tm,
+                                                 Eigen::VectorXd pi,
+                                                 double lambda,
+                                                 double mu,
                                                  bpp::SequenceContainer *sequences,
                                                  const bpp::Alphabet *alphabet,
                                                  double gamma_rate,
@@ -1282,18 +1286,20 @@ namespace progressivePIP{
         ProgressivePIPResult result;
 
 
-        double tau;
-        double nu;
-
         int originalAlphabetSize=alphabet->getSize()-1;
 
         //@gamma_distribution
-        double lambda_gamma=likelihood->lambda*gamma_rate;
-        double mu_gamma=likelihood->mu*gamma_rate;
+        double nu;
+        double tau;
+
+        double lambda_gamma = lambda * gamma_rate;
+        double mu_gamma = mu * gamma_rate;
 
         if(local){
             //TODO: calcola tau dal nodo attuale
-            tau=tree->computeTotalTreeLength();
+            bpp::Tree *subtree = tree->cloneSubtree(tm->right.at(node));
+            tau = subtree->getTotalLength();
+            //tau=tree->computeTotalTreeLength();
             nu=compute_nu(tau,lambda_gamma,mu_gamma);
             //TODO: tau and nu are already set?
             //tree->set_tau(tau);
@@ -1302,8 +1308,10 @@ namespace progressivePIP{
             //tree.set_iota_local(tau,mu_gamma);
             //tree.set_beta_local(tau,mu_gamma);
         }else{
-            tau=likelihood->tau;
-            nu=likelihood->nu;
+
+            //const Tree tree = tree->getTree();
+            tau = tree->getTotalLength();
+            nu = compute_nu(tau, lambda, mu);
         }
 
 
@@ -1317,8 +1325,6 @@ namespace progressivePIP{
         h=get_length_seq_s(result_L.MSAs)+1;
         w=get_length_seq_s(result_R.MSAs)+1;
         unsigned long d=(h-1)+(w-1)+1;
-
-        Eigen::VectorXd pi = likelihood->pi;
 
         double pc0;
         //.-----.------.------.-------.------.-------.-------.--------.-------.--------.//
@@ -1346,19 +1352,19 @@ namespace progressivePIP{
         //***************************************************************************************
         //***************************************************************************************
         if(local){
-            pc0=compute_pr_gap_local_tree_s(tree,
-                                            col_gap_Ls,
-                                            col_gap_Rs,
-                                            pi,
-                                            originalAlphabetSize,
-                                            alphabet);
+            pc0 = compute_pr_gap_local_tree_s(node,
+                                              col_gap_Ls,
+                                              col_gap_Rs,
+                                              pi,
+                                              originalAlphabetSize,
+                                              alphabet);
         }else{
-            pc0=compute_pr_gap_all_edges_s(tree,
-                                           col_gap_Ls,
-                                           col_gap_Rs,
-                                           pi,
-                                           originalAlphabetSize,
-                                           alphabet);
+            pc0 = compute_pr_gap_all_edges_s(node,
+                                             col_gap_Ls,
+                                             col_gap_Rs,
+                                             pi,
+                                             originalAlphabetSize,
+                                             alphabet);
         }
 
         //***************************************************************************************
@@ -1480,27 +1486,27 @@ namespace progressivePIP{
                         }
 
                         if(local){
-                            val=computeLK_M_local_tree_s_opt(	valM,
-                                                                 valX,
-                                                                 valY,
-                                                                 nu,
-                                                                 tree,
-                                                                 sLs,sRs,
-                                                                 pi,
-                                                                 m,
-                                                                 lkM,
-                                                                 originalAlphabetSize,alphabet);
+                            val=computeLK_M_local_tree_s_opt(valM,
+                                                             valX,
+                                                             valY,
+                                                             nu,
+                                                             node,
+                                                             sLs, sRs,
+                                                             pi,
+                                                             m,
+                                                             lkM,
+                                                             originalAlphabetSize, alphabet);
                         }else{
-                            val=computeLK_M_all_edges_s_opt(	valM,
-                                                                valX,
-                                                                valY,
-                                                                nu,
-                                                                tree,
-                                                                sLs,sRs,
-                                                                pi,
-                                                                m,
-                                                                lkM,
-                                                                originalAlphabetSize,alphabet);
+                            val=computeLK_M_all_edges_s_opt(valM,
+                                                            valX,
+                                                            valY,
+                                                            nu,
+                                                            node,
+                                                            sLs, sRs,
+                                                            pi,
+                                                            m,
+                                                            lkM,
+                                                            originalAlphabetSize, alphabet);
                         }
 
                         if(std::isinf(val)){
@@ -1576,23 +1582,23 @@ namespace progressivePIP{
                                                              valX,
                                                              valY,
                                                              nu,
-                                                             tree,
-                                                             sLs,col_gap_Rs,
+                                                             node,
+                                                             sLs, col_gap_Rs,
                                                              pi,
                                                              m,
                                                              lkX,
-                                                             originalAlphabetSize,alphabet);
+                                                             originalAlphabetSize, alphabet);
                         }else{
                             val=computeLK_X_all_edges_s_opt(valM,
                                                             valX,
                                                             valY,
                                                             nu,
-                                                            tree,
-                                                            sLs,col_gap_Rs,
+                                                            node,
+                                                            sLs, col_gap_Rs,
                                                             pi,
                                                             m,
                                                             lkX,
-                                                            originalAlphabetSize,alphabet);
+                                                            originalAlphabetSize, alphabet);
                         }
 
                         if(std::isinf(val)){
@@ -1666,23 +1672,23 @@ namespace progressivePIP{
                                                              valX,
                                                              valY,
                                                              nu,
-                                                             tree,
-                                                             col_gap_Ls,sRs,
+                                                             node,
+                                                             col_gap_Ls, sRs,
                                                              pi,
                                                              m,
                                                              lkY,
-                                                             originalAlphabetSize,alphabet);
+                                                             originalAlphabetSize, alphabet);
                         }else{
                             val=computeLK_Y_all_edges_s_opt(valM,
                                                             valX,
                                                             valY,
                                                             nu,
-                                                            tree,
-                                                            col_gap_Ls,sRs,
+                                                            node,
+                                                            col_gap_Ls, sRs,
                                                             pi,
                                                             m,
                                                             lkY,
-                                                            originalAlphabetSize,alphabet);
+                                                            originalAlphabetSize, alphabet);
                         }
 
                         if(std::isinf(val)){
@@ -1881,6 +1887,7 @@ namespace progressivePIP{
         //return result_v;
         return result;
     }
+
     void add_sequence_to_alignment(ProgressivePIPResult &result,
                                    VirtualNode *tree,
                                    bpp::SequenceContainer *sequences){
@@ -1909,8 +1916,12 @@ namespace progressivePIP{
     }
 
     //DP-PIP
-    ProgressivePIPResult compute_DP3D_PIP_tree_cross(VirtualNode *tree,
-                                                     Likelihood *likelihood,
+    ProgressivePIPResult compute_DP3D_PIP_tree_cross(VirtualNode *node,
+                                                     bpp::Tree *tree,
+                                                     UtreeBppUtils::treemap *tm,
+                                                     Eigen::VectorXd pi,
+                                                     double lambda,
+                                                     double mu,
                                                      bpp::SequenceContainer *sequences,
                                                      const bpp::Alphabet *alphabet,
                                                      double gamma_rate,
@@ -1919,16 +1930,17 @@ namespace progressivePIP{
 
         ProgressivePIPResult result;
 
-        if (tree->isTerminalNode()) {
+        if (node->isTerminalNode()) {
 
-            add_sequence_to_alignment(result, tree, sequences);
+            add_sequence_to_alignment(result, node, sequences);
 
         } else{
 
-            ProgressivePIPResult result_L = compute_DP3D_PIP_tree_cross(tree->getNodeLeft(), likelihood, sequences, alphabet, gamma_rate, local_tree);
-            ProgressivePIPResult result_R = compute_DP3D_PIP_tree_cross(tree->getNodeRight(),likelihood, sequences, alphabet, gamma_rate, local_tree);
+            ProgressivePIPResult result_L = compute_DP3D_PIP_tree_cross(node->getNodeLeft(), tree, tm, pi, lambda, mu, sequences, alphabet, gamma_rate, local_tree);
+            ProgressivePIPResult result_R = compute_DP3D_PIP_tree_cross(node->getNodeRight(), tree, tm, pi, lambda, mu, sequences, alphabet, gamma_rate, local_tree);
 
-            result = compute_DP3D_PIP(result_L, result_R, tree, likelihood, sequences, alphabet, gamma_rate, local_tree);
+            result = compute_DP3D_PIP(result_L, result_R, node, tree, tm, pi, lambda, mu, sequences, alphabet, gamma_rate, local_tree);
+
 
         }
 

@@ -326,7 +326,8 @@ int main(int argc, char *argv[]) {
             VLOG(1) << "[ProPIP] starting MSA inference...";
 
             VirtualNode *root = utree->rootnode;
-            MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, likelihood, sequences, alpha, 1.0, false);
+
+            MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, tree, &tm, pi, lambda, mu, sequences, alpha, 1.0, false);
             //sites = new bpp::VectorSiteContainer(*sequences);
 
             sequences = new bpp::VectorSequenceContainer(alpha);
@@ -353,50 +354,6 @@ int main(int argc, char *argv[]) {
             VLOG(1) << "LK ProPIP" << MSA.score;
 
             VLOG(1) << "[ProPIP] ...done";
-
-            //exit(EXIT_SUCCESS);
-
-            /*
-            int dim=20;
-            int num_times=10;
-            bpp::RowMatrix<double> AA;
-            AA.resize(dim,dim);
-
-            Eigen::MatrixXd A;
-
-            A.resize(dim,dim);
-            for(int i=0;i<dim;i++){
-                for(int j=0;j<dim;j++){
-                    double val = (double)(i/10+j/10);
-                    A(i,j) = val;
-                    AA(i,j) = val;
-                }
-            }
-
-            bpp::RowMatrix<double> BB;
-            BB.resize(dim,dim);
-            std::chrono::high_resolution_clock::time_point t1_BPP = std::chrono::high_resolution_clock::now();
-            for(int i=0;i<num_times;i++){
-                bpp::MatrixTools::exp(AA,BB);
-            }
-            std::chrono::high_resolution_clock::time_point t2_BPP = std::chrono::high_resolution_clock::now();
-            auto durationBPP = std::chrono::duration_cast<std::chrono::microseconds>(t2_BPP - t1_BPP).count();
-            VLOG(0) << "Elapsed time (BPP): " << durationBPP << " microseconds" << std::endl;
-
-            Eigen::MatrixXd B;
-            B.resize(dim,dim);
-            std::chrono::high_resolution_clock::time_point t1_EIG = std::chrono::high_resolution_clock::now();
-            for(int i=0;i<num_times;i++){
-                B=A.exp();
-            }
-            std::chrono::high_resolution_clock::time_point t2_EIG = std::chrono::high_resolution_clock::now();
-            auto durationEIG = std::chrono::duration_cast<std::chrono::microseconds>(t2_EIG - t1_EIG).count();
-            VLOG(0) << "Elapsed time (EIGEN): " << durationEIG << " microseconds" << std::endl;
-
-            //std::cout<<B;
-            //std::cout<<std::endl;
-            exit(1);
-            */
 
         }
 
