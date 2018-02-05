@@ -143,7 +143,7 @@ set(SOURCES
         Version.hpp
         progressivePIP.hpp
         RHomogeneousTreeLikelihood_PIP.cpp
-        RHomogeneousTreeLikelihood_PIP.hpp ExtendedAlphabet.cpp ExtendedAlphabet.hpp)
+        RHomogeneousTreeLikelihood_PIP.hpp ExtendedAlphabet.cpp ExtendedAlphabet.hpp TSHHomogeneousTreeLikelihood.cpp TSHHomogeneousTreeLikelihood.hpp TSHSearchable.hpp TSHTopologySearch.cpp TSHTopologySearch.hpp)
 
 
 add_executable(miniJATI ${SOURCES})

@@ -49,6 +49,7 @@
 #include <Bpp/Phyl/Model/SubstitutionModel.h>
 #include <Bpp/Numeric/VectorTools.h>
 #include <Bpp/Numeric/Prob/DiscreteDistribution.h>
+#include <Bpp/Phyl/Likelihood/DRHomogeneousTreeLikelihood.h>
 
 using namespace bpp;
 
