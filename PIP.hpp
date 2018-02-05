@@ -49,9 +49,9 @@
 #include <Bpp/Phyl/Model/Nucleotide/NucleotideSubstitutionModel.h>
 #include <Bpp/Phyl/Model/Protein/ProteinSubstitutionModel.h>
 
-
 using namespace bpp;
 namespace bpp {
+
     class PIP_Nuc : public AbstractReversibleNucleotideSubstitutionModel {
     private:
         double lambda_, mu_, tau_, nu_;

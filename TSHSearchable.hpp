@@ -80,7 +80,7 @@ namespace bpp {
          * @param nodeId The id of the node defining the TSH movement.
          * @throw NodeException If the node does not define a valid TSH.
          */
-        virtual void doTSHRearrangment(int nodeId) throw(NodeException) = 0;
+        virtual void doTSHRearrangement(int nodeId) throw(NodeException) = 0;
 
         /**
          * @brief Get the tree associated to this TSHSearchable object.
