@@ -63,12 +63,12 @@ static bool ValidateOptimTopology(const char* flagname, const std::string& optio
 // 1. Input
 
 // 1.1 MSA
-DEFINE_string(input_sequences, "path/to/fasta.fa", "File path containing the sequences [FASTA]");
+DEFINE_string(input_sequences, "", "File path containing the sequences [FASTA]");
 DEFINE_validator(input_sequences, &ValidateString);
 
 // 1.2 Tree
-DEFINE_string(input_tree, "path/to/newick.nwk", "File path containing the tree file [NWK]");
-DEFINE_validator(input_tree, &ValidateString);
+DEFINE_string(input_tree, "", "File path containing the tree file [NWK]");
+//DEFINE_validator(input_tree, &ValidateString);
 
 // 2. Optimisations
 

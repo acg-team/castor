@@ -70,6 +70,7 @@ namespace bpp {
         mutable std::map<const bpp::Node*, double> iotasData_;
         mutable std::map<const bpp::Node*, double> betasData_;
         mutable std::map<const bpp::Node*, std::vector<std::vector<double>>> indicatorFun_;
+        mutable std::vector<unsigned long> rootPatternLinksInverse_;
 
         mutable double nu_;
     public:
@@ -156,9 +157,9 @@ namespace bpp {
         void init_(bool usePatterns) throw(Exception);
 
 
-        void initializeLikelihoodMatrix_(VVVdouble *_likelihoods_node);
+        //void initializeLikelihoodMatrix_(VVVdouble *_likelihoods_node);
 
-        void initializeLikelihoodEmptyMatrix_(VVVdouble *_likelihoods_empty_node);
+        //void initializeLikelihoodEmptyMatrix_(VVVdouble *_likelihoods_empty_node);
 
         void hadamardMultFvSons_(Node *node) const;
 
@@ -358,7 +359,7 @@ namespace bpp {
          * @brief This method sets to 1 all the likelihood arrays recursively from a starting node
          * @param node The node at which the likelihood arrays must be reset
          */
-        virtual void resetNodeLikelihoodArrays(const Node *node);
+        //virtual void resetNodeLikelihoodArrays(const Node *node);
 
         /**
          * @brief This method updates the likelihood arrays recursively from a starting node for a
@@ -386,7 +387,7 @@ namespace bpp {
         void ExtendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<Node *> &listNodes, unsigned long site) const;
 
         //friend class RHomogeneousMixedTreeLikelihood;
-        double computeLikelihoodSite(size_t i) const;
+        double computeLikelihoodSite(std::vector<Node *> &likelihoodNodes, size_t i) const;
 
         double computeLikelihoodWholeAlignmentEmptyColumn() const;
 

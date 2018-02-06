@@ -122,6 +122,7 @@ int main(int argc, char *argv[]) {
     bpp::SiteContainer *sites;
     NucleicAlphabet *alpha;
 
+    // The alphabet object should be set according to the correct alphabet
 
     if (FLAGS_model_indels) {
         alpha = new bpp::DNA_EXTENDED();
@@ -173,9 +174,23 @@ int main(int argc, char *argv[]) {
             LOG(FATAL) << "[Tree parser] Error when reading tree due to: " << e.message();
         }
     } else {
-        // Compute bioNJ tree
 
+        // Compute bioNJ tree using the JC69 model
+        unique_ptr<bpp::GeneticCode> gCode;
+        map<std::string, std::string> parmap;
+        parmap["model"] = "JC69";
 
+        bpp::SubstitutionModel *submodel_bioNJ = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
+        bpp::DiscreteDistribution *rDist = new bpp::ConstantRateDistribution();
+        bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
+        bpp::DistanceEstimation distanceMethod(submodel_bioNJ, rDist, sites);
+        bpp::DistanceMatrix *distances = distanceMethod.getMatrix();
+        bpp::BioNJ bionj(*distances);
+        tree = bionj.getTree();
+
+        // Remove all the object used only for computing bioNJ tree
+        delete submodel_bioNJ;
+        delete rDist;
     }
     // Rename internal nodes with standard Vxx * where xx is a progressive number
     tree->setNodeName(tree->getRootId(),"root");
@@ -539,7 +554,6 @@ int main(int argc, char *argv[]) {
         // Clean memory
         delete rearrangmentList;
     }
-
     // ------------------------------------
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
