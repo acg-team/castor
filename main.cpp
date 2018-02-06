@@ -129,7 +129,6 @@ int main(int argc, char *argv[]) {
     } else {
         alpha = new bpp::DNA();
     }
-
     //---------------------------------------
     // Input: data
     try {
@@ -256,11 +255,27 @@ int main(int argc, char *argv[]) {
     bpp::PhylogeneticsApplicationTools::printParameters(submodel, s1, 1, true);
     LOG(INFO) << s1.str();
 
-
     //------------------------------------------------------------------------------------------------------------------
     // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
     progressivePIP::ProgressivePIPResult MSA;
+    auto likelihood = new tshlib::Likelihood;
+    std::vector<tshlib::VirtualNode *> fullTraversalNodes;
     if (FLAGS_alignment) {
+
+        likelihood->Init(utree, pi, Q, mu, lambda);
+
+        // Traverse the tree in post-order filling a list of node ready for traversal
+        likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
+
+        // Set survival probability to each node in the list
+        likelihood->setAllIotas(fullTraversalNodes);
+
+        // Set deletion probability to each node in the list
+        likelihood->setAllBetas(fullTraversalNodes);
+
+        // set probability matrix -- exponential of substitution rates
+        likelihood->computePr(fullTraversalNodes, alpha->getSize());
+
 
         VLOG(1) << "[ProPIP] starting MSA inference...";
 
