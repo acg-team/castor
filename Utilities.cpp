@@ -282,6 +282,26 @@ void UtreeBppUtils::associateNode2Alignment(bpp::SequenceContainer *sequences, t
 
 }
 
+void UtreeBppUtils::renameInternalNodes(bpp::Tree *in_tree, std::string prefix) {
+
+    // Rename internal nodes with standard Vxx * where xx is a progressive number
+    for (auto &nodeId:in_tree->getNodesId()) {
+
+        if (!in_tree->hasNodeName(nodeId)) {
+
+            std::string stringId;
+            std::string stringName;
+
+            stringId = std::to_string(nodeId);
+            stringName = prefix + stringId;
+
+            in_tree->setNodeName(nodeId, stringName);
+
+        }
+    }
+
+}
+
 Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix) {
 
     size_t rows, cols;

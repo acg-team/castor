@@ -68,6 +68,9 @@ using namespace tshlib;
 
     void associateNode2Alignment(bpp::SequenceContainer *sequences, Utree *in_tree);
 
+
+    void renameInternalNodes(bpp::Tree *in_tree, std::string prefix = "V");
+
 }
 
 namespace MatrixBppUtils{
@@ -84,5 +87,10 @@ namespace MatrixBppUtils{
 
 }
 
+
+namespace InputUtils {
+
+
+}
 
 #endif //MINIJATI_UTILS_HPP

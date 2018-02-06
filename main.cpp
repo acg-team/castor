@@ -107,109 +107,89 @@ int main(int argc, char *argv[]) {
     LOG(INFO) << software::desc;
     bpp::BppApplication bppml(argc, argv, software::desc);
 
-    //------------------------------------------------------------------------------------------------------------------
-    // LOAD MSA FROM FILE
-    // Parse fasta file containing aligned DNA sequences
-
-
-    auto alignment = new Alignment_DNA;
-
-    LOG(INFO) << "[Input alignment file] " << FLAGS_input_sequences;
-
-    NucleicAlphabet *alpha;
-
-    if (FLAGS_model_indels) {
-        alpha = new bpp::DNA_EXTENDED();
-        //alpha = new bpp::DNA();
-    } else {
-        alpha = new bpp::DNA();
-    }
+    /* ***************************************************
+     * Standard workflow
+     * [INPUT]
+     * 1. tree + alignment => (1.1) just parse everything
+     * 2. alignment  => (2.1) parse alignment => (2.2) generate tree using bioNJ
+     * 3. sequences  => (3.1) parse sequences => (3.2) generate tree using bioNJ => (3.3) perform alignment
+     * (it should not be supported in production)
+     * 4. sequences + tree => (4.1) parse sequence => (4.2) parse tree => (4.3) perform alignment
+     */
 
     bpp::Fasta seqReader;
     bpp::SequenceContainer *sequences;
     bpp::SiteContainer *sites;
+    NucleicAlphabet *alpha;
 
-    if (FLAGS_alignment) {
-        sequences = seqReader.readSequences(FLAGS_input_sequences, alpha);
+
+    if (FLAGS_model_indels) {
+        alpha = new bpp::DNA_EXTENDED();
     } else {
-        sequences = seqReader.readAlignment(FLAGS_input_sequences, alpha);
-        seqReader.readSequences(FLAGS_input_sequences, alpha);
-        std::vector<std::string> seqNames = sequences->getSequencesNames();
-
-        for (int i = 0; i < seqNames.size(); i++) {
-            std::string stringSeq = sequences->getSequence(seqNames.at(i)).toString();
-            alignment->addSequence(seqNames.at(i), stringSeq);
-        }
-        alignment->getAlignmentSize();
-        alignment->align_num_characters.resize((unsigned long) alignment->align_length);
-        alignment->align_alphabetsize += 1; // DNA +1 per PIP
-        alignment->countNumberCharactersinColumn();
-
-        sites = new bpp::VectorSiteContainer(*sequences);
-        size_t num_leaves = sequences->getNumberOfSequences();
-
-        LOG(INFO) << "[Alignment] Input alignmetn has " << num_leaves << " sequences";
-
+        alpha = new bpp::DNA();
     }
 
-
-    //------------------------------------------------------------------------------------------------------------------
-    // INIT ROOTED TREE
-
-    auto *newickReader = new bpp::Newick(false); //No comment allowed!
-    bpp::Tree *tree = nullptr;
+    //---------------------------------------
+    // Input: data
     try {
-        tree = newickReader->read(FLAGS_input_tree); // Tree in file MyTestTree.dnd
-        LOG(INFO) << "[Input tree file] " << FLAGS_input_tree;
-        LOG(INFO) << "[Tree parser] Input tree has " << tree->getNumberOfLeaves() << " leaves.";
+
+        LOG(INFO) << "[Input data parser] " << FLAGS_input_sequences;
+
+        if (FLAGS_alignment) {
+            // If the user requires the computation of an alignment, then the input file is made of unaligned sequences
+            sequences = seqReader.readSequences(FLAGS_input_sequences, alpha);
+
+        } else {
+
+            sequences = seqReader.readAlignment(FLAGS_input_sequences, alpha);
+            seqReader.readSequences(FLAGS_input_sequences, alpha);
+            //std::vector<std::string> seqNames = sequences->getSequencesNames();
+            sites = new bpp::VectorSiteContainer(*sequences);
+
+        }
+
+        size_t num_leaves = sequences->getNumberOfSequences();
+        LOG(INFO) << "[Input data parser] Sequences " << num_leaves << " sequences";
+
     } catch (bpp::Exception e) {
-        LOG(FATAL) << "[Tree parser] Error when reading tree due to: " << e.message();
+        LOG(FATAL) << "[Input data parser] Error when reading sequence file due to: " << e.message();
     }
 
+    //---------------------------------------
+    // Input: tree
+    bpp::Tree *tree = nullptr;
+
+    if (!FLAGS_input_tree.empty()) {
+        try {
+            auto *newickReader = new bpp::Newick(false); //No comment allowed!
+            tree = newickReader->read(FLAGS_input_tree); // Tree in file MyTestTree.dnd
+            LOG(INFO) << "[Input tree file] " << FLAGS_input_tree;
+            LOG(INFO) << "[Tree parser] Input tree has " << tree->getNumberOfLeaves() << " leaves.";
+            LOG(INFO) << "[Initial Utree Topology]";
+            delete newickReader;
+
+        } catch (bpp::Exception e) {
+
+            LOG(FATAL) << "[Tree parser] Error when reading tree due to: " << e.message();
+        }
+    } else {
+        // Compute bioNJ tree
+
+
+    }
     // Rename internal nodes with standard Vxx * where xx is a progressive number
     tree->setNodeName(tree->getRootId(),"root");
+    UtreeBppUtils::renameInternalNodes(tree);
 
-    for(auto &nodeId:tree->getNodesId()){
-
-        if(!tree->hasNodeName(nodeId)){
-
-            std::string stringId;
-            std::string stringName;
-
-            stringId = std::to_string(nodeId);
-            stringName = "V" + stringId;
-
-            tree->setNodeName(nodeId, stringName);
-
-        }
-    }
-
-
+    // Convert the bpp into utree for tree-search engine
     auto utree = new Utree();
     UtreeBppUtils::treemap tm;
     UtreeBppUtils::convertTree_b2u(tree, utree, tm);
-    LOG(INFO) << "[Initial Utree Topology] " << utree->printTreeNewick(true);
-
-    //delete tree;
-    delete newickReader;
-
-    //------------------------------------------------------------------------------------------------------------------
-    // Printing of the bidirectional map [test]
     VLOG(3) << "Bidirectional map size: "<<  tm.size();
+    VLOG(3) << "[Initial Utree Topology] " << utree->printTreeNewick(true);
 
-    //------------------------------------------------------------------------------------------------------------------
-    if (!FLAGS_alignment) {
-        utree->prepareSetADesCountOnNodes((int) alignment->getAlignmentSize(), alignment->align_alphabetsize);
-        UtreeUtils::associateNode2Alignment(alignment, utree);
-
-        // Add the root
-        utree->addVirtualRootNode();
-        utree->rootnode->initialiseLikelihoodComponents((int) alignment->getAlignmentSize(),
-                                                        alignment->align_alphabetsize);
-    } else {
-        UtreeBppUtils::associateNode2Alignment(sequences, utree);
-        utree->addVirtualRootNode();
-    }
+    UtreeBppUtils::associateNode2Alignment(sequences, utree);
+    utree->addVirtualRootNode();
 
     // Once the tree has the root, then map it as well
     tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode));
@@ -248,38 +228,68 @@ int main(int argc, char *argv[]) {
         lambda=FLAGS_lambda_PIP;
         mu=FLAGS_mu_PIP;
 
-        //VLOG(1) << alpha->getGapCharacterCode();
-        //auto testCS = new CanonicalStateMap(new bpp::DNA(), true);
-        //auto testCS_G = new CanonicalStateMap(new bpp::DNA_EXTENDED(), false);
-        //VLOG(1) << "size: " << testCS->getAlphabet()->getSize();
-
         submodel = new PIP_Nuc(alpha, lambda, mu, submodel);
-        //submodel->setFreqFromData(*sites);
 
         // Fill Q matrix
         Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());
         pi = MatrixBppUtils::Vector2Eigen(submodel->getFrequencies());
-        //std::cerr << Q << std::endl;
-        //std::cerr << pi << std::endl;
 
     }
     VLOG(1) << "[Substitution model] Number of states: " << (int) submodel->getNumberOfStates();
 
     bpp::StdStr s1;
     bpp::PhylogeneticsApplicationTools::printParameters(submodel, s1, 1, true);
-    VLOG(1) << s1.str();
+    LOG(INFO) << s1.str();
+
 
     //------------------------------------------------------------------------------------------------------------------
-    // INITIAL LIKELIHOOD COMPUTATION
+    // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
+    progressivePIP::ProgressivePIPResult MSA;
+    if (FLAGS_alignment) {
+
+        VLOG(1) << "[ProPIP] starting MSA inference...";
+
+        VirtualNode *root = utree->rootnode;
+
+        MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, tree, &tm, pi, lambda, mu, sequences, alpha, 1.0, false);
+        //sites = new bpp::VectorSiteContainer(*sequences);
+
+        sequences = new bpp::VectorSequenceContainer(alpha);
+
+        for (int i = 0; i < MSA.MSAs.size(); i++) {
+            //auto sequence = new bpp::BasicSequence(MSA.MSAs.at(i).first,MSA.MSAs.at(i).second,alpha);
+            //sequences->setSequence(MSA.MSAs.at(i).first,*sequence,true);
+            sequences->addSequence(*(new bpp::BasicSequence(MSA.MSAs.at(i).first, MSA.MSAs.at(i).second, alpha)), true);
+        }
+
+        sites = new bpp::VectorSiteContainer(*sequences);
+
+        delete sequences;
+
+        bpp::Fasta seqWriter;
+        seqWriter.writeAlignment(FLAGS_output_msa, *sites, true);
+
+        std::ofstream lkFile;
+        lkFile << std::setprecision(18);
+        lkFile.open(FLAGS_output_lk);
+        lkFile << MSA.score;
+        lkFile.close();
+
+        VLOG(1) << "LK ProPIP" << MSA.score;
+
+        VLOG(1) << "[ProPIP] ...done";
+        exit(0);
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Initialization likelihood functions
 
     double logLK = 0;
-    auto likelihood = new Likelihood();
-    std::vector<VirtualNode *> fullTraversalNodes;
-    progressivePIP::ProgressivePIPResult MSA;
+    //auto likelihood = new Likelihood();
+    //std::vector<VirtualNode *> fullTraversalNodes;
     if (!FLAGS_alignment) {
         //tree = UtreeBppUtils::convertTree_u2b(utree);
-
-        bpp::RowMatrix<double> testProb;
         if (!FLAGS_model_indels) {
 
             transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
@@ -299,91 +309,12 @@ int main(int argc, char *argv[]) {
         tl->initialize();
         logLK = tl->getValue();
 
-        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << -logLK << " \t[BPP METHODS]";
+        LOG(INFO) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << -logLK << " \t[BPP METHODS]";
     }
 
-    if (FLAGS_model_indels) {
-        //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, false, false, false);
-        likelihood->Init(utree, pi, Q, mu, lambda);
-
-        // COMPUTE LK GIVEN TREE TOPOLOGY AND MSA
-        logLK = 0.0;
-
-        // Traverse the tree in post-order filling a list of node ready for traversal
-        likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
-
-        // Set survival probability to each node in the list
-        likelihood->setAllIotas(fullTraversalNodes);
-
-        // Set deletion probability to each node in the list
-        likelihood->setAllBetas(fullTraversalNodes);
-
-        // set probability matrix -- exponential of substitution rates
-        likelihood->computePr(fullTraversalNodes, alignment->align_alphabetsize);
-
-        if (FLAGS_alignment) {
-
-            VLOG(1) << "[ProPIP] starting MSA inference...";
-
-            VirtualNode *root = utree->rootnode;
-
-            MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, tree, &tm, pi, lambda, mu, sequences, alpha, 1.0, false);
-            //sites = new bpp::VectorSiteContainer(*sequences);
-
-            sequences = new bpp::VectorSequenceContainer(alpha);
-
-            for (int i = 0; i < MSA.MSAs.size(); i++) {
-                //auto sequence = new bpp::BasicSequence(MSA.MSAs.at(i).first,MSA.MSAs.at(i).second,alpha);
-                //sequences->setSequence(MSA.MSAs.at(i).first,*sequence,true);
-                sequences->addSequence(*(new bpp::BasicSequence(MSA.MSAs.at(i).first,MSA.MSAs.at(i).second,alpha)), true);
-            }
-
-            sites = new bpp::VectorSiteContainer(*sequences);
-
-            delete sequences;
-
-            bpp::Fasta seqWriter;
-            seqWriter.writeAlignment(FLAGS_output_msa,*sites,true);
-
-            std::ofstream lkFile;
-            lkFile << std::setprecision(18);
-            lkFile.open (FLAGS_output_lk);
-            lkFile << MSA.score;
-            lkFile.close();
-
-            VLOG(1) << "LK ProPIP" << MSA.score;
-
-            VLOG(1) << "[ProPIP] ...done";
-
-        }
-
-        // Set insertion histories on each node of the list
-        likelihood->setInsertionHistories(fullTraversalNodes, *alignment);
-
-        // Initialise likelihood components on the tree
-        likelihood->computeFV(fullTraversalNodes, *alignment);
-
-        // Make a backup of the newly computed components
-        likelihood->saveLikelihoodComponents();
-
-        //likelihood->loadParametersOperative();
-        //likelihood->unloadParametersOperative();
-
-        // Compute the model likelihood
-        logLK = likelihood->computePartialLK_WholeAlignment(fullTraversalNodes, *alignment);
-        VLOG(1) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << logLK << " \t[TSHLIB METHODS]";
-    }
     //----------------------------------------------
     // Remove the root
     utree->removeVirtualRootNode();
-
-    //----------------------------------------------
-    // Save tree to file
-    //utree->saveTreeOnFile("../data/test.txt");
-
-    //----------------------------------------------
-    // Print tree structure on console
-    //utree->printAllNodesNeighbors();
 
     //------------------------------------------------------------------------------------------------------------------
     // DEFINE, APPLY & REVERT TREE REARRANGEMENTS
@@ -474,23 +405,12 @@ int main(int argc, char *argv[]) {
             // ------------------------------------
             if (computeMoveLikelihood && FLAGS_model_indels) {
 
-                // ------------------------------------
-                //utree->printAllNodesNeighbors();
-                //testSetAinRootPath(MSA_len, alignment, utree, list_vnode_to_root)
-
-                //likelihood->recombineAllFv(listNodesWithinPath);
-                //likelihood->setInsertionHistories(listNodesWithinPath, *alignment);
-
-                //logLK = LKFunc::LKRearrangment(*likelihood, listNodesWithinPath, *alignment);
-
-                //if (FLAGS_model_indels) {
                 // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
                 // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
                 bpp::RHomogeneousTreeLikelihood_PIP *ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(tl);
                 // we use a map to navigate between utree and bpp tree. The map is constant.
                 logLK = ttl->getLogLikelihood(listNodesWithinPath);
-                //VLOG(2) << "BPP::LogLK move apply " << logLK;
-                //}
+
                 // ------------------------------------
                 // Store likelihood of the move
                 rearrangmentList->getMove(i)->move_lk = logLK;
@@ -551,12 +471,6 @@ int main(int argc, char *argv[]) {
             if (FLAGS_model_indels) {
                 if (FLAGS_lkmove_bothways) {
 
-                    // ------------------------------------
-                    // Compute the full likelihood from the list of nodes involved in the rearrangment
-                    //likelihood->recombineAllFv(listNodesWithinPath);
-                    //likelihood->setInsertionHistories(listNodesWithinPath, *alignment);
-                    //logLK = LKFunc::LKRearrangment(*likelihood, listNodesWithinPath, *alignment);
-
                     // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
                     // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
                     bpp::RHomogeneousTreeLikelihood_PIP *ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(tl);
@@ -572,7 +486,7 @@ int main(int argc, char *argv[]) {
 
 
                 } else {
-
+                    /*
                     likelihood->restoreLikelihoodComponents();
                     // ------------------------------------
                     // Compute the list of nodes for a full traversal
@@ -580,6 +494,7 @@ int main(int argc, char *argv[]) {
                     likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
                     //likelihood->setInsertionHistories(allnodes_postorder,*alignment);
                     logLK = LKFunc::LKRearrangment(*likelihood, fullTraversalNodes, *alignment);
+                     */
                 }
 
             }
