@@ -383,3 +383,86 @@ double MatrixBppUtils::sumVector(std::vector<double> *x){
 
     return val;
 }
+
+
+bpp::DistanceMatrix *InputUtils::parseDistanceMatrix(std::string filepath) {
+
+
+    std::ifstream inFile;
+    inFile.open(filepath);
+
+    int matsize;
+
+    inFile >> matsize;
+    std::string character;
+    double val;
+
+    auto outmatrix = new bpp::DistanceMatrix(matsize);
+    outmatrix->resize(matsize);
+    std::string stringline;
+
+    int x = 0;
+    int rownum = 0;
+    while (!inFile.eof()) {
+
+        std::getline(inFile, stringline);
+        std::stringstream ss(stringline);
+
+        std::string token;
+        int y = 0;
+
+        int colnum = 0;
+        while (std::getline(ss, token, ' ')) {
+
+            if (!token.empty()) {
+
+                if (y == 0) {
+                    std::string seqname = token;
+                    (*outmatrix).setName(rownum, seqname);
+
+                } else {
+                    double value = std::stod(token);
+                    (*outmatrix)(rownum, colnum) = value;
+                    (*outmatrix)(colnum, rownum) = value;
+                    colnum++;
+                }
+
+            }
+            //(*outmatrix)(x,y) = std::stod(token);
+            y++;
+
+
+        }
+        if (!stringline.empty()) {
+            x++;
+            rownum++;
+        }
+    }
+
+    /*
+    outmatrix->resize(matsize);
+
+    std::string line;
+    std::string segment;
+    std::vector<std::string> seglist;
+    while (std::getline(inFile, line, ' ')) {
+        seglist.push_back(segment);
+
+    }
+
+    for(int i=0;i<matsize;i++){
+        inFile >> character;
+        for(int j=0;j<=i;j++){
+
+        inFile >> val
+
+
+
+        }
+    }
+
+
+    */
+
+    return outmatrix;
+}

@@ -85,10 +85,13 @@ namespace MatrixBppUtils{
 
     double sumVector(std::vector<double> *x);
 
+
 }
 
 
 namespace InputUtils {
+
+    bpp::DistanceMatrix *parseDistanceMatrix(std::string filepath);
 
 
 }

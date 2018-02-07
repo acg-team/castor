@@ -104,7 +104,6 @@ int main(int argc, char *argv[]) {
     google::InitGoogleLogging(software::name.c_str());
     //gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    int ompThreadID = omp_get_thread_num();
 #pragma omp master
 
     LOG(INFO) << "*****************************************************************************************************************************************";
@@ -128,7 +127,6 @@ int main(int argc, char *argv[]) {
         bool PAR_model_indels = ApplicationTools::getBooleanParameter("model_indels", jatiapp.getParams(), false);
         std::string PAR_optim_topology = ApplicationTools::getStringParameter("optim_topology", jatiapp.getParams(), "full-search", "", true, true);
         bool PAR_profile_ppip = ApplicationTools::getBooleanParameter("profile_ppip", jatiapp.getParams(), false);
-
 
         /* ***************************************************
          * Standard workflow
@@ -206,28 +204,38 @@ int main(int argc, char *argv[]) {
             }
         } else {
 
-            // Compute bioNJ tree using the JC69 model
-            map<std::string, std::string> parmap;
-            parmap["model"] = "JC69";
 
-            bpp::SequenceContainer *sequences_bioNJ = seqReader.readAlignment(PAR_input_sequences, alphabet);
-            seqReader.readSequences(PAR_input_sequences, alphabet);
-            bpp::SiteContainer *sites_bioNJ = new bpp::VectorSiteContainer(*sequences_bioNJ);
+            bpp::DistanceMatrix *distances;
 
-            bpp::SubstitutionModel *submodel_bioNJ = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites_bioNJ, parmap, "", true, false, 0);
-            bpp::DiscreteDistribution *rDist = new bpp::ConstantRateDistribution();
-            bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites_bioNJ);
-            bpp::DistanceEstimation distanceMethod(submodel_bioNJ, rDist, sites_bioNJ);
-            bpp::DistanceMatrix *distances = distanceMethod.getMatrix();
+            if (!PAR_alignment) {
+                // Compute bioNJ tree using the JC69 model
+                map<std::string, std::string> parmap;
+                parmap["model"] = "JC69";
+
+                bpp::SequenceContainer *sequences_bioNJ = seqReader.readAlignment(PAR_input_sequences, alphabet);
+                seqReader.readSequences(PAR_input_sequences, alphabet);
+                bpp::SiteContainer *sites_bioNJ = new bpp::VectorSiteContainer(*sequences_bioNJ);
+
+                bpp::SubstitutionModel *submodel_bioNJ = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites_bioNJ, parmap, "", true, false, 0);
+                bpp::DiscreteDistribution *rDist = new bpp::ConstantRateDistribution();
+                bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites_bioNJ);
+                bpp::DistanceEstimation distanceMethod(submodel_bioNJ, rDist, sites_bioNJ);
+                distances = distanceMethod.getMatrix();
+                delete sequences_bioNJ;
+                LOG(INFO) << "[BioNJ Pairwise distance matrix] The pairwise distance matrix using JC69";
+
+            } else {
+
+                std::string PAR_distance_matrix = ApplicationTools::getAFilePath("distance_matrix", jatiapp.getParams(), false, true, "", false, "", 0);
+                distances = InputUtils::parseDistanceMatrix(PAR_distance_matrix);
+
+                LOG(INFO) << "[BioNJ Pairwise distance matrix] The pairwise distance matrix is computed using LZ compression ";
+
+            }
+
             bpp::BioNJ bionj(*distances, true, true, false);
             tree = bionj.getTree();
 
-            // Remove all the object used only for computing bioNJ tree
-            delete sequences_bioNJ;
-            //delete sites_bioNJ;
-            //delete submodel_bioNJ;
-            //delete rDist;
-            //delete distanceMethod;
         }
         // Rename internal nodes with standard Vxx * where xx is a progressive number
         tree->setNodeName(tree->getRootId(), "root");
@@ -236,9 +244,10 @@ int main(int argc, char *argv[]) {
 
         Newick treeWriter;
         TreeTemplate<Node> ttree(*tree);
-        treeWriter.write(ttree, std::cout);
+        std::ostringstream oss;
+        treeWriter.write(ttree, oss);
 
-        LOG(INFO) << "[Initial Tree Topology] ";
+        LOG(INFO) << "[Initial Tree Topology] " << oss.str();
 
         // Convert the bpp into utree for tree-search engine
         auto utree = new Utree();
@@ -400,20 +409,11 @@ int main(int argc, char *argv[]) {
             LOG(INFO) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << -logLK << " \t[BPP METHODS]";
         //}
 
-        TreeTemplate<Node> ttree2(*tree);
-        treeWriter.write(ttree2, std::cout);
-
-        LOG(INFO) << "[Initial Tree Topology] ";
-
-        ParameterList test1;
-        ParameterList test2;
         //----------------------------------------------
         // Optimise parameters automatically
         if (!PAR_model_indels) {
-            test1 = tl->getParameters();
             tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(PhylogeneticsApplicationTools::optimizeParameters(tl, tl->getParameters(),
                                                                                                                      jatiapp.getParams(), "", true, true, 1));
-            test2 = tl->getParameters();
         }
         //----------------------------------------------
         // Remove the root
