@@ -376,7 +376,7 @@ namespace bpp {
 
         void computeNu();
 
-        void printFV(Node *node, VVVdouble *likelihoodvector);
+        void printFV(Node *node, VVVdouble *likelihoodvector) const;
 
         void printPrMatrix(Node *node, VVdouble *pr);
 

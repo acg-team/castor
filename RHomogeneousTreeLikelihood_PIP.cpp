@@ -704,6 +704,13 @@ void RHomogeneousTreeLikelihood_PIP::recombineFvAtNode(Node *node) const{
         computePrTimesIndicator_(node);
         computePrTimesIndicatorEmpty_(node);
     }
+    //--------------------------------------------------------------------------------------------
+    // Debug ** array fetching + printing **
+    VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
+    VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
+    printFV(node, _likelihoods_node);
+    printFV(node, _likelihoods_empty_node);
+    //--------------------------------------------------------------------------------------------
 
 }
 
@@ -1073,7 +1080,7 @@ void RHomogeneousTreeLikelihood_PIP::computePostOrderNodeList(Node *startNode) c
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::printFV(Node *node, VVVdouble *likelihoodvector){
+void RHomogeneousTreeLikelihood_PIP::printFV(Node *node, VVVdouble *likelihoodvector) const {
 
     // Print FV if required ------------------------------------------------------------------------------------------------
     std::ostringstream sout;
@@ -1163,9 +1170,9 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeSites() const {
     // For each site in the alignment
     for (size_t i = 0; i < nbDistinctSites_; i++) {
 
-        double lk_site = computeLikelihoodSite(listNodes, i) * rootWeights->at(i);
+        double lk_site = computeLikelihoodSite(listNodes, i);
 
-        lk_sites[i] = log(lk_site);
+        lk_sites[i] = log(lk_site) * rootWeights->at(i);
         VLOG(3) << "log_lk[" << i << "]=" << lk_sites[i] << std::endl;
     }
 
@@ -1292,7 +1299,14 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodOnTreeRearrangment(std::
         //likelihoodNodes_ = tempExtendedNodeList;
 
         // call to function which retrives the lk value for each site
+        lk_sites[i] = log(computeLikelihoodSite(tempExtendedNodeList, i));
+
+
+        VLOG(3) << "log_lk[" << i << "]=" << lk_sites[i] << " - " << rootWeights->at(i);
+
         lk_sites[i] = log(computeLikelihoodSite(tempExtendedNodeList, i)) * rootWeights->at(i);
+
+        VLOG(3) << "log_lk[" << i << "]=" << lk_sites[i] << " - " << rootWeights->at(i);
 
         //tempExtendedNodeList.clear();
 

@@ -376,7 +376,16 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << -logLK << " \t[BPP METHODS]";
         }
-
+        ParameterList test1;
+        ParameterList test2;
+        //----------------------------------------------
+        // Optimise parameters automatically
+        if (!PAR_model_indels) {
+            test1 = tl->getParameters();
+            tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(PhylogeneticsApplicationTools::optimizeParameters(tl, tl->getParameters(),
+                                                                                                                     jatiapp.getParams(), "", true, true, 1));
+            test2 = tl->getParameters();
+        }
         //----------------------------------------------
         // Remove the root
         utree->removeVirtualRootNode();
