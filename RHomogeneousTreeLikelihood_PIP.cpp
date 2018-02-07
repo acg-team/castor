@@ -134,8 +134,8 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
 
     data_ = PatternTools::getSequenceSubset(sites, *tree_->getRootNode());
 
-    tau_ = tree_->getTotalLength();
-    computeNu();
+    //tau_ = tree_->getTotalLength();
+    //computeNu();
 
     if (verbose_)
         ApplicationTools::displayTask("Initializing data structure");
@@ -181,17 +181,20 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     //likelihoodNodes_.clear();
     //computePostOrderNodeList(tree_->getRootNode());
 
+    //tau_ = tree_->getTotalLength();
+    //computeNu();
+
     // Set all iotas
-    setAllIotas();
+    //setAllIotas();
 
     // Set all betas
-    setAllBetas();
+    //setAllBetas();
 
     // Initialise vectors for storing insertion histories values
     InitialiseInsertionHistories();
 
     // Set indicator function on leafs
-    setIndicatorFunction(sites);
+    //setIndicatorFunction(sites);
 
 
     if (verbose_)
@@ -775,6 +778,18 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
         rootFreqs_ = model_->getFrequencies();
     }
 
+    tau_ = tree_->getTotalLength();
+    computeNu();
+
+    // Set all iotas
+    setAllIotas();
+
+    // Set all betas
+    setAllBetas();
+
+    // Set indicator function on leafs
+    setIndicatorFunction(*data_);
+
     // Calls the routine to compute the FV values
     computeTreeLikelihood();
 
@@ -1289,7 +1304,13 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodOnTreeRearrangment(std::
 
     const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
 
+#pragma omp barrier
+#pragma omp parallel if (OMPENABLED)
+#pragma omp for
     for (unsigned long i = 0; i < nbDistinctSites_; i++) {
+
+        //VLOG(1) << "Thread: " << omp_get_thread_num() << " on site " << i;
+
         std::vector<Node *> tempExtendedNodeList;
 
         // Extend it
@@ -1311,6 +1332,8 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodOnTreeRearrangment(std::
         //tempExtendedNodeList.clear();
 
     }
+#pragma omp barrier
+#pragma omp master
 
     // Sum all the values stored in the lk vector
     logLK= MatrixBppUtils::sumVector(&lk_sites);

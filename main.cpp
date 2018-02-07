@@ -94,7 +94,6 @@
 #include "progressivePIP.hpp"
 #include "JATIApplication.hpp"
 
-
 using namespace tshlib;
 
 int main(int argc, char *argv[]) {
@@ -104,6 +103,9 @@ int main(int argc, char *argv[]) {
     gflags::SetVersionString(software::build);
     google::InitGoogleLogging(software::name.c_str());
     //gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+    int ompThreadID = omp_get_thread_num();
+#pragma omp master
 
     LOG(INFO) << "*****************************************************************************************************************************************";
     LOG(INFO) << "* " << software::desc << "  *";
@@ -125,6 +127,8 @@ int main(int argc, char *argv[]) {
         bool PAR_model_setfreqsfromdata = ApplicationTools::getBooleanParameter("model_setfreqsfromdata", jatiapp.getParams(), false);
         bool PAR_model_indels = ApplicationTools::getBooleanParameter("model_indels", jatiapp.getParams(), false);
         std::string PAR_optim_topology = ApplicationTools::getStringParameter("optim_topology", jatiapp.getParams(), "full-search", "", true, true);
+        bool PAR_profile_ppip = ApplicationTools::getBooleanParameter("profile_ppip", jatiapp.getParams(), false);
+
 
         /* ***************************************************
          * Standard workflow
@@ -194,7 +198,6 @@ int main(int argc, char *argv[]) {
                 tree = newickReader->read(PAR_input_tree); // Tree in file MyTestTree.dnd
                 LOG(INFO) << "[Input tree file] " << PAR_input_tree;
                 LOG(INFO) << "[Tree parser] Input tree has " << tree->getNumberOfLeaves() << " leaves.";
-                LOG(INFO) << "[Initial Utree Topology]";
                 delete newickReader;
 
             } catch (bpp::Exception e) {
@@ -207,21 +210,35 @@ int main(int argc, char *argv[]) {
             map<std::string, std::string> parmap;
             parmap["model"] = "JC69";
 
-            bpp::SubstitutionModel *submodel_bioNJ = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
+            bpp::SequenceContainer *sequences_bioNJ = seqReader.readAlignment(PAR_input_sequences, alphabet);
+            seqReader.readSequences(PAR_input_sequences, alphabet);
+            bpp::SiteContainer *sites_bioNJ = new bpp::VectorSiteContainer(*sequences_bioNJ);
+
+            bpp::SubstitutionModel *submodel_bioNJ = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites_bioNJ, parmap, "", true, false, 0);
             bpp::DiscreteDistribution *rDist = new bpp::ConstantRateDistribution();
-            bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
-            bpp::DistanceEstimation distanceMethod(submodel_bioNJ, rDist, sites);
+            bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites_bioNJ);
+            bpp::DistanceEstimation distanceMethod(submodel_bioNJ, rDist, sites_bioNJ);
             bpp::DistanceMatrix *distances = distanceMethod.getMatrix();
-            bpp::BioNJ bionj(*distances);
+            bpp::BioNJ bionj(*distances, true, true, false);
             tree = bionj.getTree();
 
             // Remove all the object used only for computing bioNJ tree
-            delete submodel_bioNJ;
-            delete rDist;
+            delete sequences_bioNJ;
+            //delete sites_bioNJ;
+            //delete submodel_bioNJ;
+            //delete rDist;
+            //delete distanceMethod;
         }
         // Rename internal nodes with standard Vxx * where xx is a progressive number
         tree->setNodeName(tree->getRootId(), "root");
         UtreeBppUtils::renameInternalNodes(tree);
+
+
+        Newick treeWriter;
+        TreeTemplate<Node> ttree(*tree);
+        treeWriter.write(ttree, std::cout);
+
+        LOG(INFO) << "[Initial Tree Topology] ";
 
         // Convert the bpp into utree for tree-search engine
         auto utree = new Utree();
@@ -257,8 +274,12 @@ int main(int argc, char *argv[]) {
             parmap["model"] = PAR_model_substitution;
 
             submodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
-            if (!PAR_alignment) { if (PAR_model_setfreqsfromdata) submodel->setFreqFromData(*sites); }
-            //submodel->setFreqFromData(*sites);
+
+            if (!PAR_alignment) {
+                if (PAR_model_setfreqsfromdata) {
+                    submodel->setFreqFromData(*sites);
+                }
+            }
 
             rDist = new bpp::ConstantRateDistribution();
             if (!PAR_alignment) { bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites); }
@@ -326,24 +347,26 @@ int main(int argc, char *argv[]) {
 
             sites = new bpp::VectorSiteContainer(*sequences);
 
-            delete sequences;
+            //delete sequences;
 
-            std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output_file_msa", jatiapp.getParams(), false, false, "", true, "", 1);
-            std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output_file_lk", jatiapp.getParams(), false, false, "", true, "", 1);
 
-            bpp::Fasta seqWriter;
-            seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
+            if (PAR_profile_ppip) {
+                std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output_file_msa", jatiapp.getParams(), false, false, "", true, "", 1);
+                std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output_file_lk", jatiapp.getParams(), false, false, "", true, "", 1);
 
-            std::ofstream lkFile;
-            lkFile << std::setprecision(18);
-            lkFile.open(PAR_output_file_lk);
-            lkFile << MSA.score;
-            lkFile.close();
+                bpp::Fasta seqWriter;
+                seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
 
+                std::ofstream lkFile;
+                lkFile << std::setprecision(18);
+                lkFile.open(PAR_output_file_lk);
+                lkFile << MSA.score;
+                lkFile.close();
+            }
             VLOG(1) << "LK ProPIP" << MSA.score;
 
             VLOG(1) << "[ProPIP] ...done";
-            exit(0);
+            //exit(0);
 
         }
 
@@ -353,7 +376,7 @@ int main(int argc, char *argv[]) {
         double logLK = 0;
         //auto likelihood = new Likelihood();
         //std::vector<VirtualNode *> fullTraversalNodes;
-        if (!PAR_alignment) {
+        //if (!PAR_alignment) {
             //tree = UtreeBppUtils::convertTree_u2b(utree);
             if (!PAR_model_indels) {
 
@@ -375,7 +398,13 @@ int main(int argc, char *argv[]) {
             logLK = tl->getValue();
 
             LOG(INFO) << "[Tree likelihood] -- full traversal -- (on model " << submodel->getName() << ") = " << -logLK << " \t[BPP METHODS]";
-        }
+        //}
+
+        TreeTemplate<Node> ttree2(*tree);
+        treeWriter.write(ttree2, std::cout);
+
+        LOG(INFO) << "[Initial Tree Topology] ";
+
         ParameterList test1;
         ParameterList test2;
         //----------------------------------------------
@@ -421,6 +450,12 @@ int main(int argc, char *argv[]) {
 
         std::string PAR_lkmove = ApplicationTools::getStringParameter("lk_move", jatiapp.getParams(), "bothways", "", true, true);
 
+
+        double tsh_bestLkTopology = -logLK;
+        tshlib::VirtualNode *tsh_bestPNode = nullptr;
+        tshlib::VirtualNode *tsh_bestQNode = nullptr;
+        tshlib::MoveDirections tsh_bestDirection;
+        bool tsh_bestFound = false;
 
         // Print node description with neighbors
         for (auto &vnode:utree->listVNodes) {
@@ -483,6 +518,8 @@ int main(int argc, char *argv[]) {
                     // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
                     bpp::RHomogeneousTreeLikelihood_PIP *ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(tl);
                     // we use a map to navigate between utree and bpp tree. The map is constant.
+
+
                     logLK = ttl->getLogLikelihood(listNodesWithinPath);
 
                     // ------------------------------------
@@ -525,6 +562,17 @@ int main(int argc, char *argv[]) {
                 // ------------------------------------
                 // Print root reachability from every node (includes rotations)
                 //utree->_testReachingPseudoRoot();
+
+
+                // ------------------------------------
+                // Save move if lk is improved
+                if (rearrangmentList->getMove(i)->move_lk > tsh_bestLkTopology) {
+                    tsh_bestPNode = rearrangmentList->getSourceNode();
+                    tsh_bestQNode = rearrangmentList->getMove(i)->getTargetNode();
+                    tsh_bestDirection = rearrangmentList->getMove(i)->move_direction;
+                    tsh_bestLkTopology = rearrangmentList->getMove(i)->move_lk;
+                    tsh_bestFound = true;
+                }
 
                 // ------------------------------------
                 // Revert the move, and return to the original tree
@@ -608,13 +656,24 @@ int main(int argc, char *argv[]) {
                 // ------------------------------------
                 // Count moves performed
                 total_exec_moves += rearrangmentList->getNumberOfMoves() * 2;
-            }
 
+            }
 
             // ------------------------------------
             // Clean memory
             delete rearrangmentList;
         }
+
+        // ------------------------------------
+        // Print winning move
+
+        if (tsh_bestFound) {
+            LOG(INFO) << "[Final move to apply]\t(" << tsh_bestLkTopology << ") " << tsh_bestPNode->getNodeName() << " -> " << tsh_bestQNode->getNodeName();
+            // Commit final move on the topology
+            tsh_bestPNode->swapNode(tsh_bestQNode, tsh_bestDirection, false);
+
+        }
+        LOG(INFO) << "[Final tree topology]\t" << utree->printTreeNewick(true);
         // ------------------------------------
         std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
@@ -625,7 +684,9 @@ int main(int argc, char *argv[]) {
 
         //treesearchheuristics::testTSH(utree, TreeSearchHeuristics::classic_Mixed);
 
+
         delete sequences;
+
         jatiapp.done();
         exit(0);
 

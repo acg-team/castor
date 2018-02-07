@@ -75,7 +75,6 @@ time     ${MINIJATI_RELDATE} ${MINIJATI_RELTIME}")
 
 set(CMAKE_CXX_STANDARD 14)
 
-
 SET(CMAKE_CXX_FLAGS_DEBUG  "-Wall -Wshadow -Weffc++ -O0 -g")
 SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g")
 
@@ -84,6 +83,7 @@ SET(CMAKE_C_FLAGS_RELEASE "-O3")
 
 SET(CMAKE_CXX_FLAGS_INTEL  "-O3")
 SET(CMAKE_C_FLAGS_INTEL "-O3")
+
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(WINDOWS TRUE)
@@ -141,6 +141,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 #    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 #endif()
 
+add_definitions(-DOMPENABLED=1)
 
 set(SOURCES
         main.cpp
