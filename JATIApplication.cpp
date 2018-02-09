@@ -51,7 +51,7 @@
 using namespace bpp;
 
 JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name) : appName_(name), params_(), timerStarted_(false) {
-    LOG(INFO) << "Parsing options:";
+    //LOG(INFO) << "Parsing options:";
     params_ = bpp::AttributesTools::parseOptions(argc, argv);
     bpp::ApplicationTools::warningLevel = bpp::ApplicationTools::getIntParameter("--warning", params_, 0, "", true, 3);
     bool noint = bpp::ApplicationTools::getBooleanParameter("--noninteractive", params_, false, "", true, 3);
