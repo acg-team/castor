@@ -45,6 +45,9 @@
 #define MINIJATI_TSHTOPOLOGYSEARCH_HPP
 
 #include <Bpp/Phyl/TopologySearch.h>
+#include <Utree.hpp>
+#include <TreeRearrangment.hpp>
+#include <Bpp/Phyl/Likelihood/AbstractHomogeneousTreeLikelihood.h>
 #include "TSHSearchable.hpp"
 
 namespace bpp {
@@ -160,6 +163,110 @@ namespace bpp {
     };
 
 } //end of namespace bpp.
+
+
+namespace tshlib {
+
+    class TreeSearch {
+
+    private:
+        bpp::AbstractHomogeneousTreeLikelihood *likelihoodFunc;
+        double initialLikelihoodValue;
+        TreeSearchHeuristics tshStrategy;
+        TreeRearrangmentOperations tshOperations;
+        TreeSearchStopCondition stopConditionMethod;
+        double stopConditionValue;
+        std::string scoringMethod;
+        bool model_indels;
+        int performed_moves;
+        bpp::VectorSiteContainer *tmp_sites;
+        bpp::TransitionModel *tmp_transmodel;
+        bpp::DiscreteDistribution *tmp_rdist;
+
+    public:
+
+
+        TreeSearch() {
+            likelihoodFunc = nullptr;
+            initialLikelihoodValue = -std::numeric_limits<double>::infinity();
+            stopConditionValue = 0;
+            model_indels = false;
+            performed_moves = 0;
+        };
+
+        ~TreeSearch() = default;
+
+        void setLikelihoodFunc(bpp::AbstractHomogeneousTreeLikelihood *in_likelihoodFunc) {
+            likelihoodFunc = in_likelihoodFunc;
+        }
+
+        void setInitialLikelihoodValue(double in_initialLikelihoodValue) {
+            initialLikelihoodValue = in_initialLikelihoodValue;
+        }
+
+        void setTreeSearchStrategy(TreeSearchHeuristics in_tshStrategy, TreeRearrangmentOperations in_tshOperations) {
+            tshStrategy = in_tshStrategy;
+            tshOperations = in_tshOperations;
+        }
+
+        void setStopCondition(TreeSearchStopCondition in_stopConditionMethod, double in_stopConditionValue) {
+            stopConditionMethod = in_stopConditionMethod;
+            stopConditionValue = in_stopConditionValue;
+        }
+
+        bpp::AbstractHomogeneousTreeLikelihood *getLikelihoodFunc() const {
+            return likelihoodFunc;
+        }
+
+        double getInitialLikelihoodValue() const {
+            return initialLikelihoodValue;
+        }
+
+        TreeSearchHeuristics getTshStrategy() const {
+            return tshStrategy;
+        }
+
+        TreeRearrangmentOperations getTshOperations() const {
+            return tshOperations;
+        }
+
+        TreeSearchStopCondition getStopConditionMethod() const {
+            return stopConditionMethod;
+        }
+
+        double getStopConditionValue() const {
+            return stopConditionValue;
+        }
+
+        const std::string getScoringMethod() const {
+            return scoringMethod;
+        }
+
+        void setScoringMethod(const std::string &inScoringMethod) {
+            scoringMethod = inScoringMethod;
+        }
+
+        bool isIndelsIncluded() const {
+            return model_indels;
+        }
+
+        void setModelIndels(bool in_model_indes) {
+            model_indels = in_model_indes;
+        }
+
+        double performTreeSearch(Utree *inputTree);
+
+    protected:
+
+        tshlib::TreeRearrangment *defineCandidateMoves(tshlib::Utree *inputTree);
+
+        double greedy(tshlib::Utree *inputTree);
+
+        double hillclimbing(tshlib::Utree *inputTree);
+
+        double particleswarming(tshlib::Utree *inputTree);
+    };
+}
 
 
 #endif //MINIJATI_TSHTOPOLOGYSEARCH_HPP

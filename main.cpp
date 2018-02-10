@@ -93,6 +93,7 @@
 
 #include "progressivePIP.hpp"
 #include "JATIApplication.hpp"
+#include "TSHTopologySearch.hpp"
 
 using namespace tshlib;
 
@@ -421,306 +422,39 @@ int main(int argc, char *argv[]) {
         // DEFINE, APPLY & REVERT TREE REARRANGEMENTS
         // Get all the nodes between the radius boundaries and for each of them build the move list
 
-        std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-        unsigned long total_exec_moves = 0;
-        int min_radius;
-        int max_radius;
+        tshlib::TreeRearrangmentOperations treesearch_operations;
+        tshlib::TreeSearchHeuristics treesearch_heuristics;
 
         if (PAR_optim_topology.find("full-search") != std::string::npos) {
-
-            min_radius = 3;  // Minimum radius for an NNI move is 3 nodes
-            max_radius = utree->getMaxNodeDistance(); // Full tree traversing from any node of the tree
-
+            treesearch_operations = tshlib::TreeRearrangmentOperations::classic_Mixed;
         } else if (PAR_optim_topology.find("nni-search") != std::string::npos) {
-
-            min_radius = 3;
-            max_radius = 3;
-
+            treesearch_operations = tshlib::TreeRearrangmentOperations::classic_NNI;
         } else if (PAR_optim_topology.find("spr-search") != std::string::npos) {
-
-            min_radius = 4;
-            max_radius = utree->getMaxNodeDistance();
-
+            treesearch_operations = tshlib::TreeRearrangmentOperations::classic_SPR;
         } else {
-
             LOG(FATAL) << "Exiting program without tree search optimisation";
         }
 
         std::string PAR_lkmove = ApplicationTools::getStringParameter("lk_move", jatiapp.getParams(), "bothways", "", true, true);
-
-
-        //double tsh_bestLkTopology = -logLK;
-        //tshlib::VirtualNode *tsh_bestPNode = nullptr;
-        //tshlib::VirtualNode *tsh_bestQNode = nullptr;
-        //tshlib::MoveDirections tsh_bestDirection;
-        //bool tsh_bestFound = false;
-        //tshlib::Move *tsh_bestMove;
-
-
-        for (int cycle = 0; cycle < 10; cycle++) {
-            //std::vector<Move *> tsh_bestMoves;
-            auto tsh_bestMoves = new TreeRearrangment;
-            tsh_bestMoves->setTreeTopology(utree);
-            //Move tsh_newBestMove;
-
-            // Print node description with neighbors
-            for (auto &vnode:utree->listVNodes) {
-                //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
-
-                // Initialise a new rearrangement list
-                auto rearrangmentList = new TreeRearrangment;
-                rearrangmentList->initTreeRearrangment(utree, min_radius, max_radius, true, vnode);
-
-                // Get all the target nodes with distance == radius from the source node
-                // excluding the starting node.
-                rearrangmentList->defineMoves(false);
-
-                // Print the list of moves for the current P node (source node)
-                //rearrangmentList.printMoves();
-
-                VLOG(1) << "[utree rearrangment] [" << rearrangmentList->mset_strategy << "] Found "
-                        << rearrangmentList->getNumberOfMoves() << " candidate moves for node "
-                        << vnode->vnode_name;
-
-                std::string start_col_line, end_col_line;
-
-                // For each potential move computed before, apply it to the tree topology, print the resulting newick tree, and revert it.
-                for (unsigned long i = 0; i < rearrangmentList->getNumberOfMoves(); i++) {
-                    double moveLogLK = 0;
-
-                    VirtualNode *pnode = rearrangmentList->getSourceNode();
-                    VirtualNode *qnode = rearrangmentList->getMove(i)->getTargetNode();
-
-                    // ------------------------------------
-                    // Prepare the list of nodes involved in the move (Required here!)
-                    std::vector<VirtualNode *> listNodesWithinPath;
-                    listNodesWithinPath = utree->computePathBetweenNodes(pnode, qnode);
-                    listNodesWithinPath.push_back(utree->rootnode);
-
-                    // ------------------------------------
-                    // Apply the move
-                    rearrangmentList->applyMove(i);
-
-                    // ------------------------------------
-                    // Print root reachability from every node (includes rotations)
-                    //utree->_testReachingPseudoRoot();
-
-                    // ------------------------------------
-                    // Print tree on file
-                    //utree->saveTreeOnFile("../data/test.txt");
-
-                    // ------------------------------------
-                    bool isLKImproved = false;
-                    bool computeMoveLikelihood = true;
-
-                    // ------------------------------------
-                    // Add the root
-                    utree->addVirtualRootNode();
-
-                    // ------------------------------------
-                    if (computeMoveLikelihood && PAR_model_indels) {
-
-                        // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
-                        // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
-                        bpp::RHomogeneousTreeLikelihood_PIP *ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(tl);
-                        // we use a map to navigate between utree and bpp tree. The map is constant.
-
-
-                        moveLogLK = ttl->getLogLikelihood(listNodesWithinPath);
-
-                        // ------------------------------------
-                        // Store likelihood of the move
-                        rearrangmentList->getMove(i)->move_lk = moveLogLK;
-                    }
-
-                    if (!PAR_model_indels) {
-                        tree = UtreeBppUtils::convertTree_u2b(utree);
-                        tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
-                        tl->initialize();
-                        moveLogLK = tl->getLogLikelihood();
-                        rearrangmentList->getMove(i)->move_lk = moveLogLK;
-                    }
-
-
-                    // ------------------------------------
-                    // Remove virtual root
-                    utree->removeVirtualRootNode();
-
-                    // ------------------------------------
-                    // Some abbellishments for the console output
-                    if (rearrangmentList->getMove(i)->move_lk > 0) {
-                        start_col_line = "\033[1;34m";
-                        end_col_line = "\033[0m";
-                    } else {
-                        start_col_line = "";
-                        end_col_line = "";
-
-                    }
-
-                    // ------------------------------------
-                    // Move exection details
-                    VLOG(2) << "[apply  move]\t" << rearrangmentList->getMove(i)->move_class << "." << std::setfill('0') << std::setw(3) << i
-                            << " | (" << isLKImproved << ") " << start_col_line << rearrangmentList->getMove(i)->move_lk << end_col_line << "\t"
-                            << " | (" << rearrangmentList->getSourceNode()->vnode_name << "->" << rearrangmentList->getMove(i)->getTargetNode()->vnode_name << ")"
-                            << "\t[" << rearrangmentList->getMove(i)->move_radius << "] | "
-                            << utree->printTreeNewick(true) << std::endl;
-
-                    // ------------------------------------
-                    // Print root reachability from every node (includes rotations)
-                    //utree->_testReachingPseudoRoot();
-
-
-                    // ------------------------------------
-                    // Save move if lk is improved
-                    /*
-                    if (rearrangmentList->getMove(i)->move_lk > tsh_bestLkTopology) {
-                        tsh_bestPNode = rearrangmentList->getSourceNode();
-                        tsh_bestQNode = rearrangmentList->getMove(i)->getTargetNode();
-                        tsh_bestDirection = rearrangmentList->getMove(i)->move_direction;
-                        tsh_bestLkTopology = rearrangmentList->getMove(i)->move_lk;
-                        tsh_bestFound = true;
-                        tsh_newBestMove = *(rearrangmentList->getMove(i));
-                        //tsh_bestMoves->storeMove(&tsh_newBestMove);
-
-                    }
-                    */
-
-                    // ------------------------------------
-                    // Revert the move, and return to the original tree
-                    rearrangmentList->revertMove(i);
-
-                    // ------------------------------------
-                    // Print tree on file
-                    //utree->saveTreeOnFile("../data/test.txt");
-
-                    // ------------------------------------
-                    // Add the root
-                    utree->addVirtualRootNode();
-
-                    // ------------------------------------
-                    computeMoveLikelihood = false;
-
-                    // ------------------------------------
-                    if (PAR_model_indels) {
-                        if (PAR_lkmove.find("bothways") != std::string::npos) {
-
-                            // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
-                            // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
-                            bpp::RHomogeneousTreeLikelihood_PIP *ttl = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(tl);
-                            // we use a map to navigate between utree and bpp tree. The map is constant.
-
-                            moveLogLK = ttl->getLogLikelihood(listNodesWithinPath);
-                            //VLOG(2) << "BPP::LogLK move revert " <<
-
-
-                            // ------------------------------------
-                            // Store likelihood of the move
-                            //rearrangmentList->getMove(i)->move_lk = moveLogLK;
-
-
-                        } else {
-                            /*
-                            likelihood->restoreLikelihoodComponents();
-                            // ------------------------------------
-                            // Compute the list of nodes for a full traversal
-                            fullTraversalNodes.clear();
-                            likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
-                            //likelihood->setInsertionHistories(allnodes_postorder,*alignment);
-                            logLK = LKFunc::LKRearrangment(*likelihood, fullTraversalNodes, *alignment);
-                             */
-                        }
-
-                    }
-                    if (!PAR_model_indels) {
-                        tree = UtreeBppUtils::convertTree_u2b(utree);
-                        tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
-                        tl->initialize();
-                        moveLogLK = tl->getLogLikelihood();
-                        //rearrangmentList->getMove(i)->move_lk = logLK;
-                    }
-
-                    // ------------------------------------
-                    // Remove virtual root
-                    utree->removeVirtualRootNode();
-
-                    // ------------------------------------
-                    // Some abbellishments for the console output
-                    if (-logLK > 0) {
-                        start_col_line = "\033[1;34m";
-                        end_col_line = "\033[0m";
-                    } else {
-                        start_col_line = "";
-                        end_col_line = "";
-
-                    }
-                    // Move exection details
-                    VLOG(2) << "[revert move]\t" << rearrangmentList->getMove(i)->move_class << "." << std::setfill('0') << std::setw(3) << i
-                            << " | (" << isLKImproved << ") " << start_col_line << -logLK << end_col_line << "\t"
-                            << " | (" << rearrangmentList->getMove(i)->getTargetNode()->vnode_name << "->" << rearrangmentList->getSourceNode()->vnode_name << ")"
-                            << "\t[" << rearrangmentList->getMove(i)->move_radius << "] | "
-                            << utree->printTreeNewick(true) << std::endl;
-
-                    // ------------------------------------
-                    // Print root reachability from every node (includes rotations)
-                    //utree->_testReachingPseudoRoot();
-
-                    // ------------------------------------
-                    // Count moves performed
-                    total_exec_moves += rearrangmentList->getNumberOfMoves() * 2;
-
-                }
-
-                // Select the best move in the list and store it
-                if (rearrangmentList->selectBestMove(-logLK)) {
-                    auto bestMove = new Move(*(rearrangmentList->selectBestMove(-logLK)));
-                    tsh_bestMoves->storeMove(bestMove);
-                }
-                /*
-
-                    bestMove = *(rearrangmentList->selectBestMove(-logLK));
-                    tsh_bestMoves->storeMove(&bestMove);
-                }
-                */
-                // ------------------------------------
-                // Clean memory
-                delete rearrangmentList;
-            }
-
-
-            // ------------------------------------
-            // Print winning move
-            //LOG(INFO) << "[Best rearrangment found] Cycle #000 [" << tsh_bestPNode->getNodeName() << " -> " << tsh_bestQNode->getNodeName() << "]";
-            //LOG(INFO) << "[Optimised tree likelihood] (on model " << submodel->getName() << ") = " << tsh_bestLkTopology;
-
-            Move *bestMove = tsh_bestMoves->selectBestMove(-logLK);
-
-            if (bestMove) {
-
-                LOG(INFO) << "[TSH Cycle - Rearrangment] (cycle" << std::setfill('0') << std::setw(3) << cycle << ") [" << bestMove->getSourceNode()->getNodeName()
-                          << " -> " << bestMove->getTargetNode()->getNodeName() << "]";
-                LOG(INFO) << "[TSH Cycle - Likelihood] (on model " << submodel->getName() << ") = " << bestMove->getLikelihood();
-
-                // Commit final move on the topology
-                //tsh_bestPNode->swapNode(tsh_bestQNode, tsh_bestDirection, false);
-                tsh_bestMoves->commitMove(bestMove->move_id);
-
-
-                LOG(INFO) << "[TSH Cycle - Topology]\t" << utree->printTreeNewick(true);
-
-                logLK = -bestMove->getLikelihood();
-
-                delete tsh_bestMoves;
-
-            } else {
-
-                delete tsh_bestMoves;
-                break;
-            }
+        std::string PAR_optim_topology_operations = ApplicationTools::getStringParameter("optim_topology_operations", jatiapp.getParams(), "full-search", "", true, true);
+        int PAR_optim_topology_maxcycles = ApplicationTools::getIntParameter("optim_topology_maxcycles", jatiapp.getParams(), 1, "", true, 0);
+
+
+        auto treesearch = new tshlib::TreeSearch;
+        treesearch->setTreeSearchStrategy(tshlib::TreeSearchHeuristics::greedy, treesearch_operations);
+        treesearch->setInitialLikelihoodValue(-logLK);
+        treesearch->setScoringMethod(PAR_lkmove);
+        treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
+        if (PAR_model_indels) {
+            treesearch->setModelIndels(true);
+            treesearch->setLikelihoodFunc(tl);
+        } else {
 
         }
 
-        LOG(INFO) << "[TSH Best Topology] (" << -logLK << ") " << utree->printTreeNewick(true);
+        logLK = treesearch->performTreeSearch(utree);
 
+        LOG(INFO) << "[TSH Best Topology] (" << -logLK << ") " << utree->printTreeNewick(true);
 
         if (PAR_output_file_tree.find("none") == std::string::npos) {
             LOG(INFO) << "[Output tree]\t The final topology can be found in " << PAR_output_file_tree;
@@ -734,18 +468,6 @@ int main(int argc, char *argv[]) {
             bpp::Fasta seqWriter;
             seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
         }
-
-
-        // ------------------------------------
-        std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-
-        VLOG(0) << "Moves applied and reverted: " << total_exec_moves << std::endl;
-        VLOG(0) << "Elapsed time: " << duration << " microseconds" << std::endl;
-        VLOG(0) << "*** " << (double) duration / total_exec_moves << " microseconds/move *** " << std::endl;
-
-        //treesearchheuristics::testTSH(utree, TreeSearchHeuristics::classic_Mixed);
-
 
         delete sequences;
 
