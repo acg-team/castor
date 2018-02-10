@@ -152,6 +152,10 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     // Prepare FV empty
     likelihoodEmptyData_->initLikelihoods(*emptyContainer, *model_);
 
+    delete gaps;
+    delete emptySite;
+    delete emptyContainer;
+
 
     if (verbose_)
         ApplicationTools::displayTaskDone();
@@ -1221,7 +1225,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
                 } else {
                     fv_site += iotasData_[node] * betasData_[node] * partialLK;
                 }
-
+                delete fv_sons;
 
             } else {
                 fv_site += iotasData_[node] * (1 - betasData_[node]);
@@ -1261,6 +1265,8 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodSite(std::vector<Node *>
 
                         double partialLK = MatrixBppUtils::dotProd(fv_sons, &rootFreqs_);
                         fv_site += iotasData_[node] * betasData_[node] * partialLK;
+
+                        delete fv_sons;
 
                     } else {
                         std::vector<double> *indFun = &indicatorFun_[node][i];
