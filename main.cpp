@@ -120,6 +120,7 @@ int main(int argc, char *argv[]) {
     try {
         bpp::JATIApplication jatiapp(argc, argv, software::desc);
         jatiapp.startTimer();
+        std::string PAR_Alphabet = ApplicationTools::getStringParameter("alphabet", jatiapp.getParams(), "DNA", "", true, true);
         std::string PAR_input_sequences = ApplicationTools::getAFilePath("input_sequences", jatiapp.getParams(), true, true, "", false, "", 1);
         bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", jatiapp.getParams(), false);
         std::string PAR_input_tree = ApplicationTools::getAFilePath("input_tree", jatiapp.getParams(), false, true, "", false, "", 1);
@@ -140,6 +141,26 @@ int main(int argc, char *argv[]) {
          * (it should not be supported in production)
          * 4. sequences + tree => (4.1) parse sequence => (4.2) parse tree => (4.3) perform alignment
          */
+
+
+        bpp::Fasta seqReader;
+        bpp::SequenceContainer *sequences;
+        bpp::SiteContainer *sites;
+        bpp::Alphabet *alpha;
+
+        // The alphabet object should be set according to the correct alphabet
+
+        if (PAR_model_indels) {
+            if (PAR_Alphabet.find("DNA") != std::string::npos) {
+                alpha = new bpp::DNA_EXTENDED();
+            } else if (PAR_Alphabet.find("PROTEIN") != std::string::npos) {
+                alpha = new bpp::ProteicAlphabet_Extended();
+            }
+        } else {
+
+            alpha = new bpp::DNA();
+        }
+
         // Get alphabet from parameters
         bpp::Alphabet *alphabet = bpp::SequenceApplicationTools::getAlphabet(jatiapp.getParams(), "", false, false);
         unique_ptr<GeneticCode> gCode;
@@ -148,19 +169,6 @@ int main(int argc, char *argv[]) {
             std::string codeDesc = ApplicationTools::getStringParameter("genetic_code", jatiapp.getParams(), "Standard", "", true, true);
             //ApplicationTools::displayResult("Genetic Code", codeDesc);
             gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(codonAlphabet->getNucleicAlphabet(), codeDesc));
-        }
-
-        bpp::Fasta seqReader;
-        bpp::SequenceContainer *sequences;
-        bpp::SiteContainer *sites;
-        NucleicAlphabet *alpha;
-
-        // The alphabet object should be set according to the correct alphabet
-
-        if (PAR_model_indels) {
-            alpha = new bpp::DNA_EXTENDED();
-        } else {
-            alpha = new bpp::DNA();
         }
         //---------------------------------------
         // Input: data
@@ -225,7 +233,7 @@ int main(int argc, char *argv[]) {
                 bpp::DistanceEstimation distanceMethod(submodel_bioNJ, rDist, sites_bioNJ);
                 distances = distanceMethod.getMatrix();
                 delete sequences_bioNJ;
-                LOG(INFO) << "[BioNJ Pairwise distance matrix] The pairwise distance matrix using JC69";
+                LOG(INFO) << "[BioNJ Pairwise distance matrix] The pairwise distance matrix is computed using JC69";
 
             } else {
 
@@ -307,7 +315,8 @@ int main(int argc, char *argv[]) {
             lambda = PAR_model_pip_lambda;
             mu = PAR_model_pip_mu;
 
-            submodel = new PIP_Nuc(alpha, lambda, mu, submodel);
+
+            submodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alpha), lambda, mu, submodel);
 
             // Fill Q matrix
             Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());

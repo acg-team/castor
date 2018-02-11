@@ -56,7 +56,7 @@ using namespace std;
 
 DNA_EXTENDED::DNA_EXTENDED(bool exclamationMarkCountsAsGap) {
     // Alphabet content definition
-    // all unresolved bases use n°14
+    // all unresolved bases use n°15
     registerState(new NucleicAlphabetState(0, "A", 1, "Adenine"));
     registerState(new NucleicAlphabetState(1, "C", 2, "Cytosine"));
     registerState(new NucleicAlphabetState(2, "G", 4, "Guanine"));
@@ -128,7 +128,6 @@ int DNA_EXTENDED::getGeneric(const std::vector<int> &states) const throw(BadIntE
 }
 
 
-
 std::string DNA_EXTENDED::getGeneric(const std::vector<std::string> &states) const throw(BadCharException) {
     vector<int> vi;
     for (unsigned int i = 0; i < states.size(); ++i) {
@@ -138,3 +137,176 @@ std::string DNA_EXTENDED::getGeneric(const std::vector<std::string> &states) con
     return intToChar(getGeneric(vi));
 }
 
+
+ProteicAlphabet_Extended::ProteicAlphabet_Extended() {
+    // Alphabet content definition
+    registerState(new ProteicAlphabetState(0, "A", "ALA", "Alanine"));
+    registerState(new ProteicAlphabetState(1, "R", "ARG", "Arginine"));
+    registerState(new ProteicAlphabetState(2, "N", "ASN", "Asparagine"));
+    registerState(new ProteicAlphabetState(3, "D", "ASP", "Asparatic Acid"));
+    registerState(new ProteicAlphabetState(4, "C", "CYS", "Cysteine"));
+    registerState(new ProteicAlphabetState(5, "Q", "GLN", "Glutamine"));
+    registerState(new ProteicAlphabetState(6, "E", "GLU", "Glutamic acid"));
+    registerState(new ProteicAlphabetState(7, "G", "GLY", "Glycine"));
+    registerState(new ProteicAlphabetState(8, "H", "HIS", "Histidine"));
+    registerState(new ProteicAlphabetState(9, "I", "ILE", "Isoleucine"));
+    registerState(new ProteicAlphabetState(10, "L", "LEU", "Leucine"));
+    registerState(new ProteicAlphabetState(11, "K", "LYS", "Lysine"));
+    registerState(new ProteicAlphabetState(12, "M", "MET", "Methionine"));
+    registerState(new ProteicAlphabetState(13, "F", "PHE", "Phenylalanine"));
+    registerState(new ProteicAlphabetState(14, "P", "PRO", "Proline"));
+    registerState(new ProteicAlphabetState(15, "S", "SER", "Serine"));
+    registerState(new ProteicAlphabetState(16, "T", "THR", "Threonine"));
+    registerState(new ProteicAlphabetState(17, "W", "TRP", "Tryptophan"));
+    registerState(new ProteicAlphabetState(18, "Y", "TYR", "Tyrosine"));
+    registerState(new ProteicAlphabetState(19, "V", "VAL", "Valine"));
+    registerState(new ProteicAlphabetState(20, "B", "B", "N or D"));
+    registerState(new ProteicAlphabetState(21, "Z", "Z", "Q or E"));
+    registerState(new ProteicAlphabetState(22, "-", "GAP", "Gap"));
+    registerState(new ProteicAlphabetState(23, "X", "X", "Unresolved amino acid"));
+    registerState(new ProteicAlphabetState(23, "O", "O", "Unresolved amino acid"));
+    registerState(new ProteicAlphabetState(23, "0", "0", "Unresolved amino acid"));
+    registerState(new ProteicAlphabetState(23, "?", "?", "Unresolved amino acid"));
+    registerState(new ProteicAlphabetState(-2, "*", "STOP", "Stop"));
+}
+
+/******************************************************************************/
+
+string ProteicAlphabet_Extended::getAbbr(const string &aa) const throw(AlphabetException) {
+    string AA = TextTools::toUpper(aa);
+    return getState(aa).getAbbreviation();
+}
+
+/******************************************************************************/
+
+string ProteicAlphabet_Extended::getAbbr(int aa) const throw(AlphabetException) {
+    return getState(aa).getAbbreviation();
+}
+
+/******************************************************************************/
+
+vector<int> ProteicAlphabet_Extended::getAlias(int state) const throw(BadIntException) {
+    if (!isIntInAlphabet(state))
+        throw BadIntException(state, "ProteicAlphabet_Extended::getAlias(int): Specified base unknown.");
+    vector<int> v;
+    if (state == 20)  // N or D
+    {
+        v.resize(2);
+        v[0] = 2;
+        v[1] = 3;
+    } else if (state == 21)  // Q or E
+    {
+        v.resize(2);
+        v[0] = 5;
+        v[1] = 6;
+    } else if (state == 22)  // all!
+    {
+        v.resize(21);
+        for (size_t i = 0; i < 21; i++) {
+            v[i] = static_cast<int>(i);
+        }
+    } else {
+        v.resize(1);
+        v[0] = state;
+    }
+    return v;
+}
+
+/******************************************************************************/
+
+vector<string> ProteicAlphabet_Extended::getAlias(const string &state) const throw(BadCharException) {
+    string locstate = TextTools::toUpper(state);
+    if (!isCharInAlphabet(locstate))
+        throw BadCharException(locstate, "ProteicAlphabet_Extended::getAlias(int): Specified base unknown.");
+    vector<string> v;
+    if (locstate == "B")  // N or D
+    {
+        v.resize(2);
+        v[0] = "N";
+        v[1] = "D";
+    } else if (locstate == "Z")  // Q or E
+    {
+        v.resize(2);
+        v[0] = "Q";
+        v[1] = "E";
+    } else if (locstate == "X"
+               || locstate == "O"
+               || locstate == "0"
+               || locstate == "?")  // all!
+    {
+        v.resize(21);
+        for (int i = 0; i < 21; i++) {
+            v[static_cast<size_t>(i)] = getState(i).getLetter();
+        }
+    } else {
+        v.resize(1);
+        v[0] = locstate;
+    }
+    return v;
+}
+
+/******************************************************************************/
+
+int ProteicAlphabet_Extended::getGeneric(const vector<int> &states) const throw(BadIntException) {
+    map<int, int> m;
+    for (unsigned int i = 0; i < states.size(); ++i) {
+        vector<int> tmp_s = this->getAlias(states[i]); // get the states for generic characters
+        for (unsigned int j = 0; j < tmp_s.size(); ++j) {
+            m[tmp_s[j]]++; // add each state to the list
+        }
+    }
+    vector<int> ve = MapTools::getKeys(m);
+
+    string key;
+    for (unsigned int i = 0; i < ve.size(); ++i) {
+        if (!isIntInAlphabet(ve[i]))
+            throw BadIntException(ve[i], "ProteicAlphabet_Extended::getGeneric(const vector<int>): Specified base unknown.");
+        key += "_" + TextTools::toString(ve[i]);
+    }
+    map<string, int> g;
+    g["_2_3"] = 20;
+    g["_5_6"] = 21;
+    int v;
+    map<string, int>::iterator it = g.find(key);
+    if (ve.size() == 1) {
+        v = ve[0];
+    } else if (it != g.end()) {
+        v = it->second;
+    } else {
+        v = 23;
+    }
+    return v;
+}
+
+/******************************************************************************/
+
+string ProteicAlphabet_Extended::getGeneric(const vector<string> &states) const throw(BadCharException) {
+    map<string, int> m;
+    for (unsigned int i = 0; i < states.size(); ++i) {
+        vector<string> tmp_s = this->getAlias(states[i]); // get the states for generic characters
+        for (unsigned int j = 0; j < tmp_s.size(); ++j) {
+            m[tmp_s[j]]++; // add each state to the list
+        }
+    }
+    vector<string> ve = MapTools::getKeys(m);
+
+    string key;
+    for (unsigned int i = 0; i < ve.size(); ++i) {
+        if (!isCharInAlphabet(ve[i]))
+            throw BadCharException(ve[i], "ProteicAlphabet_Extended::getAlias(const vector<string>): Specified base unknown.");
+        key += TextTools::toString(ve[i]);
+    }
+    map<string, string> g;
+    g["DN"] = "B";
+    g["EQ"] = "Z";
+    string v;
+    map<string, string>::iterator it = g.find(key);
+    if (ve.size() == 1) {
+        v = ve[0];
+    } else if (it != g.end()) {
+        v = it->second;
+    } else {
+        v = "?";
+    }
+    return v;
+}

@@ -48,10 +48,10 @@
 #include <Bpp/Seq/Alphabet/LetterAlphabet.h>
 #include <Bpp/Seq/Alphabet/NucleicAlphabetState.h>
 #include <Bpp/Seq/Alphabet/NucleicAlphabet.h>
+#include <Bpp/Seq/Alphabet/ProteicAlphabetState.h>
 
 
 namespace bpp {
-
 
     /**
      * @brief This alphabet is used to deal with DNA_EXTENDED sequences.
@@ -91,6 +91,7 @@ namespace bpp {
         std::string getGeneric(const std::vector<std::string> &states) const throw(BadCharException);
 
         std::string getAlphabetType() const { return "DNA_EXTENDED"; }
+
         // return 4 : A, C, G, T (or U)
         unsigned int getSize() const { return 5; }
 
@@ -101,9 +102,118 @@ namespace bpp {
 
         bool isUnresolved(int state) const { return state > 3; }
 
-        bool isUnresolved(const std::string& state) const { return charToInt(state) > 3; }
+        bool isUnresolved(const std::string &state) const { return charToInt(state) > 3; }
 
         int getGapCharacterCode() const { return 4; }
+    };
+
+
+    /**
+     * @brief This alphabet is used to deal with proteins.
+     *
+     * It supports all 20 amino-acids with their standard denomination.
+     * Gaps are coded by '-', unresolved characters are coded by 'X'.
+     */
+
+    class ProteicAlphabet_Extended : public LetterAlphabet {
+        /**
+         * @name Overloaded methods from AbstractAlphabet
+         * @{
+         */
+    public:
+        const ProteicAlphabetState &getState(const std::string &letter) const
+        throw(BadCharException) {
+            return dynamic_cast<const ProteicAlphabetState &>(
+                    AbstractAlphabet::getState(letter)
+            );
+        }
+
+        const ProteicAlphabetState &getState(int num) const
+        throw(BadIntException) {
+            return dynamic_cast<const ProteicAlphabetState &>(
+                    AbstractAlphabet::getState(num)
+            );
+        }
+
+    protected:
+
+        const ProteicAlphabetState &getStateAt(size_t pos) const
+        throw(IndexOutOfBoundsException) {
+            return dynamic_cast<const ProteicAlphabetState &>(
+                    AbstractAlphabet::getStateAt(pos)
+            );
+        }
+
+        ProteicAlphabetState &getStateAt(size_t pos)
+        throw(IndexOutOfBoundsException) {
+            return dynamic_cast<ProteicAlphabetState &>(
+                    AbstractAlphabet::getStateAt(pos)
+            );
+        }
+
+        /** @} */
+    public:
+        ProteicAlphabet_Extended();
+
+        ProteicAlphabet_Extended(const ProteicAlphabet_Extended &bia) : LetterAlphabet(bia) {}
+
+        ProteicAlphabet_Extended &operator=(const ProteicAlphabet_Extended &bia) {
+            LetterAlphabet::operator=(bia);
+            return *this;
+        }
+
+        ProteicAlphabet_Extended *clone() const {
+            return new ProteicAlphabet_Extended(*this);
+        }
+
+
+        virtual ~ProteicAlphabet_Extended() {}
+
+
+    public:
+        unsigned int getSize() const { return 21; }
+
+        unsigned int getNumberOfTypes() const { return 23; }
+
+        int getUnknownCharacterCode() const { return 22; }
+
+        std::vector<int> getAlias(int state) const throw(BadIntException);
+
+        std::vector<std::string> getAlias(const std::string &state) const throw(BadCharException);
+
+        int getGeneric(const std::vector<int> &states) const throw(BadIntException);
+
+        std::string getGeneric(const std::vector<std::string> &states) const throw(BadCharException);
+
+        bool isUnresolved(int state) const { return state > 19; }
+
+        bool isUnresolved(const std::string &state) const { return charToInt(state) > 19; }
+
+        std::string getAlphabetType() const { return "Proteic"; }
+
+    public:
+
+        /**
+         * @name Specific methods
+         *
+         * @{
+         */
+
+        /**
+         * @brief Get the abbreviation (3 letter code) for a state coded as char.
+         *
+         * @param aa Char description of the amino-acid to analyse.
+         */
+        std::string getAbbr(const std::string &aa) const throw(AlphabetException);
+
+        /**
+         * @brief Get the abbreviation (3 letter code) for a state coded as int.
+         *
+         * @param aa Int description of the amino-acid to analyse.
+         */
+        std::string getAbbr(int aa) const throw(AlphabetException);
+        /** @} */
+
     };
 
 
