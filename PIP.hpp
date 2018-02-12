@@ -48,6 +48,7 @@
 #include <Bpp/Phyl/Model/AbstractSubstitutionModel.h>
 #include <Bpp/Phyl/Model/Nucleotide/NucleotideSubstitutionModel.h>
 #include <Bpp/Phyl/Model/Protein/ProteinSubstitutionModel.h>
+#include <Bpp/Phyl/Model/FrequenciesSet/ProteinFrequenciesSet.h>
 
 using namespace bpp;
 namespace bpp {
@@ -93,6 +94,78 @@ namespace bpp {
         void setFreq(std::map<int, double> &freqs);
 
         void updateMatrices(SubstitutionModel *basemodel);
+
+    };
+
+
+    class PIP_AA : public AbstractReversibleProteinSubstitutionModel {
+    private:
+        ProteinFrequenciesSet *freqSet_;
+
+    public:
+        /**
+         * @brief Build a simple PIP_AA model, with original equilibrium frequencies.
+         *
+         * @param alpha A proteic alphabet.
+         */
+        PIP_AA(const ProteicAlphabet *alpha);
+
+        /**
+         * @brief Build a PIP_AA model with special equilibrium frequencies.
+         *
+         * @param alpha A proteic alphabet.
+         * @param freqSet A pointer toward a protein frequencies set, which will be owned by this instance.
+         * @param initFreqs Tell if the frequency set should be initialized with the original PIP_AA values.
+         * Otherwise, the values of the set will be used.
+         */
+        PIP_AA(const ProteicAlphabet *alpha, ProteinFrequenciesSet *freqSet, bool initFreqs = false);
+
+        PIP_AA(const PIP_AA &model) :
+                AbstractParameterAliasable(model),
+                AbstractReversibleProteinSubstitutionModel(model),
+                freqSet_(dynamic_cast<ProteinFrequenciesSet *>(model.freqSet_->clone())) {}
+
+        PIP_AA &operator=(const PIP_AA &model) {
+            AbstractParameterAliasable::operator=(model);
+            AbstractReversibleProteinSubstitutionModel::operator=(model);
+            if (freqSet_) delete freqSet_;
+            freqSet_ = dynamic_cast<ProteinFrequenciesSet *>(model.freqSet_->clone());
+            return *this;
+        }
+
+        virtual ~PIP_AA() { delete freqSet_; }
+
+        PIP_AA *clone() const { return new PIP_AA(*this); }
+
+    public:
+        std::string getName() const {
+            if (freqSet_->getNamespace().find("PIP_AA+F.") != std::string::npos)
+                return "PIP_AA+F";
+            else
+                return "PIP_AA";
+        }
+
+        void fireParameterChanged(const ParameterList &parameters) {
+            freqSet_->matchParametersValues(parameters);
+            freq_ = freqSet_->getFrequencies();
+            AbstractReversibleSubstitutionModel::fireParameterChanged(parameters);
+        }
+
+        void setNamespace(const std::string &prefix) {
+            AbstractParameterAliasable::setNamespace(prefix);
+            freqSet_->setNamespace(prefix + freqSet_->getName() + ".");
+        }
+
+        void setFrequenciesSet(const ProteinFrequenciesSet &freqSet) {
+            delete freqSet_;
+            freqSet_ = dynamic_cast<ProteinFrequenciesSet *>(freqSet.clone());
+            resetParameters_();
+            addParameters_(freqSet_->getParameters());
+        }
+
+        const FrequenciesSet *getFrequenciesSet() const { return freqSet_; }
+
+        void setFreqFromData(const SequenceContainer &data, double pseudoCount = 0);
 
     };
 

@@ -3,12 +3,9 @@ cmake_minimum_required(VERSION 3.5)
 set(MINIJATI_SOFTWARENAME "miniJATI")
 set(MINIJATI_DESCRIPTION "Joint Alignment Tree Inference")
 
-
-
-
-set(MINIJATI_MAJOR_VERSION 1)
-set(MINIJATI_MINOR_VERSION 0)
-set(MINIJATI_PATCH_VERSION 0)
+set(MINIJATI_MAJOR_VERSION 0)
+set(MINIJATI_MINOR_VERSION 1)
+set(MINIJATI_PATCH_VERSION 1)
 set(MINIJATI_VERSION ${MINIJATI_MAJOR_VERSION}.${MINIJATI_MINOR_VERSION}.${MINIJATI_PATCH_VERSION})
 
 project(${MINIJATI_SOFTWARENAME}
@@ -92,10 +89,15 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(LINUX TRUE)
     message(STATUS "Compilation will be performed under Linux")
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lstdc++ -ldl -pthread ")
-    include_directories("/usr/local/include/glog")
-    include_directories("/usr/local/include/gflags")
-        find_library(gflags gflags)
-        message(STATUS "Found Gflags at ${gflags}")
+    if (GOOGLE_INCLUDE_PATH)
+        include_directories("${GOOGLE_INCLUDE_PATH}/glog")
+        include_directories("${GOOGLE_INCLUDE_PATH}/gflags")
+    else ()
+        include_directories("/usr/local/include/glog")
+        include_directories("/usr/local/include/gflags")
+    endif ()
+    #find_library(gflags gflags)
+    #message(STATUS "Found Gflags at ${gflags}")
     #find_package(glog REQUIRED)
     #find_package(gflags 2.2 REQUIRED)
 
@@ -106,7 +108,7 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     find_package(gflags REQUIRED)
 endif ()
 
-find_package(Boost 1.56 REQUIRED COMPONENTS date_time filesystem iostreams)
+find_package(Boost)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
@@ -153,8 +155,20 @@ set(SOURCES
         Version.hpp
         progressivePIP.hpp
         RHomogeneousTreeLikelihood_PIP.cpp
-        RHomogeneousTreeLikelihood_PIP.hpp ExtendedAlphabet.cpp ExtendedAlphabet.hpp TSHHomogeneousTreeLikelihood.cpp TSHHomogeneousTreeLikelihood.hpp TSHSearchable.hpp TSHTopologySearch.cpp TSHTopologySearch.hpp JATIApplication.cpp JATIApplication.hpp)
+        RHomogeneousTreeLikelihood_PIP.hpp
+        ExtendedAlphabet.cpp
+        ExtendedAlphabet.hpp
+        TSHHomogeneousTreeLikelihood.cpp
+        TSHHomogeneousTreeLikelihood.hpp
+        TSHSearchable.hpp
+        TSHTopologySearch.cpp
+        TSHTopologySearch.hpp
+        JATIApplication.cpp
+        JATIApplication.hpp)
 
+if (CMAKE_BUILD_TYPE EQUAL "Release")
+    set_target_properties(miniJATI PROPERTIES LINK_FLAGS "-static")
+endif ()
 
 add_executable(miniJATI ${SOURCES})
 
@@ -173,3 +187,4 @@ target_link_libraries(miniJATI_onBPP tshlib)
 target_link_libraries(miniJATI_onBPP glog)
 target_link_libraries(miniJATI_onBPP gflags)
 target_link_libraries(miniJATI_onBPP ${BPP_LIBS_SHARED})
+
