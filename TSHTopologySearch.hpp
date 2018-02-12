@@ -44,6 +44,7 @@
 #ifndef MINIJATI_TSHTOPOLOGYSEARCH_HPP
 #define MINIJATI_TSHTOPOLOGYSEARCH_HPP
 
+#include <chrono>
 #include <Bpp/Phyl/TopologySearch.h>
 #include <Utree.hpp>
 #include <TreeRearrangment.hpp>
