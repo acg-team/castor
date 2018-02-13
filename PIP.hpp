@@ -100,6 +100,8 @@ namespace bpp {
 
     class PIP_AA : public AbstractReversibleProteinSubstitutionModel {
     private:
+        double lambda_, mu_, tau_, nu_;
+        std::string name_;
         ProteinFrequenciesSet *freqSet_;
 
     public:
@@ -108,7 +110,7 @@ namespace bpp {
          *
          * @param alpha A proteic alphabet.
          */
-        PIP_AA(const ProteicAlphabet *alpha);
+        PIP_AA(const ProteicAlphabet *alpha, double lambda = 0.1, double mu = 0.1, SubstitutionModel *basemodel = nullptr);
 
         /**
          * @brief Build a PIP_AA model with special equilibrium frequencies.
@@ -118,7 +120,7 @@ namespace bpp {
          * @param initFreqs Tell if the frequency set should be initialized with the original PIP_AA values.
          * Otherwise, the values of the set will be used.
          */
-        PIP_AA(const ProteicAlphabet *alpha, ProteinFrequenciesSet *freqSet, bool initFreqs = false);
+        //PIP_AA(const ProteicAlphabet *alpha, ProteinFrequenciesSet *freqSet, bool initFreqs = false,);
 
         PIP_AA(const PIP_AA &model) :
                 AbstractParameterAliasable(model),
@@ -140,9 +142,9 @@ namespace bpp {
     public:
         std::string getName() const {
             if (freqSet_->getNamespace().find("PIP_AA+F.") != std::string::npos)
-                return "PIP_AA+F";
+                return name_ + "+F";
             else
-                return "PIP_AA";
+                return name_;
         }
 
         void fireParameterChanged(const ParameterList &parameters) {
@@ -166,6 +168,12 @@ namespace bpp {
         const FrequenciesSet *getFrequenciesSet() const { return freqSet_; }
 
         void setFreqFromData(const SequenceContainer &data, double pseudoCount = 0);
+
+    protected:
+
+        size_t getNumberOfStates() const { return 21; };
+
+        void updateMatrices(SubstitutionModel *basemodel);
 
     };
 

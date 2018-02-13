@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
         if (PAR_model_indels) {
             if (PAR_Alphabet.find("DNA") != std::string::npos) {
                 alpha = new bpp::DNA_EXTENDED();
-            } else if (PAR_Alphabet.find("PROTEIN") != std::string::npos) {
+            } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
                 alpha = new bpp::ProteicAlphabet_Extended();
             }
         } else {
@@ -315,8 +315,13 @@ int main(int argc, char *argv[]) {
             lambda = PAR_model_pip_lambda;
             mu = PAR_model_pip_mu;
 
+            if (PAR_Alphabet.find("DNA") != std::string::npos) {
+                submodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alpha), lambda, mu, submodel);
+            } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
+                submodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alpha), lambda, mu, submodel);
+            }
 
-            submodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alpha), lambda, mu, submodel);
+            //submodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alpha), lambda, mu, submodel);
 
             // Fill Q matrix
             Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());

@@ -49,6 +49,7 @@
 #include <Bpp/Seq/Alphabet/NucleicAlphabetState.h>
 #include <Bpp/Seq/Alphabet/NucleicAlphabet.h>
 #include <Bpp/Seq/Alphabet/ProteicAlphabetState.h>
+#include <Bpp/Seq/Alphabet/ProteicAlphabet.h>
 
 
 namespace bpp {
@@ -115,7 +116,7 @@ namespace bpp {
      * Gaps are coded by '-', unresolved characters are coded by 'X'.
      */
 
-    class ProteicAlphabet_Extended : public LetterAlphabet {
+    class ProteicAlphabet_Extended : public ProteicAlphabet {
         /**
          * @name Overloaded methods from AbstractAlphabet
          * @{
@@ -155,7 +156,7 @@ namespace bpp {
     public:
         ProteicAlphabet_Extended();
 
-        ProteicAlphabet_Extended(const ProteicAlphabet_Extended &bia) : LetterAlphabet(bia) {}
+        // ProteicAlphabet_Extended(const ProteicAlphabet_Extended &bia) : ProteicAlphabet(bia)  {}
 
         ProteicAlphabet_Extended &operator=(const ProteicAlphabet_Extended &bia) {
             LetterAlphabet::operator=(bia);
@@ -173,9 +174,9 @@ namespace bpp {
     public:
         unsigned int getSize() const { return 21; }
 
-        unsigned int getNumberOfTypes() const { return 23; }
+        unsigned int getNumberOfTypes() const { return 24; }
 
-        int getUnknownCharacterCode() const { return 22; }
+        int getUnknownCharacterCode() const { return 23; }
 
         std::vector<int> getAlias(int state) const throw(BadIntException);
 
@@ -183,11 +184,13 @@ namespace bpp {
 
         int getGeneric(const std::vector<int> &states) const throw(BadIntException);
 
+        int getGapCharacterCode() const { return 20; }
+
         std::string getGeneric(const std::vector<std::string> &states) const throw(BadCharException);
 
-        bool isUnresolved(int state) const { return state > 19; }
+        bool isUnresolved(int state) const { return state > 20; }
 
-        bool isUnresolved(const std::string &state) const { return charToInt(state) > 19; }
+        bool isUnresolved(const std::string &state) const { return charToInt(state) > 20; }
 
         std::string getAlphabetType() const { return "Proteic"; }
 

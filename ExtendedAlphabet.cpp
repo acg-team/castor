@@ -140,6 +140,9 @@ std::string DNA_EXTENDED::getGeneric(const std::vector<std::string> &states) con
 
 ProteicAlphabet_Extended::ProteicAlphabet_Extended() {
     // Alphabet content definition
+    resize(0);
+    remap();
+    // Alphabet content definition
     registerState(new ProteicAlphabetState(0, "A", "ALA", "Alanine"));
     registerState(new ProteicAlphabetState(1, "R", "ARG", "Arginine"));
     registerState(new ProteicAlphabetState(2, "N", "ASN", "Asparagine"));
@@ -160,14 +163,16 @@ ProteicAlphabet_Extended::ProteicAlphabet_Extended() {
     registerState(new ProteicAlphabetState(17, "W", "TRP", "Tryptophan"));
     registerState(new ProteicAlphabetState(18, "Y", "TYR", "Tyrosine"));
     registerState(new ProteicAlphabetState(19, "V", "VAL", "Valine"));
-    registerState(new ProteicAlphabetState(20, "B", "B", "N or D"));
-    registerState(new ProteicAlphabetState(21, "Z", "Z", "Q or E"));
-    registerState(new ProteicAlphabetState(22, "-", "GAP", "Gap"));
+    registerState(new ProteicAlphabetState(20, "-", "GAP", "Gap"));
+    registerState(new ProteicAlphabetState(21, "B", "B", "N or D"));
+    registerState(new ProteicAlphabetState(22, "Z", "Z", "Q or E"));
     registerState(new ProteicAlphabetState(23, "X", "X", "Unresolved amino acid"));
     registerState(new ProteicAlphabetState(23, "O", "O", "Unresolved amino acid"));
     registerState(new ProteicAlphabetState(23, "0", "0", "Unresolved amino acid"));
     registerState(new ProteicAlphabetState(23, "?", "?", "Unresolved amino acid"));
-    registerState(new ProteicAlphabetState(-2, "*", "STOP", "Stop"));
+    registerState(new ProteicAlphabetState(-1, "*", "STOP", "Stop"));
+    //setState(22, new ProteicAlphabetState(22, "-", "GAP", "Gap"));
+
 }
 
 /******************************************************************************/
@@ -189,17 +194,17 @@ vector<int> ProteicAlphabet_Extended::getAlias(int state) const throw(BadIntExce
     if (!isIntInAlphabet(state))
         throw BadIntException(state, "ProteicAlphabet_Extended::getAlias(int): Specified base unknown.");
     vector<int> v;
-    if (state == 20)  // N or D
+    if (state == 21)  // N or D
     {
         v.resize(2);
         v[0] = 2;
         v[1] = 3;
-    } else if (state == 21)  // Q or E
+    } else if (state == 22)  // Q or E
     {
         v.resize(2);
         v[0] = 5;
         v[1] = 6;
-    } else if (state == 22)  // all!
+    } else if (state == 23)  // all!
     {
         v.resize(21);
         for (size_t i = 0; i < 21; i++) {
@@ -264,8 +269,8 @@ int ProteicAlphabet_Extended::getGeneric(const vector<int> &states) const throw(
         key += "_" + TextTools::toString(ve[i]);
     }
     map<string, int> g;
-    g["_2_3"] = 20;
-    g["_5_6"] = 21;
+    g["_2_3"] = 21;
+    g["_5_6"] = 22;
     int v;
     map<string, int>::iterator it = g.find(key);
     if (ve.size() == 1) {

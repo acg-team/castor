@@ -252,16 +252,31 @@ void PIP_Nuc::setFreqFromData(const SequenceContainer &data, double pseudoCount)
 }
 
 
-PIP_AA::PIP_AA(const ProteicAlphabet *alpha) :
-        AbstractParameterAliasable("PIP_AA."),
-        AbstractReversibleProteinSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP_AA."),
-        freqSet_(0) {
+PIP_AA::PIP_AA(const ProteicAlphabet *alpha, double lambda, double mu, SubstitutionModel *basemodel) :
+        AbstractParameterAliasable("PIP."),
+        AbstractReversibleProteinSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP."),
+        lambda_(lambda), mu_(mu), freqSet_(0) {
 //#include "__PIP_AAExchangeabilityCode"
 //#include "__PIP_AAFrequenciesCode"
     freqSet_ = new FixedProteinFrequenciesSet(alpha, freq_);
-    updateMatrices();
+    name_ = basemodel->getName() + "+PIP";
+
+    // Inheriting basemodel parameters
+    ParameterList parlist = basemodel->getParameters();
+
+    for (int i = 0; i < parlist.size(); i++) {
+        addParameter_(new Parameter("PIP." + parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
+    }
+
+    //name_ = basemodel->getName() + "+PIP";
+
+    addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
+    addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
+
+    updateMatrices(basemodel);
 }
 
+/*
 PIP_AA::PIP_AA(const ProteicAlphabet *alpha, ProteinFrequenciesSet *freqSet, bool initFreqs) :
         AbstractParameterAliasable("PIP_AA+F."),
         AbstractReversibleProteinSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP_AA+F."),
@@ -274,6 +289,93 @@ PIP_AA::PIP_AA(const ProteicAlphabet *alpha, ProteinFrequenciesSet *freqSet, boo
     addParameters_(freqSet_->getParameters());
     updateMatrices();
 }
+*/
+void PIP_AA::updateMatrices(SubstitutionModel *basemodel) {
+    lambda_ = getParameterValue("lambda");
+    mu_ = getParameterValue("mu");
+
+
+    //AbstractReversibleSubstitutionModel::updateMatrices();
+
+    // Add frequency for gap character
+
+    freq_ = basemodel->getFrequencies();
+    freq_[alphabet_->getGapCharacterCode()] = 0; // hack for updateMatrices()
+
+
+    // Copy the generator from substitution model + extend it
+    const bpp::Matrix<double> &qmatrix = basemodel->getGenerator();
+
+    int cols = qmatrix.getNumberOfColumns();
+    int rows = qmatrix.getNumberOfRows();
+
+
+    for (int i = 0; i < rows - 1; i++) {
+        for (int j = 0; j < cols; j++) {
+
+            if (i == j) {
+                generator_(i, j) = qmatrix(i, j) - mu_;
+            } else {
+
+                generator_(i, j) = qmatrix(i, j);
+            }
+
+        }
+        generator_(i, cols - 1) = mu_;
+    }
+
+
+
+    // Copy the exchangeability from substitution model + extend it
+    const bpp::Matrix<double> &exMatrix = basemodel->getExchangeabilityMatrix();
+
+    // Exchangeability
+    for (int i = 0; i < rows - 1; i++) {
+        for (int j = 0; j < cols - 1; j++) {
+
+            if (i == j) {
+                exchangeability_(i, j) = exMatrix(i, j) - mu_;
+            } else {
+                exchangeability_(i, j) = exMatrix(i, j);
+            }
+
+        }
+
+        exchangeability_(i, cols - 1) = mu_;
+    }
+
+    // Normalization:
+    setDiagonal();
+    //normalize();
+
+
+    // Compute eigen values and vectors:
+    if (enableEigenDecomposition()) {
+        EigenValue<double> ev(generator_);
+        rightEigenVectors_ = ev.getV();
+        eigenValues_ = ev.getRealEigenValues();
+        iEigenValues_ = ev.getImagEigenValues();
+        try {
+            MatrixTools::inv(rightEigenVectors_, leftEigenVectors_);
+            isNonSingular_ = true;
+            isDiagonalizable_ = true;
+            for (size_t i = 0; i < size_ && isDiagonalizable_; i++) {
+                if (abs(iEigenValues_[i]) > NumConstants::TINY())
+                    isDiagonalizable_ = false;
+            }
+        }
+        catch (ZeroDivisionException &e) {
+            ApplicationTools::displayMessage("Singularity during diagonalization. Taylor series used instead.");
+
+            isNonSingular_ = false;
+            isDiagonalizable_ = false;
+            MatrixTools::Taylor(generator_, 30, vPowGen_);
+        }
+    }
+
+
+}
+
 
 void PIP_AA::setFreqFromData(const SequenceContainer &data, double pseudoCount) {
     std::map<int, int> counts;
