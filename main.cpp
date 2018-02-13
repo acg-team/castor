@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
         std::string PAR_model_substitution = ApplicationTools::getStringParameter("model_substitution", jatiapp.getParams(), "JC69", "", true, true);
         bool PAR_model_setfreqsfromdata = ApplicationTools::getBooleanParameter("model_setfreqsfromdata", jatiapp.getParams(), false);
         bool PAR_model_indels = ApplicationTools::getBooleanParameter("model_indels", jatiapp.getParams(), false);
-        std::string PAR_optim_topology = ApplicationTools::getStringParameter("optim_topology", jatiapp.getParams(), "full-search", "", true, true);
+        std::string PAR_optim_topology_algorithm = ApplicationTools::getStringParameter("optim_topology_algorithm", jatiapp.getParams(), "no-search", "", true, true);
         bool PAR_profile_ppip = ApplicationTools::getBooleanParameter("profile_ppip", jatiapp.getParams(), false);
         std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output_file_msa", jatiapp.getParams(), false, false, "", true, "", 1);
         std::string PAR_output_file_tree = ApplicationTools::getAFilePath("output_file_tree", jatiapp.getParams(), false, false, "", true, "", 1);
@@ -434,42 +434,51 @@ int main(int argc, char *argv[]) {
         tshlib::TreeRearrangmentOperations treesearch_operations;
         tshlib::TreeSearchHeuristics treesearch_heuristics;
 
-        if (PAR_optim_topology.find("full-search") != std::string::npos) {
-            treesearch_operations = tshlib::TreeRearrangmentOperations::classic_Mixed;
-        } else if (PAR_optim_topology.find("nni-search") != std::string::npos) {
-            treesearch_operations = tshlib::TreeRearrangmentOperations::classic_NNI;
-        } else if (PAR_optim_topology.find("spr-search") != std::string::npos) {
-            treesearch_operations = tshlib::TreeRearrangmentOperations::classic_SPR;
-        } else {
-            LOG(FATAL) << "Exiting program without tree search optimisation";
+        if (PAR_optim_topology_algorithm.find("greedy") != std::string::npos) {
+            treesearch_heuristics = tshlib::TreeSearchHeuristics::greedy;
+        } else if (PAR_optim_topology_algorithm.find("no-search") != std::string::npos) {
+            treesearch_heuristics = tshlib::TreeSearchHeuristics::nosearch;
         }
 
-        std::string PAR_lkmove = ApplicationTools::getStringParameter("lk_move", jatiapp.getParams(), "bothways", "", true, true);
-        std::string PAR_optim_topology_operations = ApplicationTools::getStringParameter("optim_topology_operations", jatiapp.getParams(), "full-search", "", true, true);
-        int PAR_optim_topology_maxcycles = ApplicationTools::getIntParameter("optim_topology_maxcycles", jatiapp.getParams(), 1, "", true, 0);
+        if (treesearch_heuristics != tshlib::TreeSearchHeuristics::nosearch) {
+            std::string PAR_lkmove = ApplicationTools::getStringParameter("lk_move", jatiapp.getParams(), "bothways", "", true, true);
+            std::string PAR_optim_topology_operations = ApplicationTools::getStringParameter("optim_topology_operations", jatiapp.getParams(), "best-search", "", true, true);
+            int PAR_optim_topology_maxcycles = ApplicationTools::getIntParameter("optim_topology_maxcycles", jatiapp.getParams(), 1, "", true, 0);
 
 
-        auto treesearch = new tshlib::TreeSearch;
-        treesearch->setTreeSearchStrategy(tshlib::TreeSearchHeuristics::greedy, treesearch_operations);
-        treesearch->setInitialLikelihoodValue(-logLK);
-        treesearch->setScoringMethod(PAR_lkmove);
-        treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
-        if (PAR_model_indels) {
-            treesearch->setModelIndels(true);
-            treesearch->setLikelihoodFunc(tl);
-        } else {
+            if (PAR_optim_topology_operations.find("best-search") != std::string::npos) {
+                treesearch_operations = tshlib::TreeRearrangmentOperations::classic_Mixed;
+            } else if (PAR_optim_topology_operations.find("nni-search") != std::string::npos) {
+                treesearch_operations = tshlib::TreeRearrangmentOperations::classic_NNI;
+            } else if (PAR_optim_topology_operations.find("spr-search") != std::string::npos) {
+                treesearch_operations = tshlib::TreeRearrangmentOperations::classic_SPR;
+            } else {
+                LOG(FATAL) << "Exiting program without tree search optimisation";
+            }
+
+            auto treesearch = new tshlib::TreeSearch;
+            treesearch->setTreeSearchStrategy(tshlib::TreeSearchHeuristics::greedy, treesearch_operations);
+            treesearch->setInitialLikelihoodValue(-logLK);
+            treesearch->setScoringMethod(PAR_lkmove);
+            treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
+            if (PAR_model_indels) {
+                treesearch->setModelIndels(true);
+                treesearch->setLikelihoodFunc(tl);
+            } else {
+
+            }
+            logLK = treesearch->performTreeSearch(utree);
 
         }
 
-        logLK = treesearch->performTreeSearch(utree);
 
-        LOG(INFO) << "[TSH Best Topology] (" << -logLK << ") " << utree->printTreeNewick(true);
+        LOG(INFO) << "[TSH Best Topology] (" << -logLK << ") " << utree->printTreeNewick(false);
 
         if (PAR_output_file_tree.find("none") == std::string::npos) {
             LOG(INFO) << "[Output tree]\t The final topology can be found in " << PAR_output_file_tree;
             std::ofstream file;
             file.open(PAR_output_file_tree);
-            file << utree->printTreeNewick(true);
+            file << utree->printTreeNewick(false);
             file.close();
         }
         if (PAR_output_file_msa.find("none") == std::string::npos) {
