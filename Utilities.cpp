@@ -146,6 +146,7 @@ void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::
 
 void UtreeBppUtils::convertTree_b2u(bpp::Tree *in_tree, Utree *out_tree, treemap &tm) {
     int rootId = in_tree->getRootId();
+
     for(auto &sonId:in_tree->getSonsId(rootId)){
 
         auto ichild = new VirtualNode;

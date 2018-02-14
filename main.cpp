@@ -336,6 +336,7 @@ int main(int argc, char *argv[]) {
 
         //------------------------------------------------------------------------------------------------------------------
         // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
+
         progressivePIP::ProgressivePIPResult MSA;
         auto likelihood = new tshlib::Likelihood;
         std::vector<tshlib::VirtualNode *> fullTraversalNodes;

@@ -1933,6 +1933,7 @@ namespace progressivePIP{
         if (node->isTerminalNode()) {
 
             add_sequence_to_alignment(result, node, sequences);
+            VLOG(2) << "[PPIP] Processing node " << node->vnode_name;
 
         } else{
 
@@ -1940,7 +1941,7 @@ namespace progressivePIP{
             ProgressivePIPResult result_R = compute_DP3D_PIP_tree_cross(node->getNodeRight(), tree, tm, pi, lambda, mu, sequences, alphabet, gamma_rate, local_tree);
 
             result = compute_DP3D_PIP(result_L, result_R, node, tree, tm, pi, lambda, mu, sequences, alphabet, gamma_rate, local_tree);
-
+            VLOG(2) << "[PPIP] Processing node " << node->vnode_name;
 
         }
 
