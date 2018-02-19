@@ -166,7 +166,7 @@ set(SOURCES
         TSHTopologySearch.cpp
         TSHTopologySearch.hpp
         JATIApplication.cpp
-        JATIApplication.hpp)
+        JATIApplication.hpp pPIP.cpp pPIP.hpp)
 
 if (CMAKE_BUILD_TYPE EQUAL "Release")
     set_target_properties(miniJATI PROPERTIES LINK_FLAGS "-static")

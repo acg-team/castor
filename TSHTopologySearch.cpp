@@ -112,18 +112,37 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves(tshlib::Utree
     candidateMoveSet->setTreeTopology(inputTree);
     candidateMoveSet->setMinRadius(min_radius);
     candidateMoveSet->setMaxRadius(max_radius);
-    // Generate candidate list of possible moves given the tree topology and the rearrangement operation type
 
-    for (auto &node:inputTree->listVNodes) {
-        // Print node description with neighbors
-        //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
-        candidateMoveSet->setSourceNode(node);
-        // Get all the target nodes with distance == radius from the source node
-        // excluding the starting node (false)
-        // do not duplicate moves in the list
-        candidateMoveSet->defineMoves(false, false);
+    switch (tshStrategy) {
+        case tshlib::TreeSearchHeuristics::greedy:
+            // Generate candidate list of possible moves given the tree topology and the rearrangement operation type
+            for (auto &node:inputTree->listVNodes) {
+                // Print node description with neighbors
+                //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
+                candidateMoveSet->setSourceNode(node);
+                // Get all the target nodes with distance == radius from the source node
+                // excluding the starting node (false)
+                // do not duplicate moves in the list
+                candidateMoveSet->defineMoves(false, false);
+
+            }
+            break;
+        case tshlib::TreeSearchHeuristics::hillclimbing:
+            // Generate candidate list of possible moves given the tree topology and the rearrangement operation type
+            for (auto &node:inputTree->listVNodes) {
+                // Print node description with neighbors
+                //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
+
+                candidateMoveSet->setSourceNode(node);
+                // Get all the target nodes with distance == radius from the source node
+                // excluding the starting node (false)
+                // do not duplicate moves in the list
+                candidateMoveSet->defineMoves(false, false);
+
+            }
+            break;
     }
 
     // Print the list of moves for the current P node (source node)
@@ -323,7 +342,6 @@ double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
 
     }
 
-
     // ------------------------------------
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
@@ -336,7 +354,7 @@ double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
 }
 
 double tshlib::TreeSearch::hillclimbing(tshlib::Utree *inputTree) {
-    return 0;
+    return greedy(inputTree);
 }
 
 double tshlib::TreeSearch::particleswarming(tshlib::Utree *inputTree) {
