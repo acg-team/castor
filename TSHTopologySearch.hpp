@@ -180,9 +180,12 @@ namespace tshlib {
         std::string scoringMethod;
         bool model_indels;
         int performed_moves;
+        int search_startingnodes;
         bpp::VectorSiteContainer *tmp_sites;
         bpp::TransitionModel *tmp_transmodel;
         bpp::DiscreteDistribution *tmp_rdist;
+    public:
+
 
     public:
 
@@ -193,6 +196,7 @@ namespace tshlib {
             stopConditionValue = 0;
             model_indels = false;
             performed_moves = 0;
+            search_startingnodes = 0;
         };
 
         ~TreeSearch() = default;
@@ -255,11 +259,21 @@ namespace tshlib {
             model_indels = in_model_indes;
         }
 
+        int getStartingNodes() const {
+            return search_startingnodes;
+        }
+
+        void setStartingNodes(int in_search_startingnodes) {
+            search_startingnodes = in_search_startingnodes;
+        }
+
         double performTreeSearch(Utree *inputTree);
 
     protected:
 
         tshlib::TreeRearrangment *defineCandidateMoves(tshlib::Utree *inputTree);
+
+        void testCandidateMoves(tshlib::TreeRearrangment *candidateMoves, tshlib::Utree *inputTree);
 
         double greedy(tshlib::Utree *inputTree);
 

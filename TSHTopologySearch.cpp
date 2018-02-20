@@ -43,6 +43,7 @@
  */
 #include <glog/logging.h>
 #include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
+#include <random>
 #include "TSHTopologySearch.hpp"
 #include "Utilities.hpp"
 #include "RHomogeneousTreeLikelihood_PIP.hpp"
@@ -129,9 +130,23 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves(tshlib::Utree
 
             }
             break;
+
         case tshlib::TreeSearchHeuristics::hillclimbing:
-            // Generate candidate list of possible moves given the tree topology and the rearrangement operation type
-            for (auto &node:inputTree->listVNodes) {
+
+            // fill array with [min value, max_value] number of nodes in the tree
+            std::vector<int> node_ids(inputTree->listVNodes.size());
+            std::iota(node_ids.begin(), node_ids.end(), 0);
+
+            // shuffle the array
+            std::random_device rd;
+            std::mt19937 e{rd()};
+            std::shuffle(node_ids.begin(), node_ids.end(), e);
+
+            // Generate candidate list of possible moves given the node topology and the rearrangement operation type
+            for (int i = 0; i < search_startingnodes; i++) {
+
+                VirtualNode *node = inputTree->listVNodes.at(node_ids.at(i));
+
                 // Print node description with neighbors
                 //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
@@ -142,6 +157,7 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves(tshlib::Utree
                 candidateMoveSet->defineMoves(false, false);
 
             }
+
             break;
     }
 
@@ -154,17 +170,58 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves(tshlib::Utree
 
 double tshlib::TreeSearch::performTreeSearch(tshlib::Utree *inputTree) {
     double newScore = 0;
+
+    std::string stopcondition;
+    switch (stopConditionMethod) {
+        case tshlib::TreeSearchStopCondition::convergence:
+            stopcondition = "convergence";
+            break;
+        case tshlib::TreeSearchStopCondition::iterations:
+            stopcondition = "max iterations";
+            break;
+    }
+    std::string startingnodes = "";
+    if (search_startingnodes > 0)
+        startingnodes = "starting nodes: " + std::to_string(search_startingnodes);
+
+    std::string operations;
+    switch (tshOperations) {
+        case tshlib::TreeRearrangmentOperations::classic_NNI:
+            operations = "classic_NNI";
+            break;
+        case tshlib::TreeRearrangmentOperations::classic_SPR:
+            operations = "classic_SPR";
+            break;
+        case tshlib::TreeRearrangmentOperations::classic_TBR:
+            operations = "classic_TBR";
+            break;
+        case tshlib::TreeRearrangmentOperations::classic_Mixed:
+            operations = "classic_Best";
+            break;
+
+    }
+
     // define the high-level strategy to evaluate the tree rearrangement operations
+    std::string strategy;
     switch (tshStrategy) {
         case tshlib::TreeSearchHeuristics::greedy:
+            strategy = "Greedy";
+            LOG(INFO) << "[TSH Optimisation] algorithm: " << strategy << ", moves: " << operations << ", " << startingnodes << ", stop condition: " << stopcondition;
             newScore = greedy(inputTree);
             break;
+
         case tshlib::TreeSearchHeuristics::hillclimbing:
+            strategy = "Hillclimbing";
+            LOG(INFO) << "[TSH Optimisation] algorithm: " << strategy << ", moves: " << operations << ", " << startingnodes << ", stop condition: " << stopcondition;
             newScore = hillclimbing(inputTree);
             break;
+
         case tshlib::TreeSearchHeuristics::particle_swarm:
+            strategy = "Particle Swarm";
+            LOG(INFO) << "[TSH Optimisation] algorithm: " << strategy << ", moves: " << operations << ", " << startingnodes << ", stop condition: " << stopcondition;
             newScore = particleswarming(inputTree);
             break;
+
         case tshlib::TreeSearchHeuristics::nosearch:
             LOG(INFO) << "[Tree search] No tree search optimisation!";
             break;
@@ -176,157 +233,171 @@ double tshlib::TreeSearch::performTreeSearch(tshlib::Utree *inputTree) {
     return newScore;
 }
 
-double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
-    int total_exec_moves = 0;
-    double currentBestLk = initialLikelihoodValue;
-    Utree *utree = inputTree;
+void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateMoves, tshlib::Utree *inputTree) {
 
-    //auto tsh_bestMoves = new TreeRearrangment;
-    //tsh_bestMoves->setTreeTopology(utree);
 
-    for (int c = 0; c < stopConditionValue; c++) {
+    for (unsigned long i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
 
-        // Define moves according to tree-search criteria
-        tshlib::TreeRearrangment *candidateMoves = defineCandidateMoves(utree);
+        double moveLogLK = 0;
 
-        for (unsigned long i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
+        VirtualNode *pnode = candidateMoves->getMove(i)->getSourceNode();
+        VirtualNode *qnode = candidateMoves->getMove(i)->getTargetNode();
 
-            double moveLogLK = 0;
+        // ------------------------------------
+        // Prepare the list of nodes involved in the move (Required here!)
+        std::vector<tshlib::VirtualNode *> listNodesWithinPath;
+        listNodesWithinPath = inputTree->computePathBetweenNodes(pnode, qnode);
+        listNodesWithinPath.push_back(inputTree->rootnode);
 
-            VirtualNode *pnode = candidateMoves->getMove(i)->getSourceNode();
-            VirtualNode *qnode = candidateMoves->getMove(i)->getTargetNode();
+        // ------------------------------------
+        // Apply the move
+        candidateMoves->applyMove(i);
 
-            // ------------------------------------
-            // Prepare the list of nodes involved in the move (Required here!)
-            std::vector<tshlib::VirtualNode *> listNodesWithinPath;
-            listNodesWithinPath = utree->computePathBetweenNodes(pnode, qnode);
-            listNodesWithinPath.push_back(utree->rootnode);
+        // ------------------------------------
+        // Print root reachability from every node (includes rotations)
+        //utree->_testReachingPseudoRoot();
 
-            // ------------------------------------
-            // Apply the move
-            candidateMoves->applyMove(i);
+        // ------------------------------------
+        // Print tree on file
+        //utree->saveTreeOnFile("../data/test.txt");
 
-            // ------------------------------------
-            // Print root reachability from every node (includes rotations)
-            //utree->_testReachingPseudoRoot();
+        // ------------------------------------
+        // bool isLKImproved = false;
+        // bool computeMoveLikelihood = true;
 
-            // ------------------------------------
-            // Print tree on file
-            //utree->saveTreeOnFile("../data/test.txt");
+        // ------------------------------------
+        // Add the root
+        inputTree->addVirtualRootNode();
 
-            // ------------------------------------
-            // bool isLKImproved = false;
-            // bool computeMoveLikelihood = true;
+        if (model_indels) {
+            // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
+            // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
+            // we use a map to navigate between utree and bpp tree. The map is constant.
+            bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc);
+            moveLogLK = c_likelihoodFunc->getLogLikelihood(listNodesWithinPath);
 
-            // ------------------------------------
-            // Add the root
-            utree->addVirtualRootNode();
+        } else {
 
+            bpp::Tree *tree = UtreeBppUtils::convertTree_u2b(inputTree);
+            auto c_likelihoodFunc = new bpp::RHomogeneousTreeLikelihood(*tree, *tmp_sites, tmp_transmodel, tmp_rdist, false, false, false);
+            c_likelihoodFunc->initialize();
+            moveLogLK = c_likelihoodFunc->getLogLikelihood();
+        }
+
+        // ------------------------------------
+        // Store likelihood of the move
+        candidateMoves->getMove(i)->move_lk = moveLogLK;
+
+        // ------------------------------------
+        // Remove virtual root
+        inputTree->removeVirtualRootNode();
+
+        candidateMoves->displayRearrangmentStatus(i, true);
+
+        // ------------------------------------
+        // Revert the move, and return to the original tree
+        candidateMoves->revertMove(i);
+
+        // ------------------------------------
+        // Add the root
+        inputTree->addVirtualRootNode();
+
+        // ------------------------------------
+        if (scoringMethod.find("bothways") != std::string::npos) {
             if (model_indels) {
                 // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
                 // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
-                // we use a map to navigate between utree and bpp tree. The map is constant.
                 bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc);
+                // we use a map to navigate between utree and bpp tree. The map is constant.
+
                 moveLogLK = c_likelihoodFunc->getLogLikelihood(listNodesWithinPath);
 
-            } else {
+                // ------------------------------------
+                // Store likelihood of the move
+                //rearrangmentList->getMove(i)->move_lk = moveLogLK;
 
-                bpp::Tree *tree = UtreeBppUtils::convertTree_u2b(utree);
+            } else {
+                // If not required, the likelihood value won't be computed but the FV components must be restored
+
+                /*
+                likelihood->restoreLikelihoodComponents();
+                // ------------------------------------
+                // Compute the list of nodes for a full traversal
+                fullTraversalNodes.clear();
+                likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
+                //likelihood->setInsertionHistories(allnodes_postorder,*alignment);
+                logLK = LKFunc::LKRearrangment(*likelihood, fullTraversalNodes, *alignment);
+                 */
+
+                bpp::Tree *tree = UtreeBppUtils::convertTree_u2b(inputTree);
                 auto c_likelihoodFunc = new bpp::RHomogeneousTreeLikelihood(*tree, *tmp_sites, tmp_transmodel, tmp_rdist, false, false, false);
                 c_likelihoodFunc->initialize();
                 moveLogLK = c_likelihoodFunc->getLogLikelihood();
             }
-
-            // ------------------------------------
-            // Store likelihood of the move
-            candidateMoves->getMove(i)->move_lk = moveLogLK;
-
-            // ------------------------------------
-            // Remove virtual root
-            utree->removeVirtualRootNode();
-
-            candidateMoves->displayRearrangmentStatus(i, true);
-
-            // ------------------------------------
-            // Revert the move, and return to the original tree
-            candidateMoves->revertMove(i);
-
-            // ------------------------------------
-            // Add the root
-            utree->addVirtualRootNode();
-
-            // ------------------------------------
-            if (scoringMethod.find("bothways") != std::string::npos) {
-                if (model_indels) {
-                    // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
-                    // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
-                    bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc);
-                    // we use a map to navigate between utree and bpp tree. The map is constant.
-
-                    moveLogLK = c_likelihoodFunc->getLogLikelihood(listNodesWithinPath);
-
-                    // ------------------------------------
-                    // Store likelihood of the move
-                    //rearrangmentList->getMove(i)->move_lk = moveLogLK;
-
-                } else {
-                    // If not required, the likelihood value won't be computed but the FV components must be restored
-
-                    /*
-                    likelihood->restoreLikelihoodComponents();
-                    // ------------------------------------
-                    // Compute the list of nodes for a full traversal
-                    fullTraversalNodes.clear();
-                    likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
-                    //likelihood->setInsertionHistories(allnodes_postorder,*alignment);
-                    logLK = LKFunc::LKRearrangment(*likelihood, fullTraversalNodes, *alignment);
-                     */
-
-                    bpp::Tree *tree = UtreeBppUtils::convertTree_u2b(utree);
-                    auto c_likelihoodFunc = new bpp::RHomogeneousTreeLikelihood(*tree, *tmp_sites, tmp_transmodel, tmp_rdist, false, false, false);
-                    c_likelihoodFunc->initialize();
-                    moveLogLK = c_likelihoodFunc->getLogLikelihood();
-                }
-            }
-
-            // ------------------------------------
-            // Remove virtual root
-            utree->removeVirtualRootNode();
-
-            //candidateMoves->displayRearrangmentStatus(i, true);
-
-            // ------------------------------------
-            // Count moves performed
-            total_exec_moves += candidateMoves->getNumberOfMoves() * 2;
-
         }
 
+        // ------------------------------------
+        // Remove virtual root
+        inputTree->removeVirtualRootNode();
+
+        //candidateMoves->displayRearrangmentStatus(i, true);
+
+        // ------------------------------------
+        // Count moves performed
+        performed_moves += candidateMoves->getNumberOfMoves() * 2;
+
+    }
+
+}
+
+
+double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
+    double currentBestLk = initialLikelihoodValue;
+    Utree *utree = inputTree;
+
+    // Condition handler
+    double cycle_no = 0;
+    double c;
+    switch (stopConditionMethod) {
+        case tshlib::TreeSearchStopCondition::iterations:
+            c = 0;
+            break;
+        case tshlib::TreeSearchStopCondition::convergence:
+            c = initialLikelihoodValue;
+            break;
+    }
+
+    while (c < stopConditionValue) {
+        //for (int c = 0; c < stopConditionValue; c++) {
+
+        // Define moves according to tree-search criteria
+        tshlib::TreeRearrangment *candidateMoves = defineCandidateMoves(utree);
+
+        // Test and record likelihood of each and every candidate move
+        testCandidateMoves(candidateMoves, utree);
+
         // Select the best move in the list and store it
-        //if (candidateMoves->selectBestMove(currentBestLk)) {
-        //    auto bestMove = new Move(*(candidateMoves->selectBestMove(currentBestLk)));
-        //    tsh_bestMoves->storeMove(bestMove);
-        //}
+        Move *bestMove = candidateMoves->selectBestMove(currentBestLk);
 
         // ------------------------------------
         // Print winning move
-        Move *bestMove = candidateMoves->selectBestMove(currentBestLk);
-
         if (bestMove) {
 
-            LOG(INFO) << "[TSH Cycle - Rearrangment] (cycle" << std::setfill('0') << std::setw(3) << c << ") ["
-                      << bestMove->getSourceNode()->getNodeName() << " -> " << bestMove->getTargetNode()->getNodeName() << "]";
-            LOG(INFO) << "[TSH Cycle - Likelihood] = " << bestMove->getLikelihood();
+            LOG(INFO) << "[TSH Cycle - Topology] (cycle" << std::setfill('0') << std::setw(3) << cycle_no + 1 << ")\t"
+                      << "lk = " << bestMove->getLikelihood() << " | "
+                      << bestMove->move_class << "." << std::setfill('0') << std::setw(3) << bestMove->move_id
+                      << " [" << bestMove->getSourceNode()->getNodeName() << " -> " << bestMove->getTargetNode()->getNodeName() << "]";
 
             // Commit final move on the topology
-            //tsh_bestPNode->swapNode(tsh_bestQNode, tsh_bestDirection, false);
             candidateMoves->commitMove(bestMove->move_id);
 
-            LOG(INFO) << "[TSH Cycle - Topology]\t" << utree->printTreeNewick(true);
+            //LOG(INFO) << "[TSH Cycle - Topology]\t" << utree->printTreeNewick(false);
 
             currentBestLk = bestMove->getLikelihood();
-
+            cycle_no++;
             // ------------------------------------
             // Clean memory
             delete candidateMoves;
@@ -334,24 +405,36 @@ double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
 
         } else {
 
+            LOG(INFO) << "[TSH Cycle - Topology] I am stuck, I will try a cycle with a greedy approach... ";
+            // ------------------------------------
+            // Clean memory
             delete candidateMoves;
             //delete tsh_bestMoves;
 
             break;
         }
 
+        switch (stopConditionMethod) {
+            case tshlib::TreeSearchStopCondition::iterations:
+                c++;
+                break;
+            case tshlib::TreeSearchStopCondition::convergence:
+                c = c - currentBestLk;
+                break;
+        }
     }
 
     // ------------------------------------
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
 
-    VLOG(0) << "Moves applied and reverted: " << total_exec_moves << std::endl;
-    VLOG(0) << "Elapsed time: " << duration << " microseconds" << std::endl;
-    VLOG(0) << "*** " << (double) duration / total_exec_moves << " microseconds/move *** " << std::endl;
+    VLOG(0) << "[TSH Cycle] Moves applied and reverted: " << performed_moves << std::endl;
+    VLOG(0) << "[TSH Cycle] Elapsed time: " << duration << " microseconds" << std::endl;
+    VLOG(0) << "[TSH Cycle] *** " << (double) duration / performed_moves << " microseconds/move *** " << std::endl;
 
     return -currentBestLk;
 }
+
 
 double tshlib::TreeSearch::hillclimbing(tshlib::Utree *inputTree) {
     return greedy(inputTree);
@@ -360,4 +443,3 @@ double tshlib::TreeSearch::hillclimbing(tshlib::Utree *inputTree) {
 double tshlib::TreeSearch::particleswarming(tshlib::Utree *inputTree) {
     return 0;
 }
-

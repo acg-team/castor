@@ -473,6 +473,8 @@ int main(int argc, char *argv[]) {
 
         if (PAR_optim_topology_algorithm.find("greedy") != std::string::npos) {
             treesearch_heuristics = tshlib::TreeSearchHeuristics::greedy;
+        } else if (PAR_optim_topology_algorithm.find("hillclimbing") != std::string::npos) {
+            treesearch_heuristics = tshlib::TreeSearchHeuristics::hillclimbing;
         } else if (PAR_optim_topology_algorithm.find("no-search") != std::string::npos) {
             treesearch_heuristics = tshlib::TreeSearchHeuristics::nosearch;
         }
@@ -481,6 +483,8 @@ int main(int argc, char *argv[]) {
             std::string PAR_lkmove = ApplicationTools::getStringParameter("lk_move", jatiapp.getParams(), "bothways", "", true, true);
             std::string PAR_optim_topology_operations = ApplicationTools::getStringParameter("optim_topology_operations", jatiapp.getParams(), "best-search", "", true, true);
             int PAR_optim_topology_maxcycles = ApplicationTools::getIntParameter("optim_topology_maxcycles", jatiapp.getParams(), 1, "", true, 0);
+            int PAR_optim_topology_hillclimbing_startnodes = ApplicationTools::getIntParameter("optim_topology_numnodes", jatiapp.getParams(), 1, "", true, 0);
+
 
 
             if (PAR_optim_topology_operations.find("best-search") != std::string::npos) {
@@ -494,9 +498,10 @@ int main(int argc, char *argv[]) {
             }
 
             auto treesearch = new tshlib::TreeSearch;
-            treesearch->setTreeSearchStrategy(tshlib::TreeSearchHeuristics::greedy, treesearch_operations);
+            treesearch->setTreeSearchStrategy(treesearch_heuristics, treesearch_operations);
             treesearch->setInitialLikelihoodValue(-logLK);
             treesearch->setScoringMethod(PAR_lkmove);
+            treesearch->setStartingNodes(PAR_optim_topology_hillclimbing_startnodes);
             treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
             if (PAR_model_indels) {
                 treesearch->setModelIndels(true);
