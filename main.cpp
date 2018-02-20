@@ -94,6 +94,7 @@
 #include "progressivePIP.hpp"
 #include "JATIApplication.hpp"
 #include "TSHTopologySearch.hpp"
+#include "pPIP.hpp"
 
 using namespace tshlib;
 
@@ -362,7 +363,23 @@ int main(int argc, char *argv[]) {
             VirtualNode *root = utree->rootnode;
 
             MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, tree, &tm, pi, lambda, mu, sequences, alpha, 1.0, false);
-            //sites = new bpp::VectorSiteContainer(*sequences);
+
+
+            //********************************************************************************
+            //********************************************************************************
+            //********************************************************************************
+            //********************************************************************************
+
+            Vdouble Pi;
+
+            auto progressivePIP=new bpp::pPIP();
+            progressivePIP->PIPAligner(tree,&tm,fullTraversalNodes, sequences, Pi, lambda, mu, alphabet, 1.0, true);
+
+            //********************************************************************************
+            //********************************************************************************
+            //********************************************************************************
+            //********************************************************************************
+
 
             sequences = new bpp::VectorSequenceContainer(alpha);
 
@@ -393,7 +410,21 @@ int main(int argc, char *argv[]) {
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << MSA.score;
         }
 
-        //------------------------------------------------------------------------------------------------------------------
+
+
+
+        //--------------------------------------------------------------------------------------------------------------
+        // best tree from MSA marginalization
+        if(false){
+            auto treesearch = new tshlib::TreeSearch;
+            Utree *best_tree_from_MSA=progressivePIP::marginalizationOverMSAs(treesearch,alpha,pi,lambda, mu, sequences, tm);
+        }
+        //--------------------------------------------------------------------------------------------------------------
+
+
+
+
+        //--------------------------------------------------------------------------------------------------------------
         // Initialization likelihood functions
 
         double logLK = 0;

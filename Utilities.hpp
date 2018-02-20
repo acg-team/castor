@@ -83,8 +83,11 @@ namespace MatrixBppUtils{
 
     double dotProd(const std::vector<double> *x,const std::vector<double> *y);
 
+    std::vector<double> cwiseProd(std::vector<double> *x,std::vector<double> *y);
+
     double sumVector(std::vector<double> *x);
 
+    std::vector<double> matrixVectorProd(bpp::RowMatrix<double> &M, bpp::Vdouble &A);
 
 }
 

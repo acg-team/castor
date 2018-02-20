@@ -44,6 +44,8 @@
 
 #include <limits>
 
+#include "TSHTopologySearch.hpp"
+
 double inf = std::numeric_limits<double>::infinity();
 
 
@@ -62,6 +64,13 @@ namespace progressivePIP{
 #define GAP_X_CHAR '2'
 #define GAP_Y_CHAR '3'
 
+
+    struct tree_msas{
+        Utree *utree;
+        //std::vector<bpp::SiteContainer *> msas;
+        //std::vector<double> lks;
+        double marginal_lk;
+    };
     struct ProgressivePIPResult;
 
     struct ProgressivePIPResult{
@@ -1947,6 +1956,75 @@ namespace progressivePIP{
 
         return result;
     }
+
+
+    tshlib::Utree *marginalizationOverMSAs(tshlib::TreeSearch *treesearch,
+                                           bpp::Alphabet *alpha,
+                                           Eigen::VectorXd pi,
+                                           double lambda,
+                                           double mu,
+                                           bpp::SequenceContainer *sequences,
+                                           UtreeBppUtils::treemap &tm){
+
+        std::vector<tree_msas> trees_msas;
+        std::vector<double> lk_tree;
+        int num_trees;
+        int num_msas;
+
+        double max_lk;
+        int index_max_lk;
+
+        num_msas=10;
+        num_trees=10;
+        max_lk=-inf;
+        index_max_lk=-1;
+        for(int i=0;i<num_trees;i++){
+            auto utree = new::tshlib::Utree();
+
+            tree_msas tree_msa;
+
+            tree_msa.utree=utree;
+            VirtualNode *root;
+            bpp::Tree *tree = nullptr;
+
+            double marginal_lk=0.0;
+            for(int j=0;j<num_msas;j++){
+
+                progressivePIP::ProgressivePIPResult MSA;
+                MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, tree, &tm, pi, lambda, mu, sequences, alpha, 1.0, false);
+
+                /*
+                auto sequences = new bpp::VectorSequenceContainer(alpha);
+                for (int i = 0; i < MSA.MSAs.size(); i++) {
+                    sequences->addSequence(*(new bpp::BasicSequence(MSA.MSAs.at(i).first, MSA.MSAs.at(i).second, alpha)), true);
+                }
+                auto sites = new bpp::VectorSiteContainer(*sequences);
+                tree_msa.msas.push_back(sites);
+                tree_msa.lks.push_back(MSA.score);
+                */
+
+                marginal_lk+=MSA.score;
+
+            }
+            tree_msa.marginal_lk=marginal_lk;
+
+            trees_msas.push_back(tree_msa);
+
+            if(tree_msa.marginal_lk>max_lk){
+                max_lk=tree_msa.marginal_lk;
+                index_max_lk=i;
+            }
+
+        }
+
+        if(index_max_lk>-1){
+            return trees_msas.at(index_max_lk).utree;
+        }else{
+            return NULL;
+        }
+
+    }
+
 
 }
 #endif //MINIJATI_PROGRESSIVEPIP_HPP
