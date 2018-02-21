@@ -325,6 +325,28 @@ Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix
     return m;
 }
 
+bpp::RowMatrix<double> MatrixBppUtils::Eigen2Matrix(const Eigen::MatrixXd &M) {
+
+    size_t rows, cols;
+
+    rows = M.rows();
+    cols = M.cols();
+
+    bpp::RowMatrix<double> m;
+    m.resize(rows,cols);
+
+    for(int r=0; r<rows; r++){
+        for (int c=0; c<cols; c++){
+
+            m(r,c) = M(r,c);
+
+        }
+
+    }
+
+    return m;
+}
+
 Eigen::VectorXd MatrixBppUtils::Vector2Eigen(const std::vector<double> &inVector) {
 
     Eigen::VectorXd vector = Eigen::VectorXd::Zero(inVector.size());
@@ -404,7 +426,7 @@ double MatrixBppUtils::sumVector(std::vector<double> *x){
     return val;
 }
 
-std::vector<double> MatrixBppUtils::matrixVectorProd(bpp::RowMatrix<double> &M, bpp::Vdouble &A){
+std::vector<double> MatrixBppUtils::matrixVectorProd(bpp::RowMatrix<double> &M, std::vector<double> &A){
 
     std::vector<double> B;
     B.resize(A.size());
@@ -412,7 +434,7 @@ std::vector<double> MatrixBppUtils::matrixVectorProd(bpp::RowMatrix<double> &M, 
     for(int i=0;i<A.size();i++){
         B[i]=0;
         for(int j=0;j<A.size();j++){
-            B[i] += M(i,j)*A[j];
+            B[i] += M(i,j)*A.at(j);
 
         }
     }

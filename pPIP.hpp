@@ -59,9 +59,13 @@ namespace bpp {
 
         ~pPIP(){};
 
+        void setLKxyLeaves(bpp::Node *node);
 
-        void PIPAligner(bpp::Tree *tree,
-                        UtreeBppUtils::treemap *tm,
+        void setAllIotas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> list_vnode_to_root,double mu,double tau);
+        void setAllBetas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes,double mu);
+        void computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes);
+
+        void PIPAligner(UtreeBppUtils::treemap *tm,
                               std::vector<tshlib::VirtualNode *> list_vnode_to_root,
                               bpp::SequenceContainer *sequences,
                               Vdouble &pi,
@@ -74,13 +78,20 @@ namespace bpp {
 
     protected:
     private:
+        mutable TreeTemplate<Node> *tree_;
 
-        std::map<bpp::Node *, bpp::VVdouble > _fv;
-        std::map<bpp::Node *, bpp::Vdouble > _lkxy;
-        std::map<bpp::Node *, double> _iota;
-        std::map<bpp::Node *, double> _beta;
-        std::map<bpp::Node *, bpp::RowMatrix<double> *> _pr;
-        std::map<bpp::Node *, std::vector< std::pair<std::string,std::string> >> _MSA;
+    public:
+        void setTree(const Tree *tree) {
+            tree_ = new TreeTemplate<Node>(*tree);
+        }
+
+    private:
+        mutable std::map<bpp::Node *, bpp::VVdouble > _fv;
+        mutable std::map<bpp::Node *, bpp::Vdouble > _lkxy;
+        mutable std::map<bpp::Node *, double> _iota;
+        mutable std::map<bpp::Node *, double> _beta;
+        mutable std::map<bpp::Node *, bpp::RowMatrix<double> > _pr;
+        mutable std::map<bpp::Node *, std::vector< std::pair<std::string,std::string> >> _MSA;
         std::string _traceback_path;
         double _score;
 
@@ -155,6 +166,9 @@ namespace bpp {
         std::vector<std::pair<std::string,std::string>> build_MSA(std::string traceback_path,
                                                                         std::vector<std::pair<std::string,std::string>> &MSA_L,
                                                                         std::vector<std::pair<std::string,std::string>> &MSA_R);
+
+        void setIndicatorFun(bpp::Node *node,int extAlphabetSize);
+
         void DP3D_PIP(bpp::Node *node,
                             UtreeBppUtils::treemap *tm,
                             Vdouble &pi,

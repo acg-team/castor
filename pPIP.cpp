@@ -64,7 +64,6 @@ using namespace bpp;
 pPIP::pPIP(){
 
     _score=-std::numeric_limits<double>::infinity();
-    _traceback_path= nullptr;
 
 };
 bool pPIP::is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned long yf,unsigned long xt,unsigned long yt){
@@ -409,22 +408,39 @@ Vdouble pPIP::computeLKgapColLocal(bpp::Node *node, Vdouble &pi, double &val, do
     Vdouble fv;
     //unsigned long idx;
 
+    //auto sonsID = node->getSonsId();
+
+    auto sons = node->getSons();
+
+    auto s1 = sons.at(0);
+    auto s2 = sons.at(1);
+
+
     //idx=0;
     //fvL=go_down(tree->getNodeLeft(),sL,idx,alphabetSize,alphabet);
     //PrfvL.at(node->getId())[col_i];
-    auto fvL=(_fv.at(node->getSon(0)))[0];
+    auto fvL=&(_fv.at(s1)[0]);
 
     //idx=0;
     //fvR=go_down(tree->getNodeRight(),sR,idx,alphabetSize,alphabet);
     //PrfvR.at(node->getId())[col_j];
-    auto fvR=(_fv.at(node->getSon(1)))[0];
+    auto fvR=&(_fv.at(s2)[0]);
+
+//    for(int i=0;i<5;i++){
+//        std::cout<<fvL->at(i)<<std::endl;
+//        std::cout<<fvR->at(i)<<std::endl;
+//    }
 
     //fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
+    //_pr.at(s1);
 
-    fvL=MatrixBppUtils::matrixVectorProd((*_pr.at(node->getSon(0))),fvL);
-    fvR=MatrixBppUtils::matrixVectorProd((*_pr.at(node->getSon(1))),fvR);
+    bpp::RowMatrix<double> *pr1 = &(_pr.at(s1));
+    bpp::RowMatrix<double> *pr2 = &(_pr.at(s2));
 
-    fv=MatrixBppUtils::cwiseProd(&fvL,&fvR);
+    auto PrfvL=MatrixBppUtils::matrixVectorProd(*pr1,*fvL);
+    auto PrfvR=MatrixBppUtils::matrixVectorProd(*pr2,*fvR);
+
+    fv=MatrixBppUtils::cwiseProd(&PrfvL,&PrfvR);
 
     //fv=MatrixBppUtils::cwiseProd(&PrfvL,&PrfvR);
 
@@ -439,10 +455,12 @@ Vdouble pPIP::computeLKgapColLocal(bpp::Node *node, Vdouble &pi, double &val, do
     //pL=compute_lk_gap_down(tree->getNodeLeft(),sL,pi,alphabetSize,alphabet);
     //pR=compute_lk_gap_down(tree->getNodeRight(),sR,pi,alphabetSize,alphabet);
 
-    p0=_lkxy[node][0];
+    //Vdouble *lkxy =&(_lkxy[node]);
 
+    double pL=(_lkxy[s1]).at(0);
+    double pR=(_lkxy[s2]).at(0);
 
-    val=pr+p0;//pL+pR;
+    val=pr+pL+pR;
 
     p0=val;
 
@@ -476,22 +494,24 @@ Vdouble pPIP::computeLKmatchLocal(double valM,
     //auto it=lkM.find(s);
     //if(it == lkM.end()){
 
-    //------------------------------------------------------------------------------------------
-    //idx=0;
-    //fvL=go_down(tree->getNodeLeft(),sL,idx,alphabetSize,alphabet);
-    auto fvL=(_fv.at(node->getSon(0)))[col_i];
+    auto sons = node->getSons();
 
+    auto s1 = sons.at(0);
+    auto s2 = sons.at(1);
 
-    //idx=0;
-    //fvR=go_down(tree->getNodeRight(),sR,idx,alphabetSize,alphabet);
-    auto fvR=(_fv.at(node->getSon(1)))[col_j];
+    auto fvL=&(_fv.at(s1)[col_i]);
+
+    auto fvR=&(_fv.at(s2)[col_j]);
 
     //fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
 
-    fvL=MatrixBppUtils::matrixVectorProd((*_pr.at(node->getSon(0))),fvL);
-    fvR=MatrixBppUtils::matrixVectorProd((*_pr.at(node->getSon(1))),fvR);
+    bpp::RowMatrix<double> *pr1 = &(_pr.at(s1));
+    bpp::RowMatrix<double> *pr2 = &(_pr.at(s2));
 
-    fv=MatrixBppUtils::cwiseProd(&fvL,&fvR);
+    auto PrfvL=MatrixBppUtils::matrixVectorProd(*pr1,*fvL);
+    auto PrfvR=MatrixBppUtils::matrixVectorProd(*pr2,*fvR);
+
+    fv=MatrixBppUtils::cwiseProd(&PrfvL,&PrfvR);
 
     //fv0=fv.dot(pi);
     fv0=MatrixBppUtils::dotProd(&fv,&pi);
@@ -549,23 +569,25 @@ Vdouble pPIP::computeLKgapxLocal(double valM,
 
     //------------------------------------------------------------------------------------------
 
-    //idx=0;
-    //fvL=go_down(tree->getNodeLeft(),sL,idx,alphabetSize,alphabet);
-    //PrfvL.at(node->getId())[col_i];
-    auto fvL=(_fv.at(node->getSon(0)))[col_i];
+    auto sons = node->getSons();
 
-    //idx=0;
-    //fvR=go_down(tree->getNodeRight(),col_gap_R,idx,alphabetSize,alphabet);
-    //PrfvR.at(node->getId())[col_j];
-    auto fvR=(_fv.at(node->getSon(1)))[col_j];
+    auto s1 = sons.at(0);
+    auto s2 = sons.at(1);
+
+    auto fvL=&(_fv.at(s1)[col_i]);
+
+    auto fvR=&(_fv.at(s2)[col_j]);
 
     //fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
     //fv=MatrixBppUtils::cwiseProd(&PrfvL,&PrfvR);
 
-    fvL=MatrixBppUtils::matrixVectorProd((*_pr.at(node->getSon(0))),fvL);
-    fvR=MatrixBppUtils::matrixVectorProd((*_pr.at(node->getSon(1))),fvR);
+    bpp::RowMatrix<double> *pr1 = &(_pr.at(s1));
+    bpp::RowMatrix<double> *pr2 = &(_pr.at(s2));
 
-    fv=MatrixBppUtils::cwiseProd(&fvL,&fvR);
+    auto PrfvL=MatrixBppUtils::matrixVectorProd(*pr1,*fvL);
+    auto PrfvR=MatrixBppUtils::matrixVectorProd(*pr2,*fvR);
+
+    fv=MatrixBppUtils::cwiseProd(&PrfvL,&PrfvR);
 
 
     //fv0=fv.dot(pi);
@@ -577,16 +599,15 @@ Vdouble pPIP::computeLKgapxLocal(double valM,
     pr=_iota[node]*_beta[node]*fv0;
 
 
-    double pL;
-
     //------------------------------------------------------------------------------------------
     //pL=compute_lk_down(tree->getNodeLeft(),sL,pi,alphabetSize,alphabet);
-    pL=_lkxy[node][col_j];
+    //pL=_lkxy[node][col_j];
+    double pL=(_lkxy[s1]).at(col_i);
     //------------------------------------------------------------------------------------------
 
     pr+=pL;
 
-    lkx=pr;
+    lkx=log(pr);
     //------------------------------------------------------------------------------------------
 
     //pr=log(pr);
@@ -635,24 +656,24 @@ Vdouble pPIP::computeLKgapyLocal(double valM,
 //    if(it == lkY.end()){
 
     //------------------------------------------------------------------------------------------
+    auto sons = node->getSons();
 
-    //fvL=go_down(tree->getNodeLeft(),col_gap_L,idx,alphabetSize,alphabet);
-    //PrfvL.at(node->getId())[col_i];
-    auto fvL=(_fv.at(node->getSon(0)))[col_i];
+    auto s1 = sons.at(0);
+    auto s2 = sons.at(1);
 
-    //idx=0;
-    //fvR=go_down(tree->getNodeRight(),sR,idx,alphabetSize,alphabet);
-    //PrfvR.at(node->getId())[col_j];
-    auto fvR=(_fv.at(node->getSon(1)))[col_j];
+    auto fvL=&(_fv.at(s1)[col_i]);
+
+    auto fvR=&(_fv.at(s2)[col_j]);
 
     //fv=(tree->getNodeLeft()->getPr()*fvL).cwiseProduct(tree->getNodeRight()->getPr()*fvR);
 
-    //fvL=(*_pr.at(node->getSon(0)))*fvL;
-    //fvR=(*_pr.at(node->getSon(1)))*fvR;
-    fvL=MatrixBppUtils::matrixVectorProd((*_pr.at(node->getSon(0))),fvL);
-    fvR=MatrixBppUtils::matrixVectorProd((*_pr.at(node->getSon(1))),fvR);
+    bpp::RowMatrix<double> *pr1 = &(_pr.at(s1));
+    bpp::RowMatrix<double> *pr2 = &(_pr.at(s2));
 
-    fv=MatrixBppUtils::cwiseProd(&fvL,&fvR);
+    auto PrfvL=MatrixBppUtils::matrixVectorProd(*pr1,*fvL);
+    auto PrfvR=MatrixBppUtils::matrixVectorProd(*pr2,*fvR);
+
+    fv=MatrixBppUtils::cwiseProd(&PrfvL,&PrfvR);
     //------------------------------------------------------------------------------------------
 
     //fv0=fv.dot(pi);
@@ -663,20 +684,21 @@ Vdouble pPIP::computeLKgapyLocal(double valM,
 
     pr=_iota[node]*_beta[node]*fv0;
 
-    double pR;
-
     //------------------------------------------------------------------------------------------
     //pR=compute_lk_down(tree->getNodeRight(),sR,pi,alphabetSize,alphabet);
-    pR=_lkxy[node][col_j];
+    //pR=_lkxy[node][col_j];
+    double pR=(_lkxy[s1]).at(col_j);
     //------------------------------------------------------------------------------------------
 
     pr+=pR;
 
-    lky=pr;
+    lky=log(pr);
 
     //pr=log(pr);
 
     //lkY[s]=pr;
+
+
 
 //    }else{
 //        pr=it->second;
@@ -845,6 +867,151 @@ std::vector<std::pair<std::string,std::string>> pPIP::build_MSA(std::string trac
 
     return MSA;
 }
+void pPIP::setIndicatorFun(bpp::Node *node,int extAlphabetSize){
+
+    int len=_MSA[node].at(0).second.size();
+
+    VVdouble indicatorFunctions;
+
+    for(int i=0;i<len;i++){
+        Vdouble indicatorFun;
+        indicatorFun.resize(extAlphabetSize);
+        indicatorFun.assign(extAlphabetSize,0.0);
+        indicatorFun[0]=1.0;
+       indicatorFunctions.push_back(indicatorFun);
+    }
+
+    _fv[node]=indicatorFunctions;
+
+//    for (int i = 0; i < nbDistinctSites_; i++) {
+//        size_t indexRealSite = static_cast<size_t>(rootPatternLinksInverse_.at(i));
+//
+//        for (auto &node:tree_->getNodes()) {
+//            if (node->isLeaf()) {
+//                indicatorFun_[node].at(i).at(sites.getSequence(node->getName()).getValue(indexRealSite)) = 1;
+//            }
+//        }
+//    }
+
+}
+void pPIP::setLKxyLeaves(bpp::Node *node){
+
+    int len=_MSA[node].at(0).second.size();
+
+    Vdouble lkxy;
+
+    lkxy.resize(len);
+    lkxy.assign(len,0.0);
+
+    _lkxy[node]=lkxy;
+
+}
+void pPIP::setAllIotas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> list_vnode_to_root,double mu,double tau) {
+    double T;
+
+    //TreeTemplate<Node> ttree(*tree);
+
+    if (fabs(mu) < 1e-8) {
+        perror("ERROR in set_iota: mu too small");
+    }
+
+    T = tau + 1/mu;
+
+    if (fabs(T) < 1e-8) {
+        perror("ERROR in set_iota: T too small");
+    }
+
+
+    for (auto &vnode:list_vnode_to_root) {
+
+        auto node = tree_->getNode(tm->right.at(vnode),false);
+
+        if (!node->hasFather()) {
+
+            _iota[node]=(1/mu)/T;
+
+        } else {
+
+            _iota[node]=node->getDistanceToFather()/T;
+
+        }
+    }
+}
+void pPIP::setAllBetas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes,double mu) {
+
+    //TreeTemplate<Node> ttree(*tree);
+
+    if (fabs(mu) < 1e-8) {
+        perror("ERROR in set_iota: mu too small");
+    }
+
+    for (auto &vnode:listNodes) {
+
+        auto node = tree_->getNode(tm->right.at(vnode),false);
+
+        if (!node->hasFather()) {
+
+            _beta[node]=1.0;
+
+        } else {
+
+            _beta[node]= (1.0 - exp(-mu * node->getDistanceToFather())) / (mu * node->getDistanceToFather());
+
+        }
+
+    }
+
+
+}
+void pPIP::computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes) {
+
+    //TreeTemplate<Node> ttree(*tree);
+
+    //tree->
+
+    for (auto &vnode:listNodes) {
+
+        auto node = tree_->getNode(tm->right.at(vnode),false);
+
+        if (!node->hasFather()) {
+
+        } else {
+
+            _pr[node] = MatrixBppUtils::Eigen2Matrix(vnode->getPr());
+
+        }
+
+    }
+
+
+    for (auto &vnode:listNodes) {
+
+        auto node = tree_->getNode(tm->right.at(vnode),false);
+
+        if (!node->hasFather()) {
+
+        } else {
+
+
+            std::cout<<node->getName()<<std::endl;
+
+            bpp::RowMatrix<double> M = _pr[node];
+
+            for(int i=0;i<M.getNumberOfRows();i++){
+                for(int j=0;j<M.getNumberOfRows();j++){
+                    std::cout<<M(i,j)<<" ";
+                }
+                std::cout<<std::endl;
+            }
+            std::cout<<std::endl;
+
+        }
+
+    }
+
+
+
+}
 void pPIP::DP3D_PIP(bpp::Node *node,
                     UtreeBppUtils::treemap *tm,
                     Vdouble &pi,
@@ -993,6 +1160,9 @@ void pPIP::DP3D_PIP(bpp::Node *node,
 //    std::map<std::string,double> lkX;
 //    std::map<std::string,double> lkY;
 
+    Vdouble lkxy;
+    lkxy.resize(d);
+    lkxy.assign(d,0.0);
 
     double lkx,lky;
     for(unsigned long m=1;m<d;m++){
@@ -1336,11 +1506,11 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                             break;
                         case GAP_X_STATE:
                             (_fv.at(node))[indexFv]=Fvgapx;
-                            _lkxy.at(node)[indexFv]=lkx;
+                            lkxy.at(indexFv)=lkx;
                             break;
                         case GAP_Y_STATE:
                             (_fv.at(node))[indexFv]=Fvgapy;
-                            _lkxy.at(node)[indexFv]=lky;
+                            lkxy.at(indexFv)=lkx;
                             break;
                         default:
                             perror("ERROR!!!");
@@ -1378,6 +1548,9 @@ void pPIP::DP3D_PIP(bpp::Node *node,
             }
         }
     }
+
+    //TODO:resize
+    _lkxy[node]=lkxy;
 
     depth=level_max_lk;
 
@@ -1434,8 +1607,7 @@ void pPIP::DP3D_PIP(bpp::Node *node,
 
 }
 
-void pPIP::PIPAligner(bpp::Tree *tree,
-                      UtreeBppUtils::treemap *tm,
+void pPIP::PIPAligner(UtreeBppUtils::treemap *tm,
                       std::vector<tshlib::VirtualNode *> list_vnode_to_root,
                       bpp::SequenceContainer *sequences,
                       Vdouble &pi,
@@ -1446,10 +1618,12 @@ void pPIP::PIPAligner(bpp::Tree *tree,
                       bool local) {
 
 
-    TreeTemplate<Node> ttree(*tree);
+    //TreeTemplate<Node> ttree(*tree);
 
     for (auto &vnode:list_vnode_to_root) {
-        auto node = ttree.getNode(tm->right.at(vnode),false);
+
+        auto node = tree_->getNode(tm->right.at(vnode),false);
+
         if(node->isLeaf()){
             //TODO: if not already assigned????
             std::string seqname = sequences->getSequencesNames().at((unsigned long)vnode->vnode_seqid);
@@ -1459,8 +1633,22 @@ void pPIP::PIPAligner(bpp::Tree *tree,
             seq.push_back(std::make_pair(seqname,seqdata));
 
             _MSA[node]=seq;
+
+            int extAlphabetSize=alphabet->getSize()+1;
+
+            setIndicatorFun(node,extAlphabetSize);
+
+            setLKxyLeaves(node);
+
+//            for(int i=0;i<_lkxy[node].size();i++){
+//                std::cout<<_lkxy[node].at(i)<<" ";
+//            }
+//            std::cout<<std::endl;
+
         }else{
+
             DP3D_PIP(node, tm, pi, lambda, mu, alphabet, gamma_rate, local);
+
         }
     }
 

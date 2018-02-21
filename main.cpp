@@ -349,10 +349,10 @@ int main(int argc, char *argv[]) {
             likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
 
             // Set survival probability to each node in the list
-            likelihood->setAllIotas(fullTraversalNodes);
+            //likelihood->setAllIotas(fullTraversalNodes);
 
             // Set deletion probability to each node in the list
-            likelihood->setAllBetas(fullTraversalNodes);
+            //likelihood->setAllBetas(fullTraversalNodes);
 
             // set probability matrix -- exponential of substitution rates
             likelihood->computePr(fullTraversalNodes, alpha->getSize());
@@ -360,27 +360,39 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] Starting MSA inference using Pro-PIP...";
 
+            /*
             VirtualNode *root = utree->rootnode;
 
             MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, tree, &tm, pi, lambda, mu, sequences, alpha, 1.0, false);
+             */
 
-
             //********************************************************************************
             //********************************************************************************
             //********************************************************************************
             //********************************************************************************
 
-            Vdouble Pi;
+            double tau;
+
+            Vdouble PiPIP=submodel->getFrequencies();
 
             auto progressivePIP=new bpp::pPIP();
-            progressivePIP->PIPAligner(tree,&tm,fullTraversalNodes, sequences, Pi, lambda, mu, alphabet, 1.0, true);
+
+            progressivePIP->setTree(tree);
+
+            progressivePIP->setAllIotas(&tm,fullTraversalNodes,mu,tau);
+
+            progressivePIP->setAllBetas(&tm,fullTraversalNodes,mu);
+
+            progressivePIP->computePr(&tm,fullTraversalNodes);
+
+            progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, PiPIP, lambda, mu, alphabet, 1.0, true);
 
             //********************************************************************************
             //********************************************************************************
             //********************************************************************************
             //********************************************************************************
 
-
+            /*
             sequences = new bpp::VectorSequenceContainer(alpha);
 
             for (int i = 0; i < MSA.MSAs.size(); i++) {
@@ -408,6 +420,9 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] MSA inference using Pro-PIP terminated successfully!";
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << MSA.score;
+
+            */
+
         }
 
 
