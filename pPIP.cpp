@@ -61,11 +61,40 @@
 
 using namespace bpp;
 
-pPIP::pPIP(){
+pPIP::pPIP(bpp::Alphabet *alphabet){
 
+    _alphabet=alphabet;
+    _extendedAlphabetSize=_alphabet->getSize()+1;
     _score=-std::numeric_limits<double>::infinity();
 
 };
+void pPIP::init(const Tree *tree,
+                UtreeBppUtils::treemap *tm,
+                std::vector<tshlib::VirtualNode *> &listNodes,
+                const Vdouble &pi,
+                double lambda,
+                double mu){
+
+    _setTree(tree);
+    _setLambda(lambda);
+    _setMu(mu);
+    _setPi(pi);
+
+    _tau = _tree->getTotalLength();
+    _setNu();
+
+    _setAllIotas(tm,listNodes);
+    _setAllBetas(tm,listNodes);
+    _computePr(tm,listNodes);
+
+}
+void pPIP::update(){
+
+
+}
+void pPIP::_setTree(const Tree *tree) {
+    _tree = new TreeTemplate<Node>(*tree);
+}
 bool pPIP::is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned long yf,unsigned long xt,unsigned long yt){
 
     if((xt<x0) || (yt>y0) || (xt>xf) || (yt<yf)){
@@ -399,7 +428,9 @@ bool pPIP::checkboundary(unsigned long up_corner_i,unsigned long up_corner_j,uns
 
     return false;
 }
-Vdouble pPIP::computeLKgapColLocal(bpp::Node *node, Vdouble &pi, double &val, double &p0){
+Vdouble pPIP::computeLKgapColLocal(bpp::Node *node,
+                                   double &val,
+                                   double &p0){
 
     double fv0;
     double pr;
@@ -445,7 +476,7 @@ Vdouble pPIP::computeLKgapColLocal(bpp::Node *node, Vdouble &pi, double &val, do
     //fv=MatrixBppUtils::cwiseProd(&PrfvL,&PrfvR);
 
     //fv0=fv.dot(pi);
-    fv0=MatrixBppUtils::dotProd(&fv,&pi);
+    fv0=MatrixBppUtils::dotProd(&fv,&_pi);
 
     //pr=tree->getIota()*fv0;
     //pr=_iota[node->getId()]*fv0;
@@ -471,9 +502,7 @@ Vdouble pPIP::computeLKgapColLocal(bpp::Node *node, Vdouble &pi, double &val, do
 Vdouble pPIP::computeLKmatchLocal(double valM,
                             double valX,
                             double valY,
-                            double nu,
                             bpp::Node *node,unsigned long col_i, unsigned long col_j,
-                            Vdouble &pi,
                             unsigned long m,
                             double &val){
 
@@ -514,7 +543,7 @@ Vdouble pPIP::computeLKmatchLocal(double valM,
     fv=MatrixBppUtils::cwiseProd(&PrfvL,&PrfvR);
 
     //fv0=fv.dot(pi);
-    fv0=MatrixBppUtils::dotProd(&fv,&pi);
+    fv0=MatrixBppUtils::dotProd(&fv,&_pi);
 
     //pr=tree->getIota()*tree->getBeta()*fv0;
     pr=_iota[node]*_beta[node]*fv0;
@@ -531,7 +560,7 @@ Vdouble pPIP::computeLKmatchLocal(double valM,
 //    }
     //------------------------------------------------------------------------------------------
 
-    val=-log(m)+log(nu)+log(pr)+max_of_three(valM,valX,valY,DBL_EPSILON);
+    val=-log(m)+log(_nu)+log(pr)+max_of_three(valM,valX,valY,DBL_EPSILON);
 
     //return val;
 
@@ -541,11 +570,9 @@ Vdouble pPIP::computeLKmatchLocal(double valM,
 Vdouble pPIP::computeLKgapxLocal(double valM,
                                     double valX,
                                     double valY,
-                                    double nu,
                                     bpp::Node *node,
                                     unsigned long col_i,
                                     unsigned long col_j,
-                                    Vdouble &pi,
                                     unsigned long m,
                                     double &val,
                                     double &lkx){
@@ -591,7 +618,7 @@ Vdouble pPIP::computeLKgapxLocal(double valM,
 
 
     //fv0=fv.dot(pi);
-    fv0=MatrixBppUtils::dotProd(&fv,&pi);
+    fv0=MatrixBppUtils::dotProd(&fv,&_pi);
 
     //pr=tree->getIota()*tree->getBeta()*fv0;
     //pr=_iota[node->getId()]*_beta[node->getId()]*fv0;
@@ -619,7 +646,7 @@ Vdouble pPIP::computeLKgapxLocal(double valM,
 //    }
     //------------------------------------------------------------------------------------------
 
-    val=-log(m)+log(nu)+log(pr)+max_of_three(valM,valX,valY,DBL_EPSILON);
+    val=-log(m)+log(_nu)+log(pr)+max_of_three(valM,valX,valY,DBL_EPSILON);
 
     //return val;
 
@@ -629,11 +656,9 @@ Vdouble pPIP::computeLKgapxLocal(double valM,
 Vdouble pPIP::computeLKgapyLocal(double valM,
                                     double valX,
                                     double valY,
-                                    double nu,
                                     bpp::Node *node,
                                     unsigned long col_i,
                                     unsigned long col_j,
-                                    Vdouble &pi,
                                     unsigned long m,
                                     double &val,
                                     double &lky){
@@ -677,7 +702,7 @@ Vdouble pPIP::computeLKgapyLocal(double valM,
     //------------------------------------------------------------------------------------------
 
     //fv0=fv.dot(pi);
-    fv0=MatrixBppUtils::dotProd(&fv,&pi);
+    fv0=MatrixBppUtils::dotProd(&fv,&_pi);
 
     //pr=tree->getIota()*tree->getBeta()*fv0;
     //pr=_iota[node->getId()]*_beta[node->getId()]*fv0;
@@ -687,7 +712,7 @@ Vdouble pPIP::computeLKgapyLocal(double valM,
     //------------------------------------------------------------------------------------------
     //pR=compute_lk_down(tree->getNodeRight(),sR,pi,alphabetSize,alphabet);
     //pR=_lkxy[node][col_j];
-    double pR=(_lkxy[s1]).at(col_j);
+    double pR=(_lkxy[s2]).at(col_j);
     //------------------------------------------------------------------------------------------
 
     pr+=pR;
@@ -706,7 +731,7 @@ Vdouble pPIP::computeLKgapyLocal(double valM,
     //------------------------------------------------------------------------------------------
 
 
-    val=-log(m)+log(nu)+log(pr)+max_of_three(valM,valX,valY,DBL_EPSILON);
+    val=-log(m)+log(_nu)+log(pr)+max_of_three(valM,valX,valY,DBL_EPSILON);
 
 
     //return val;
@@ -730,173 +755,301 @@ bool pPIP::checkUniformLen(std::vector<std::pair<std::string,std::string>> &resu
 
     return true;
 }
-unsigned long pPIP::getMSAlength(std::vector<std::pair<std::string,std::string>> &result){
-
-    if(result.empty()){
-        return 0;
-    }
-
-    if(!checkUniformLen(result)){
-        perror("ERROR in get_length_seq: non aligned");
-    }
-
-    return result.at(0).second.length();
-}
+//unsigned long pPIP::getMSAlength(std::vector< std::string > &result){
+//
+//    if(result.empty()){
+//        return 0;
+//    }
+//
+////    if(!checkUniformLen(result)){
+////        perror("ERROR in get_length_seq: non aligned");
+////    }
+//
+//    return result.size();
+//}
 std::string pPIP::createGapCol(unsigned long len){
 
     std::string colMSA (len,'-');
 
     return colMSA;
 }
-std::string pPIP::createMSAcol(std::vector<std::pair<std::string,std::string>> &result, unsigned long index){
-    std::string colMSA;
+//std::string pPIP::createMSAcol(std::vector< std::string > &result, unsigned long index){
+//    std::string colMSA;
+//
+//    //for(unsigned int i=0;i<result.size();i++){
+//    for(const auto &r : result){
+//        //colMSA.append(result.at(i).second,index,1);
+//        colMSA.append(r.second,index,1);
+//    }
+//
+//    return colMSA;
+//}
+//std::vector<std::pair<std::string,std::string>> pPIP::align_seq_left(	std::vector<std::pair<std::string,std::string>> &MSA_in,
+//                                                                   std::string &traceback_path){
+//
+//    unsigned int idx;
+//
+//    std::vector<std::pair<std::string,std::string>> MSA_out;
+//
+//    //typedef typename std::vector<std::pair<std::string,std::string>>::iterator vect_iterator;
+//    //for (auto iter = MSA_in.begin(); iter != MSA_in.end(); iter++){
+//    for (auto&& iter : MSA_in) {
+//        //std::pair<std::string,std::string> seq = (*ter);
+//        std::pair<std::string,std::string> seq = (iter);
+//
+//        std::string seq_name=seq.first;
+//        std::string seq_not_aligned=seq.second;
+//        std::string seq_aligned(traceback_path.size(),'-');
+//
+//        idx=0;
+//        for(unsigned int j=0;j<traceback_path.size();j++){
+//
+//            if(traceback_path.at(j)==MATCH_CHAR){
+//
+//                seq_aligned[j]=seq_not_aligned.at(idx);
+//                idx++;
+//
+//            }else if(traceback_path.at(j)==GAP_X_CHAR){
+//
+//                seq_aligned[j]=seq_not_aligned.at(idx);
+//                idx++;
+//
+//            }else if(traceback_path.at(j)==GAP_Y_CHAR){
+//
+//                seq_aligned[j]='-';
+//
+//            }else{
+//                perror("ERROR in align_seq_left");
+//            }
+//        }
+//
+//        MSA_out.emplace_back(std::make_pair(seq_name,seq_aligned));
+//    }
+//
+//    return MSA_out;
+//}
+//std::vector< std::string > pPIP::align_seq_left(std::vector< std::string > &MSA_in, std::string &traceback_path){
+//
+//    unsigned int idx;
+//
+//    std::vector< std::string > MSA_out;
+//
+//    for (auto&& seq : MSA_in) {
+//        //std::string seq = (iter);
+//
+//        //std::string seq_name=seq.first;
+//        //std::string seq_not_aligned=seq.second;
+//        std::string seq_aligned(traceback_path.size(),'-');
+//
+//        idx=0;
+//        for(unsigned int j=0;j<traceback_path.size();j++){
+//
+//            if(traceback_path.at(j)==MATCH_CHAR){
+//
+//                seq_aligned[j]=seq_not_aligned.at(idx);
+//                idx++;
+//
+//            }else if(traceback_path.at(j)==GAP_X_CHAR){
+//
+//                seq_aligned[j]=seq_not_aligned.at(idx);
+//                idx++;
+//
+//            }else if(traceback_path.at(j)==GAP_Y_CHAR){
+//
+//                seq_aligned[j]='-';
+//
+//            }else{
+//                perror("ERROR in align_seq_left");
+//            }
+//        }
+//
+//        MSA_out.emplace_back(std::make_pair(seq_name,seq_aligned));
+//    }
+//
+//    return MSA_out;
+//}
+//std::vector<std::pair<std::string,std::string>> pPIP::align_seq_right(std::vector<std::pair<std::string,std::string>> &result,
+//                                                                std::string &traceback_path){
+//    unsigned int idx;
+//
+//    std::vector<std::pair<std::string,std::string>> MSA_out;
+//
+//    //for (auto iter = result.begin(); iter != result.end(); iter++){
+//    for (auto&& iter : result) {
+//        //std::pair<std::string,std::string> seq = (*iter);
+//        std::pair<std::string,std::string> seq = (iter);
+//
+//        std::string seq_name=seq.first;
+//        std::string seq_not_aligned=seq.second;
+//        std::string seq_aligned(traceback_path.size(),'-');
+//
+//        idx=0;
+//        for(unsigned int j=0;j<traceback_path.size();j++){
+//
+//            if(traceback_path.at(j)==MATCH_CHAR){
+//
+//                seq_aligned[j]=seq_not_aligned.at(idx);
+//                idx++;
+//
+//            }else if(traceback_path.at(j)==GAP_X_CHAR){
+//
+//                seq_aligned[j]='-';
+//
+//            }else if(traceback_path.at(j)==GAP_Y_CHAR){
+//
+//                seq_aligned[j]=seq_not_aligned.at(idx);
+//                idx++;
+//
+//            }else{
+//                perror("ERROR in align_seq");
+//            }
+//        }
+//
+//        MSA_out.emplace_back(std::make_pair(seq_name,seq_aligned));
+//    }
+//
+//    return MSA_out;
+//}
+//std::vector<std::pair<std::string,std::string>> pPIP::build_MSA(std::string traceback_path,
+//                                                                std::vector<std::pair<std::string, std::string>> &MSA_L,
+//                                                                std::vector<std::pair<std::string,std::string>> &MSA_R){
+//    std::vector<std::pair<std::string,std::string>> MSA;
+//    std::vector<std::pair<std::string,std::string>> MSA_L_out;
+//    std::vector<std::pair<std::string,std::string>> MSA_R_out;
+//
+//    MSA_L_out=align_seq_left(MSA_L,traceback_path);
+//    MSA_R_out=align_seq_right(MSA_R,traceback_path);
+//
+//    //for (unsigned int i=0;i<MSA_L_out.size();i++){
+//    for (const auto &m : MSA_L_out){
+//        //MSA.push_back(MSA_L_out.at(i));
+//        MSA.push_back(m);
+//    }
+//
+//    //for (unsigned int i=0;i<MSA_R_out.size();i++){
+//    for (const auto &m : MSA_L_out){
+//        //MSA.push_back(MSA_R_out.at(i));
+//        MSA.push_back(m);
+//    }
+//
+//    return MSA;
+//}
+void pPIP::build_MSA(bpp::Node *node,
+                     std::string traceback_path){
 
-    //for(unsigned int i=0;i<result.size();i++){
-    for(const auto &r : result){
-        //colMSA.append(result.at(i).second,index,1);
-        colMSA.append(r.second,index,1);
-    }
 
-    return colMSA;
-}
-std::vector<std::pair<std::string,std::string>> pPIP::align_seq_left(	std::vector<std::pair<std::string,std::string>> &MSA_in,
-                                                                   std::string &traceback_path){
+    auto sons = node->getSons();
 
-    unsigned int idx;
+    auto s1 = sons.at(0);
+    auto s2 = sons.at(1);
 
-    std::vector<std::pair<std::string,std::string>> MSA_out;
+    std::vector< std::string > *MSA_L=&(_MSA[s1]);
+    std::vector< std::string > *MSA_R=&(_MSA[s2]);
 
-    //typedef typename std::vector<std::pair<std::string,std::string>>::iterator vect_iterator;
-    //for (auto iter = MSA_in.begin(); iter != MSA_in.end(); iter++){
-    for (auto&& iter : MSA_in) {
-        //std::pair<std::string,std::string> seq = (*ter);
-        std::pair<std::string,std::string> seq = (iter);
 
-        std::string seq_name=seq.first;
-        std::string seq_not_aligned=seq.second;
-        std::string seq_aligned(traceback_path.size(),'-');
+    int lenColL=MSA_L->at(0).size();
+    int lenColR=MSA_R->at(0).size();
 
-        idx=0;
-        for(unsigned int j=0;j<traceback_path.size();j++){
+    std::vector<std::string> MSA;
 
-            if(traceback_path.at(j)==MATCH_CHAR){
+    int idx_i=0;
+    int idx_j=0;
+    for(unsigned int j=0;j<traceback_path.size();j++){
 
-                seq_aligned[j]=seq_not_aligned.at(idx);
-                idx++;
+        if(traceback_path.at(j)==MATCH_CHAR){
 
-            }else if(traceback_path.at(j)==GAP_X_CHAR){
+            MSA.push_back(MSA_L->at(idx_i)+MSA_R->at(idx_j));
+            idx_i++;
+            idx_j++;
 
-                seq_aligned[j]=seq_not_aligned.at(idx);
-                idx++;
+        }else if(traceback_path.at(j)==GAP_X_CHAR){
 
-            }else if(traceback_path.at(j)==GAP_Y_CHAR){
+            std::string gapCol(lenColR,GAP_CHAR);
+            MSA.push_back(MSA_L->at(idx_i)+gapCol);
+            idx_i++;
 
-                seq_aligned[j]='-';
+        }else if(traceback_path.at(j)==GAP_Y_CHAR){
 
-            }else{
-                perror("ERROR in align_seq_left");
-            }
+            std::string gapCol(lenColL,GAP_CHAR);
+            MSA.push_back(gapCol+MSA_R->at(idx_j));
+            idx_j++;
+
+        }else{
+            perror("ERROR");
         }
-
-        MSA_out.emplace_back(std::make_pair(seq_name,seq_aligned));
     }
 
-    return MSA_out;
+    _MSA[node]=MSA;
+
+
 }
-std::vector<std::pair<std::string,std::string>> pPIP::align_seq_right(std::vector<std::pair<std::string,std::string>> &result,
-                                                                std::string &traceback_path){
-    unsigned int idx;
+void pPIP::setMSAsequenceNames(bpp::Node *node){
 
-    std::vector<std::pair<std::string,std::string>> MSA_out;
+    auto sons = node->getSons();
 
-    //for (auto iter = result.begin(); iter != result.end(); iter++){
-    for (auto&& iter : result) {
-        //std::pair<std::string,std::string> seq = (*iter);
-        std::pair<std::string,std::string> seq = (iter);
+    auto s1 = sons.at(0);
+    auto s2 = sons.at(1);
 
-        std::string seq_name=seq.first;
-        std::string seq_not_aligned=seq.second;
-        std::string seq_aligned(traceback_path.size(),'-');
+    std::vector<std::string> seqNames;
 
-        idx=0;
-        for(unsigned int j=0;j<traceback_path.size();j++){
-
-            if(traceback_path.at(j)==MATCH_CHAR){
-
-                seq_aligned[j]=seq_not_aligned.at(idx);
-                idx++;
-
-            }else if(traceback_path.at(j)==GAP_X_CHAR){
-
-                seq_aligned[j]='-';
-
-            }else if(traceback_path.at(j)==GAP_Y_CHAR){
-
-                seq_aligned[j]=seq_not_aligned.at(idx);
-                idx++;
-
-            }else{
-                perror("ERROR in align_seq");
-            }
-        }
-
-        MSA_out.emplace_back(std::make_pair(seq_name,seq_aligned));
+    for(int i=0;i<_seqNames[s1].size();i++){
+        seqNames.push_back(_seqNames[s1].at(i));
     }
 
-    return MSA_out;
+    for(int i=0;i<_seqNames[s2].size();i++){
+        seqNames.push_back(_seqNames[s2].at(i));
+    }
+
+    _seqNames[node]=seqNames;
+
 }
-std::vector<std::pair<std::string,std::string>> pPIP::build_MSA(std::string traceback_path,std::vector<std::pair<std::string,std::string>> &MSA_L,std::vector<std::pair<std::string,std::string>> &MSA_R){
-    std::vector<std::pair<std::string,std::string>> MSA;
-    std::vector<std::pair<std::string,std::string>> MSA_L_out;
-    std::vector<std::pair<std::string,std::string>> MSA_R_out;
+void pPIP::setMSAsequenceNames(bpp::Node *node,std::string seqname){
 
-    MSA_L_out=align_seq_left(MSA_L,traceback_path);
-    MSA_R_out=align_seq_right(MSA_R,traceback_path);
+    std::vector<std::string> seqNames;
 
-    //for (unsigned int i=0;i<MSA_L_out.size();i++){
-    for (const auto &m : MSA_L_out){
-        //MSA.push_back(MSA_L_out.at(i));
-        MSA.push_back(m);
-    }
+    seqNames.push_back(seqname);
 
-    //for (unsigned int i=0;i<MSA_R_out.size();i++){
-    for (const auto &m : MSA_L_out){
-        //MSA.push_back(MSA_R_out.at(i));
-        MSA.push_back(m);
-    }
+    _seqNames[node]=seqNames;
 
-    return MSA;
 }
-void pPIP::setIndicatorFun(bpp::Node *node,int extAlphabetSize){
+void pPIP::setMSAleaves(bpp::Node *node,const std::string &MSA){
 
-    int len=_MSA[node].at(0).second.size();
+    //convert a string into a vector of strings (single char)
+    std::vector<std::string> msa;
+    for(int i=0;i<MSA.size();i++){
+        std::string s(1, MSA.at(i));
+        msa.push_back(s);
+    }
+
+    _MSA[node]=msa;
+
+}
+
+void pPIP::setIndicatorFun(bpp::Node *node){
+
+    int idx;
+
+    std::vector<std::string> *MSA = &(_MSA[node]);
 
     VVdouble indicatorFunctions;
 
-    for(int i=0;i<len;i++){
+    for(int i=0;i<MSA->size();i++){
         Vdouble indicatorFun;
-        indicatorFun.resize(extAlphabetSize);
-        indicatorFun.assign(extAlphabetSize,0.0);
-        indicatorFun[0]=1.0;
-       indicatorFunctions.push_back(indicatorFun);
+        indicatorFun.resize(_extendedAlphabetSize);
+        indicatorFun.assign(_extendedAlphabetSize,0.0);
+
+        idx=_alphabet->charToInt(MSA->at(i));
+
+        indicatorFun[idx]=1.0;
+        indicatorFunctions.push_back(indicatorFun);
     }
 
     _fv[node]=indicatorFunctions;
 
-//    for (int i = 0; i < nbDistinctSites_; i++) {
-//        size_t indexRealSite = static_cast<size_t>(rootPatternLinksInverse_.at(i));
-//
-//        for (auto &node:tree_->getNodes()) {
-//            if (node->isLeaf()) {
-//                indicatorFun_[node].at(i).at(sites.getSequence(node->getName()).getValue(indexRealSite)) = 1;
-//            }
-//        }
-//    }
-
 }
 void pPIP::setLKxyLeaves(bpp::Node *node){
 
-    int len=_MSA[node].at(0).second.size();
+    int len=_MSA[node].size();
 
     Vdouble lkxy;
 
@@ -906,29 +1059,52 @@ void pPIP::setLKxyLeaves(bpp::Node *node){
     _lkxy[node]=lkxy;
 
 }
-void pPIP::setAllIotas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> list_vnode_to_root,double mu,double tau) {
+void pPIP::_setNu() {
+
+    if (fabs(_mu) < 1e-8) {
+        perror("ERROR: mu too small");
+    }
+
+    _nu  = _lambda * (_tau + 1 / _mu);
+
+}
+void pPIP::_setLambda(double lambda){
+    _lambda=lambda;
+}
+void pPIP::_setMu(double mu){
+
+    if (fabs(mu) < 1e-8) {
+        perror("ERROR: mu too small");
+    }
+
+    _mu=mu;
+}
+void pPIP::_setPi(const Vdouble &pi){
+    _pi=pi;
+}
+void pPIP::_setAllIotas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes) {
     double T;
 
     //TreeTemplate<Node> ttree(*tree);
 
-    if (fabs(mu) < 1e-8) {
-        perror("ERROR in set_iota: mu too small");
-    }
+//    if (fabs(_mu) < 1e-8) {
+//        perror("ERROR in set_iota: mu too small");
+//    }
 
-    T = tau + 1/mu;
+    T = _tau + 1/_mu;
 
     if (fabs(T) < 1e-8) {
         perror("ERROR in set_iota: T too small");
     }
 
 
-    for (auto &vnode:list_vnode_to_root) {
+    for (auto &vnode:listNodes) {
 
-        auto node = tree_->getNode(tm->right.at(vnode),false);
+        auto node = _tree->getNode(tm->right.at(vnode),false);
 
         if (!node->hasFather()) {
 
-            _iota[node]=(1/mu)/T;
+            _iota[node]=(1/_mu)/T;
 
         } else {
 
@@ -937,17 +1113,17 @@ void pPIP::setAllIotas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNod
         }
     }
 }
-void pPIP::setAllBetas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes,double mu) {
+void pPIP::_setAllBetas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes) {
 
     //TreeTemplate<Node> ttree(*tree);
 
-    if (fabs(mu) < 1e-8) {
-        perror("ERROR in set_iota: mu too small");
-    }
+//    if (fabs(mu) < 1e-8) {
+//        perror("ERROR in set_iota: mu too small");
+//    }
 
     for (auto &vnode:listNodes) {
 
-        auto node = tree_->getNode(tm->right.at(vnode),false);
+        auto node = _tree->getNode(tm->right.at(vnode),false);
 
         if (!node->hasFather()) {
 
@@ -955,7 +1131,7 @@ void pPIP::setAllBetas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNod
 
         } else {
 
-            _beta[node]= (1.0 - exp(-mu * node->getDistanceToFather())) / (mu * node->getDistanceToFather());
+            _beta[node]= (1.0 - exp(-_mu * node->getDistanceToFather())) / (_mu * node->getDistanceToFather());
 
         }
 
@@ -963,7 +1139,7 @@ void pPIP::setAllBetas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNod
 
 
 }
-void pPIP::computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes) {
+void pPIP::_computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes) {
 
     //TreeTemplate<Node> ttree(*tree);
 
@@ -971,7 +1147,7 @@ void pPIP::computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode 
 
     for (auto &vnode:listNodes) {
 
-        auto node = tree_->getNode(tm->right.at(vnode),false);
+        auto node = _tree->getNode(tm->right.at(vnode),false);
 
         if (!node->hasFather()) {
 
@@ -984,69 +1160,60 @@ void pPIP::computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode 
     }
 
 
-    for (auto &vnode:listNodes) {
-
-        auto node = tree_->getNode(tm->right.at(vnode),false);
-
-        if (!node->hasFather()) {
-
-        } else {
-
-
-            std::cout<<node->getName()<<std::endl;
-
-            bpp::RowMatrix<double> M = _pr[node];
-
-            for(int i=0;i<M.getNumberOfRows();i++){
-                for(int j=0;j<M.getNumberOfRows();j++){
-                    std::cout<<M(i,j)<<" ";
-                }
-                std::cout<<std::endl;
-            }
-            std::cout<<std::endl;
-
-        }
-
-    }
+//    for (auto &vnode:listNodes) {
+//
+//        auto node = tree_->getNode(tm->right.at(vnode),false);
+//
+//        if (!node->hasFather()) {
+//
+//        } else {
+//
+//
+//            std::cout<<node->getName()<<std::endl;
+//
+//            bpp::RowMatrix<double> M = _pr[node];
+//
+//            for(int i=0;i<M.getNumberOfRows();i++){
+//                for(int j=0;j<M.getNumberOfRows();j++){
+//                    std::cout<<M(i,j)<<" ";
+//                }
+//                std::cout<<std::endl;
+//            }
+//            std::cout<<std::endl;
+//
+//        }
+//
+//    }
 
 
 
 }
 void pPIP::DP3D_PIP(bpp::Node *node,
                     UtreeBppUtils::treemap *tm,
-                    Vdouble &pi,
-                    double lambda,
-                    double mu,
-                    const bpp::Alphabet *alphabet,
                     double gamma_rate,
                     bool local){
 
     //TODO: place as argument
     bool randomSeed = true;
 
-    int originalAlphabetSize=alphabet->getSize()-1;
+    //int originalAlphabetSize=_alphabet->getSize()-1;
 
-    double nu;
-    double tau;
+    //double nu;
+    //double tau;
 
-    double lambda_gamma = lambda * gamma_rate;
-    double mu_gamma = mu * gamma_rate;
+    //TODO: re-implement gamma distribution
+    double lambda_gamma = _lambda * gamma_rate;
+    double mu_gamma = _mu * gamma_rate;
 
     if(local){
-        /*
-        //TODO: calcola tau dal nodo attuale
-        bpp::Tree *subtree = tree->cloneSubtree(tm->right.at(node));
-        tau = subtree->getTotalLength();
-        nu=compute_nu(tau,lambda_gamma,mu_gamma);
-         */
+        //bpp::Tree *subtree = tree_->cloneSubtree(tm->right.at(node));
+        bpp::Tree *subtree = _tree->cloneSubtree(node->getId());
+        _tau = subtree->getTotalLength();
+        _setNu();
     }else{
-        /*
-        //const Tree tree = tree->getTree();
-        tau = tree->getTotalLength();
-        nu = compute_nu(tau, lambda, mu);
-         */
+        //_tau = tree_->getTotalLength();
+        //computeNu();
     }
-
 
     unsigned long up_corner_i;
     unsigned long up_corner_j;
@@ -1055,21 +1222,28 @@ void pPIP::DP3D_PIP(bpp::Node *node,
     unsigned long lw;
     unsigned long h,w;
 
+    auto sons = node->getSons();
 
-    h=getMSAlength(_MSA[node->getSon(0)])+1;
-    w=getMSAlength(_MSA[node->getSon(1)])+1;
+    auto s1 = sons.at(0);
+    auto s2 = sons.at(1);
+
+//    h=getMSAlength(_MSA[s1])+1;
+//    w=getMSAlength(_MSA[s2])+1;
+
+    h = _MSA[s1].size()+1;
+    w = _MSA[s2].size()+1;
 
     unsigned long d=(h-1)+(w-1)+1;
 
     double pc0;
     //.-----.------.------.-------.------.-------.-------.--------.-------.--------.//
-    std::string sLs;
-    std::string sRs;
+    std::string *sLs;
+    std::string *sRs;
     std::string col_gap_Ls;
     std::string col_gap_Rs;
     //.-----.------.------.-------.------.-------.-------.--------.-------.--------.//
-    col_gap_Ls=createGapCol(_MSA[node->getSon(0)].size());
-    col_gap_Rs=createGapCol(_MSA[node->getSon(0)].size());
+    col_gap_Ls=createGapCol(_MSA[s1].size());
+    col_gap_Rs=createGapCol(_MSA[s2].size());
     //.-----.------.------.-------.------.-------.-------.--------.-------.--------.//
     signed long seed;
     if(randomSeed){
@@ -1089,9 +1263,9 @@ void pPIP::DP3D_PIP(bpp::Node *node,
     //***************************************************************************************
     Vdouble Fvgap;
     double p0;
-    unsigned long indexFv=0;
+    //unsigned long indexFv=0;
     if(local){
-        Fvgap = computeLKgapColLocal(node, pi, pc0,p0);
+        Fvgap = computeLKgapColLocal(node,pc0,p0);
     }else{
         /*
         pc0 = compute_pr_gap_all_edges_s(node,
@@ -1103,8 +1277,13 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                                          */
     }
 
-    (_fv.at(node))[indexFv]=Fvgap;
-    indexFv++;
+
+    //int sss = (_fv[node]).size();
+
+    (_fv[node]).push_back(Fvgap);
+
+   // (_fv.at(node))[indexFv]=Fvgap;
+    //indexFv++;
     //***************************************************************************************
     //***************************************************************************************
 
@@ -1121,9 +1300,9 @@ void pPIP::DP3D_PIP(bpp::Node *node,
     LogX[1] = new double[int((w*(h+1))/2)];
     LogY[1] = new double[int((w*(h+1))/2)];
 
-    LogM[0][0]=nu*(pc0-1.0);
-    LogX[0][0]=nu*(pc0-1.0);
-    LogY[0][0]=nu*(pc0-1.0);
+    LogM[0][0]=_nu*(pc0-1.0);
+    LogX[0][0]=_nu*(pc0-1.0);
+    LogY[0][0]=_nu*(pc0-1.0);
 
     TR[0] = new int[1]();
     TR[0][0]=STOP_STATE;
@@ -1167,6 +1346,9 @@ void pPIP::DP3D_PIP(bpp::Node *node,
     double lkx,lky;
     for(unsigned long m=1;m<d;m++){
 
+
+        std::cout<<"m="<<m<<std::endl;
+
         Vdouble Fvmatch;
         Vdouble Fvgapx;
         Vdouble Fvgapy;
@@ -1190,15 +1372,16 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                 coordSeq_1=coordTriangle_this_i-1;
                 coordTriangle_prev_i=coordTriangle_this_i-1;
                 //TODO: use site container?
-                sLs=createMSAcol(_MSA[node->getSon(0)],coordSeq_1);
-
+                //sLs=createMSAcol(_MSA[node->getSon(0)],coordSeq_1);
+                sLs=&(_MSA[s1].at(coordSeq_1));
 
                 for(int j=0;j<=lw;j++){
 
                     coordTriangle_this_j=up_corner_j-j;
                     coordSeq_2=coordTriangle_this_j-1;
                     coordTriangle_prev_j=coordTriangle_this_j-1;
-                    sRs=createMSAcol(_MSA[node->getSon(1)],coordSeq_2);
+                    //sRs=createMSAcol(_MSA[node->getSon(1)],coordSeq_2);
+                    sRs=&(_MSA[s2].at(coordSeq_2));
 
                     idx=get_indices_M(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
                     if(idx>=0){
@@ -1225,15 +1408,18 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                         exit(EXIT_FAILURE);
                     }
 
+
+                    std::cout<<"M\n";
+
+
                     if(local){
                         Fvmatch=computeLKmatchLocal(valM,
                                                  valX,
                                                  valY,
-                                                 nu,
                                                  node,
                                                  coordSeq_1,
                                                  coordSeq_2,
-                                                 pi,m,
+                                                 m,
                                                  val);
                     }else{
                         /*
@@ -1249,6 +1435,9 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                                                         originalAlphabetSize, alphabet);
                                                         */
                     }
+
+
+                    std::cout<<"M done...\n";
 
                     if(std::isinf(val)){
                         exit(EXIT_FAILURE);
@@ -1280,7 +1469,8 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                 coordTriangle_this_i=i;
                 coordTriangle_prev_i=coordTriangle_this_i-1;
                 coordSeq_1=coordTriangle_this_i-1;
-                sLs=createMSAcol(_MSA[node->getSon(0)],coordSeq_1);
+                //sLs=createMSAcol(_MSA[node->getSon(0)],coordSeq_1);
+                sLs=&(_MSA[s1].at(coordSeq_1));
 
                 for(int j=0;j<=lw;j++){
 
@@ -1315,15 +1505,15 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                         exit(EXIT_FAILURE);
                     }
 
+                    std::cout<<"X\n";
+
                     if(local){
                         Fvgapx=computeLKgapxLocal(valM,
                                                  valX,
                                                  valY,
-                                                 nu,
                                                  node,
                                                  coordSeq_1,
                                                  coordSeq_2,
-                                                 pi,
                                                  m,
                                                 val,lkx);
                     }else{
@@ -1340,6 +1530,10 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                                                         originalAlphabetSize, alphabet);
                                                         */
                     }
+
+
+                    std::cout<<"X done...\n";
+
 
                     if(std::isinf(val)){
                         exit(EXIT_FAILURE);
@@ -1374,7 +1568,8 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                     coordTriangle_this_j=up_corner_j-j;
                     coordTriangle_prev_j=coordTriangle_this_j-1;
                     coordSeq_2=coordTriangle_this_j-1;
-                    sRs=createMSAcol(_MSA[node->getSon(1)],coordSeq_2);
+                    //sRs=createMSAcol(_MSA[node->getSon(1)],coordSeq_2);
+                    sRs=&(_MSA[s2].at(coordSeq_2));
 
                     idx=get_indices_M(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
                                       up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
@@ -1404,15 +1599,17 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                         exit(EXIT_FAILURE);
                     }
 
+
+                    std::cout<<"Y\n";
+
+
                     if(local){
                         Fvgapy=computeLKgapyLocal(valM,
                                                  valX,
                                                  valY,
-                                                 nu,
                                                  node,
                                                  coordSeq_1,
                                                  coordSeq_2,
-                                                 pi,
                                                  m,
                                                  val,lky);
                     }else{
@@ -1429,6 +1626,9 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                                                         originalAlphabetSize, alphabet);
                                                         */
                     }
+
+                    std::cout<<"Y done...\n";
+
 
                     if(std::isinf(val)){
                         exit(EXIT_FAILURE);
@@ -1498,26 +1698,30 @@ void pPIP::DP3D_PIP(bpp::Node *node,
                     //.-----.------.------.-------.------.-------.-------.--------.-------.--------.//
                     int ttrr;
 
+
+                    std::cout<<"T\n";
+
+
                     ttrr=index_of_max(mval,xval,yval,epsilon,generator,distribution);
 
                     switch(ttrr){
                         case MATCH_STATE:
-                            (_fv.at(node))[indexFv]=Fvmatch;
+                            _fv[node].push_back(Fvmatch);
                             break;
                         case GAP_X_STATE:
-                            (_fv.at(node))[indexFv]=Fvgapx;
-                            lkxy.at(indexFv)=lkx;
+                            _fv[node].push_back(Fvgapx);
+                            lkxy.push_back(lkx);
                             break;
                         case GAP_Y_STATE:
-                            (_fv.at(node))[indexFv]=Fvgapy;
-                            lkxy.at(indexFv)=lkx;
+                            _fv[node].push_back(Fvgapy);
+                            lkxy.push_back(lky);
                             break;
                         default:
                             perror("ERROR!!!");
                             exit(EXIT_FAILURE);
                     }
 
-                    indexFv++;
+                    //indexFv++;
 
 
                     idx=get_indices_T(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
@@ -1585,8 +1789,12 @@ void pPIP::DP3D_PIP(bpp::Node *node,
 
     _traceback_path=traceback_path;
 
-    auto MSA=build_MSA(traceback_path,_MSA[node->getSon(0)],_MSA[node->getSon(1)]);
-    _MSA.insert(std::make_pair(node,MSA));
+    //auto MSA=build_MSA(traceback_path,_MSA[node->getSon(0)],_MSA[node->getSon(1)]);
+    //_MSA.insert(std::make_pair(node,MSA));
+    build_MSA(node,traceback_path);
+
+    setMSAsequenceNames(node);
+
 
     free(LogM[1]);
     free(LogM[0]);
@@ -1610,44 +1818,28 @@ void pPIP::DP3D_PIP(bpp::Node *node,
 void pPIP::PIPAligner(UtreeBppUtils::treemap *tm,
                       std::vector<tshlib::VirtualNode *> list_vnode_to_root,
                       bpp::SequenceContainer *sequences,
-                      Vdouble &pi,
-                      double lambda,
-                      double mu,
-                      const bpp::Alphabet *alphabet,
                       double gamma_rate,
                       bool local) {
 
-
-    //TreeTemplate<Node> ttree(*tree);
-
     for (auto &vnode:list_vnode_to_root) {
 
-        auto node = tree_->getNode(tm->right.at(vnode),false);
+        auto node = _tree->getNode(tm->right.at(vnode),false);
 
         if(node->isLeaf()){
-            //TODO: if not already assigned????
+
             std::string seqname = sequences->getSequencesNames().at((unsigned long)vnode->vnode_seqid);
-            std::string seqdata = sequences->getSequence(seqname).toString();
 
-            std::vector< std::pair<std::string,std::string> > seq;
-            seq.push_back(std::make_pair(seqname,seqdata));
+            setMSAsequenceNames(node,seqname);
 
-            _MSA[node]=seq;
+            setMSAleaves(node,sequences->getSequence(seqname).toString());
 
-            int extAlphabetSize=alphabet->getSize()+1;
-
-            setIndicatorFun(node,extAlphabetSize);
+            setIndicatorFun(node);
 
             setLKxyLeaves(node);
 
-//            for(int i=0;i<_lkxy[node].size();i++){
-//                std::cout<<_lkxy[node].at(i)<<" ";
-//            }
-//            std::cout<<std::endl;
-
         }else{
 
-            DP3D_PIP(node, tm, pi, lambda, mu, alphabet, gamma_rate, local);
+            DP3D_PIP(node, tm, gamma_rate, local);
 
         }
     }

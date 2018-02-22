@@ -373,19 +373,13 @@ int main(int argc, char *argv[]) {
 
             double tau;
 
-            Vdouble PiPIP=submodel->getFrequencies();
+            auto progressivePIP=new bpp::pPIP(alphabet);
 
-            auto progressivePIP=new bpp::pPIP();
+            progressivePIP->init(tree, &tm, fullTraversalNodes, submodel->getFrequencies(),lambda, mu);
 
-            progressivePIP->setTree(tree);
+            progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
 
-            progressivePIP->setAllIotas(&tm,fullTraversalNodes,mu,tau);
-
-            progressivePIP->setAllBetas(&tm,fullTraversalNodes,mu);
-
-            progressivePIP->computePr(&tm,fullTraversalNodes);
-
-            progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, PiPIP, lambda, mu, alphabet, 1.0, true);
+            std::cout<<"PIPAligner done...\n";
 
             //********************************************************************************
             //********************************************************************************
