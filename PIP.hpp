@@ -61,6 +61,7 @@ namespace bpp {
         double kappa_, r_;
         mutable double l_, k_, exp1_, exp2_;
         mutable RowMatrix<double> p_;
+        mutable SubstitutionModel *submodel_;
 
     public:
 
@@ -71,11 +72,11 @@ namespace bpp {
         PIP_Nuc *clone() const { return new PIP_Nuc(*this); }
 
     public:
-        double Pij_t(size_t i, size_t j, double d) const;
+        //double Pij_t(size_t i, size_t j, double d) const;
 
-        double dPij_dt(size_t i, size_t j, double d) const;
+        //double dPij_dt(size_t i, size_t j, double d) const;
 
-        double d2Pij_dt2(size_t i, size_t j, double d) const;
+        //double d2Pij_dt2(size_t i, size_t j, double d) const;
 
         //const Matrix<double> &getPij_t(double d) const;
 
@@ -93,7 +94,7 @@ namespace bpp {
 
         void setFreq(std::map<int, double> &freqs);
 
-        void updateMatrices(SubstitutionModel *basemodel);
+        void updateMatrices();
 
     };
 
@@ -103,6 +104,8 @@ namespace bpp {
         double lambda_, mu_, tau_, nu_;
         std::string name_;
         ProteinFrequenciesSet *freqSet_;
+        mutable SubstitutionModel *submodel_;
+
 
     public:
         /**
@@ -173,7 +176,7 @@ namespace bpp {
 
         size_t getNumberOfStates() const { return 21; };
 
-        void updateMatrices(SubstitutionModel *basemodel);
+        void updateMatrices();
 
     };
 

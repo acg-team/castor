@@ -53,14 +53,17 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, Substit
         lambda_(lambda), mu_(mu), r_(), l_(), k_(), exp1_(), exp2_(), p_(size_, size_) {
 
 
+    // Setting basemodel to PIP
+    submodel_ = basemodel;
+
     // Inheriting basemodel parameters
-    ParameterList parlist = basemodel->getParameters();
+    ParameterList parlist = submodel_->getParameters();
 
     for (int i = 0; i < parlist.size(); i++) {
         addParameter_(new Parameter("PIP." + parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
     }
 
-    name_ = basemodel->getName() + "+PIP";
+    name_ = submodel_->getName() + "+PIP";
 
     //¨generator_.resize(alpha->getSize(), alpha->getSize());
     //size_ = alpha->getSize();
@@ -68,13 +71,17 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, Substit
 
 
 
-    addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
-    addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
+    addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS));
+    addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS));
+    //addParameter_(new Parameter("PIP.lambda", lambda, &FrequenciesSet::FREQUENCE_CONSTRAINT_SMALL));
+    //addParameter_(new Parameter("PIP.mu", mu, &FrequenciesSet::FREQUENCE_CONSTRAINT_SMALL));
 
-    updateMatrices(basemodel);
+
+
+    updateMatrices();
 }
 
-void PIP_Nuc::updateMatrices(SubstitutionModel *basemodel) {
+void PIP_Nuc::updateMatrices() {
 
     lambda_ = getParameterValue("lambda");
     mu_ = getParameterValue("mu");
@@ -83,13 +90,12 @@ void PIP_Nuc::updateMatrices(SubstitutionModel *basemodel) {
     //AbstractReversibleSubstitutionModel::updateMatrices();
 
     // Add frequency for gap character
-
-    freq_ = basemodel->getFrequencies();
+    freq_ = submodel_->getFrequencies();
     freq_[alphabet_->getGapCharacterCode()] = 0; // hack for updateMatrices()
 
 
     // Copy the generator from substitution model + extend it
-    const bpp::Matrix<double> &qmatrix = basemodel->getGenerator();
+    const bpp::Matrix<double> &qmatrix = submodel_->getGenerator();
 
     int cols = qmatrix.getNumberOfColumns();
     int rows = qmatrix.getNumberOfRows();
@@ -112,7 +118,7 @@ void PIP_Nuc::updateMatrices(SubstitutionModel *basemodel) {
 
 
     // Copy the exchangeability from substitution model + extend it
-    const bpp::Matrix<double> &exMatrix = basemodel->getExchangeabilityMatrix();
+    const bpp::Matrix<double> &exMatrix = submodel_->getExchangeabilityMatrix();
 
     // Exchangeability
     for (int i = 0; i < rows - 1; i++) {
@@ -161,7 +167,7 @@ void PIP_Nuc::updateMatrices(SubstitutionModel *basemodel) {
     //freq_[alphabet_->getGapCharacterCode()] = 0;
 
 }
-
+/*
 double PIP_Nuc::Pij_t(size_t i, size_t j, double d) const {
 
     return getPij_t(d)(i, j);
@@ -181,7 +187,7 @@ double PIP_Nuc::d2Pij_dt2(size_t i, size_t j, double d) const {
 
 }
 
-/*
+
 const bpp::Matrix<double> &PIP_Nuc::getPij_t(double d) const {
 
     MatrixTools::getId(size_, pijt_);
@@ -258,6 +264,9 @@ PIP_AA::PIP_AA(const ProteicAlphabet *alpha, double lambda, double mu, Substitut
         lambda_(lambda), mu_(mu), freqSet_(0) {
 //#include "__PIP_AAExchangeabilityCode"
 //#include "__PIP_AAFrequenciesCode"
+    // Setting basemodel to PIP
+    submodel_ = basemodel;
+
     freqSet_ = new FixedProteinFrequenciesSet(alpha, freq_);
     name_ = basemodel->getName() + "+PIP";
 
@@ -273,7 +282,7 @@ PIP_AA::PIP_AA(const ProteicAlphabet *alpha, double lambda, double mu, Substitut
     addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
     addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
 
-    updateMatrices(basemodel);
+    updateMatrices();
 }
 
 /*
@@ -290,7 +299,7 @@ PIP_AA::PIP_AA(const ProteicAlphabet *alpha, ProteinFrequenciesSet *freqSet, boo
     updateMatrices();
 }
 */
-void PIP_AA::updateMatrices(SubstitutionModel *basemodel) {
+void PIP_AA::updateMatrices() {
     lambda_ = getParameterValue("lambda");
     mu_ = getParameterValue("mu");
 
@@ -299,12 +308,12 @@ void PIP_AA::updateMatrices(SubstitutionModel *basemodel) {
 
     // Add frequency for gap character
 
-    freq_ = basemodel->getFrequencies();
+    freq_ = submodel_->getFrequencies();
     freq_[alphabet_->getGapCharacterCode()] = 0; // hack for updateMatrices()
 
 
     // Copy the generator from substitution model + extend it
-    const bpp::Matrix<double> &qmatrix = basemodel->getGenerator();
+    const bpp::Matrix<double> &qmatrix = submodel_->getGenerator();
 
     int cols = qmatrix.getNumberOfColumns();
     int rows = qmatrix.getNumberOfRows();
@@ -327,7 +336,7 @@ void PIP_AA::updateMatrices(SubstitutionModel *basemodel) {
 
 
     // Copy the exchangeability from substitution model + extend it
-    const bpp::Matrix<double> &exMatrix = basemodel->getExchangeabilityMatrix();
+    const bpp::Matrix<double> &exMatrix = submodel_->getExchangeabilityMatrix();
 
     // Exchangeability
     for (int i = 0; i < rows - 1; i++) {
