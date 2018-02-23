@@ -425,10 +425,10 @@ int main(int argc, char *argv[]) {
 
         //----------------------------------------------
         // Optimise parameters automatically
-        if (!PAR_model_indels) {
+        //if (!PAR_model_indels) {
             tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(PhylogeneticsApplicationTools::optimizeParameters(tl, tl->getParameters(),
-                                                                                                                     jatiapp.getParams(), "", true, true, 1));
-        }
+                                                                                                                     jatiapp.getParams(), "", true, true, 0));
+        //}
         //----------------------------------------------
         // Remove the root
         utree->removeVirtualRootNode();
