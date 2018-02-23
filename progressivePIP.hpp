@@ -262,7 +262,8 @@ namespace progressivePIP{
     double compute_nu(double tau,double lambda,double mu){
 
         if(fabs((long double)mu)<1e-8){
-            perror("ERROR in compute_nu: mu too small");
+            //perror("ERROR in compute_nu: mu too small");
+            LOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu;
         }
 
         return lambda*(tau+1/mu);
