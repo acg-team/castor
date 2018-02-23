@@ -65,28 +65,25 @@ namespace bpp {
 
         mutable std::vector<Node *> likelihoodNodes_;
 
-        mutable std::map<int, std::pair<std::vector<int>, bpp::Node*>> descCountData_;
-        mutable std::map<int, std::pair<std::vector<bool>, bpp::Node*>> setAData_;
-        mutable std::map<const bpp::Node*, double> iotasData_;
-        mutable std::map<const bpp::Node*, double> betasData_;
-        mutable std::map<const bpp::Node*, std::vector<std::vector<double>>> indicatorFun_;
+        mutable std::map<int, std::pair<std::vector<int>, bpp::Node *>> descCountData_;
+        mutable std::map<int, std::pair<std::vector<bool>, bpp::Node *>> setAData_;
+        mutable std::map<const bpp::Node *, double> iotasData_;
+        mutable std::map<const bpp::Node *, double> betasData_;
+        mutable std::map<const bpp::Node *, std::vector<std::vector<double>>> indicatorFun_;
         mutable std::vector<unsigned long> rootPatternLinksInverse_;
 
         mutable double nu_;
-    public:
-
-        double getNu() const { return nu_; }
-
-
-    private:
         mutable double tau_;
 
         mutable UtreeBppUtils::treemap treemap_;
-    public:
-        const UtreeBppUtils::treemap &getTreemap() const { return treemap_; }
+
 
     protected:
+
         double minusLogLik_;
+
+        double d1bl_;
+        double d2bl_;
 
     public:
         /**
@@ -156,28 +153,27 @@ namespace bpp {
          */
         void init_(bool usePatterns) throw(Exception);
 
-
         //void initializeLikelihoodMatrix_(VVVdouble *_likelihoods_node);
 
         //void initializeLikelihoodEmptyMatrix_(VVVdouble *_likelihoods_empty_node);
 
-        void hadamardMultFvSons_(Node *node) const;
+        void _hadamardMultFvSons(Node *node) const;
 
-        void hadamardMultFvEmptySons_(Node *node) const ;
+        void _hadamardMultFvEmptySons(Node *node) const;
 
-        void SingleRateCategoryHadamardMultFvSons_(Node *node,unsigned long site,unsigned long rate,Vdouble *fv_out) const;
+        void _SingleRateCategoryHadamardMultFvSons(Node *node, unsigned long site, unsigned long rate, Vdouble *fv_out) const;
 
-        void SingleRateCategoryHadamardMultFvEmptySons_(Node *node,unsigned long rate,Vdouble *fv_out) const;
+        void _SingleRateCategoryHadamardMultFvEmptySons(Node *node, unsigned long rate, Vdouble *fv_out) const;
 
-        void computePrTimesFv_(Node *node) const;
+        void _computePrTimesFv(Node *node) const;
 
-        void computePrTimesFvEmpty_(Node *node) const;
+        void _computePrTimesFvEmpty(Node *node) const;
 
-        void computePrTimesIndicator_(Node *node) const;
+        void _computePrTimesIndicator(Node *node) const;
 
-        void computePrTimesIndicatorEmpty_(Node *node) const;
+        void _computePrTimesIndicatorEmpty(Node *node) const;
 
-        void InitialiseInsertionHistories() const;
+        void initialiseInsertionHistories() const;
 
     public:
 
@@ -190,21 +186,24 @@ namespace bpp {
          */
         void setData(const SiteContainer &sites) throw(Exception);
 
-        double getLikelihood() const;
+        double getNu() const { return nu_; }
+
+        const UtreeBppUtils::treemap &getTreemap() const { return treemap_; }
+
+
+        double getLikelihood() const {
+            std::cerr << "getLikelihood()" << std::endl;
+            return 0;
+        };
 
         double getLogLikelihood() const;
+
         double getLogLikelihood(std::vector<tshlib::VirtualNode *> &listNodes) const;
 
 
-        double getLikelihoodForASite(size_t site) const;
-
-        double getLogLikelihoodForASite(size_t site) const;
-
-
-
-        double getLogLikelihoodSubtree(const Node *node) const;
-        double getLogLikelihoodSubtreeForASite(size_t site) const;
-        double getLogLikelihoodSubtreeForASiteForARateClass(size_t site, size_t rateClass) const;
+        //double getLogLikelihoodSubtree(const Node *node) const;
+        //double getLogLikelihoodSubtreeForASite(size_t site) const;
+        //double getLogLikelihoodSubtreeForASiteForARateClass(size_t site, size_t rateClass) const;
 
 
         /** @} */
@@ -215,13 +214,38 @@ namespace bpp {
          * @deprecated at the moment these methods are not used
          * @{
          */
-        double getLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
+        double getLikelihoodForASite(size_t site) const {
+            std::cerr << "getLikelihoodForASite()" << std::endl;
+            return 0;
+        };
 
-        double getLogLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
+        double getLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const {
+            std::cerr << "getLikelihoodForASiteForARateClass()" << std::endl;
+            return 0;
+        };
 
-        double getLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const;
+        double getLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const {
+            std::cerr << "getLikelihoodForASiteForARateClassForAState()" << std::endl;
+            return
+                    0;
+        };
 
-        double getLogLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const;
+        double getLogLikelihoodForASite(size_t site) const {
+            std::cerr << "getLogLikelihoodForASite()" << std::endl;
+            return 0;
+        };
+
+        double getLogLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const {
+            std::cerr << "getLogLikelihoodForASiteForARateClass()" << std::endl;
+            return 0;
+        };
+
+        double getLogLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const {
+            std::cerr << "getLogLikelihoodForASiteForARateClassForAState()"
+                    "" << std::endl;
+            return 0;
+        };
+
         /** @} */
 
         /**
@@ -248,7 +272,13 @@ namespace bpp {
          *
          * @{
          */
-        double getFirstOrderDerivative(const std::string &variable) const throw(Exception) { return 0; }
+        double getFirstOrderDerivative(const std::string &variable) const throw(Exception);
+
+        double compute1DLikelihoodForBranchLeghts(const std::string &variable);
+
+        double compute2DLikelihoodForBranchLeghts(const std::string &variable);
+
+        double evaluateLikelihoodPointForBranchDerivative(const std::string &variable, double new_branchlength);
         /** @} */
 
         /**
@@ -256,22 +286,24 @@ namespace bpp {
          *
          * @{
          */
-        double getSecondOrderDerivative(const std::string &variable) const throw(Exception) { return 0; }
+        double getSecondOrderDerivative(const std::string &variable) const throw(Exception);
 
         double getSecondOrderDerivative(const std::string &variable1, const std::string &variable2) const throw(Exception) { return 0; } // Not implemented for now.
         /** @} */
 
     public:    // Specific methods:
 
-        std::vector<int> getNodeDescCounts(bpp::Node *node, int siteId){ return descCountData_[node->getId()].first;}
-
-        int getNodeDescCountForASite(bpp::Node *node, int siteId) const{ return descCountData_[node->getId()].first.at(siteId);}
-
-        bool getSetAForANodeForASite(bpp::Node *node, int siteId){ return setAData_[node->getId()].first.at(siteId);}
 
         DRASRTreeLikelihoodData *getLikelihoodData() { return likelihoodData_; }
 
         const DRASRTreeLikelihoodData *getLikelihoodData() const { return likelihoodData_; }
+
+        std::vector<int> getNodeDescCounts(bpp::Node *node, int siteId) { return descCountData_[node->getId()].first; }
+
+        int getNodeDescCountForASite(bpp::Node *node, int siteId) const { return descCountData_[node->getId()].first.at(siteId); }
+
+        bool getSetAForANodeForASite(bpp::Node *node, int siteId) { return setAData_[node->getId()].first.at(siteId); }
+
 
         /**
          * @name Interface to compute the likelihood components
@@ -288,18 +320,28 @@ namespace bpp {
          * @param nodeList
          */
         void computeTreeLikelihood(std::vector<Node *> nodeList);
+
         /** @} */
 
-        //virtual double getDLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
-        //virtual double getDLikelihoodForASite(size_t site) const;
-        //virtual double getDLogLikelihoodForASite(size_t site) const;
-        //virtual double getDLogLikelihood() const;
-        //virtual void computeTreeDLikelihood(const std::string &variable);
-        //virtual double getD2LikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
-        //virtual double getD2LikelihoodForASite(size_t site) const;
-        //virtual double getD2LogLikelihoodForASite(size_t site) const;
-        //virtual double getD2LogLikelihood() const;
-        //virtual void computeTreeD2Likelihood(const std::string &variable);
+        virtual double getDLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
+
+        virtual double getDLikelihoodForASite(size_t site) const;
+
+        virtual double getDLogLikelihoodForASite(size_t site) const;
+
+        virtual double getDLogLikelihood() const;
+
+        virtual void computeTreeDLikelihood(const std::string &variable);
+
+        virtual double getD2LikelihoodForASiteForARateClass(size_t site, size_t rateClass) const;
+
+        virtual double getD2LikelihoodForASite(size_t site) const;
+
+        virtual double getD2LogLikelihoodForASite(size_t site) const;
+
+        virtual double getD2LogLikelihood() const;
+
+        virtual void computeTreeD2Likelihood(const std::string &variable);
 
         /**
          * @brief This method computes the likelihood after a tree rearrangment
@@ -323,8 +365,9 @@ namespace bpp {
          */
         virtual void computeSubtreeLikelihood();
 
-        //virtual void computeDownSubtreeDLikelihood(const Node *);
-        //virtual void computeDownSubtreeD2Likelihood(const Node *);
+        virtual void computeDownSubtreeDLikelihood(const Node *);
+
+        virtual void computeDownSubtreeD2Likelihood(const Node *);
 
         void fireParameterChanged(const ParameterList &params);
 
@@ -376,24 +419,26 @@ namespace bpp {
 
         void computeNu();
 
-        void printFV(Node *node, VVVdouble *likelihoodvector) const;
+        void _printFV(Node *node, VVVdouble *likelihoodvector) const;
 
-        void printPrMatrix(Node *node, VVdouble *pr);
-
-        double computeLikelihoodWholeAlignment()const;
+        void _printPrMatrix(Node *node, VVdouble *pr);
 
         std::vector<Node *> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const;
 
-        void ExtendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<Node *> &listNodes, unsigned long site) const;
+        void _extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<Node *> &listNodes, unsigned long site) const;
 
-        //friend class RHomogeneousMixedTreeLikelihood;
-        double computeLikelihoodSite(std::vector<Node *> &likelihoodNodes, size_t i) const;
+        double computeLikelihoodForASite(std::vector<Node *> &likelihoodNodes, size_t i) const;
 
         double computeLikelihoodWholeAlignmentEmptyColumn() const;
 
-        double computeLikelihoodWholeSites() const;
+        //double computeLikelihoodWholeSites() const;
+        //double computeLikelihoodWholeAlignment()const;
 
         int countNonGapCharacterInSite(const SiteContainer &sites, int siteID) const;
+
+
+        //friend class RHomogeneousMixedTreeLikelihood;
+
     };
 }
 #endif //MINIJATI_RHOMOGENEOUSTREELIKELIHOOD_PIP_HPP
