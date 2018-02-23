@@ -42,7 +42,7 @@
  * @see For more information visit: 
  */
 #include <glog/logging.h>
-#include <elf.h>
+//#include <elf.h>
 
 #include "Utilities.hpp"
 
