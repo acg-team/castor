@@ -42,6 +42,7 @@
  * @see For more information visit: 
  */
 #include <glog/logging.h>
+#include <elf.h>
 
 #include "Utilities.hpp"
 
@@ -324,6 +325,28 @@ Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix
     return m;
 }
 
+bpp::RowMatrix<double> MatrixBppUtils::Eigen2Matrix(const Eigen::MatrixXd &M) {
+
+    size_t rows, cols;
+
+    rows = M.rows();
+    cols = M.cols();
+
+    bpp::RowMatrix<double> m;
+    m.resize(rows,cols);
+
+    for(int r=0; r<rows; r++){
+        for (int c=0; c<cols; c++){
+
+            m(r,c) = M(r,c);
+
+        }
+
+    }
+
+    return m;
+}
+
 Eigen::VectorXd MatrixBppUtils::Vector2Eigen(const std::vector<double> &inVector) {
 
     Eigen::VectorXd vector = Eigen::VectorXd::Zero(inVector.size());
@@ -373,6 +396,24 @@ double MatrixBppUtils::dotProd(const std::vector<double> *x,const std::vector<do
     return val;
 }
 
+std::vector<double> MatrixBppUtils::cwiseProd(std::vector<double> *x,std::vector<double> *y){
+
+    std::vector<double> val;
+
+
+    if(x->size() != y->size()){
+        perror("ERROR: MatrixBppUtils::dotProd");
+    }
+
+    val.resize(x->size());
+
+    for(unsigned  long i=0;i<x->size();i++){
+        val.at(i) = (x->at(i) * y->at(i));
+    }
+
+    return val;
+}
+
 double MatrixBppUtils::sumVector(std::vector<double> *x){
 
     double val;
@@ -385,6 +426,21 @@ double MatrixBppUtils::sumVector(std::vector<double> *x){
     return val;
 }
 
+std::vector<double> MatrixBppUtils::matrixVectorProd(bpp::RowMatrix<double> &M, std::vector<double> &A){
+
+    std::vector<double> B;
+    B.resize(A.size());
+
+    for(int i=0;i<A.size();i++){
+        B[i]=0;
+        for(int j=0;j<A.size();j++){
+            B[i] += M(i,j)*A.at(j);
+
+        }
+    }
+
+    return B;
+}
 
 bpp::DistanceMatrix *InputUtils::parseDistanceMatrix(std::string filepath) {
 

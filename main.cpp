@@ -94,6 +94,7 @@
 #include "progressivePIP.hpp"
 #include "JATIApplication.hpp"
 #include "TSHTopologySearch.hpp"
+#include "pPIP.hpp"
 
 using namespace tshlib;
 
@@ -348,10 +349,10 @@ int main(int argc, char *argv[]) {
             likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
 
             // Set survival probability to each node in the list
-            likelihood->setAllIotas(fullTraversalNodes);
+            //likelihood->setAllIotas(fullTraversalNodes);
 
             // Set deletion probability to each node in the list
-            likelihood->setAllBetas(fullTraversalNodes);
+            //likelihood->setAllBetas(fullTraversalNodes);
 
             // set probability matrix -- exponential of substitution rates
             likelihood->computePr(fullTraversalNodes, alpha->getSize());
@@ -359,11 +360,33 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] Starting MSA inference using Pro-PIP...";
 
+            /*
             VirtualNode *root = utree->rootnode;
 
             MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, tree, &tm, pi, lambda, mu, sequences, alpha, 1.0, false);
-            //sites = new bpp::VectorSiteContainer(*sequences);
+             */
 
+            //********************************************************************************
+            //********************************************************************************
+            //********************************************************************************
+            //********************************************************************************
+
+            double tau;
+
+            auto progressivePIP=new bpp::pPIP(alphabet);
+
+            progressivePIP->init(tree, &tm, fullTraversalNodes, submodel->getFrequencies(),lambda, mu);
+
+            progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
+
+            std::cout<<"PIPAligner done...\n";
+
+            //********************************************************************************
+            //********************************************************************************
+            //********************************************************************************
+            //********************************************************************************
+
+            /*
             sequences = new bpp::VectorSequenceContainer(alpha);
 
             for (int i = 0; i < MSA.MSAs.size(); i++) {
@@ -391,9 +414,26 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] MSA inference using Pro-PIP terminated successfully!";
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << MSA.score;
+
+            */
+
         }
 
-        //------------------------------------------------------------------------------------------------------------------
+
+
+
+        //--------------------------------------------------------------------------------------------------------------
+        // best tree from MSA marginalization
+        if(false){
+            auto treesearch = new tshlib::TreeSearch;
+            Utree *best_tree_from_MSA=progressivePIP::marginalizationOverMSAs(treesearch,alpha,pi,lambda, mu, sequences, tm);
+        }
+        //--------------------------------------------------------------------------------------------------------------
+
+
+
+
+        //--------------------------------------------------------------------------------------------------------------
         // Initialization likelihood functions
 
         double logLK = 0;
