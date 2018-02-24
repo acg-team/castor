@@ -200,6 +200,10 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     // Set indicator function on leafs
     //setIndicatorFunction(sites);
 
+    // Set indicator function on leafs
+    setIndicatorFunction(*data_);                       //TODO: indicator function must be computed on: topology changes
+    computePostOrderNodeList(tree_->getRootNode());     //TODO: post-order list must be computed on: topology changes
+    setInsertionHistories(*data_);
 
     if (verbose_)
         ApplicationTools::displayResult("Number of distinct sites", TextTools::toString(nbDistinctSites_));
@@ -509,10 +513,10 @@ void RHomogeneousTreeLikelihood_PIP::recombineFvAtNode(Node *node) const{
     }
     //--------------------------------------------------------------------------------------------
     // Debug ** array fetching + printing **
-    VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
-    VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
-    _printFV(node, _likelihoods_node);
-    _printFV(node, _likelihoods_empty_node);
+    //VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
+    //VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
+    //_printFV(node, _likelihoods_node);
+    //_printFV(node, _likelihoods_empty_node);
     //--------------------------------------------------------------------------------------------
 
 }
@@ -541,10 +545,10 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
         //--------------------------------------------------------------------------------------------
         // Debug ** array fetching + printing **
-        VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
-        VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
-        _printFV(node, _likelihoods_node);
-        _printFV(node, _likelihoods_empty_node);
+        //VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
+        //VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
+        //_printFV(node, _likelihoods_node);
+        //_printFV(node, _likelihoods_empty_node);
         //--------------------------------------------------------------------------------------------
 
     }
@@ -590,8 +594,8 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
     setAllBetas();                                      //TODO: betas must be computed when: branch lengths + mu
 
     // Set indicator function on leafs
-    setIndicatorFunction(*data_);                       //TODO: indicator function must be computed on: topology changes
-    computePostOrderNodeList(tree_->getRootNode());     //TODO: post-order list must be computed on: topology changes
+    //setIndicatorFunction(*data_);                       //TODO: indicator function must be computed on: topology changes
+    //computePostOrderNodeList(tree_->getRootNode());     //TODO: post-order list must be computed on: topology changes
 
     // Calls the routine to compute the FV values
     computeTreeLikelihood();
@@ -1002,7 +1006,7 @@ void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood() {
     //computePostOrderNodeList(tree_->getRootNode());
 
     // Set insertion histories
-    setInsertionHistories(*data_);
+    //setInsertionHistories(*data_);
 
     computeSubtreeLikelihood();
 
@@ -1619,7 +1623,7 @@ double RHomogeneousTreeLikelihood_PIP::compute1DLikelihoodForBranchLeghts(const 
 
     // Restore previous branch length
     this->setParameterValue(variable, BranchLength_1);
-    fireParameterChanged(getParameters());
+    //fireParameterChanged(getParameters());
 
     // Compute the slope
     double diff_bl = BranchLength_2 - BranchLength_1;
@@ -1664,7 +1668,7 @@ double RHomogeneousTreeLikelihood_PIP::compute2DLikelihoodForBranchLeghts(const 
 
     // Restore previous branch length
     this->setParameterValue(variable, BranchLength_1);
-    fireParameterChanged(getParameters());
+    //fireParameterChanged(getParameters());
 
 
     double op = lk_2 - lk_1;
@@ -1686,7 +1690,7 @@ double RHomogeneousTreeLikelihood_PIP::evaluateLikelihoodPointForBranchDerivativ
 
     // Evaluate the likelihood function under the perturbed parameter value
     this->setParameterValue(variable, new_branchlength);
-    fireParameterChanged(getParameters());
+    //fireParameterChanged(getParameters());
     lk_2 = -getValue();
 
     return lk_2;
