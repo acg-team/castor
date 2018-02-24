@@ -387,7 +387,7 @@ double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
         if (bestMove) {
 
             LOG(INFO) << "[TSH Cycle - Topology] (cycle" << std::setfill('0') << std::setw(3) << cycle_no + 1 << ")\t"
-                      << "lk = " << bestMove->getLikelihood() << " | "
+                      << "lk = " << std::setprecision(12) << bestMove->getLikelihood() << " | "
                       << bestMove->move_class << "." << std::setfill('0') << std::setw(3) << bestMove->move_id
                       << " [" << bestMove->getSourceNode()->getNodeName() << " -> " << bestMove->getTargetNode()->getNodeName() << "]";
 

@@ -560,6 +560,7 @@ void RHomogeneousTreeLikelihood_PIP::displayLikelihood(const Node *node) {
 
 
 void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &params) {
+
     applyParameters();
 
     if (rateDistribution_->getParameters().getCommonParametersWith(params).size() > 0
@@ -578,19 +579,19 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
         rootFreqs_ = model_->getFrequencies();
     }
 
-    tau_ = tree_->getTotalLength();
-    computeNu();
+    // Recompute the tree length
+    tau_ = tree_->getTotalLength();                     //TODO: tau_ must be computed when: branch lengths
+    computeNu();                                        //TODO: nu must be computed when: branch lengths + lambda + mu
 
     // Set all iotas
-    setAllIotas();
+    setAllIotas();                                      //TODO: iotas must be computed when: branch lengths + mu
 
     // Set all betas
-    setAllBetas();
+    setAllBetas();                                      //TODO: betas must be computed when: branch lengths + mu
 
     // Set indicator function on leafs
-    setIndicatorFunction(*data_);
-
-    computePostOrderNodeList(tree_->getRootNode());
+    setIndicatorFunction(*data_);                       //TODO: indicator function must be computed on: topology changes
+    computePostOrderNodeList(tree_->getRootNode());     //TODO: post-order list must be computed on: topology changes
 
     // Calls the routine to compute the FV values
     computeTreeLikelihood();
@@ -994,8 +995,6 @@ void RHomogeneousTreeLikelihood_PIP::setIndicatorFunction(const SiteContainer &s
 
 
 /********************************************************************************************************************************************/
-
-
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood() {
     //LOG(INFO) <<"RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood()";
@@ -1649,12 +1648,7 @@ double RHomogeneousTreeLikelihood_PIP::compute2DLikelihoodForBranchLeghts(const 
     const Node *branch = nodes_[brI];
 
     double lk_1 = 0;
-    double dlk_1 = 0;
-
     double lk_2 = 0;
-    double d2lk_2 = 0;
-
-    double lk_3 = 0;
     double dbl2 = 0;
     double perturbation = 0.0001;
 

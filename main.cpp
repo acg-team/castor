@@ -95,6 +95,7 @@
 #include "JATIApplication.hpp"
 #include "TSHTopologySearch.hpp"
 #include "pPIP.hpp"
+#include "Optimizators.hpp"
 
 using namespace tshlib;
 
@@ -158,8 +159,11 @@ int main(int argc, char *argv[]) {
                 alpha = new bpp::ProteicAlphabet_Extended();
             }
         } else {
-
-            alpha = new bpp::DNA();
+            if (PAR_Alphabet.find("DNA") != std::string::npos) {
+                alpha = new bpp::DNA();
+            } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
+                alpha = new bpp::ProteicAlphabet();
+            }
         }
 
         // Get alphabet from parameters
@@ -466,8 +470,10 @@ int main(int argc, char *argv[]) {
         //----------------------------------------------
         // Optimise parameters automatically
         //if (!PAR_model_indels) {
-            tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(PhylogeneticsApplicationTools::optimizeParameters(tl, tl->getParameters(),
-                                                                                                                     jatiapp.getParams(), "", true, true, 0));
+        tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl, tl->getParameters(), jatiapp.getParams(), "", true, true, 0));
+
+        //tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(PhylogeneticsApplicationTools::optimizeParameters(tl, tl->getParameters(), jatiapp.getParams(), "", true, true,
+        // 0));
         //}
         //----------------------------------------------
         // Remove the root
