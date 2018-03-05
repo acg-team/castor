@@ -49,6 +49,7 @@
 #include <boost/bimap.hpp>
 #include <Bpp/Phyl/Tree.h>
 #include <Bpp/Phyl/TreeTemplate.h>
+#include <Bpp/Phyl/Likelihood/AbstractHomogeneousTreeLikelihood.h>
 
 
 namespace UtreeBppUtils{
@@ -66,10 +67,18 @@ using namespace tshlib;
     bpp::TreeTemplate<bpp::Node> *convertTree_u2b(Utree *in_tree);
     void _traverseTree_u2b(bpp::Node *target, VirtualNode *source);
 
+
+    void updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, Utree *inUTree, treemap &tm);
+
+    void updateTree_u2b(bpp::Tree *inBTree, Utree *inUTree, treemap &tm);
+
+
     void associateNode2Alignment(bpp::SequenceContainer *sequences, Utree *in_tree);
 
 
     void renameInternalNodes(bpp::Tree *in_tree, std::string prefix = "V");
+
+    std::vector<bpp::Node *> remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm);
 
 }
 
@@ -98,6 +107,13 @@ namespace InputUtils {
 
     bpp::DistanceMatrix *parseDistanceMatrix(std::string filepath);
 
+
+}
+
+
+namespace OutputUtils {
+
+    void printParametersLikelihood(bpp::AbstractHomogeneousTreeLikelihood *tl);
 
 }
 

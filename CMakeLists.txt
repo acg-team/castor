@@ -145,7 +145,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 #    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 #endif()
 
-add_definitions(-DOMPENABLED=1)
+add_definitions(-DOMPENABLED=0)
 
 set(SOURCES
         main.cpp

@@ -45,6 +45,7 @@
 //#include <elf.h>
 
 #include "Utilities.hpp"
+#include "TSHHomogeneousTreeLikelihood.hpp"
 
 
 /*
@@ -304,6 +305,118 @@ void UtreeBppUtils::renameInternalNodes(bpp::Tree *in_tree, std::string prefix) 
 
 }
 
+std::vector<bpp::Node *> UtreeBppUtils::remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm) {
+
+    std::vector<bpp::Node *> newList;
+
+    for (auto &vnode:inputList) {
+
+        newList.push_back(tree->getNode(tm.right.at(vnode)));
+    }
+
+    return newList;
+}
+
+void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib::Utree *inUTree, UtreeBppUtils::treemap &tm) {
+
+    //inUTree->addVirtualRootNode();
+    std::vector<tshlib::VirtualNode *> nodelist;
+
+    nodelist = inUTree->listVNodes;
+    //nodelist.push_back(inUTree->rootnode);
+    //bpp::Node *rNode = inBTree.getRootNode();
+    //rNode->removeSons();
+
+    std::map<int, bpp::Node *> tempMap;
+
+    // reset inBtree
+    for (auto &bnode:inBTree.getNodes()) {
+
+        tempMap.insert(std::pair<int, bpp::Node *>(bnode->getId(), bnode));
+
+        bnode->removeSons();
+        bnode->removeFather();
+
+    }
+
+
+    for (auto &vnode:nodelist) {
+
+        std::cerr << "vnode " << vnode->getNodeName();
+        if (!vnode->isTerminalNode()) {
+
+            // get corrisponding sons in inBTree
+            //bpp::Node *leftBNode  = inBTree.getNode(tm.right.at(vnode->getNodeLeft()));
+            //bpp::Node *rightBNode = inBTree.getNode(tm.right.at(vnode->getNodeRight()));
+            bpp::Node *leftBNode = tempMap[tm.right.at(vnode->getNodeLeft())];
+            bpp::Node *rightBNode = tempMap[tm.right.at(vnode->getNodeRight())];
+            // get corrisponding parent in inBTree
+            //bpp::Node *pNode = inBTree.getNode(tm.right.at(vnode));
+            bpp::Node *pNode = tempMap[tm.right.at(vnode)];
+
+            // Empty array of sons on the parent node
+            //pNode->removeSons();
+
+            //leftBNode->removeFather();
+            //rightBNode->removeFather();
+            leftBNode->setFather(pNode);
+            rightBNode->setFather(pNode);
+            //Add new sons
+            pNode->setSon(0, leftBNode);
+            pNode->setSon(1, rightBNode);
+
+            std::cerr << "\t internal";
+
+        } else {
+
+            std::cerr << "\t leaf";
+
+            //bpp::Node *pNode = inBTree.getNode(tm.right.at(vnode->getNodeUp()));
+            //bpp::Node *cNode = inBTree.getNode(tm.right.at(vnode));
+            //cNode->removeFather();
+            //cNode->setFather(pNode);
+
+        }
+        // in case the current vnode is also the pseudo-root
+        if (vnode == vnode->getNodeUp()->getNodeUp()) {
+            std::cerr << "\tvnode pseudoroot";
+            //bpp::Node *leftBNode  = inBTree.getNode(tm.right.at(vnode->getNodeLeft()));
+            //bpp::Node *rightBNode = inBTree.getNode(tm.right.at(vnode->getNodeRight()));
+
+
+
+            bpp::Node *leftBNode = tempMap[tm.right.at(vnode)];
+            bpp::Node *rightBNode = tempMap[tm.right.at(vnode->getNodeUp())];
+            // get corrisponding parent in inBTree
+            //bpp::Node *pNode = inBTree.getNode(tm.right.at(vnode));
+            //bpp::Node *pNode = tempMap[tm.right.at(vnode)].second;
+
+
+            inBTree.getRootNode()->removeSons();
+
+            //leftBNode->removeFather();
+            //rightBNode->removeFather();
+
+            leftBNode->setFather(inBTree.getRootNode());
+            rightBNode->setFather(inBTree.getRootNode());
+
+            inBTree.getRootNode()->setSon(0, leftBNode);
+            inBTree.getRootNode()->setSon(1, rightBNode);
+
+        }
+
+
+        std::cerr << "\t done\n";
+
+    }
+    //inUTree->removeVirtualRootNode();
+
+}
+
+void UtreeBppUtils::updateTree_u2b(bpp::Tree *inBTree, tshlib::Utree *inUTree, UtreeBppUtils::treemap &tm) {
+
+}
+
 Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix) {
 
     size_t rows, cols;
@@ -522,4 +635,55 @@ bpp::DistanceMatrix *InputUtils::parseDistanceMatrix(std::string filepath) {
     */
 
     return outmatrix;
+}
+
+void OutputUtils::printParametersLikelihood(bpp::AbstractHomogeneousTreeLikelihood *tl) {
+    bpp::ParameterList parModel;
+    std::ostringstream oss;
+
+    bpp::AbstractHomogeneousTreeLikelihood *ttl;
+    if (dynamic_cast<bpp::TSHHomogeneousTreeLikelihood *>( tl )) {
+        bpp::TSHHomogeneousTreeLikelihood *flk = dynamic_cast<bpp::TSHHomogeneousTreeLikelihood *>(tl);
+        ttl = flk->getLikelihoodFunction();
+    } else {
+        ttl = tl;
+    }
+
+
+    parModel = ttl->getSubstitutionModelParameters();
+    if (parModel.size() > 0) {
+        oss << "model=" << ttl->getModel()->getName() << "(";
+        for (auto &parameterName:parModel.getParameterNames()) {
+            oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";
+        }
+        oss << ")";
+        LOG(INFO) << oss.str();
+    }
+    oss.clear();
+    oss.str("");
+
+
+    parModel = ttl->getRateDistributionParameters();
+    if (parModel.size() > 0) {
+        oss << "rates=" << ttl->getRateDistribution()->getName() << "(";
+        for (auto &parameterName:parModel.getParameterNames()) {
+            oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";
+        }
+        oss << ")";
+        LOG(INFO) << oss.str();
+    }
+    oss.clear();
+    oss.str("");
+
+    parModel = ttl->getBranchLengthsParameters();
+    if (parModel.size() > 0) {
+        oss << "branches=" << ttl->getBranchLengthsParameters().size() << "(";
+        for (auto &parameterName:parModel.getParameterNames()) {
+            oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";;
+        }
+        oss << ")";
+        LOG(INFO) << oss.str();
+    }
+    oss.clear();
+    oss.str("");
 }
