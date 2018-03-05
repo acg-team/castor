@@ -72,7 +72,7 @@ namespace bpp {
          * @return The score variation of the TSH.
          * @throw NodeException If the node does not define a valid TSH.
          */
-        virtual double testTSHRearrangement(int nodeId) const throw(NodeException) = 0;
+        //virtual double testTSHRearrangement(int nodeId) const throw(NodeException) = 0;
 
         /**
          * @brief Perform a TSH movement.
@@ -80,7 +80,7 @@ namespace bpp {
          * @param nodeId The id of the node defining the TSH movement.
          * @throw NodeException If the node does not define a valid TSH.
          */
-        virtual void doTSHRearrangement(int nodeId) throw(NodeException) = 0;
+        //virtual void doTSHRearrangement(int nodeId) throw(NodeException) = 0;
 
         /**
          * @brief Get the tree associated to this TSHSearchable object.

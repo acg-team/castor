@@ -42,6 +42,7 @@
  * @see For more information visit: 
  */
 
+#include <Bpp/Numeric/Function/ThreePointsNumericalDerivative.h>
 #include <Bpp/Numeric/Matrix/MatrixTools.h>
 #include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
 #include <Bpp/Phyl/PatternTools.h>
@@ -402,7 +403,6 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFvEmpty(Node *node) const {
 void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(Node *node) const {
 
     VVVdouble *pxy__node = &pxy_[node->getId()];
-
     VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
 
     double val;
@@ -410,44 +410,16 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(Node *node) const 
         VVdouble *pxy__node_c = &(*pxy__node)[c];
         for (size_t i = 0; i < nbDistinctSites_; i++) {
             for (size_t x = 0; x < nbStates_; x++) {
-
-                /*
-                if ((*_likelihoods_node)[i][c][x] == 1) {
-                    for (size_t y = 0; y < nbStates_; y++) {
-                        (*_likelihoods_node)[i][c][y] = (*pxy__node_c)[y][x];
-                    }
-                    break;
-                }
-                */
-
                 val=0.0;
                 for (size_t y = 0; y < nbStates_; y++) {
                     val += (*pxy__node_c)[x][y] * indicatorFun_[node][i][y];
-
                 }
+                // Store value
                 (*_likelihoods_node)[i][c][x]=val;
             }
         }
+
     }
-
-    //alternative: first sites and then classes
-    /*
-    for (size_t i = 0; i < nbSites_; i++) {
-        for (size_t c = 0; c < nbClasses_; c++) {
-
-            VVdouble *pxy__node_c = &(*pxy__node)[c];
-
-            for (size_t row = 0; row < nbStates_; row++) {
-                if ((*_likelihoods_node)[i][c][row] == 1) {
-                    for (size_t col = 0; col < nbStates_; col++) {
-                        (*_likelihoods_node)[i][c][col] = (*pxy__node_c)[col][row];
-                    }
-                    break;
-                }
-            }
-        }
-    }
-    */
 
 }
 
@@ -565,6 +537,11 @@ void RHomogeneousTreeLikelihood_PIP::displayLikelihood(const Node *node) {
 
 void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &params) {
 
+    bool onTopologyChange = false;
+    if (params.size() != getParameters().size()) {
+        onTopologyChange = true;
+    }
+
     applyParameters();
 
     if (rateDistribution_->getParameters().getCommonParametersWith(params).size() > 0
@@ -596,6 +573,17 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
     // Set indicator function on leafs
     //setIndicatorFunction(*data_);                       //TODO: indicator function must be computed on: topology changes
     //computePostOrderNodeList(tree_->getRootNode());     //TODO: post-order list must be computed on: topology changes
+
+
+    if (onTopologyChange) {
+        computePostOrderNodeList(tree_->getRootNode());
+
+        setIndicatorFunction(*data_);
+
+        // Set ancestral histories
+        setInsertionHistories(*data_);
+
+    }
 
     // Calls the routine to compute the FV values
     computeTreeLikelihood();
@@ -687,7 +675,7 @@ void RHomogeneousTreeLikelihood_PIP::setAllIotas() {
 
     if (fabs(mu_.getValue()) < 1e-8) {
         //perror("ERROR in set_iota: mu too small");
-        LOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu_.getValue();
+        DLOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu_.getValue();
 
     }
 
@@ -696,7 +684,7 @@ void RHomogeneousTreeLikelihood_PIP::setAllIotas() {
 
     if (fabs(T_) < 1e-8) {
         //perror("ERROR in set_iota: T too small");
-        LOG(WARNING) << "[Parameter value] The parameter T is too small! T = " << T_;
+        DLOG(WARNING) << "[Parameter value] The parameter T is too small! T = " << T_;
     }
 
     for (auto &node:tree_->getNodes()) {
@@ -722,7 +710,7 @@ void RHomogeneousTreeLikelihood_PIP::setAllBetas() {
 
     if (fabs(mu_.getValue()) < 1e-8) {
         //perror("ERROR in set_iota: mu too small");
-        LOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu_.getValue();
+        DLOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu_.getValue();
 
     }
 
@@ -1238,15 +1226,19 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
 
     const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
 
-    // For each site in the alignment
-    for (size_t i = 0; i < nbDistinctSites_; i++) {
-
+    size_t i;
+//#pragma omp barrier
+//#pragma omp parallel for if (OMPENABLED) private(i)
+    for (i = 0; i < nbDistinctSites_; i++) {
+        // For each site in the alignment
+        //int tid = omp_get_thread_num();
+        //printf("site%d@thread_%d\n",i,tid);
         double lk_site = computeLikelihoodForASite(listNodes, i);
 
         lk_sites[i] = log(lk_site) * rootWeights->at(i);
         VLOG(3) << "log_lk[" << i << "]=" << lk_sites[i] << std::endl;
     }
-
+//#pragma omp barrier
     // Sum all the values stored in the lk vector
     logLK= MatrixBppUtils::sumVector(&lk_sites);
     VLOG(3) << "LK Sites [BPP] "<< logLK;
@@ -1338,7 +1330,6 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodSubtreeForASiteForARateCl
 
 /********************************************************************************************************************************************/
 
-
 double RHomogeneousTreeLikelihood_PIP::getDLikelihoodForASiteForARateClass(size_t site, size_t rateClass) const {
 
     double dl = 0;
@@ -1407,7 +1398,6 @@ double RHomogeneousTreeLikelihood_PIP::getDLikelihoodForASiteForARateClass(size_
 
 }
 
-
 double RHomogeneousTreeLikelihood_PIP::getDLikelihoodForASite(size_t site) const {
     // Derivative of the sum is the sum of derivatives:
     double dl = 0;
@@ -1419,12 +1409,10 @@ double RHomogeneousTreeLikelihood_PIP::getDLikelihoodForASite(size_t site) const
     return dl;
 }
 
-
 double RHomogeneousTreeLikelihood_PIP::getDLogLikelihoodForASite(size_t site) const {
     // d(f(g(x)))/dx = dg(x)/dx . df(g(x))/dg :
     return getDLikelihoodForASite(site) / getLikelihoodForASite(site);
 }
-
 
 double RHomogeneousTreeLikelihood_PIP::getDLogLikelihood() const {
     // Derivative of the sum is the sum of derivatives:
@@ -1434,7 +1422,6 @@ double RHomogeneousTreeLikelihood_PIP::getDLogLikelihood() const {
     }
     return dl;
 }
-
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeDLikelihood(const std::string &variable) {
     // Get the node with the branch whose length must be derivated:
@@ -1507,7 +1494,6 @@ void RHomogeneousTreeLikelihood_PIP::computeTreeDLikelihood(const std::string &v
     // Now we go down the tree toward the root node:
     computeDownSubtreeDLikelihood(father);
 }
-
 
 void RHomogeneousTreeLikelihood_PIP::computeDownSubtreeDLikelihood(const Node *node) {
     const Node *father = node->getFather();
@@ -1593,14 +1579,15 @@ double RHomogeneousTreeLikelihood_PIP::getFirstOrderDerivative(const std::string
 
     //const_cast<RHomogeneousTreeLikelihood_PIP*>(this)->computeTreeDLikelihood(variable);
     //double result = -getDLogLikelihood();
-    double result = const_cast<RHomogeneousTreeLikelihood_PIP *>(this)->compute1DLikelihoodForBranchLeghts(variable);
+    double result = const_cast<RHomogeneousTreeLikelihood_PIP *>(this)->computeN1DerivativeLikelihood(variable);
+    //auto der = new ThreePointsNumericalDerivative(const_cast<RHomogeneousTreeLikelihood_PIP *>(this));
+    //double result2 = der->df(variable, this->getParameters());
 
-    VLOG(1) << "1D: " << result;
+    VLOG(3) << "1D: " << result;
     return result;
 }
 
-
-double RHomogeneousTreeLikelihood_PIP::compute1DLikelihoodForBranchLeghts(const std::string &variable) {
+double RHomogeneousTreeLikelihood_PIP::computeN1DerivativeLikelihood(const std::string &variable) {
 
     size_t brI = TextTools::to<size_t>(variable.substr(5));
     const Node *branch = nodes_[brI];
@@ -1645,42 +1632,6 @@ double RHomogeneousTreeLikelihood_PIP::compute1DLikelihoodForBranchLeghts(const 
 
 }
 
-
-double RHomogeneousTreeLikelihood_PIP::compute2DLikelihoodForBranchLeghts(const std::string &variable) {
-
-    size_t brI = TextTools::to<size_t>(variable.substr(5));
-    const Node *branch = nodes_[brI];
-
-    double lk_1 = 0;
-    double lk_2 = 0;
-    double dbl2 = 0;
-    double perturbation = 0.0001;
-
-    double BranchLength_1 = branch->getDistanceToFather();
-    double BranchLength_2 = (branch->getDistanceToFather() + perturbation * 2);
-
-
-    // Evaluate the likelihood function under the incoming parameter value
-    lk_1 = -getValue();
-
-    // Evaluate the second point of the function
-    lk_2 = evaluateLikelihoodPointForBranchDerivative(variable, BranchLength_2);
-
-    // Restore previous branch length
-    this->setParameterValue(variable, BranchLength_1);
-    //fireParameterChanged(getParameters());
-
-
-    double op = lk_2 - lk_1;
-    dbl2 = op / log(BranchLength_2 - BranchLength_1);
-
-
-    d2bl_ = (dbl2 - d1bl_) / log(perturbation / 2);
-
-    return d2bl_;
-}
-
-
 double RHomogeneousTreeLikelihood_PIP::evaluateLikelihoodPointForBranchDerivative(const std::string &variable, double new_branchlength) {
 
     size_t brI = TextTools::to<size_t>(variable.substr(5));
@@ -1698,7 +1649,6 @@ double RHomogeneousTreeLikelihood_PIP::evaluateLikelihoodPointForBranchDerivativ
 }
 
 /********************************************************************************************************************************************/
-
 
 double RHomogeneousTreeLikelihood_PIP::getD2LikelihoodForASiteForARateClass(size_t site, size_t rateClass) const {
     double d2l = 0;
@@ -1876,6 +1826,40 @@ void RHomogeneousTreeLikelihood_PIP::computeDownSubtreeD2Likelihood(const Node *
     computeDownSubtreeD2Likelihood(father);
 }
 
+double RHomogeneousTreeLikelihood_PIP::computeN2DerivativeLikelihood(const std::string &variable) {
+
+    size_t brI = TextTools::to<size_t>(variable.substr(5));
+    const Node *branch = nodes_[brI];
+
+    double lk_1 = 0;
+    double lk_2 = 0;
+    double dbl2 = 0;
+    double perturbation = 0.0001;
+
+    double BranchLength_1 = branch->getDistanceToFather();
+    double BranchLength_2 = (branch->getDistanceToFather() + perturbation * 2);
+
+
+    // Evaluate the likelihood function under the incoming parameter value
+    lk_1 = -getValue();
+
+    // Evaluate the second point of the function
+    lk_2 = evaluateLikelihoodPointForBranchDerivative(variable, BranchLength_2);
+
+    // Restore previous branch length
+    this->setParameterValue(variable, BranchLength_1);
+    //fireParameterChanged(getParameters());
+
+
+    double op = lk_2 - lk_1;
+    dbl2 = op / log(BranchLength_2 - BranchLength_1);
+
+
+    d2bl_ = (dbl2 - d1bl_) / log(perturbation / 2);
+
+    return d2bl_;
+}
+
 double RHomogeneousTreeLikelihood_PIP::getSecondOrderDerivative(const std::string &variable) const throw(Exception) {
     if (!hasParameter(variable))
         throw ParameterNotFoundException("RHomogeneousTreeLikelihood::getSecondOrderDerivative().", variable);
@@ -1889,9 +1873,9 @@ double RHomogeneousTreeLikelihood_PIP::getSecondOrderDerivative(const std::strin
     //const_cast<RHomogeneousTreeLikelihood_PIP*>(this)->computeTreeD2Likelihood(variable);
     //double result = -getD2LogLikelihood();
 
-    double result = const_cast<RHomogeneousTreeLikelihood_PIP *>(this)->compute2DLikelihoodForBranchLeghts(variable);
+    double result = const_cast<RHomogeneousTreeLikelihood_PIP *>(this)->computeN2DerivativeLikelihood(variable);
 
-    VLOG(1) << "2D: " << result;
+    VLOG(3) << "2D: " << result;
     return result;
 }
 

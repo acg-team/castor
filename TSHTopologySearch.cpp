@@ -44,6 +44,7 @@
 #include <glog/logging.h>
 #include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
 #include <random>
+#include <Bpp/Phyl/Io/Newick.h>
 #include "TSHTopologySearch.hpp"
 #include "Utilities.hpp"
 #include "RHomogeneousTreeLikelihood_PIP.hpp"
@@ -274,7 +275,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
             // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
             // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
             // we use a map to navigate between utree and bpp tree. The map is constant.
-            bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc);
+            bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc->getLikelihoodFunction());
             moveLogLK = c_likelihoodFunc->getLogLikelihood(listNodesWithinPath);
 
         } else {
@@ -308,7 +309,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
             if (model_indels) {
                 // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
                 // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
-                bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc);
+                bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc->getLikelihoodFunction());
                 // we use a map to navigate between utree and bpp tree. The map is constant.
 
                 moveLogLK = c_likelihoodFunc->getLogLikelihood(listNodesWithinPath);
@@ -391,8 +392,21 @@ double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
                       << bestMove->move_class << "." << std::setfill('0') << std::setw(3) << bestMove->move_id
                       << " [" << bestMove->getSourceNode()->getNodeName() << " -> " << bestMove->getTargetNode()->getNodeName() << "]";
 
+            std::vector<tshlib::VirtualNode *> listNodesWithinPath;
+            listNodesWithinPath = utree->computePathBetweenNodes(bestMove->getSourceNode(), bestMove->getTargetNode());
+            listNodesWithinPath.push_back(utree->rootnode);
+
             // Commit final move on the topology
             candidateMoves->commitMove(bestMove->move_id);
+            VLOG(1) << "utree after commit " << utree->printTreeNewick(true);
+            likelihoodFunc->topologyChange(listNodesWithinPath, utree);
+            bpp::Newick treeWriter;
+            bpp::TreeTemplate<Node> ttree(likelihoodFunc->getLikelihoodFunction()->getTree());
+            std::ostringstream oss;
+            treeWriter.write(ttree, oss);
+
+            VLOG(1) << "bpp after commit " << oss.str();
+
 
             //LOG(INFO) << "[TSH Cycle - Topology]\t" << utree->printTreeNewick(false);
 

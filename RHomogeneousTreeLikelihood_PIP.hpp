@@ -78,6 +78,7 @@ namespace bpp {
         mutable UtreeBppUtils::treemap treemap_;
 
 
+
     protected:
 
         double minusLogLik_;
@@ -188,8 +189,7 @@ namespace bpp {
 
         double getNu() const { return nu_; }
 
-        const UtreeBppUtils::treemap &getTreemap() const { return treemap_; }
-
+        UtreeBppUtils::treemap &getTreemap() { return treemap_; }
 
         double getLikelihood() const {
             std::cerr << "getLikelihood()" << std::endl;
@@ -274,9 +274,9 @@ namespace bpp {
          */
         double getFirstOrderDerivative(const std::string &variable) const throw(Exception);
 
-        double compute1DLikelihoodForBranchLeghts(const std::string &variable);
+        double computeN1DerivativeLikelihood(const std::string &variable);
 
-        double compute2DLikelihoodForBranchLeghts(const std::string &variable);
+        double computeN2DerivativeLikelihood(const std::string &variable);
 
         double evaluateLikelihoodPointForBranchDerivative(const std::string &variable, double new_branchlength);
         /** @} */

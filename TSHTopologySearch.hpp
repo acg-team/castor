@@ -50,6 +50,8 @@
 #include <TreeRearrangment.hpp>
 #include <Bpp/Phyl/Likelihood/AbstractHomogeneousTreeLikelihood.h>
 #include "TSHSearchable.hpp"
+#include "Utilities.hpp"
+#include "TSHHomogeneousTreeLikelihood.hpp"
 
 namespace bpp {
 
@@ -171,7 +173,7 @@ namespace tshlib {
     class TreeSearch {
 
     private:
-        bpp::AbstractHomogeneousTreeLikelihood *likelihoodFunc;
+        bpp::TSHHomogeneousTreeLikelihood *likelihoodFunc;
         double initialLikelihoodValue;
         TreeSearchHeuristics tshStrategy;
         TreeRearrangmentOperations tshOperations;
@@ -184,7 +186,7 @@ namespace tshlib {
         bpp::VectorSiteContainer *tmp_sites;
         bpp::TransitionModel *tmp_transmodel;
         bpp::DiscreteDistribution *tmp_rdist;
-    public:
+        mutable UtreeBppUtils::treemap treemap_;
 
 
     public:
@@ -201,7 +203,7 @@ namespace tshlib {
 
         ~TreeSearch() = default;
 
-        void setLikelihoodFunc(bpp::AbstractHomogeneousTreeLikelihood *in_likelihoodFunc) {
+        void setLikelihoodFunc(bpp::TSHHomogeneousTreeLikelihood *in_likelihoodFunc) {
             likelihoodFunc = in_likelihoodFunc;
         }
 
@@ -265,6 +267,14 @@ namespace tshlib {
 
         void setStartingNodes(int in_search_startingnodes) {
             search_startingnodes = in_search_startingnodes;
+        }
+
+        const UtreeBppUtils::treemap &getTreemap() const {
+            return treemap_;
+        }
+
+        void setTreemap(const UtreeBppUtils::treemap &treemap_) {
+            TreeSearch::treemap_ = treemap_;
         }
 
         double performTreeSearch(Utree *inputTree);

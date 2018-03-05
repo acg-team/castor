@@ -47,51 +47,35 @@
 using namespace bpp;
 
 
-TSHHomogeneousTreeLikelihood::TSHHomogeneousTreeLikelihood(
-        const Tree &tree,
-        TransitionModel *model,
-        DiscreteDistribution *rDist,
-        bool checkRooted,
-        bool verbose)
+TSHHomogeneousTreeLikelihood::TSHHomogeneousTreeLikelihood(AbstractHomogeneousTreeLikelihood *lk,
+                                                           const SiteContainer &data,
+                                                           TransitionModel *model,
+                                                           DiscreteDistribution *rDist)
 throw(Exception) :
-        DRHomogeneousTreeLikelihood(tree, model, rDist, checkRooted, verbose),
-        //brLikFunction_(0),
+        RHomogeneousTreeLikelihood(lk->getTree(), model, rDist, false, false),
         brentOptimizer_(0),
         brLenTSHValues_(),
         brLenTSHParams_() {
+
+
+    likelihoodFunc_ = lk;
+
+    //optimiser_ = new PowellMultiDimensions(lk);
+    optimiser_ = new BfgsMultiDimensions(lk);
+    optimiser_->setConstraintPolicy(AutoParameter::CONSTRAINTS_AUTO);
+    optimiser_->setProfiler(new StdOut);
+    optimiser_->setMessageHandler(new StdOut);
+    optimiser_->setVerbose(0);
+
     brentOptimizer_ = new BrentOneDimension();
     brentOptimizer_->setConstraintPolicy(AutoParameter::CONSTRAINTS_AUTO);
     brentOptimizer_->setProfiler(0);
     brentOptimizer_->setMessageHandler(0);
     brentOptimizer_->setVerbose(0);
 }
-
-
-TSHHomogeneousTreeLikelihood::TSHHomogeneousTreeLikelihood(
-        const Tree &tree,
-        const SiteContainer &data,
-        TransitionModel *model,
-        DiscreteDistribution *rDist,
-        bool checkRooted,
-        bool verbose)
-throw(Exception) :
-        DRHomogeneousTreeLikelihood(tree, data, model, rDist, checkRooted, verbose),
-        //brLikFunction_(0),
-        brentOptimizer_(0),
-        brLenTSHValues_(),
-        brLenTSHParams_() {
-    brentOptimizer_ = new BrentOneDimension();
-    brentOptimizer_->setConstraintPolicy(AutoParameter::CONSTRAINTS_AUTO);
-    brentOptimizer_->setProfiler(0);
-    brentOptimizer_->setMessageHandler(0);
-    brentOptimizer_->setVerbose(0);
-    // We have to do this since the DRHomogeneousTreeLikelihood constructor will not call the overloaded setData method:
-    //brLikFunction_ = new BranchLikelihood(getLikelihoodData()->getWeights());
-}
-
 
 TSHHomogeneousTreeLikelihood::TSHHomogeneousTreeLikelihood(const TSHHomogeneousTreeLikelihood &lik) :
-        DRHomogeneousTreeLikelihood(lik),
+        RHomogeneousTreeLikelihood(lik),
         //brLikFunction_(0),
         brentOptimizer_(0),
         brLenTSHValues_(),
@@ -103,7 +87,7 @@ TSHHomogeneousTreeLikelihood::TSHHomogeneousTreeLikelihood(const TSHHomogeneousT
 }
 
 TSHHomogeneousTreeLikelihood &TSHHomogeneousTreeLikelihood::operator=(const TSHHomogeneousTreeLikelihood &lik) {
-    DRHomogeneousTreeLikelihood::operator=(lik);
+    RHomogeneousTreeLikelihood::operator=(lik);
     //if (brLikFunction_) delete brLikFunction_;
     //brLikFunction_  = dynamic_cast<BranchLikelihood*>(lik.brLikFunction_->clone());
     if (brentOptimizer_) delete brentOptimizer_;
@@ -116,15 +100,120 @@ TSHHomogeneousTreeLikelihood &TSHHomogeneousTreeLikelihood::operator=(const TSHH
 TSHHomogeneousTreeLikelihood::~TSHHomogeneousTreeLikelihood() {
     //if (brLikFunction_) delete brLikFunction_;
     delete brentOptimizer_;
+    delete optimiser_;
 }
 
 
-double TSHHomogeneousTreeLikelihood::testTSHRearrangement(int nodeId) const throw(NodeException) {
-    return 0;
+AbstractHomogeneousTreeLikelihood *TSHHomogeneousTreeLikelihood::getLikelihoodFunction() const {
+    return likelihoodFunc_;
 }
 
-void TSHHomogeneousTreeLikelihood::doTSHRearrangement(int nodeId) throw(NodeException) {
+void TSHHomogeneousTreeLikelihood::fixTopologyChanges(tshlib::Utree *inUTree) {
+
+    std::vector<tshlib::VirtualNode *> nodelist;
+    nodelist = inUTree->listVNodes;
+    UtreeBppUtils::treemap &tm = getTreeMap();
+
+    std::map<int, bpp::Node *> tempMap;
+    // reset inBtree
+    for (auto &bnode:tree_->getNodes()) {
+
+        tempMap.insert(std::pair<int, bpp::Node *>(bnode->getId(), bnode));
+        // Empty array of sons on the node
+        bnode->removeSons();
+        // Empty father connection
+        bnode->removeFather();
+
+    }
+
+    for (auto &vnode:nodelist) {
+
+        //std::cerr << "vnode " << vnode->getNodeName();
+        if (!vnode->isTerminalNode()) {
+
+            // get corrisponding sons in inBTree
+            bpp::Node *leftBNode = tempMap[tm.right.at(vnode->getNodeLeft())];
+            bpp::Node *rightBNode = tempMap[tm.right.at(vnode->getNodeRight())];
+
+            // get corrisponding parent in inBTree
+            bpp::Node *pNode = tempMap[tm.right.at(vnode)];
+
+            leftBNode->setFather(pNode);
+            rightBNode->setFather(pNode);
+
+            leftBNode->setDistanceToFather(likelihoodFunc_->getTree().getDistanceToFather(leftBNode->getId()));
+            rightBNode->setDistanceToFather(likelihoodFunc_->getTree().getDistanceToFather(rightBNode->getId()));
+            //Add new sons
+            pNode->setSon(0, leftBNode);
+            pNode->setSon(1, rightBNode);
+            pNode->setDistanceToFather(likelihoodFunc_->getTree().getDistanceToFather(pNode->getId()));
+            //std::cerr << "\t internal";
+
+        } else {
+
+            //std::cerr << "\t leaf";
+
+        }
+        // in case the current vnode is also the pseudo-root
+        if (vnode == vnode->getNodeUp()->getNodeUp()) {
+            //std::cerr << "\tvnode pseudoroot";
+
+            bpp::Node *leftBNode = tempMap[tm.right.at(vnode)];
+            bpp::Node *rightBNode = tempMap[tm.right.at(vnode->getNodeUp())];
+
+            tree_->getRootNode()->removeSons();
+
+            leftBNode->setFather(tree_->getRootNode());
+            rightBNode->setFather(tree_->getRootNode());
+            leftBNode->setDistanceToFather(likelihoodFunc_->getTree().getDistanceToFather(leftBNode->getId()));
+            rightBNode->setDistanceToFather(likelihoodFunc_->getTree().getDistanceToFather(rightBNode->getId()));
+
+            tree_->getRootNode()->setSon(0, leftBNode);
+            tree_->getRootNode()->setSon(1, rightBNode);
+
+        }
+
+        //std::cerr << "\t done\n";
+
+    }
+
+}
+
+void TSHHomogeneousTreeLikelihood::optimiseBranches(std::vector<tshlib::VirtualNode *> listNodes) {
+
+
+    std::vector<Node *> extractionNodes = UtreeBppUtils::remapNodeLists(listNodes, tree_, getTreeMap());
+    ParameterList parameters;
+    // For each node involved in the move, get the corrisponding branch parameter (no root)
+    for (auto &bnode:extractionNodes) {
+        if (bnode->hasFather()) {
+            Parameter brLen = likelihoodFunc_->getParameter("BrLen" + TextTools::toString(bnode->getId()));
+            brLen.setName("BrLen" + TextTools::toString(bnode->getId()));
+            parameters.addParameter(brLen);
+        }
+    }
+
+
+    likelihoodFunc_->setParameters(parameters);
+
+    // Re-estimate branch length:
+    optimiser_->init(parameters);
+    optimiser_->doInit(parameters);
+    optimiser_->getStopCondition()->setTolerance(0.001);
+    optimiser_->optimize();
+
+    likelihoodFunc_->setParameters(optimiser_->getParameters());
+
+    //brentOptimizer_->setFunction(likelihoodFunc_);
+    //brentOptimizer_->getStopCondition()->setTolerance(0.1);
+    //brentOptimizer_->setInitialInterval(brLen.getValue(), brLen.getValue() + 0.01);
+    //brentOptimizer_->init(parameters);
+    //brentOptimizer_->optimize();
+
 
 
 }
+
+
+
 
