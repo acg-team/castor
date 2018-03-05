@@ -54,7 +54,11 @@
 // From bpp-seq:
 #include <Bpp/Phyl/Likelihood/TreeLikelihood.h>
 #include <Bpp/Phyl/OptimizationTools.h>
+#include <TreeRearrangment.hpp>
 #include "Optimizators.hpp"
+#include "Utilities.hpp"
+#include "TSHHomogeneousTreeLikelihood.hpp"
+#include "TSHTopologySearch.hpp"
 
 using namespace bpp;
 
@@ -388,6 +392,12 @@ namespace bpp {
             unsigned int nstep = ApplicationTools::getParameter<unsigned int>("nstep", optArgs, 1, "", true, warn + 1);
 
             if (optimizeTopo) {
+                tshlib::TreeRearrangmentOperations treesearch_operations;
+                tshlib::TreeSearchHeuristics treesearch_heuristics;
+                auto ttl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(tl);
+                auto ntl = new bpp::TSHHomogeneousTreeLikelihood(ttl, (*ttl->getData()), (ttl->getModel()), (ttl->getRateDistribution()));
+
+                /*
                 bool optNumFirst = ApplicationTools::getBooleanParameter("optimization.topology.numfirst", params, true, suffix, suffixIsOptional, warn + 1);
                 unsigned int topoNbStep = ApplicationTools::getParameter<unsigned int>("optimization.topology.nstep", params, 1, suffix, suffixIsOptional, warn + 1);
                 double tolBefore = ApplicationTools::getDoubleParameter("optimization.topology.tolerance.before", params, 100, suffix, suffixIsOptional, warn + 1);
@@ -396,6 +406,53 @@ namespace bpp {
                         dynamic_cast<NNIHomogeneousTreeLikelihood *>(tl), parametersToEstimate,
                         optNumFirst, tolBefore, tolDuring, nbEvalMax, topoNbStep, messageHandler, profiler,
                         reparam, optVerbose, optMethodDeriv, nstep, nniAlgo);
+                */
+                std::string PAR_optim_topology_algorithm = ApplicationTools::getStringParameter("optim_topology_algorithm", params, "no-search", "", true, true);
+
+                if (PAR_optim_topology_algorithm.find("greedy") != std::string::npos) {
+                    treesearch_heuristics = tshlib::TreeSearchHeuristics::greedy;
+                } else if (PAR_optim_topology_algorithm.find("hillclimbing") != std::string::npos) {
+                    treesearch_heuristics = tshlib::TreeSearchHeuristics::hillclimbing;
+                } else if (PAR_optim_topology_algorithm.find("no-search") != std::string::npos) {
+                    treesearch_heuristics = tshlib::TreeSearchHeuristics::nosearch;
+                }
+
+                if (treesearch_heuristics != tshlib::TreeSearchHeuristics::nosearch) {
+                    std::string PAR_lkmove = ApplicationTools::getStringParameter("lk_move", params, "bothways", "", true, true);
+                    std::string PAR_optim_topology_operations = ApplicationTools::getStringParameter("optim_topology_operations", params, "best-search", "", true, true);
+                    int PAR_optim_topology_maxcycles = ApplicationTools::getIntParameter("optim_topology_maxcycles", params, 1, "", true, 0);
+                    int PAR_optim_topology_hillclimbing_startnodes = ApplicationTools::getIntParameter("optim_topology_numnodes", params, 1, "", true, 0);
+
+                    if (PAR_optim_topology_operations.find("best-search") != std::string::npos) {
+                        treesearch_operations = tshlib::TreeRearrangmentOperations::classic_Mixed;
+                    } else if (PAR_optim_topology_operations.find("nni-search") != std::string::npos) {
+                        treesearch_operations = tshlib::TreeRearrangmentOperations::classic_NNI;
+                    } else if (PAR_optim_topology_operations.find("spr-search") != std::string::npos) {
+                        treesearch_operations = tshlib::TreeRearrangmentOperations::classic_SPR;
+                    } else {}
+
+                    auto treesearch = new tshlib::TreeSearch;
+                    /*
+                    treesearch->setTreeSearchStrategy(treesearch_heuristics, treesearch_operations);
+                    treesearch->setInitialLikelihoodValue(-ntl->getLikelihoodFunction()->getValue());
+                    treesearch->setScoringMethod(PAR_lkmove);
+                    treesearch->setStartingNodes(PAR_optim_topology_hillclimbing_startnodes);
+                    treesearch->setTreemap(tm);
+                    treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
+                    if (PAR_model_indels) {
+                        treesearch->setModelIndels(true);
+                        treesearch->setLikelihoodFunc(ntl);
+                    } else {
+                        treesearch->setModelIndels(false);
+
+                    }
+                    logLK = treesearch->performTreeSearch(utree);
+                    */
+                }
+
+                //OutputUtils::printParametersLikelihood(tl);
+
+
             }
 
             //if (verbose && nstep > 1)
