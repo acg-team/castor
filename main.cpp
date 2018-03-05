@@ -90,6 +90,7 @@
 #include "CommandLineFlags.hpp"
 #include "ExtendedAlphabet.hpp"
 #include "RHomogeneousTreeLikelihood_PIP.hpp"
+#include "TSHHomogeneousTreeLikelihood.hpp"
 
 #include "progressivePIP.hpp"
 #include "JATIApplication.hpp"
@@ -102,26 +103,22 @@ using namespace tshlib;
 int main(int argc, char *argv[]) {
 
     FLAGS_alsologtostderr = true;
-    gflags::SetUsageMessage("some usage message");
+    int OMP_max_avail_threads = 1;
     gflags::SetVersionString(software::build);
     google::InitGoogleLogging(software::name.c_str());
     //gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-#pragma omp master
-
-    LOG(INFO) << "*****************************************************************************************************************************************";
-    LOG(INFO) << "* " << software::desc << "  *";
-    LOG(INFO) << "* Authors: Lorenzo Gatti & Massimo Maiolo                                                                                               *";
-    LOG(INFO) << "* ------------------------------------------------------------------------------------------------------------------------------------- *";
-    LOG(INFO) << "* Based on Bio++ by J. Dutheil, B. Boussau, L. Guéguen, M. Groussin                                                                     *";
-    LOG(INFO) << "* Inspired on codonPhyML (Zanetti M. et al.)                                                                                            *";
-    LOG(INFO) << "* Inspired on PrographMSA (Szalkowski A. et al.)                                                                                        *";
-    LOG(INFO) << "* Implements the Poisson Indel Model (Bouchard-Cote A. et al.)                                                                          *";
-    LOG(INFO) << "*****************************************************************************************************************************************";
-
     try {
         bpp::JATIApplication jatiapp(argc, argv, software::desc);
-        jatiapp.startTimer();
+
+        if (argc < 2) {
+            jatiapp.help();
+            return 0;
+        } else {
+            jatiapp.banner();
+            jatiapp.startTimer();
+        };
+
         std::string PAR_Alphabet = ApplicationTools::getStringParameter("alphabet", jatiapp.getParams(), "DNA", "", true, true);
         std::string PAR_input_sequences = ApplicationTools::getAFilePath("input_sequences", jatiapp.getParams(), true, true, "", false, "", 1);
         bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", jatiapp.getParams(), false);
@@ -134,6 +131,12 @@ int main(int argc, char *argv[]) {
         std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output_file_msa", jatiapp.getParams(), false, false, "", true, "", 1);
         std::string PAR_output_file_tree = ApplicationTools::getAFilePath("output_file_tree", jatiapp.getParams(), false, false, "", true, "", 1);
 
+
+        if (OMPENABLED) OMP_max_avail_threads = omp_get_max_threads();
+        int PAR_execution_numthreads = ApplicationTools::getIntParameter("exec_numthreads", jatiapp.getParams(), OMP_max_avail_threads, "", true, 0);
+
+        //#pragma omp parallel num_threads(PAR_execution_numthreads) if (OMPENABLED)
+
         /* ***************************************************
          * Standard workflow
          * [INPUT]
@@ -143,7 +146,6 @@ int main(int argc, char *argv[]) {
          * (it should not be supported in production)
          * 4. sequences + tree => (4.1) parse sequence => (4.2) parse tree => (4.3) perform alignment
          */
-
 
         bpp::Fasta seqReader;
         bpp::SequenceContainer *sequences;
@@ -326,8 +328,6 @@ int main(int argc, char *argv[]) {
                 submodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alpha), lambda, mu, submodel);
             }
 
-            //submodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alpha), lambda, mu, submodel);
-
             // Fill Q matrix
             Q = MatrixBppUtils::Matrix2Eigen(submodel->getGenerator());
             pi = MatrixBppUtils::Vector2Eigen(submodel->getFrequencies());
@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
             likelihood->computePr(fullTraversalNodes, alpha->getSize());
 
 
-            LOG(INFO) << "[Alignment sequences] Starting MSA inference using Pro-PIP...";
+            LOG(INFO) << "[Alignment sequences] Starting MSA inference using PIPAligner...";
 
             /*
             VirtualNode *root = utree->rootnode;
@@ -383,7 +383,7 @@ int main(int argc, char *argv[]) {
 
             progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
 
-            std::cout<<"PIPAligner done...\n";
+            LOG(INFO) << "[Alignment sequences] Alignment completed succesfully using PIPAligner.";
 
             //********************************************************************************
             //********************************************************************************
@@ -424,8 +424,6 @@ int main(int argc, char *argv[]) {
         }
 
 
-
-
         //--------------------------------------------------------------------------------------------------------------
         // best tree from MSA marginalization
         if(false){
@@ -435,53 +433,42 @@ int main(int argc, char *argv[]) {
         //--------------------------------------------------------------------------------------------------------------
 
 
-
-
         //--------------------------------------------------------------------------------------------------------------
         // Initialization likelihood functions
-
         double logLK = 0;
-        //auto likelihood = new Likelihood();
-        //std::vector<VirtualNode *> fullTraversalNodes;
-        //if (!PAR_alignment) {
-            //tree = UtreeBppUtils::convertTree_u2b(utree);
-            if (!PAR_model_indels) {
 
-                transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
-                tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
+        if (!PAR_model_indels) {
 
-            } else {
+            transmodel = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, parmap, "", true, false, 0);
+            tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, transmodel, rDist, false, false, false);
 
-                unique_ptr<TransitionModel> test;
-                test.reset(submodel);
-                transmodel = test.release();
+        } else {
 
-                tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, &tm, false, false, false);
-            }
+            unique_ptr<TransitionModel> test;
+            test.reset(submodel);
+            transmodel = test.release();
 
-            VLOG(1) << "[Transition model] Number of states: " << (int) transmodel->getNumberOfStates();
+            tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, transmodel, rDist, &tm, false, false, false);
+        }
 
-            tl->initialize();
-            logLK = tl->getValue();
-
+        tl->initialize();
+        logLK = tl->getValue();
         LOG(INFO) << "[Intial tree likelihood] (on model " << submodel->getName() << ") = " << -logLK;
-        //}
 
-        //----------------------------------------------
-        // Optimise parameters automatically
-        //if (!PAR_model_indels) {
+
+        //------------------------------------------------------------------------------------------------------------------
+        // OPTIMISE PARAMETERS (numerical + topology) according to user parameters
+        // Optimise parameters automatically following standard pipeline
+        auto ntl = new bpp::TSHHomogeneousTreeLikelihood(tl, (*tl->getData()), (tl->getModel()), (tl->getRateDistribution()));
         tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl, tl->getParameters(), jatiapp.getParams(), "", true, true, 0));
-
-        //tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(PhylogeneticsApplicationTools::optimizeParameters(tl, tl->getParameters(), jatiapp.getParams(), "", true, true,
-        // 0));
-        //}
-        //----------------------------------------------
-        // Remove the root
-        utree->removeVirtualRootNode();
+        OutputUtils::printParametersLikelihood(tl);
 
         //------------------------------------------------------------------------------------------------------------------
         // DEFINE, APPLY & REVERT TREE REARRANGEMENTS
         // Get all the nodes between the radius boundaries and for each of them build the move list
+
+        // Remove the root to perform tree search
+        utree->removeVirtualRootNode();
 
         tshlib::TreeRearrangmentOperations treesearch_operations;
         tshlib::TreeSearchHeuristics treesearch_heuristics;
@@ -517,25 +504,34 @@ int main(int argc, char *argv[]) {
             treesearch->setInitialLikelihoodValue(-logLK);
             treesearch->setScoringMethod(PAR_lkmove);
             treesearch->setStartingNodes(PAR_optim_topology_hillclimbing_startnodes);
+            treesearch->setTreemap(tm);
             treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
             if (PAR_model_indels) {
                 treesearch->setModelIndels(true);
-                treesearch->setLikelihoodFunc(tl);
+                treesearch->setLikelihoodFunc(ntl);
             } else {
+                treesearch->setModelIndels(false);
 
             }
             logLK = treesearch->performTreeSearch(utree);
 
         }
 
+        OutputUtils::printParametersLikelihood(ntl);
 
-        LOG(INFO) << "[TSH Best Topology] (" << -logLK << ") " << utree->printTreeNewick(false);
+
+        Newick finalTreeWriter;
+        TreeTemplate<Node> finalTree(ntl->getTree());
+        std::ostringstream outputTreeString;
+        treeWriter.write(finalTree, outputTreeString);
+
+        LOG(INFO) << "[TSH Best Topology] (" << std::setprecision(12) << -logLK << ") " << outputTreeString.str();
 
         if (PAR_output_file_tree.find("none") == std::string::npos) {
             LOG(INFO) << "[Output tree]\t The final topology can be found in " << PAR_output_file_tree;
             std::ofstream file;
             file.open(PAR_output_file_tree);
-            file << utree->printTreeNewick(false);
+            file << outputTreeString.str();
             file.close();
         }
         if (PAR_output_file_msa.find("none") == std::string::npos) {
