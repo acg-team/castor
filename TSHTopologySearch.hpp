@@ -221,7 +221,7 @@ namespace tshlib {
             stopConditionValue = in_stopConditionValue;
         }
 
-        bpp::AbstractHomogeneousTreeLikelihood *getLikelihoodFunc() const {
+        bpp::TSHHomogeneousTreeLikelihood *getLikelihoodFunc() const {
             return likelihoodFunc;
         }
 

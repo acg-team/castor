@@ -62,23 +62,16 @@ namespace bpp {
      */
     class TSHHomogeneousTreeLikelihood : public RHomogeneousTreeLikelihood, public virtual TSHSearchable {
     protected:
-        //BranchLikelihood* brLikFunction_;
-
 
         /**
-         * @brief Optimizer used for testing NNI.
+         * @brief Optimizer used for testing TSH moves.
          */
-        BrentOneDimension *brentOptimizer_;
-        //PowellMultiDimensions *optimiser_;
+
         BfgsMultiDimensions *optimiser_;
         AbstractHomogeneousTreeLikelihood *likelihoodFunc_;
+        const UtreeBppUtils::treemap &treemap_;
+        mutable tshlib::Utree *utree_;
 
-        /**
-         * @brief Hash used for backing up branch lengths when testing NNIs.
-         */
-        mutable std::map<int, double> brLenTSHValues_;
-
-        ParameterList brLenTSHParams_;
 
     public:
         /**
@@ -95,7 +88,9 @@ namespace bpp {
         TSHHomogeneousTreeLikelihood(AbstractHomogeneousTreeLikelihood *lk,
                                      const SiteContainer &data,
                                      TransitionModel *model,
-                                     DiscreteDistribution *rDist)
+                                     DiscreteDistribution *rDist,
+                                     tshlib::Utree *inUtree,
+                                     UtreeBppUtils::treemap &inTreeMap)
         throw(Exception);
 
         /**
@@ -112,16 +107,13 @@ namespace bpp {
     public:
         void setData(const SiteContainer &sites) throw(Exception) {
             RHomogeneousTreeLikelihood::setData(sites);
-
-            // The following calls are made for interfaces to node likelihood
-            //if (brLikFunction_) delete brLikFunction_;
-            //brLikFunction_ = new BranchLikelihood(getLikelihoodData()->getWeights());
         }
 
         AbstractHomogeneousTreeLikelihood *getLikelihoodFunction() const;
 
-        UtreeBppUtils::treemap &getTreeMap() { return dynamic_cast<RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc_)->getTreemap(); };
+        UtreeBppUtils::treemap &getTreeMap() const { return dynamic_cast<RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc_)->getTreemap(); };
 
+        tshlib::Utree *getUtree() const { return utree_; }
         /**
          * @name The NNISearchable interface.
          *
@@ -135,9 +127,9 @@ namespace bpp {
          */
         const Tree &getTopology() const { return getTree(); }
 
-
         double getTopologyValue() const throw(Exception) { return getValue(); }
 
+        const ParameterList &getParameters() const { return likelihoodFunc_->getParameters(); }
 
         void fixTopologyChanges(tshlib::Utree *inUTree);
 
@@ -145,10 +137,13 @@ namespace bpp {
 
 
         void topologyChange(std::vector<tshlib::VirtualNode *> listNodes, tshlib::Utree *inUTree) {
-
+            // Update BPP tree using the structure in Utree
             fixTopologyChanges(inUTree);
+            // Add virtual root to compute the likelihood
             inUTree->addVirtualRootNode();
+            // Optimise branches involved in the tree rearrangement
             optimiseBranches(listNodes);
+            // Remove the virtual root to allow for further tree topology improvements
             inUTree->removeVirtualRootNode();
         }
 
@@ -156,13 +151,13 @@ namespace bpp {
             // getLikelihoodData()->reInit();
 
             // if(brLenNNIParams_.size() > 0)
-            fireParameterChanged(brLenTSHParams_);
-            brLenTSHParams_.reset();
+            //fireParameterChanged(brLenTSHParams_);
+            //brLenTSHParams_.reset();
 
         }
 
         void topologyChangeSuccessful(const TopologyChangeEvent &event) {
-            brLenTSHValues_.clear();
+            //brLenTSHValues_.clear();
         }
 
         /** @} */

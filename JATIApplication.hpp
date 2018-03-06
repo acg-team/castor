@@ -93,7 +93,6 @@ namespace bpp {
             std::cout << "\tmodel_pip_mu=<float>                                 (if models_indels=true)" << std::endl;
 
             std::cout << std::endl << "**** Likelihood computation options ****" << std::endl << std::endl;
-            std::cout << "\tlkmove={single,double}                               [not-requested]" << std::endl;
 
             std::cout << std::endl << "**** Parameter optimisation options ****" << std::endl << std::endl;
             std::cout << "\toptimization=<string>                                        [requested]\t(inherited from bpp documentation)" << std::endl;
@@ -102,10 +101,14 @@ namespace bpp {
             std::cout << "\toptimization.reparametrization=<bool>                        [not-requested]\t(inherited from bpp documentation)" << std::endl;
             std::cout << "\toptimization.max_number_f_eval=<int>                         [not-requested]\t(inherited from bpp documentation)" << std::endl;
             std::cout << "\toptimization.tolerance=<float>                               [not-requested]\t(inherited from bpp documentation)" << std::endl;
-            std::cout << "\toptim_topology_algorithm={none,greedy,hillclimbing,swarm}    [requested]" << std::endl;
-            std::cout << "\toptim_topology_numnodes=<int>                                number of random nodes to use during the hillclimbing" << std::endl;
-            std::cout << "\toptim_topology_operations={nni-search,spr-search,tbr-search,best-search}" << std::endl;
-            std::cout << "\toptim_topology_maxcycles=<int>" << std::endl;
+            std::cout << "\toptimization.final ={powell|simplex}                         [not-requested]\t(inherited from bpp documentation)" << std::endl;
+            std::cout << "\toptimization.topology=<bool>                                 [not-requested]\t(inherited from bpp documentation)" << std::endl;
+            std::cout << "\toptimization.topology.algorithm={greedy|hillclimbing|swarm}                                  [not-requested]" << std::endl;
+            std::cout << "\toptimization.topology.algorithm.hillclimbing.startnodes=<int>                                [not-requested] number of random nodes to use during the"
+                    " hillclimbing" << std::endl;
+            std::cout << "\toptimization.topology.algorithm.operations={nni-search|spr-search|tbr-search|best-search}    [not-requested]" << std::endl;
+            std::cout << "\toptimization.topology.algorithm.maxcycles=<int>                                              [not-requested]" << std::endl;
+            std::cout << "\toptimization.topology.likelihood={single,double}                                             [not-requested]" << std::endl;
 
             std::cout << std::endl << "Verbosity:" << std::endl;
             std::cout << "\texport GLOG_v={0,1,2,3}" << std::endl << "\texport GLOG_minloglevel={INFO,FATAL,WARN}" << std::endl << std::endl;

@@ -42,7 +42,6 @@
  * @see For more information visit: 
  */
 #include "TSHHomogeneousTreeLikelihood.hpp"
-#include <Bpp/Numeric/AutoParameter.h>
 
 using namespace bpp;
 
@@ -50,59 +49,48 @@ using namespace bpp;
 TSHHomogeneousTreeLikelihood::TSHHomogeneousTreeLikelihood(AbstractHomogeneousTreeLikelihood *lk,
                                                            const SiteContainer &data,
                                                            TransitionModel *model,
-                                                           DiscreteDistribution *rDist)
+                                                           DiscreteDistribution *rDist,
+                                                           tshlib::Utree *inUtree,
+                                                           UtreeBppUtils::treemap &inTreeMap)
 throw(Exception) :
         RHomogeneousTreeLikelihood(lk->getTree(), model, rDist, false, false),
-        brentOptimizer_(0),
-        brLenTSHValues_(),
-        brLenTSHParams_() {
+        optimiser_(0),
+        utree_(inUtree),
+        treemap_(inTreeMap) {
 
-
+    // Import the likelihood function
     likelihoodFunc_ = lk;
 
-    //optimiser_ = new PowellMultiDimensions(lk);
+    // Initialise the optimiser
     optimiser_ = new BfgsMultiDimensions(lk);
     optimiser_->setConstraintPolicy(AutoParameter::CONSTRAINTS_AUTO);
     optimiser_->setProfiler(new StdOut);
     optimiser_->setMessageHandler(new StdOut);
     optimiser_->setVerbose(0);
 
-    brentOptimizer_ = new BrentOneDimension();
-    brentOptimizer_->setConstraintPolicy(AutoParameter::CONSTRAINTS_AUTO);
-    brentOptimizer_->setProfiler(0);
-    brentOptimizer_->setMessageHandler(0);
-    brentOptimizer_->setVerbose(0);
 }
 
 TSHHomogeneousTreeLikelihood::TSHHomogeneousTreeLikelihood(const TSHHomogeneousTreeLikelihood &lik) :
         RHomogeneousTreeLikelihood(lik),
-        //brLikFunction_(0),
-        brentOptimizer_(0),
-        brLenTSHValues_(),
-        brLenTSHParams_() {
-    //brLikFunction_  = dynamic_cast<BranchLikelihood*>(lik.brLikFunction_->clone());
-    brentOptimizer_ = dynamic_cast<BrentOneDimension *>(lik.brentOptimizer_->clone());
-    brLenTSHValues_ = lik.brLenTSHValues_;
-    brLenTSHParams_ = lik.brLenTSHParams_;
-}
+        optimiser_(0),
+        utree_(),
+        treemap_(lik.getTreeMap()) {
+
+    optimiser_ = dynamic_cast<BfgsMultiDimensions *>(lik.optimiser_->clone());
+};
 
 TSHHomogeneousTreeLikelihood &TSHHomogeneousTreeLikelihood::operator=(const TSHHomogeneousTreeLikelihood &lik) {
     RHomogeneousTreeLikelihood::operator=(lik);
-    //if (brLikFunction_) delete brLikFunction_;
-    //brLikFunction_  = dynamic_cast<BranchLikelihood*>(lik.brLikFunction_->clone());
-    if (brentOptimizer_) delete brentOptimizer_;
-    brentOptimizer_ = dynamic_cast<BrentOneDimension *>(lik.brentOptimizer_->clone());
-    brLenTSHValues_ = lik.brLenTSHValues_;
-    brLenTSHParams_ = lik.brLenTSHParams_;
+    if (optimiser_) delete optimiser_;
+    optimiser_ = dynamic_cast<BfgsMultiDimensions *>(lik.optimiser_->clone());
+
     return *this;
 }
 
 TSHHomogeneousTreeLikelihood::~TSHHomogeneousTreeLikelihood() {
-    //if (brLikFunction_) delete brLikFunction_;
-    delete brentOptimizer_;
+
     delete optimiser_;
 }
-
 
 AbstractHomogeneousTreeLikelihood *TSHHomogeneousTreeLikelihood::getLikelihoodFunction() const {
     return likelihoodFunc_;
@@ -181,8 +169,9 @@ void TSHHomogeneousTreeLikelihood::fixTopologyChanges(tshlib::Utree *inUTree) {
 
 void TSHHomogeneousTreeLikelihood::optimiseBranches(std::vector<tshlib::VirtualNode *> listNodes) {
 
-
+    // remap the virtual nodes to the bpp nodes
     std::vector<Node *> extractionNodes = UtreeBppUtils::remapNodeLists(listNodes, tree_, getTreeMap());
+
     ParameterList parameters;
     // For each node involved in the move, get the corrisponding branch parameter (no root)
     for (auto &bnode:extractionNodes) {
@@ -193,7 +182,7 @@ void TSHHomogeneousTreeLikelihood::optimiseBranches(std::vector<tshlib::VirtualN
         }
     }
 
-
+    // set parameters on the likelihood function (inherited)
     likelihoodFunc_->setParameters(parameters);
 
     // Re-estimate branch length:
@@ -202,18 +191,8 @@ void TSHHomogeneousTreeLikelihood::optimiseBranches(std::vector<tshlib::VirtualN
     optimiser_->getStopCondition()->setTolerance(0.001);
     optimiser_->optimize();
 
+    // set parameters on the likelihood function (inherited)
     likelihoodFunc_->setParameters(optimiser_->getParameters());
-
-    //brentOptimizer_->setFunction(likelihoodFunc_);
-    //brentOptimizer_->getStopCondition()->setTolerance(0.1);
-    //brentOptimizer_->setInitialInterval(brLen.getValue(), brLen.getValue() + 0.01);
-    //brentOptimizer_->init(parameters);
-    //brentOptimizer_->optimize();
-
 
 
 }
-
-
-
-

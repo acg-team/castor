@@ -75,7 +75,7 @@ namespace bpp {
        * @endcode
        */
         static TreeLikelihood *optimizeParameters(
-                TreeLikelihood *tl,
+                TreeLikelihood *inTL,
                 const ParameterList &parameters,
                 std::map<std::string, std::string> &params,
                 const std::string &suffix = "",
