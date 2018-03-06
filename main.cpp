@@ -459,8 +459,10 @@ int main(int argc, char *argv[]) {
         //------------------------------------------------------------------------------------------------------------------
         // OPTIMISE PARAMETERS (numerical + topology) according to user parameters
         // Optimise parameters automatically following standard pipeline
-        auto ntl = new bpp::TSHHomogeneousTreeLikelihood(tl, (*tl->getData()), (tl->getModel()), (tl->getRateDistribution()));
-        tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl, tl->getParameters(), jatiapp.getParams(), "", true, true, 0));
+        auto ntl = new bpp::TSHHomogeneousTreeLikelihood(tl, (*tl->getData()), (tl->getModel()), (tl->getRateDistribution()), utree, tm);
+        tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(ntl, ntl->getParameters(), jatiapp.getParams(), "", true, true, 0));
+        //tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl, tl->getParameters(), jatiapp.getParams(), "", true, true, 0));
+
         OutputUtils::printParametersLikelihood(tl);
 
         //------------------------------------------------------------------------------------------------------------------
@@ -468,6 +470,7 @@ int main(int argc, char *argv[]) {
         // Get all the nodes between the radius boundaries and for each of them build the move list
 
         // Remove the root to perform tree search
+        /*
         utree->removeVirtualRootNode();
 
         tshlib::TreeRearrangmentOperations treesearch_operations;
@@ -518,10 +521,10 @@ int main(int argc, char *argv[]) {
         }
 
         OutputUtils::printParametersLikelihood(ntl);
-
-
+        */
+        logLK = tl->getValue();
         Newick finalTreeWriter;
-        TreeTemplate<Node> finalTree(ntl->getTree());
+        TreeTemplate<Node> finalTree(tl->getTree());
         std::ostringstream outputTreeString;
         treeWriter.write(finalTree, outputTreeString);
 
