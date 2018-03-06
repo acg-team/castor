@@ -521,14 +521,13 @@ int main(int argc, char *argv[]) {
         }
 
         OutputUtils::printParametersLikelihood(ntl);
-        */
-        logLK = tl->getValue();
+
+        logLK =
         Newick finalTreeWriter;
         TreeTemplate<Node> finalTree(tl->getTree());
         std::ostringstream outputTreeString;
         treeWriter.write(finalTree, outputTreeString);
 
-        LOG(INFO) << "[TSH Best Topology] (" << std::setprecision(12) << -logLK << ") " << outputTreeString.str();
 
         if (PAR_output_file_tree.find("none") == std::string::npos) {
             LOG(INFO) << "[Output tree]\t The final topology can be found in " << PAR_output_file_tree;
@@ -537,6 +536,11 @@ int main(int argc, char *argv[]) {
             file << outputTreeString.str();
             file.close();
         }
+        */
+
+        LOG(INFO) << "[Final likelihood] " << std::setprecision(12) << -tl->getValue();
+
+
         if (PAR_output_file_msa.find("none") == std::string::npos) {
             LOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
             bpp::Fasta seqWriter;
@@ -544,6 +548,51 @@ int main(int argc, char *argv[]) {
         }
 
         delete sequences;
+
+
+        tree = new TreeTemplate<Node>(tl->getTree());
+        PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
+
+        // Write parameters to screen:
+        ApplicationTools::displayResult("Log likelihood", TextTools::toString(-tl->getValue(), 15));
+        ParameterList parameters = tl->getSubstitutionModelParameters();
+        for (size_t i = 0; i < parameters.size(); i++) {
+            ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
+        }
+        parameters = tl->getRateDistributionParameters();
+        for (size_t i = 0; i < parameters.size(); i++) {
+            ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
+        }
+
+        // Checking convergence:
+        PhylogeneticsApplicationTools::checkEstimatedParameters(tl->getParameters());
+
+        // Write parameters to file:
+        string parametersFile = ApplicationTools::getAFilePath("output.estimates", jatiapp.getParams(), false, false, "none", 1);
+        bool withAlias = ApplicationTools::getBooleanParameter("output.estimates.alias", jatiapp.getParams(), true, "", true, 0);
+
+        ApplicationTools::displayResult("Output estimates to file", parametersFile);
+        if (parametersFile != "none") {
+            StlOutputStream out(new ofstream(parametersFile.c_str(), ios::out));
+            out << "# Log likelihood = ";
+            out.setPrecision(20) << (-tl->getValue());
+            out.endLine();
+            out << "# Number of sites = ";
+            out.setPrecision(20) << sites->getNumberOfSites();
+            out.endLine();
+            out.endLine();
+            out << "# Substitution model parameters:";
+            out.endLine();
+
+            submodel->matchParametersValues(tl->getParameters());
+            PhylogeneticsApplicationTools::printParameters(submodel, out, 1, withAlias);
+
+            out.endLine();
+            (out << "# Rate distribution parameters:").endLine();
+            rDist->matchParametersValues(tl->getParameters());
+            PhylogeneticsApplicationTools::printParameters(rDist, out, withAlias);
+        }
+
 
         jatiapp.done();
         exit(0);

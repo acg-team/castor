@@ -110,6 +110,16 @@ namespace bpp {
             std::cout << "\toptimization.topology.algorithm.maxcycles=<int>                                              [not-requested]" << std::endl;
             std::cout << "\toptimization.topology.likelihood={single,double}                                             [not-requested]" << std::endl;
 
+            std::cout << std::endl << "**** Output options ****" << std::endl << std::endl;
+            std::cout << "\toutput.tree.file={path}                         The phylogenetic tree file to write to. " << std::endl;
+            std::cout << "\toutput.tree.format={Newick|Nexus|NHX}           The format of the output tree file. " << std::endl;
+            std::cout << "\toutput.trees.file={path}                        The file that will contain multiple trees. " << std::endl;
+            std::cout << "\toutput.trees.format={Newick|Nexus|NHX}          The format of the output tree file." << std::endl;
+            std::cout << "\toutput.infos={{path}|none}                      Alignment information log file (site specific rates, etc)" << std::endl;
+            std::cout << "\toutput.estimates={{path}|none}                  Write parameter estimated values. " << std::endl;
+            std::cout << "\toutput.estimates.alias={boolean}                Write the alias names of the aliased parameters instead of their values (default: true). " << std::endl;
+
+
             std::cout << std::endl << "Verbosity:" << std::endl;
             std::cout << "\texport GLOG_v={0,1,2,3}" << std::endl << "\texport GLOG_minloglevel={INFO,FATAL,WARN}" << std::endl << std::endl;
             std::cout << "Examples:" << std::endl;

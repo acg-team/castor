@@ -490,7 +490,7 @@ namespace bpp {
                     parametersToEstimate,
                     backupListener.get(),
                     100,
-                    tolerance,
+                    tolerance * 10,
                     nbEvalMax,
                     messageHandler,
                     profiler,
