@@ -61,10 +61,11 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, Substit
 
     for (int i = 0; i < parlist.size(); i++) {
         addParameter_(new Parameter("PIP." + parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
+        //addParameter_(new Parameter(parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
     }
 
     name_ = submodel_->getName() + "+PIP";
-
+    modelname_ = "PIP." + submodel_->getName();
     //¨generator_.resize(alpha->getSize(), alpha->getSize());
     //size_ = alpha->getSize();
     //freq_.resize(alpha->getSize());
@@ -86,6 +87,18 @@ void PIP_Nuc::updateMatrices() {
     lambda_ = getParameterValue("lambda");
     mu_ = getParameterValue("mu");
 
+    unsigned long eraseCharNum = name_.size();
+
+    for (int i = 0; i < getParameters().size(); i++) {
+        //test[i].getName();
+        std::string parName = getParameters()[i].getName();
+        if (parName.find(modelname_) != std::string::npos) {
+            parName.erase(parName.begin(), parName.begin() + eraseCharNum + 1);
+            submodel_->setParameterValue(parName, getParameters()[i].getValue());
+        }
+    }
+
+    //submodel_->setAllParametersValues(test);
 
     //AbstractReversibleSubstitutionModel::updateMatrices();
 
@@ -269,6 +282,8 @@ PIP_AA::PIP_AA(const ProteicAlphabet *alpha, double lambda, double mu, Substitut
 
     freqSet_ = new FixedProteinFrequenciesSet(alpha, freq_);
     name_ = basemodel->getName() + "+PIP";
+    modelname_ = "PIP." + submodel_->getName();
+
 
     // Inheriting basemodel parameters
     ParameterList parlist = basemodel->getParameters();
@@ -303,6 +318,17 @@ void PIP_AA::updateMatrices() {
     lambda_ = getParameterValue("lambda");
     mu_ = getParameterValue("mu");
 
+
+    unsigned long eraseCharNum = name_.size();
+
+    for (int i = 0; i < getParameters().size(); i++) {
+        //test[i].getName();
+        std::string parName = getParameters()[i].getName();
+        if (parName.find(modelname_) != std::string::npos) {
+            parName.erase(parName.begin(), parName.begin() + eraseCharNum + 1);
+            submodel_->setParameterValue(parName, getParameters()[i].getValue());
+        }
+    }
 
     //AbstractReversibleSubstitutionModel::updateMatrices();
 

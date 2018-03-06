@@ -57,6 +57,7 @@ namespace bpp {
     private:
         double lambda_, mu_, tau_, nu_;
         std::string name_;
+        std::string modelname_;
 
         double kappa_, r_;
         mutable double l_, k_, exp1_, exp2_;
@@ -103,9 +104,9 @@ namespace bpp {
     private:
         double lambda_, mu_, tau_, nu_;
         std::string name_;
+        std::string modelname_;
         ProteinFrequenciesSet *freqSet_;
         mutable SubstitutionModel *submodel_;
-
 
     public:
         /**
