@@ -7,9 +7,11 @@
 
 ### Arguments
 
+
     Usage: miniJATI [options]
     
 ### Alphabet options 
+    
     
     alphabet={DNA|RNA|Protein)|Codon(letter={DNA|RNA},type={Standard|EchinodermMitochondrial|InvertebrateMitochondrial|VertebrateMitochondrial})}
                                             The alphabet to use when reading sequences. DNA and RNA alphabet can in addition take
@@ -29,7 +31,8 @@
                                             AscidianMitochondrial       13
                                             The states of the alphabets are in alphabetical order.
     
-     [Input] Reading sequences 
+### [Input] Reading sequences 
+
     
     input.sequence.file={path}                  The sequence file to use. (These sequences can also be not aligned). 
     input.sequence.format={format}              The sequence file format. 
@@ -39,7 +42,8 @@
     input.site.selection = {Sample(n={integer} [, replace={true}])}
                                                 Will consider {n} random sites, with optional replacement. 
     
-    The following formats are currently supported:
+The following formats are currently supported:
+
     Fasta(extended={bool}, strictNames={bool})                The fasta format. The argument extended, default to 'no' 
                                                               allows to enable the HUPO-PSI extension of the format.
                                                               The argument strict_names, default to 'no', specifies
@@ -72,19 +76,22 @@
                                                               all features are ignored.
     
 ### [Input] Reading trees 
+
     
     input.tree.file={path}                      The phylogenetic tree file to use.
     input.tree.format={Newick|Nexus|NHX}        The format of the input tree file.
     
 ### Alignment options 
+
     
     alignment=<bool>                                     [requested]
     
 ### Substitution model options 
+
     
     model=<string>                                      A description of the substitution model to use, using the keyval syntax. 
     
-    The following nucleotide models are currently available:
+The following nucleotide models are currently available:
     
     JC69 
     K80([kappa={real>0}]) 
@@ -98,7 +105,7 @@
     RN95([thetaR={real]0,1[}, thetaC={real]0,1[}, thetaG={real]0,1[}, kappaP={real[0,1[}, gammaP={real[0,1[}, sigmaP={real>1}, alphaP={real>1}])
     RN95s([thetaA={real]0,0.5[}, gamma={real]0,0.5[}, alphaP={real>1}])
     
-    The following protein models are currently available:
+The following protein models are currently available:
     
     JC69 
     DSO78 
@@ -119,7 +126,7 @@
     Empirical(name={chars}, file={path})
     Empirical+F(name={chars}, file={path}, [theta={real]0,1[}, theta1={real]0,1[}, theta2={real]0,1[}, ...,  "equilibrium frequencies"])
     
-    The following meta models are currently available:
+The following meta models are currently available:
     
     PIP(model={model description}, lambda={real>0}, mu={real>0} [, "equilibrium frequencies"]) 
     TS98(model={model description}, s1={real>0}, s2={real>0} [, "equilibrium frequencies"])
@@ -128,7 +135,8 @@
     
 ### Frequencies distribution sets 
     
-    The following frequencies distributions are available:
+The following frequencies distributions are available:
+
     Fixed()                                                                  All frequencies are fixed to their initial value and are not estimated. 
     
     GC(theta={real]0,1[})                                                    For nucleotides only, set the G content equal to the C content. 
@@ -140,9 +148,10 @@
     
     rate_distribution={rate distribution description}                Specify the rate across sites distribution
     
-    The following distributions are currently available:
+The following distributions are currently available:
     
-    [Most used distributions]
+[Most used distributions]
+
     Constant                                                         Uses a constant rate across sites
     
     Gamma(n={int>=2}, alpha={float>0})                               A discretized gamma distribution of rates, with n classes, and a given shape,
@@ -151,7 +160,8 @@
     Invariant(dist={rate distribution description}, p={real[0,1]})   A composite distribution allowing a special class of invariant site, with a 
                                                                      probability p.
     
-    [Standard distributions]
+[Standard distributions]
+
     Beta(n={int>=2}, alpha={float>0}, beta={float>0})                A discretized beta distribution, with n classes, with standard parameters
                                                                      alpha and beta.
     
@@ -177,7 +187,8 @@
     Uniform(n={int>=1}, begin={float>0}, end={float>0})              A uniform distribution, with n classes in interval [begin,end].
                                                                      There are no parameters.
     
-    [Mixture Distributions]
+[Mixture Distributions]
+
     Invariant(dist={distribution description}, p={float>0})          A Mixture of a given discrete distributution and a 0 Dirac. p is the  
                                                                      probability of this 0 Dirac.
     
@@ -193,14 +204,17 @@
     
 ### Numerical parameter optimisation options 
     
-    This program allows to (re-)estimate numerical parameters, including
-    - Branch lengths
-    - Entries of the substitution matrices, included base frequencies values)
-    - Parameters of the rate distribution (currently shape parameter of the gamma law, proportion of invariant sites).
-    
+This program allows to (re-)estimate numerical parameters, including
+- Branch lengths
+- Entries of the substitution matrices, included base frequencies values)
+- Parameters of the rate distribution (currently shape parameter of the gamma law, proportion of invariant sites).
+
+
     optimization={method}
     
-    The following methods are currently available:
+    
+The following methods are currently available:
+    
     
     None                                                         No optimization is performed, initial values are kept 'as is'.
     
