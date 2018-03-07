@@ -572,8 +572,12 @@ int main(int argc, char *argv[]) {
         bool withAlias = ApplicationTools::getBooleanParameter("output.estimates.alias", jatiapp.getParams(), true, "", true, 0);
 
         ApplicationTools::displayResult("Output estimates to file", parametersFile);
+
+
         if (parametersFile != "none") {
             StlOutputStream out(new ofstream(parametersFile.c_str(), ios::out));
+
+
             out << "# Log likelihood = ";
             out.setPrecision(20) << (-tl->getValue());
             out.endLine();
