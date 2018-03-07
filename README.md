@@ -325,6 +325,7 @@ The following methods are currently available:
 - Substitution model: PIP(lambda=0.1,mu=0.2)+GTR()+Gamma(cat=4)
 - Optimisation= D-BFGS(derivatives=BFGS) + Topology(hillclimbing(n=4))
 
+
     ./miniJATI alphabet=DNA alignment=false input.sequence.file=../data/test_treesearch/sim_dna_5.fa input.sequence.sites_to_use=all model=PIP(model=GTR(),lambda=0.1,mu=0.2) rate_distribution=Gamma(n=4) init.tree=distance optimization=D-BFGS(derivatives=BFGS) optimization.message_handler=../out_opt.txt optimization.profiler=../out_opt_prof.txt optimization.reparametrization=false optimization.max_number_f_eval=1000 optimization.tolerance=0.001 optimization.final=bfgs optimization.topology=true optimization.topology.algorithm=hillclimbing optimization.topology.algorithm.hillclimbing.startnodes=4 optimization.topology.algorithm.operations=best-search optimization.topology.algorithm.maxcycles=100 optimization.topology.likelihood=bothways output.tree.file=../5leaves.nwk output.infos=../5leaves_info.log output.estimates=../5leaves_estimates.log
 
 ##### Results

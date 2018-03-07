@@ -3,3 +3,10 @@ data/*
 cmake-build-intel/*
 cmake-build-release/*
 cmake-build-debug/*
+cmake-build-debug-clangopenmp
+cmake-build-release-clangopenmp
+5leaves.nwk
+5leaves_estimates.log
+brca1_k80.nwk
+out_opt.txt
+out_opt_prof.txt
