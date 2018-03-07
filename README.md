@@ -292,8 +292,29 @@ The following methods are currently available:
     
 ### Examples
 
-    ./miniJATI alphabet=DNA alignment=false input_sequences=../data/test_treesearch/sim_dna_5.fa lkmove=bothways optimization=D-Brent(derivatives=Newton) optimization
-    .message_handler=../out_opt.txt optimization.profiler=../out_opt_prof.txt optimization.reparametrization=false optimization.max_number_f_eval=1000 optimization.tolerance=0.001 optim_topology_algorithm=greedy optim_topology_numnodes=4 optim_topology_operations=best-search optim_topology_maxcycles=100 model_substitution=HKY85 model_indels=true model_setfreqsfromdata=false model_pip_lambda=0.2 model_pip_mu=0.1
+Analysis 1 
+
+Dataset: sim_dna_5.fa (5 simulated nucleotide sequences with gaps) <br>
+Initial tree: distance based (bioNJ)<br>
+Substitution model: PIP(lambda=0.1,mu=0.2)+GTR()+Gamma(cat=4)<br>
+Optimisation= D-BFGS(derivatives=BFGS) + Topology(hillclimbing(n=4))<br>
+
+    ./miniJATI alphabet=DNA alignment=false input.sequence.file=../data/test_treesearch/sim_dna_5.fa input.sequence.sites_to_use=all model=PIP(model=GTR(),lambda=0.1,mu=0.2) rate_distribution=Gamma
+    (n=4) init.tree=distance optimization=D-BFGS(derivatives=BFGS) optimization.message_handler=../out_opt.txt optimization.profiler=../out_opt_prof.txt optimization.reparametrization=false optimization.max_number_f_eval=1000 optimization.tolerance=0.001 optimization.final=bfgs optimization.topology=true optimization.topology.algorithm=hillclimbing optimization.topology.algorithm.hillclimbing.startnodes=4 optimization.topology.algorithm.operations=best-search optimization.topology.algorithm.maxcycles=100 optimization.topology.likelihood=bothways output.tree.file=../5leaves.nwk output.infos=../5leaves_info.log output.estimates=../5leaves_estimates.log
+
+Results:
+
+Tree: ((jkqnk:10.7483,(zgedq:5.41497,gojyc:6.69881):0.996304):0.972286,(zoixi:3.22681,mcwps:5.07359):1e-06);<br>
+Log likelihood = -752.29059764981366242864<br>
+Number of sites = 100<br>
+
+Substitution model parameters:<br>
+model=GTR+PIP(GTR.a=13198.746763264866,GTR.b=39108.651431432860,GTR.c=8549.078691481493,GTR.d=16777.297593105031,GTR.e=19546.980416169525,GTR.theta=0.537138911249,GTR.theta1=0.551576311231,GTR.theta2=0.544394277806,lambda=1.382997811983,mu=0.020728094422)
+
+Rate distribution parameters:<br>
+rate_distribution=Gamma(n=4,alpha=7722.244281054756, Gamma.beta=alpha)
+
+Duration: 1.000000m, 51.000000s.
 
 ### Wikipages
 

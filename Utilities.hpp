@@ -73,7 +73,7 @@ using namespace tshlib;
     void updateTree_u2b(bpp::Tree *inBTree, Utree *inUTree, treemap &tm);
 
 
-    void associateNode2Alignment(bpp::SequenceContainer *sequences, Utree *in_tree);
+    void associateNode2Alignment(bpp::SiteContainer *sites, Utree *in_tree);
 
 
     void renameInternalNodes(bpp::Tree *in_tree, std::string prefix = "V");
@@ -114,6 +114,8 @@ namespace InputUtils {
 namespace OutputUtils {
 
     void printParametersLikelihood(bpp::AbstractHomogeneousTreeLikelihood *tl);
+
+    std::string tree2string(bpp::Tree *tree);
 
 }
 

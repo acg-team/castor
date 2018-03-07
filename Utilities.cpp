@@ -42,6 +42,7 @@
  * @see For more information visit: 
  */
 #include <glog/logging.h>
+#include <Bpp/Phyl/Io/Newick.h>
 //#include <elf.h>
 
 #include "Utilities.hpp"
@@ -258,13 +259,13 @@ void UtreeBppUtils::_traverseTree_u2b(bpp::Node *target, tshlib::VirtualNode *so
 
 }
 
-void UtreeBppUtils::associateNode2Alignment(bpp::SequenceContainer *sequences, tshlib::Utree *in_tree) {
+void UtreeBppUtils::associateNode2Alignment(bpp::SiteContainer *sites, tshlib::Utree *in_tree) {
 
     for(auto &node:in_tree->listVNodes){
 
         if(node->isTerminalNode()){
 
-            std::vector<std::string> seqnames = sequences->getSequencesNames();
+            std::vector<std::string> seqnames = sites->getSequencesNames();
 
             for(int i=0;i<seqnames.size(); i++){
 
@@ -686,4 +687,13 @@ void OutputUtils::printParametersLikelihood(bpp::AbstractHomogeneousTreeLikeliho
     }
     oss.clear();
     oss.str("");
+}
+
+std::string OutputUtils::tree2string(bpp::Tree *tree) {
+    bpp::Newick treeWriter;
+    bpp::TreeTemplate<bpp::Node> ttree(*tree);
+    std::ostringstream oss;
+    treeWriter.write(ttree, oss);
+    std::string out = oss.str();
+    return out;
 }

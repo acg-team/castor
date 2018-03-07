@@ -78,7 +78,7 @@ namespace bpp {
         void help() {
             std::cout << appName_ << std::endl << std::endl;
             std::cout << "Usage: miniJATI [options]" << std::endl;
-            std::cout << std::endl << "**** Alphabet options ****" << std::endl << std::endl;
+            std::cout << std::endl << "### Alphabet options" << std::endl << std::endl;
             std::cout << "alphabet={DNA|RNA|Protein)|Codon(letter={DNA|RNA},type={Standard|EchinodermMitochondrial|InvertebrateMitochondrial|VertebrateMitochondrial})}" << std::endl;
 
             std::cout << "                                        The alphabet to use when reading sequences. DNA and RNA alphabet can in addition take" << std::endl;
@@ -98,15 +98,19 @@ namespace bpp {
             std::cout << "                                        AscidianMitochondrial       13" << std::endl;
             std::cout << "                                        The states of the alphabets are in alphabetical order." << std::endl;
 
-            std::cout << std::endl << "**** [Input] Reading sequences ****" << std::endl << std::endl;
+            std::cout << std::endl << "### [Input] Reading sequences" << std::endl << std::endl;
 
-            std::cout << "input.sequence.file={path}                  The sequence file to use. (These sequences can also be not aligned). " << std::endl;
-            std::cout << "input.sequence.format={format}              The sequence file format. " << std::endl;
-            std::cout << "input.site.selection={list of integers}     Will only consider sites in the given list of positions, in extended format :" << std::endl;
-            std::cout << "                                            positions separated with \",\", and \"i-j\" for all positions between i and j, " << std::endl;
-            std::cout << "                                            included." << std::endl;
+            std::cout << "input.sequence.file={path}                                The sequence file to use. (These sequences can also be not aligned). " << std::endl;
+            std::cout << "input.sequence.format={format}                            The sequence file format. " << std::endl;
+            std::cout << "input.sequence.sites_to_use={all|nogap|complete}          Tells which sites to use " << std::endl;
+            std::cout << "input.sequence.remove_stop_codons={boolean}               Removes the sites where there is a stop codon (default: ’yes’)" << std::endl;
+            std::cout << "input.sequence.max_gap_allowed=100%                       It specifies the maximum amount of gap allowed per site." << std::endl;
+            std::cout << "input.sequence.max_unresolved_allowed=100%                It specifies the maximum amount of unresolved states per site." << std::endl;
+            std::cout << "input.site.selection={list of integers}                   Will only consider sites in the given list of positions, in extended format :" << std::endl;
+            std::cout << "                                                          positions separated with \",\", and \"i-j\" for all positions between i and j, " << std::endl;
+            std::cout << "                                                          included." << std::endl;
             std::cout << "input.site.selection = {Sample(n={integer} [, replace={true}])}" << std::endl;
-            std::cout << "                                            Will consider {n} random sites, with optional replacement. " << std::endl;
+            std::cout << "                                                          Will consider {n} random sites, with optional replacement. " << std::endl;
 
             std::cout << std::endl << "The following formats are currently supported:" << std::endl;
             std::cout << "Fasta(extended={bool}, strictNames={bool})                The fasta format. The argument extended, default to 'no' " << std::endl;
@@ -141,7 +145,7 @@ namespace bpp {
             std::cout << "                                                          all features are ignored." << std::endl;
 
 
-            std::cout << std::endl << "**** [Input] Reading trees ****" << std::endl << std::endl;
+            std::cout << std::endl << "### [Input] Reading trees" << std::endl << std::endl;
 
             std::cout << "input.tree.file={path}                      The phylogenetic tree file to use." << std::endl;
             std::cout << "input.tree.format={Newick|Nexus|NHX}        The format of the input tree file." << std::endl;
@@ -149,7 +153,37 @@ namespace bpp {
             std::cout << std::endl << "**** Alignment options ****" << std::endl << std::endl;
             std::cout << "alignment=<bool>                                     [requested]" << std::endl;
 
-            std::cout << std::endl << "**** Substitution model options ****" << std::endl << std::endl;
+            std::cout << std::endl << "**** Branch lengths initial values ****" << std::endl << std::endl;
+            std::cout << "init.tree={user|random|distance}                  Set the method for the initial tree to use. " << std::endl;
+            std::cout << "                                                  The user option allows you to use an existing file passed via input.tree.file" << std::endl;
+            std::cout << "                                                  This file may have been built using another method like neighbor joining or " << std::endl;
+            std::cout << "                                                  parsimony for instance. The random option picks a random tree, which is handy " << std::endl;
+            std::cout << "                                                  to test convergence.  This may however slows down significantly the optimization  " << std::endl;
+            std::cout << "                                                  process. " << std::endl;
+            std::cout << "init.distance.matrix.file={path}                  A distance matrix can be supplied instead of being computed from the alignment." << std::endl;
+            std::cout << "init.distance.method={wpgma|upgma|nj|bionj}       When distance method is required, the user can specify which algorithm to use." << std::endl;
+            std::cout << "init.brlen.method={method description}            Set how to initialize the branch lengths. Available methods include:" << std::endl;
+            std::cout << std::endl;
+            std::cout << "Input(midpoint_root_branch={boolean})             Keep initial branch lengths as is. Additional argument specifies if the root " << std::endl;
+            std::cout << "                                                  position should be moved to the midpoint position of the branch containing it. " << std::endl;
+            std::cout << std::endl;
+            std::cout << "Equal(value={float>0})                            Set all branch lengths to the same value, provided as argumemt. " << std::endl;
+            std::cout << std::endl;
+            std::cout << "Clock                                             Coerce to a clock tree." << std::endl;
+            std::cout << std::endl;
+            std::cout << "Grafen(height={{real>0}|input}, rho = {real>0})   Uses Grafen’s method to compute branch lengths." << std::endl;
+            std::cout << "                                                  In Grafen’s method, each node is given a weight equal to the number of underlying  " << std::endl;
+            std::cout << "                                                  leaves. The length of each branch is then computed as the difference of the weights" << std::endl;
+            std::cout << "                                                  of the connected nodes, and further divided by the number of leaves in the tree. " << std::endl;
+            std::cout << "                                                  The height of all nodes are then raised to the power of ’rho’, a user specified value. " << std::endl;
+            std::cout << "                                                  The tree is finally scaled to match a given total height, which can be the original " << std::endl;
+            std::cout << "                                                  one (height=input), or fixed to a certain value (usually height=1). A value of " << std::endl;
+            std::cout << "                                                  rho=0 provides a star tree, and the greater the value of rho, the more recent the" << std::endl;
+            std::cout << "                                                  inner nodes. " << std::endl;
+            std::cout << std::endl;
+            std::cout << "input.tree.check_root = {boolean}                 Tell if the input tree should be checked regarding to the presence of a root." << std::endl;
+
+            std::cout << std::endl << "### Substitution model options" << std::endl << std::endl;
             std::cout << "model=<string>                                      A description of the substitution model to use, using the keyval syntax. " << std::endl;
             //std::cout << "model_setfreqsfromdata=<bool>                       [requested](inherited from bpp documentation)" << std::endl;
             //std::cout << "model_pip_lambda=<float>                            (if models_indels=true)" << std::endl;
@@ -194,7 +228,7 @@ namespace bpp {
             std::cout << "G01(model={model description}, rdist={rate distribution description}, mu={real>0} [, \"equilibrium frequencies\"])" << std::endl;
             std::cout << "RE08(model={model description}, lambda={real>0}, mu={real>0} [, \"equilibrium frequencies\"])" << std::endl;
 
-            std::cout << std::endl << "**** Frequencies distribution sets ****" << std::endl << std::endl;
+            std::cout << std::endl << "### Frequencies distribution sets" << std::endl << std::endl;
             std::cout << "The following frequencies distributions are available:" << std::endl;
             std::cout << "Fixed()                                                                  All frequencies are fixed to their initial value and are not estimated. " << std::endl;
             std::cout << std::endl;
@@ -203,7 +237,7 @@ namespace bpp {
             std::cout << "Full(theta1={real]0,1[}, theta2={real]0,1[}, ..., thetaN={real]0,1[})    Full parametrization. Contains N free parameters." << std::endl;
             std::cout << std::endl;
 
-            std::cout << std::endl << "**** Rate across site distribution ****" << std::endl << std::endl;
+            std::cout << std::endl << "### Rate across site distribution" << std::endl << std::endl;
             std::cout << "rate_distribution={rate distribution description}                Specify the rate across sites distribution" << std::endl;
 
             std::cout << std::endl << "The following distributions are currently available:" << std::endl << std::endl;
@@ -255,9 +289,9 @@ namespace bpp {
             std::cout << "                                                                 of the distribution. " << std::endl;
             std::cout << std::endl;
 
-            std::cout << "**** Likelihood computation options ****" << std::endl << std::endl;
+            std::cout << std::endl << "### Likelihood computation options" << std::endl << std::endl;
 
-            std::cout << std::endl << "**** Numerical parameter optimisation options ****" << std::endl << std::endl;
+            std::cout << std::endl << "### Numerical parameter optimisation options" << std::endl << std::endl;
             std::cout << "This program allows to (re-)estimate numerical parameters, including\n"
                     "- Branch lengths\n"
                     "- Entries of the substitution matrices, included base frequencies values)\n"
@@ -316,7 +350,7 @@ namespace bpp {
             std::cout << "                                                             name has theta in it." << std::endl;
 
 
-            std::cout << std::endl << "**** Topology optimisation options ****" << std::endl << std::endl;
+            std::cout << std::endl << "### Topology optimisation options" << std::endl << std::endl;
 
             std::cout << "optimization.topology=<bool>                                                                Enable the tree topology estimation" << std::endl;
             std::cout << "optimization.topology.algorithm={greedy|hillclimbing|swarm}                                 Algorithm to use for topology estimation" << std::endl;
@@ -325,7 +359,7 @@ namespace bpp {
             std::cout << "optimization.topology.likelihood={single,double}                                            Method for recomputing the likelihood after tree move" << std::endl;
             std::cout << "optimization.topology.algorithm.hillclimbing.startnodes=<int>                               Number of starting random nodes to use during hc" << std::endl;
 
-            std::cout << std::endl << "**** Output options ****" << std::endl << std::endl;
+            std::cout << std::endl << "### Output options" << std::endl << std::endl;
 
             std::cout << "output.tree.file={path}                         The phylogenetic tree file to write to. " << std::endl;
             std::cout << "output.tree.format={Newick|Nexus|NHX}           The format of the output tree file. " << std::endl;
@@ -335,10 +369,10 @@ namespace bpp {
             std::cout << "output.estimates={{path}|none}                  Write parameter estimated values. " << std::endl;
             std::cout << "output.estimates.alias={boolean}                Write the alias names of the aliased parameters instead of their values (default: true). " << std::endl;
 
-            std::cout << std::endl << "**** Verbosity ****" << std::endl << std::endl;
+            std::cout << std::endl << "###  Verbosity" << std::endl << std::endl;
             std::cout << "export GLOG_v={0,1,2,3}" << std::endl << "export GLOG_minloglevel={INFO,FATAL,WARN}" << std::endl << std::endl;
 
-            std::cout << std::endl << "**** Examples ****" << std::endl << std::endl;
+            std::cout << std::endl << "### Examples" << std::endl << std::endl;
 
             std::cout << "Documentation can be found at https://bitbucket.org/acg-team/minijati/" << std::endl;
         }
