@@ -81,7 +81,7 @@ The following formats are currently supported:
 
 ###  Alignment options
 
-    alignment=<bool>                                     [requested]
+    alignment={bool}                                     [requested]
 
 ###  Branch lengths initial values
 
@@ -97,6 +97,8 @@ The following formats are currently supported:
 
     Input(midpoint_root_branch={boolean})             Keep initial branch lengths as is. Additional argument specifies if the root
                                                       position should be moved to the midpoint position of the branch containing it.
+
+   
 
     Equal(value={float>0})                            Set all branch lengths to the same value, provided as argumemt.
 
@@ -116,7 +118,7 @@ The following formats are currently supported:
 
 ### Substitution model options
 
-    model=<string>                                      A description of the substitution model to use, using the keyval syntax.
+    model={string}                                    A description of the substitution model to use, using the keyval syntax.
 
 The following nucleotide models are currently available:
 
@@ -161,8 +163,8 @@ The following meta models are currently available:
     RE08(model={model description}, lambda={real>0}, mu={real>0} [, "equilibrium frequencies"])
 
 ### Frequencies distribution sets
+The following frequencies distributions are available:
 
-    The following frequencies distributions are available:
     Fixed()                                                                  All frequencies are fixed to their initial value and are not estimated.
 
     GC(theta={real]0,1[})                                                    For nucleotides only, set the G content equal to the C content.
@@ -176,7 +178,7 @@ The following meta models are currently available:
 
 The following distributions are currently available:
 
-[Most used distributions]
+**[Most used distributions]**
 
     Constant                                                         Uses a constant rate across sites
 
@@ -186,7 +188,7 @@ The following distributions are currently available:
     Invariant(dist={rate distribution description}, p={real[0,1]})   A composite distribution allowing a special class of invariant site, with a
                                                                      probability p.
 
-[Standard distributions]
+**[Standard distributions]**
 
     Beta(n={int>=2}, alpha={float>0}, beta={float>0})                A discretized beta distribution, with n classes, with standard parameters
                                                                      alpha and beta.
@@ -213,7 +215,7 @@ The following distributions are currently available:
     Uniform(n={int>=1}, begin={float>0}, end={float>0})              A uniform distribution, with n classes in interval [begin,end].
                                                                      There are no parameters.
 
-[Mixture Distributions]
+**[Mixture Distributions]**
 
     Invariant(dist={distribution description}, p={float>0})          A Mixture of a given discrete distributution and a 0 Dirac. p is the  
                                                                      probability of this 0 Dirac.
@@ -238,6 +240,7 @@ This program allows to (re-)estimate numerical parameters, including
 
 
     optimization={method}
+
 
 The following methods are currently available:
 
@@ -267,6 +270,8 @@ The following methods are currently available:
                                                                  precision=E-6, a first optimization with precision=E-2, will be performed,
                                                                  then a round with precision set to E-4 and finally precision will be set to
                                                                  E-6. This approach generally increases convergence time.
+
+   
 
     optimization.reparametrization=<bool>                        Tells if parameters should be transformed in order to remove constraints (for
                                                                  instance positivie-only parameters will be log transformed in order to obtain
