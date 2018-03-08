@@ -446,28 +446,9 @@ int main(int argc, char *argv[]) {
 
             //progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
 
-            progressivePIP->PIPAligner2(&tm,fullTraversalNodes, sequences, 1.0, true);
+            progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
 
-            auto MSA = progressivePIP->getMSA(progressivePIP->getRootNode());
-
-            sequences = new bpp::VectorSequenceContainer(alpha);
-
-            auto seqNames = progressivePIP->getSeqnames(progressivePIP->getRootNode());
-
-            int msaLen = MSA.size();
-
-            int numLeaves = seqNames.size();
-            for(int j=0;j<numLeaves;j++){
-                std::string seqname = seqNames.at(j);
-                std::string seqdata;
-                seqdata.resize(msaLen);
-                for (int i = 0; i < msaLen; i++) {
-                    seqdata.at(i)=MSA.at(i).at(j);
-                }
-                sequences->addSequence(*(new bpp::BasicSequence(seqname, seqdata, alpha)), true);
-            }
-
-            sites = new bpp::VectorSiteContainer(*sequences);
+            sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
 
             std::cout<<"PIPAligner done...\n";
 

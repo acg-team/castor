@@ -2249,7 +2249,7 @@ double pPIP::computeLK_Y_local_tree_s_opt(double valM,
 
     return val;
 }
-void pPIP::DP3D_PIP2(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local){
+void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local){
 
     //TODO: place as argument
     bool randomSeed = true;
@@ -2828,7 +2828,10 @@ std::vector< std::string > pPIP::getSeqnames(bpp::Node *node) {
 bpp::Node * pPIP::getRootNode(){
     return _tree->getRootNode();
 }
-void pPIP::PIPAligner2(UtreeBppUtils::treemap *tm,
+bpp::Alphabet *pPIP::getAlphabet(){
+    return _alphabet;
+}
+void pPIP::PIPAligner(UtreeBppUtils::treemap *tm,
                   std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
                   bpp::SequenceContainer *sequences,
                   double gamma_rate,
@@ -2852,10 +2855,33 @@ void pPIP::PIPAligner2(UtreeBppUtils::treemap *tm,
 
         }else{
 
-            DP3D_PIP2(node, tm, gamma_rate, local);
+            DP3D_PIP(node, tm, gamma_rate, local);
 
         }
     }
 
 }
 
+
+bpp::SiteContainer * pPIPUtils::pPIPmsa2Sites(bpp::pPIP *progressivePIP){
+    auto MSA = progressivePIP->getMSA(progressivePIP->getRootNode());
+
+    auto sequences = new bpp::VectorSequenceContainer(progressivePIP->getAlphabet());
+
+    auto seqNames = progressivePIP->getSeqnames(progressivePIP->getRootNode());
+
+    int msaLen = MSA.size();
+
+    int numLeaves = seqNames.size();
+    for(int j=0;j<numLeaves;j++){
+        std::string seqname = seqNames.at(j);
+        std::string seqdata;
+        seqdata.resize(msaLen);
+        for (int i = 0; i < msaLen; i++) {
+            seqdata.at(i)=MSA.at(i).at(j);
+        }
+        sequences->addSequence(*(new bpp::BasicSequence(seqname, seqdata, progressivePIP->getAlphabet())), true);
+    }
+
+    return new bpp::VectorSiteContainer(*sequences);
+}
