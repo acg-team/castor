@@ -74,7 +74,7 @@ using namespace tshlib;
 
 
     void associateNode2Alignment(bpp::SiteContainer *sites, Utree *in_tree);
-
+    void associateNode2Alignment(bpp::SequenceContainer *sequences, tshlib::Utree *in_tree);
 
     void renameInternalNodes(bpp::Tree *in_tree, std::string prefix = "V");
 

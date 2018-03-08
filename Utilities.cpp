@@ -280,10 +280,29 @@ void UtreeBppUtils::associateNode2Alignment(bpp::SiteContainer *sites, tshlib::U
         }
 
     }
+}
+
+void UtreeBppUtils::associateNode2Alignment(bpp::SequenceContainer *sequences, tshlib::Utree *in_tree) {
+
+    for(auto &node:in_tree->listVNodes){
+
+        if(node->isTerminalNode()){
+
+            std::vector<std::string> seqnames = sequences->getSequencesNames();
+
+            for(int i=0;i<seqnames.size(); i++){
+
+                if(seqnames.at(i).compare(node->vnode_name)==0){
+                    node->vnode_seqid = i;
+                    break;
+                }
+
+            }
 
 
+        }
 
-
+    }
 }
 
 void UtreeBppUtils::renameInternalNodes(bpp::Tree *in_tree, std::string prefix) {

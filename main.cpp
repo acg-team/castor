@@ -209,12 +209,13 @@ int main(int argc, char *argv[]) {
                 sites = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams(), "", true, !PAR_model_indels, true, 1);
                 delete allSites;
 
+                LOG(INFO) << "[Input data parser] Number of sequences: " << sites->getNumberOfSequences();
+                LOG(INFO) << "[Input data parser] Number of sites: " << sites->getNumberOfSites();
 
             }
 
             //size_t num_leaves = sequences->getNumberOfSequences();
-            LOG(INFO) << "[Input data parser] Number of sequences: " << sites->getNumberOfSequences();
-            LOG(INFO) << "[Input data parser] Number of sites: " << sites->getNumberOfSites();
+
 
         } catch (bpp::Exception e) {
             LOG(FATAL) << "[Input data parser] Error when reading sequence file due to: " << e.message();
@@ -345,7 +346,11 @@ int main(int argc, char *argv[]) {
         auto utree = new Utree();
         UtreeBppUtils::treemap tm;
         UtreeBppUtils::convertTree_b2u(tree, utree, tm);
-        UtreeBppUtils::associateNode2Alignment(sites, utree);
+        if (PAR_alignment) {
+            UtreeBppUtils::associateNode2Alignment(sequences, utree);
+        }else{
+            UtreeBppUtils::associateNode2Alignment(sites, utree);
+        }
 
         DLOG(INFO) << "Bidirectional map size: " << tm.size();
         DLOG(INFO) << "[Initial Utree Topology] " << utree->printTreeNewick(true);
