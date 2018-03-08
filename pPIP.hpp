@@ -46,6 +46,7 @@
 
 #include <Bpp/Numeric/VectorTools.h>
 #include <Bpp/Phyl/Node.h>
+#include <random>
 #include "Utree.hpp"
 #include "Utilities.hpp"
 
@@ -70,18 +71,24 @@ namespace bpp {
              double lambda,
              double mu);
 
-        void PIPAligner(UtreeBppUtils::treemap *tm,
-                              std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-                              bpp::SequenceContainer *sequences,
-                              double gamma_rate,
-                              bool local);
+//        void PIPAligner(UtreeBppUtils::treemap *tm,
+//                              std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
+//                              bpp::SequenceContainer *sequences,
+//                              double gamma_rate,
+//                              bool local);
 
-        void PIPAligner2(UtreeBppUtils::treemap *tm,
+        void PIPAligner(UtreeBppUtils::treemap *tm,
                         std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
                         bpp::SequenceContainer *sequences,
                         double gamma_rate,
                         bool local);
 
+
+        std::vector< std::string > getMSA(bpp::Node *node);
+        double getScore(bpp::Node *node);
+        std::vector< std::string > getSeqnames(bpp::Node *node);
+        bpp::Node *getRootNode();
+        bpp::Alphabet *getAlphabet();
 
     protected:
     private:
@@ -281,7 +288,7 @@ namespace bpp {
                                                   unsigned long m,
                                                   std::map<std::string,double> &lkY);
 
-        void DP3D_PIP2(bpp::Node *node,
+        void DP3D_PIP(bpp::Node *node,
                       UtreeBppUtils::treemap *tm,
                       double gamma_rate,
                       bool local);
@@ -292,5 +299,8 @@ namespace bpp {
 
 }
 
+namespace pPIPUtils {
+    bpp::SiteContainer *pPIPmsa2Sites(bpp::pPIP *progressivePIP);
+}
 
 #endif //MINIJATI_PPIP_HPP

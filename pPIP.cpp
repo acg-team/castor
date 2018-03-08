@@ -1810,11 +1810,11 @@ bpp::ColMatrix<double> pPIP::fv_observed(std::string &s, unsigned long &idx){
     int ii;
     char ch=s[idx];
 
-    fv.resize(1,_extendedAlphabetSize);
+    fv.resize(_extendedAlphabetSize,1);
     bpp::MatrixTools::fill(fv,0.0);
 
     ii=_alphabet->charToInt(&ch);
-    //ii=ii<0?_alphabetSize:ii;
+    ii=ii<0?_alphabetSize:ii;
 
     fv(ii,0)=1.0;
     idx++;
@@ -2249,7 +2249,7 @@ double pPIP::computeLK_Y_local_tree_s_opt(double valM,
 
     return val;
 }
-void pPIP::DP3D_PIP2(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local){
+void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local){
 
     //TODO: place as argument
     bool randomSeed = true;
@@ -2294,8 +2294,12 @@ void pPIP::DP3D_PIP2(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rat
     std::string col_gap_Ls;
     std::string col_gap_Rs;
 
-    col_gap_Ls=createGapCol(_MSA.at(s1ID).size());
-    col_gap_Rs=createGapCol(_MSA.at(s2ID).size());
+
+    unsigned long numLeavesLeft = _seqNames.at(s1ID).size();
+    unsigned long numLeavesRight = _seqNames.at(s2ID).size();
+
+    col_gap_Ls=createGapCol(numLeavesLeft);
+    col_gap_Rs=createGapCol(numLeavesRight);
 
     signed long seed;
     if(randomSeed){
@@ -2360,7 +2364,7 @@ void pPIP::DP3D_PIP2(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rat
     double valX;
     double valY;
 
-    unsigned long idx;
+    signed long idx;
 
     unsigned long coordSeq_1;
     unsigned long coordSeq_2;
@@ -2810,11 +2814,28 @@ void pPIP::DP3D_PIP2(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rat
     //return result_v;
     //return result;
 }
-void pPIP::PIPAligner2(UtreeBppUtils::treemap *tm,
-                      std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-                      bpp::SequenceContainer *sequences,
-                      double gamma_rate,
-                      bool local) {
+std::vector< std::string > pPIP::getMSA(bpp::Node *node){
+
+    return _MSA.at(node->getId());
+
+}
+double pPIP::getScore(bpp::Node *node){
+    return _score.at(node->getId());
+}
+std::vector< std::string > pPIP::getSeqnames(bpp::Node *node) {
+    return _seqNames.at(node->getId());
+}
+bpp::Node * pPIP::getRootNode(){
+    return _tree->getRootNode();
+}
+bpp::Alphabet *pPIP::getAlphabet(){
+    return _alphabet;
+}
+void pPIP::PIPAligner(UtreeBppUtils::treemap *tm,
+                  std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
+                  bpp::SequenceContainer *sequences,
+                  double gamma_rate,
+                  bool local) {
 
     for (auto &vnode:list_vnode_to_root) {
 
@@ -2834,9 +2855,33 @@ void pPIP::PIPAligner2(UtreeBppUtils::treemap *tm,
 
         }else{
 
-            DP3D_PIP2(node, tm, gamma_rate, local);
+            DP3D_PIP(node, tm, gamma_rate, local);
 
         }
     }
 
+}
+
+
+bpp::SiteContainer * pPIPUtils::pPIPmsa2Sites(bpp::pPIP *progressivePIP){
+    auto MSA = progressivePIP->getMSA(progressivePIP->getRootNode());
+
+    auto sequences = new bpp::VectorSequenceContainer(progressivePIP->getAlphabet());
+
+    auto seqNames = progressivePIP->getSeqnames(progressivePIP->getRootNode());
+
+    int msaLen = MSA.size();
+
+    int numLeaves = seqNames.size();
+    for(int j=0;j<numLeaves;j++){
+        std::string seqname = seqNames.at(j);
+        std::string seqdata;
+        seqdata.resize(msaLen);
+        for (int i = 0; i < msaLen; i++) {
+            seqdata.at(i)=MSA.at(i).at(j);
+        }
+        sequences->addSequence(*(new bpp::BasicSequence(seqname, seqdata, progressivePIP->getAlphabet())), true);
+    }
+
+    return new bpp::VectorSiteContainer(*sequences);
 }

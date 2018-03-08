@@ -51,6 +51,7 @@
 #include <Bpp/Phyl/Distance/NeighborJoining.h>
 #include <Bpp/Phyl/Distance/BioNJ.h>
 #include <Bpp/Phyl/OptimizationTools.h>
+
 //#include <elf.h>
 
 #include "Utilities.hpp"
@@ -58,6 +59,7 @@
 #include "Optimizators.hpp"
 
 using namespace bpp;
+#include "pPIP.hpp"
 
 /*
 void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source, treemap &tm) {

@@ -452,7 +452,9 @@ int main(int argc, char *argv[]) {
 
             //progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
 
-            progressivePIP->PIPAligner2(&tm,fullTraversalNodes, sequences, 1.0, true);
+            progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
+
+            sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
 
             std::cout<<"PIPAligner done...\n";
 
