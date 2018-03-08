@@ -527,4 +527,138 @@ namespace bpp {
         return tl;
     }
 
+    std::string Optimizators::DISTANCEMETHOD_INIT = "init";
+    std::string Optimizators::DISTANCEMETHOD_PAIRWISE = "pairwise";
+    std::string Optimizators::DISTANCEMETHOD_ITERATIONS = "iterations";
+
+
+    TreeTemplate<Node> *Optimizators::buildDistanceTreeGeneric(
+            DistanceEstimation &estimationMethod,
+            AgglomerativeDistanceMethod &reconstructionMethod,
+            const ParameterList &parametersToIgnore,
+            bool optimizeBrLen,
+            const std::string &param,
+            double tolerance,
+            unsigned int tlEvalMax,
+            OutputStream *profiler,
+            OutputStream *messenger,
+            unsigned int verbose) throw(Exception) {
+        estimationMethod.resetAdditionalParameters();
+        estimationMethod.setVerbose(verbose);
+        if (param == DISTANCEMETHOD_PAIRWISE) {
+            ParameterList tmp = estimationMethod.getModel().getIndependentParameters();
+            tmp.addParameters(estimationMethod.getRateDistribution().getIndependentParameters());
+            tmp.deleteParameters(parametersToIgnore.getParameterNames());
+            estimationMethod.setAdditionalParameters(tmp);
+        }
+        TreeTemplate<Node> *tree = NULL;
+        TreeTemplate<Node> *previousTree = NULL;
+        bool test = true;
+        while (test) {
+            // Compute matrice:
+            if (verbose > 0)
+                ApplicationTools::displayTask("Estimating distance matrix", true);
+            estimationMethod.computeMatrix();
+            DistanceMatrix *matrix = estimationMethod.getMatrix();
+            if (verbose > 0)
+                ApplicationTools::displayTaskDone();
+
+            // Compute tree:
+            if (matrix->size() == 2) {
+                //Special case, there is only one possible tree:
+                Node *n1 = new Node(0);
+                Node *n2 = new Node(1, matrix->getName(0));
+                n2->setDistanceToFather((*matrix)(0, 0) / 2.);
+                Node *n3 = new Node(2, matrix->getName(1));
+                n3->setDistanceToFather((*matrix)(0, 0) / 2.);
+                n1->addSon(n2);
+                n1->addSon(n3);
+                tree = new TreeTemplate<Node>(n1);
+                break;
+            }
+            if (verbose > 0)
+                ApplicationTools::displayTask("Building tree");
+            reconstructionMethod.setDistanceMatrix(*matrix);
+            reconstructionMethod.computeTree();
+            previousTree = tree;
+            delete matrix;
+            tree = dynamic_cast<TreeTemplate<Node> *>(reconstructionMethod.getTree());
+            if (verbose > 0)
+                ApplicationTools::displayTaskDone();
+            if (previousTree && verbose > 0) {
+                int rf = TreeTools::robinsonFouldsDistance(*previousTree, *tree, false);
+                ApplicationTools::displayResult("Topo. distance with previous iteration", TextTools::toString(rf));
+                test = (rf == 0);
+                delete previousTree;
+            }
+            if (param != DISTANCEMETHOD_ITERATIONS)
+                break;  // Ends here.
+
+            // Now, re-estimate parameters:
+            unique_ptr<TransitionModel> model(estimationMethod.getModel().clone());
+            unique_ptr<DiscreteDistribution> rdist(estimationMethod.getRateDistribution().clone());
+            DRHomogeneousTreeLikelihood tl(*tree,
+                                           *estimationMethod.getData(),
+                                           model.get(),
+                                           rdist.get(),
+                                           true, verbose > 1);
+            tl.initialize();
+            ParameterList parameters = tl.getParameters();
+            if (!optimizeBrLen) {
+                vector<string> vs = tl.getBranchLengthsParameters().getParameterNames();
+                parameters.deleteParameters(vs);
+            }
+            parameters.deleteParameters(parametersToIgnore.getParameterNames());
+            OptimizationTools::optimizeNumericalParameters(&tl, parameters, NULL, 0, tolerance, tlEvalMax, messenger, profiler, verbose > 0 ? verbose - 1 : 0);
+            if (verbose > 0) {
+                ParameterList tmp = tl.getSubstitutionModelParameters();
+                for (unsigned int i = 0; i < tmp.size(); i++) {
+                    ApplicationTools::displayResult(tmp[i].getName(), TextTools::toString(tmp[i].getValue()));
+                }
+                tmp = tl.getRateDistributionParameters();
+                for (unsigned int i = 0; i < tmp.size(); i++) {
+                    ApplicationTools::displayResult(tmp[i].getName(), TextTools::toString(tmp[i].getValue()));
+                }
+            }
+        }
+        return tree;
+    }
+
+    TreeTemplate<Node> *Optimizators::buildDistanceTreeGenericFromDistanceMatrix(DistanceMatrix *dmatrix,
+                                                                                 AgglomerativeDistanceMethod &reconstructionMethod,
+                                                                                 unsigned int verbose) {
+
+        TreeTemplate<Node> *tree = nullptr;
+
+        // Compute matrice:
+        if (verbose > 0)
+            ApplicationTools::displayTask("Importing distance matrix", true);
+        DistanceMatrix *matrix = dmatrix;
+        if (verbose > 0)
+            ApplicationTools::displayTaskDone();
+
+        // Compute tree:
+        if (matrix->size() == 2) {
+            //Special case, there is only one possible tree:
+            Node *n1 = new Node(0);
+            Node *n2 = new Node(1, matrix->getName(0));
+            n2->setDistanceToFather((*matrix)(0, 0) / 2.);
+            Node *n3 = new Node(2, matrix->getName(1));
+            n3->setDistanceToFather((*matrix)(0, 0) / 2.);
+            n1->addSon(n2);
+            n1->addSon(n3);
+            tree = new TreeTemplate<Node>(n1);
+        }
+        if (verbose > 0)
+            ApplicationTools::displayTask("Building tree");
+        reconstructionMethod.setDistanceMatrix(*matrix);
+        reconstructionMethod.computeTree();
+        delete matrix;
+        tree = dynamic_cast<TreeTemplate<Node> *>(reconstructionMethod.getTree());
+        if (verbose > 0)
+            ApplicationTools::displayTaskDone();
+
+
+        return tree;
+    }
 }

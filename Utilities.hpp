@@ -50,21 +50,25 @@
 #include <Bpp/Phyl/Tree.h>
 #include <Bpp/Phyl/TreeTemplate.h>
 #include <Bpp/Phyl/Likelihood/AbstractHomogeneousTreeLikelihood.h>
+#include <Bpp/Phyl/Distance/DistanceEstimation.h>
+#include <Bpp/Seq/GeneticCode/GeneticCode.h>
 
 
-namespace UtreeBppUtils{
-using namespace tshlib;
+namespace UtreeBppUtils {
+    using namespace tshlib;
 
-    typedef boost::bimap< int, tshlib::VirtualNode *> treemap;
+    typedef boost::bimap<int, tshlib::VirtualNode *> treemap;
     typedef treemap::value_type nodeassoc;
 
     //void convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree, treemap &tm);
     void convertTree_b2u(bpp::Tree *in_tree, Utree *out_tree, treemap &tm);
+
     void _traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Tree *refTree, int nodeId, treemap &tm);
 
     // void _traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source, treemap &tm);
 
     bpp::TreeTemplate<bpp::Node> *convertTree_u2b(Utree *in_tree);
+
     void _traverseTree_u2b(bpp::Node *target, VirtualNode *source);
 
 
@@ -74,6 +78,7 @@ using namespace tshlib;
 
 
     void associateNode2Alignment(bpp::SiteContainer *sites, Utree *in_tree);
+
     void associateNode2Alignment(bpp::SequenceContainer *sequences, tshlib::Utree *in_tree);
 
     void renameInternalNodes(bpp::Tree *in_tree, std::string prefix = "V");
@@ -82,7 +87,7 @@ using namespace tshlib;
 
 }
 
-namespace MatrixBppUtils{
+namespace MatrixBppUtils {
 
 
     Eigen::MatrixXd Matrix2Eigen(const bpp::Matrix<double> &inMatrix);
@@ -92,18 +97,17 @@ namespace MatrixBppUtils{
 
     Eigen::VectorXd Vector2Eigen(const std::vector<double> &inVector);
 
-    double dotProd(const std::vector<double> *x,const std::vector<double> *y);
+    double dotProd(const std::vector<double> *x, const std::vector<double> *y);
 
-    std::vector<double> cwiseProd(std::vector<double> *x,std::vector<double> *y);
+    std::vector<double> cwiseProd(std::vector<double> *x, std::vector<double> *y);
 
-    double dotProd(const bpp::ColMatrix<double> &x,const bpp::ColMatrix<double> &y);
+    double dotProd(const bpp::ColMatrix<double> &x, const bpp::ColMatrix<double> &y);
 
     double sumVector(std::vector<double> *x);
 
     std::vector<double> matrixVectorProd(bpp::RowMatrix<double> &M, std::vector<double> &A);
 
 }
-
 
 namespace InputUtils {
 
@@ -112,7 +116,6 @@ namespace InputUtils {
 
 }
 
-
 namespace OutputUtils {
 
     void printParametersLikelihood(bpp::AbstractHomogeneousTreeLikelihood *tl);
@@ -120,5 +123,54 @@ namespace OutputUtils {
     std::string tree2string(bpp::Tree *tree);
 
 }
+
+namespace DistanceUtils {
+
+    bpp::DistanceEstimation computeDistanceMethod(std::string seqfilename, bpp::Alphabet *alphabet, bpp::GeneticCode *gCode, std::map<std::string, std::string> &params);
+
+    bpp::TreeTemplate<bpp::Node> *computeDistanceTree(bpp::TransitionModel *model, bpp::DiscreteDistribution *rDist, bpp::DistanceEstimation &distEstimation, std::map<std::string, std::string> &
+    params);
+
+}
+
+
+class DistanceMethodsUtils {
+
+private:
+    std::string seqfilename_;
+    bpp::Alphabet *alphabet_;
+    bpp::GeneticCode *gCode_;
+    bpp::DiscreteDistribution *rdist_;
+    bpp::TransitionModel *model_;
+    bpp::DistanceEstimation *distEstimation_;
+    bpp::DistanceMatrix *distMatrix_;
+    std::map<std::string, std::string> params_;
+
+
+public:
+
+    DistanceMethodsUtils(std::string seqfilename, bpp::Alphabet *alphabet, bpp::GeneticCode *gCode, std::map<std::string, std::string> &params) :
+            seqfilename_(seqfilename),
+            alphabet_(alphabet),
+            gCode_(gCode),
+            params_(params),
+            distMatrix_(nullptr),
+            distEstimation_(nullptr) {}
+
+    ~DistanceMethodsUtils() {
+        delete model_;
+        delete distEstimation_;
+        delete rdist_;
+    };
+
+    void computeDistanceMatrix();
+
+    void setDistanceMatrix();
+
+    bpp::TreeTemplate<bpp::Node> *computeDistanceTree();
+
+
+};
+
 
 #endif //MINIJATI_UTILS_HPP

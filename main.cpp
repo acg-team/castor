@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
         std::map<std::string, std::string> modelMap;
         KeyvalTools::parseProcedure(PAR_model_substitution, modelStringName, modelMap);
         bool PAR_model_indels = (modelStringName == "PIP") ? true : false;
-        modelMap["model"];
+
         //////////////////////////////////////////////
         // ALPHABET
         // The alphabet object contains the not-extended alphabet as requested by the user,
@@ -242,6 +242,7 @@ int main(int argc, char *argv[]) {
         } else if (initTreeOpt == "distance") {
 
             bpp::DistanceMatrix *distances;
+            bpp::DistanceEstimation *distEst;
 
             if (!PAR_alignment) {
                 // Compute bioNJ tree using the JC69 model
@@ -258,7 +259,11 @@ int main(int argc, char *argv[]) {
                 bpp::DistanceEstimation distanceMethod(submodel_bioNJ, rDist, sites_bioNJ);
                 distances = distanceMethod.getMatrix();
                 delete sequences_bioNJ;
+
+                //distEst = DistanceUtils::computeDistanceMethod(PAR_input_sequences, alphabet, gCode.get(), jatiapp.getParams());
+
                 LOG(INFO) << "[BioNJ Pairwise distance matrix] The pairwise distance matrix is computed using JC69";
+
 
             } else {
 
@@ -268,6 +273,7 @@ int main(int argc, char *argv[]) {
                 LOG(INFO) << "[BioNJ Pairwise distance matrix] The pairwise distance matrix is computed using LZ compression ";
 
             }
+
 
             bpp::BioNJ bionj(*distances, true, true, false);
             tree = bionj.getTree();
