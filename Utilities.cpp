@@ -498,9 +498,9 @@ double MatrixBppUtils::dotProd(const std::vector<double> *x,const std::vector<do
 
     double val;
 
-    if(x->size() != y->size()){
-        perror("ERROR: MatrixBppUtils::dotProd");
-    }
+//    if(x->size() != y->size()){
+//        perror("ERROR: MatrixBppUtils::dotProd");
+//    }
 
     val=0.0;
     for(unsigned  long i=0;i<x->size();i++){
@@ -509,15 +509,29 @@ double MatrixBppUtils::dotProd(const std::vector<double> *x,const std::vector<do
 
     return val;
 }
+double MatrixBppUtils::dotProd(const bpp::ColMatrix<double> &x,const bpp::ColMatrix<double> &y){
 
+    double val;
+
+//    if(x->size() != y->size()){
+//        perror("ERROR: MatrixBppUtils::dotProd");
+//    }
+
+    val=0.0;
+    for(unsigned  long i=0;i<x.getNumberOfRows();i++){
+        val += (x(i,0) * y(i,0));
+    }
+
+    return val;
+}
 std::vector<double> MatrixBppUtils::cwiseProd(std::vector<double> *x,std::vector<double> *y){
 
     std::vector<double> val;
 
 
-    if(x->size() != y->size()){
-        perror("ERROR: MatrixBppUtils::dotProd");
-    }
+//    if(x->size() != y->size()){
+//        perror("ERROR: MatrixBppUtils::dotProd");
+//    }
 
     val.resize(x->size());
 

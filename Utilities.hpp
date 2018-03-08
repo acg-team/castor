@@ -96,6 +96,8 @@ namespace MatrixBppUtils{
 
     std::vector<double> cwiseProd(std::vector<double> *x,std::vector<double> *y);
 
+    double dotProd(const bpp::ColMatrix<double> &x,const bpp::ColMatrix<double> &y);
+
     double sumVector(std::vector<double> *x);
 
     std::vector<double> matrixVectorProd(bpp::RowMatrix<double> &M, std::vector<double> &A);

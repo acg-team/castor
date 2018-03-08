@@ -421,13 +421,12 @@ int main(int argc, char *argv[]) {
             likelihood->computePr(fullTraversalNodes, alpha->getSize());
 
 
-            LOG(INFO) << "[Alignment sequences] Starting MSA inference using PIPAligner...";
+            LOG(INFO) << "[Alignment sequences] Starting MSA inference using Pro-PIP...";
 
             /*
             VirtualNode *root = utree->rootnode;
-
             MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, tree, &tm, pi, lambda, mu, sequences, alpha, 1.0, false);
-             */
+            */
 
             //********************************************************************************
             //********************************************************************************
@@ -440,9 +439,11 @@ int main(int argc, char *argv[]) {
 
             progressivePIP->init(tree, &tm, fullTraversalNodes, smodel->getFrequencies(), lambda, mu);
 
-            progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
+            //progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
 
-            LOG(INFO) << "[Alignment sequences] Alignment completed succesfully using PIPAligner.";
+            progressivePIP->PIPAligner2(&tm,fullTraversalNodes, sequences, 1.0, true);
+
+            std::cout<<"PIPAligner done...\n";
 
             //********************************************************************************
             //********************************************************************************
@@ -481,6 +482,8 @@ int main(int argc, char *argv[]) {
             */
 
         }
+
+
 
 
         //--------------------------------------------------------------------------------------------------------------
