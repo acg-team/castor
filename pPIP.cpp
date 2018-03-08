@@ -1810,11 +1810,11 @@ bpp::ColMatrix<double> pPIP::fv_observed(std::string &s, unsigned long &idx){
     int ii;
     char ch=s[idx];
 
-    fv.resize(1,_extendedAlphabetSize);
+    fv.resize(_extendedAlphabetSize,1);
     bpp::MatrixTools::fill(fv,0.0);
 
     ii=_alphabet->charToInt(&ch);
-    //ii=ii<0?_alphabetSize:ii;
+    ii=ii<0?_alphabetSize:ii;
 
     fv(ii,0)=1.0;
     idx++;
@@ -2294,8 +2294,12 @@ void pPIP::DP3D_PIP2(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rat
     std::string col_gap_Ls;
     std::string col_gap_Rs;
 
-    col_gap_Ls=createGapCol(_MSA.at(s1ID).size());
-    col_gap_Rs=createGapCol(_MSA.at(s2ID).size());
+
+    unsigned long numLeavesLeft = _seqNames.at(s1ID).size();
+    unsigned long numLeavesRight = _seqNames.at(s2ID).size();
+
+    col_gap_Ls=createGapCol(numLeavesLeft);
+    col_gap_Rs=createGapCol(numLeavesRight);
 
     signed long seed;
     if(randomSeed){
@@ -2360,7 +2364,7 @@ void pPIP::DP3D_PIP2(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rat
     double valX;
     double valY;
 
-    unsigned long idx;
+    signed long idx;
 
     unsigned long coordSeq_1;
     unsigned long coordSeq_2;
@@ -2810,11 +2814,25 @@ void pPIP::DP3D_PIP2(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rat
     //return result_v;
     //return result;
 }
+std::vector< std::string > pPIP::getMSA(bpp::Node *node){
+
+    return _MSA.at(node->getId());
+
+}
+double pPIP::getScore(bpp::Node *node){
+    return _score.at(node->getId());
+}
+std::vector< std::string > pPIP::getSeqnames(bpp::Node *node) {
+    return _seqNames.at(node->getId());
+}
+bpp::Node * pPIP::getRootNode(){
+    return _tree->getRootNode();
+}
 void pPIP::PIPAligner2(UtreeBppUtils::treemap *tm,
-                      std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-                      bpp::SequenceContainer *sequences,
-                      double gamma_rate,
-                      bool local) {
+                  std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
+                  bpp::SequenceContainer *sequences,
+                  double gamma_rate,
+                  bool local) {
 
     for (auto &vnode:list_vnode_to_root) {
 
@@ -2840,3 +2858,4 @@ void pPIP::PIPAligner2(UtreeBppUtils::treemap *tm,
     }
 
 }
+

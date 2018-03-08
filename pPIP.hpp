@@ -70,11 +70,11 @@ namespace bpp {
              double lambda,
              double mu);
 
-        void PIPAligner(UtreeBppUtils::treemap *tm,
-                              std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-                              bpp::SequenceContainer *sequences,
-                              double gamma_rate,
-                              bool local);
+//        void PIPAligner(UtreeBppUtils::treemap *tm,
+//                              std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
+//                              bpp::SequenceContainer *sequences,
+//                              double gamma_rate,
+//                              bool local);
 
         void PIPAligner2(UtreeBppUtils::treemap *tm,
                         std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
@@ -82,6 +82,11 @@ namespace bpp {
                         double gamma_rate,
                         bool local);
 
+
+        std::vector< std::string > getMSA(bpp::Node *node);
+        double getScore(bpp::Node *node);
+        std::vector< std::string > getSeqnames(bpp::Node *node);
+        bpp::Node *getRootNode();
 
     protected:
     private:
@@ -291,6 +296,5 @@ namespace bpp {
 
 
 }
-
 
 #endif //MINIJATI_PPIP_HPP
