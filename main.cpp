@@ -125,8 +125,8 @@ int main(int argc, char *argv[]) {
 
         std::string PAR_optim_topology_algorithm = ApplicationTools::getStringParameter("optim_topology_algorithm", jatiapp.getParams(), "no-search", "", true, true);
         bool PAR_profile_ppip = ApplicationTools::getBooleanParameter("profile_ppip", jatiapp.getParams(), false);
-        std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output_file_msa", jatiapp.getParams(), false, false, "", true, "", 1);
-        std::string PAR_output_file_tree = ApplicationTools::getAFilePath("output_file_tree", jatiapp.getParams(), false, false, "", true, "", 1);
+        std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", jatiapp.getParams(), false, false, "", true, "", 1);
+        //std::string PAR_output_file_tree = ApplicationTools::getAFilePath("output_file_tree", jatiapp.getParams(), false, false, "", true, "", 1);
 
 
         if (OMPENABLED) OMP_max_avail_threads = omp_get_max_threads();
