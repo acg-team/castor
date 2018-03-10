@@ -126,7 +126,9 @@ int main(int argc, char *argv[]) {
         std::string PAR_optim_topology_algorithm = ApplicationTools::getStringParameter("optim_topology_algorithm", jatiapp.getParams(), "no-search", "", true, true);
         bool PAR_profile_ppip = ApplicationTools::getBooleanParameter("profile_ppip", jatiapp.getParams(), false);
         std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", jatiapp.getParams(), false, false, "", true, "", 1);
-        //std::string PAR_output_file_tree = ApplicationTools::getAFilePath("output_file_tree", jatiapp.getParams(), false, false, "", true, "", 1);
+        //std::string PAR_output_file_tree = ApplicationTools::getAFilePath("output.tree.file", jatiapp.getParams(), false, false, "", true, "", 1);
+        std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", jatiapp.getParams(), false, false, "", true, "", 1);
+
 
 
         if (OMPENABLED) OMP_max_avail_threads = omp_get_max_threads();
@@ -444,19 +446,35 @@ int main(int argc, char *argv[]) {
             //********************************************************************************
             //********************************************************************************
 
-            double tau;
+            //double tau;
 
+            double score;
             auto progressivePIP=new bpp::pPIP(alphabet);
 
             progressivePIP->init(tree, &tm, fullTraversalNodes, smodel->getFrequencies(), lambda, mu);
-
-            //progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
 
             progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
 
             sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
 
+            LOG(INFO) << "[Output msa file] " << PAR_output_file_msa;
+            LOG(INFO) << "[Output lk file] " << PAR_output_file_lk;
+
+            bpp::Fasta seqWriter;
+            seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
+
+            score=progressivePIP->getScore(progressivePIP->getRootNode());
+
+            std::ofstream lkFile;
+            lkFile << std::setprecision(18);
+            lkFile.open(PAR_output_file_lk);
+            lkFile << score;
+            lkFile.close();
+
+
             std::cout<<"PIPAligner done...\n";
+
+            exit(EXIT_SUCCESS);
 
             //********************************************************************************
             //********************************************************************************

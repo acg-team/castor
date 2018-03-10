@@ -91,9 +91,8 @@ void pPIP::init(const Tree *tree,
 }
 void pPIP::_reserve(unsigned long numNodes){
 
-    //_fv.resize(numNodes);
-    //_lkxy.resize(numNodes);
     _score.resize(numNodes);
+    _score.assign(numNodes,-std::numeric_limits<double>::infinity());
     _iota.resize(numNodes);
     _beta.resize(numNodes);
     _pr.resize(numNodes);
@@ -2304,7 +2303,6 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     signed long seed;
     if(randomSeed){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
-
     }else{
         seed = 0;
     }
@@ -2329,6 +2327,8 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
         */
     }
 
+    //std::cout<<"pc0:"<<pc0<<std::endl;
+
     //***************************************************************************************
     //***************************************************************************************
 
@@ -2352,9 +2352,9 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     TR[0] = new int[1]();
     TR[0][0]=STOP_STATE;
 
-    double max_of_3;
-    double max_lk=-std::numeric_limits<double>::infinity();
-    double prev_max_lk=-std::numeric_limits<double>::infinity();
+    double max_of_3=-std::numeric_limits<double>::infinity();
+    //double max_lk=-std::numeric_limits<double>::infinity();
+    //double prev_max_lk=-std::numeric_limits<double>::infinity();
     signed long level_max_lk=INT_MIN;
     double val;
     unsigned long m_binary_this;
@@ -2396,61 +2396,64 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
         //***************************************************************************************
         set_indeces_M(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
 
-        if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)){
+        if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)) {
 
-            lw=0;
-            for(unsigned long i=up_corner_i;i<=bot_corner_i;i++){
+            lw = 0;
+            for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
 
-                coordTriangle_this_i=i;
-                coordSeq_1=coordTriangle_this_i-1;
-                coordTriangle_prev_i=coordTriangle_this_i-1;
+                coordTriangle_this_i = i;
+                coordSeq_1 = coordTriangle_this_i - 1;
+                coordTriangle_prev_i = coordTriangle_this_i - 1;
 
-                sLs=(_MSA.at(s1ID).at(coordSeq_1));
+                sLs = (_MSA.at(s1ID).at(coordSeq_1));
 
-                for(int j=0;j<=lw;j++){
+                for (int j = 0; j <= lw; j++) {
 
-                    coordTriangle_this_j=up_corner_j-j;
-                    coordSeq_2=coordTriangle_this_j-1;
-                    coordTriangle_prev_j=coordTriangle_this_j-1;
+                    coordTriangle_this_j = up_corner_j - j;
+                    coordSeq_2 = coordTriangle_this_j - 1;
+                    coordTriangle_prev_j = coordTriangle_this_j - 1;
 
-                    sRs=(_MSA.at(s2ID).at(coordSeq_2));
+                    sRs = (_MSA.at(s2ID).at(coordSeq_2));
 
-                    idx=get_indices_M(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
-                    if(idx>=0){
-                        valM=LogM[m_binary_prev][idx];
-                    }else
-                        valM=-std::numeric_limits<double>::infinity();
+                    idx = get_indices_M(coordTriangle_prev_i, coordTriangle_prev_j, up_corner_i, up_corner_j,
+                                        bot_corner_i, bot_corner_j, m - 1, h, w);
+                    if (idx >= 0) {
+                        valM = LogM[m_binary_prev][idx];
+                    } else {
+                        valM = -std::numeric_limits<double>::infinity();
                     }
 
-                    idx=get_indices_X(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
-                    if(idx>=0){
-                        valX=LogX[m_binary_prev][idx];
-                    }else{
-                        valX=-std::numeric_limits<double>::infinity();
+                    idx = get_indices_X(coordTriangle_prev_i, coordTriangle_prev_j, up_corner_i, up_corner_j,
+                                        bot_corner_i, bot_corner_j, m - 1, h, w);
+                    if (idx >= 0) {
+                        valX = LogX[m_binary_prev][idx];
+                    } else {
+                        valX = -std::numeric_limits<double>::infinity();
                     }
 
-                    idx=get_indices_Y(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
-                    if(idx>=0){
-                        valY=LogY[m_binary_prev][idx];
-                    }else{
-                        valY=-std::numeric_limits<double>::infinity();
+                    idx = get_indices_Y(coordTriangle_prev_i, coordTriangle_prev_j, up_corner_i, up_corner_j,
+                                        bot_corner_i, bot_corner_j, m - 1, h, w);
+                    if (idx >= 0) {
+                        valY = LogY[m_binary_prev][idx];
+                    } else {
+                        valY = -std::numeric_limits<double>::infinity();
                     }
 
-                    if(std::isinf(valM) && std::isinf(valX) && std::isinf(valY)){
+                    if (std::isinf(valM) && std::isinf(valX) && std::isinf(valY)) {
                         exit(EXIT_FAILURE);
                     }
 
-                    if(local){
-                        val=computeLK_M_local_tree_s_opt(valM,
-                                                         valX,
-                                                         valY,
-                                                         _nu,
-                                                         node,
-                                                         sLs,
-                                                         sRs,
-                                                         m,
-                                                         lkM);
-                    }else{
+                    if (local) {
+                        val = computeLK_M_local_tree_s_opt(valM,
+                                                           valX,
+                                                           valY,
+                                                           _nu,
+                                                           node,
+                                                           sLs,
+                                                           sRs,
+                                                           m,
+                                                           lkM);
+                    } else {
                         /*
                         val=computeLK_M_all_edges_s_opt(valM,
                                                         valX,
@@ -2465,22 +2468,22 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
                         */
                     }
 
-                    if(std::isinf(val)){
+                    if (std::isinf(val)) {
                         exit(EXIT_FAILURE);
                     }
 
-                    if(std::isnan(val)){
+                    if (std::isnan(val)) {
                         exit(EXIT_FAILURE);
                     }
 
-                    idx=get_indices_M(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+                    idx = get_indices_M(coordTriangle_this_i, coordTriangle_this_j, up_corner_i,
+                                        up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
 
-                    LogM[m_binary_this][idx]=val;
+                    LogM[m_binary_this][idx] = val;
                 }
                 lw++;
             }
-
+        }
         //***************************************************************************************
         //***************************************************************************************
         set_indeces_X(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
@@ -2728,6 +2731,12 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
 
                         max_of_3=max_of_three(mval,xval,yval,epsilon);
 
+//                        std::cout<<"m:"<<mval<<std::endl;
+//                        std::cout<<"x:"<<xval<<std::endl;
+//                        std::cout<<"y:"<<yval<<std::endl;
+//                        std::cout<<"m3:"<<max_of_3<<std::endl;
+
+
                         if(max_of_3>score){
                             score=max_of_3;
                             level_max_lk=m;
@@ -2750,6 +2759,11 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     depth=level_max_lk;
 
     //result.score=score;
+
+    //std::cout<<nodeID<<":"<<score<<std::endl;
+    //std::cout<<_iota.at(nodeID)<<std::endl;
+    //std::cout<<_beta.at(nodeID)<<std::endl;
+
 
     _score.at(nodeID)=score;
 
