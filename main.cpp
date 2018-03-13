@@ -446,19 +446,14 @@ int main(int argc, char *argv[]) {
             //********************************************************************************
             //********************************************************************************
 
-            //double tau;
-
             double score;
             auto progressivePIP=new bpp::pPIP(alphabet);
 
-            progressivePIP->init(tree, &tm, fullTraversalNodes, smodel->getFrequencies(), lambda, mu);
+            progressivePIP->init(tree, &tm, fullTraversalNodes, smodel->getFrequencies(), lambda, mu,true);
 
             progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
 
             sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
-
-            LOG(INFO) << "[Output msa file] " << PAR_output_file_msa;
-            LOG(INFO) << "[Output lk file] " << PAR_output_file_lk;
 
             bpp::Fasta seqWriter;
             seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);

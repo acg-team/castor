@@ -69,13 +69,7 @@ namespace bpp {
              std::vector<tshlib::VirtualNode *> &listNodes,
              const Vdouble &pi,
              double lambda,
-             double mu);
-
-//        void PIPAligner(UtreeBppUtils::treemap *tm,
-//                              std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-//                              bpp::SequenceContainer *sequences,
-//                              double gamma_rate,
-//                              bool local);
+             double mu, bool local);
 
         void PIPAligner(UtreeBppUtils::treemap *tm,
                         std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
@@ -91,40 +85,20 @@ namespace bpp {
         bpp::Alphabet *getAlphabet();
 
     protected:
+
     private:
         mutable TreeTemplate<Node> *_tree;
-
-    public:
-
-    private:
-
-        /*
-        mutable std::map<bpp::Node *, bpp::VVdouble > _fv;
-        mutable std::map<bpp::Node *, bpp::Vdouble > _lkxy;
-        mutable std::map<bpp::Node *, double> _iota;
-        mutable std::map<bpp::Node *, double> _beta;
-        mutable std::map<bpp::Node *, bpp::RowMatrix<double> > _pr;
-        mutable std::map<bpp::Node *, std::vector< std::string > > _seqNames;
-        mutable std::map<bpp::Node *, std::vector< std::string > > _MSA;
-        */
-
-        //std::vector< std::vector<bpp::ColMatrix<double>> > _fv;
-        //std::vector< bpp::Vdouble > _lkxy;
         std::vector< double > _iota;
         std::vector< double > _beta;
         std::vector< bpp::RowMatrix<double> > _pr;
         std::vector< std::vector< std::string > > _seqNames;
         std::vector< std::vector< std::string > > _MSA;
-
         std::string _traceback_path;
         std::vector< double > _score;
-
         double _lambda;
         double _mu;
         double _nu;
         double _tau;
-
-        //Vdouble _pi;
 
         bpp::ColMatrix<double> _pi;
 
@@ -146,15 +120,17 @@ namespace bpp {
 
         void _setPi(const Vdouble &pi);
 
-        void _setTau();
+        void _setLocalTau(bpp::Node *node);
 
         void _setAllIotas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes);
 
+        void _setAllIotas(bpp::Node *node,bool local_root);
+
         void _setAllBetas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes);
 
-        void _computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes);
+        void _setAllBetas(bpp::Node *node,bool local_root);
 
-        //void setLKxyLeaves(bpp::Node *node);
+        void _computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes);
 
         bool is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned long yf,unsigned long xt,unsigned long yt);
 
@@ -194,40 +170,6 @@ namespace bpp {
         bool checkboundary(unsigned long up_corner_i,unsigned long up_corner_j,unsigned long bot_corner_i,
                                  unsigned long bot_corner_j,unsigned long h,unsigned long w);
 
-//        bpp::ColMatrix<double> computeLKgapColLocal(bpp::Node *node,
-//                                           double &val,
-//                                           double &p0);
-//
-//        bpp::ColMatrix<double> computeLKmatchLocal(double valM,
-//                                          double valX,
-//                                          double valY,
-//                                          bpp::Node *node,
-//                                    unsigned long col_i, unsigned long col_j,
-//                                          unsigned long m,
-//                                          double &val);
-//
-//        bpp::ColMatrix<double> computeLKgapxLocal(double valM,
-//                                         double valX,
-//                                         double valY,
-//                                         bpp::Node *node,
-//                                         unsigned long col_i,
-//                                         unsigned long col_j,
-//                                         unsigned long m,
-//                                         double &val,
-//                                         double &lkx);
-//
-//        bpp::ColMatrix<double> computeLKgapyLocal(double valM,
-//                                         double valX,
-//                                         double valY,
-//                                         bpp::Node *node,
-//                                         unsigned long col_i,
-//                                         unsigned long col_j,
-//                                         unsigned long m,
-//                                         double &val,
-//                                         double &lky);
-
-        //bool checkUniformLen(std::vector<std::pair<std::string,std::string>> &result);
-
         std::string createGapCol(unsigned long len);
 
         void build_MSA(bpp::Node *node, std::string traceback_path);
@@ -238,60 +180,46 @@ namespace bpp {
 
         void setMSAleaves(bpp::Node *node,const std::string &MSA);
 
-        //void setIndicatorFun(bpp::Node *node);
-
         bpp::ColMatrix<double> fv_observed(std::string &s, unsigned long &idx);
 
-        bpp::ColMatrix<double> go_down(bpp::Node *tree,std::string &s, unsigned long &idx);
+        bpp::ColMatrix<double> go_down(bpp::Node *node,std::string &s, unsigned long &idx);
 
-        void allgaps(bpp::Node *tree,std::string &s, unsigned long &idx,bool &flag);
+        void allgaps(bpp::Node *node,std::string &s, unsigned long &idx,bool &flag);
 
-        double compute_lk_gap_down(bpp::Node *tree,std::string &s);
+        double compute_lk_gap_down(bpp::Node *node,std::string &s);
 
-        double compute_pr_gap_local_tree_s(bpp::Node *tree, std::string &sL, std::string &sR);
+        double computeLK_GapColumn_local(bpp::Node *node, std::string &sL, std::string &sR);
 
-//        void DP3D_PIP(bpp::Node *node,
-//                            UtreeBppUtils::treemap *tm,
-//                            double gamma_rate,
-//                            bool local);
+        double compute_lk_down(bpp::Node *node,std::string &s);
 
+        double computeLK_M_local(double valM,
+                                 double valX,
+                                 double valY,
+                                 bpp::Node *node,
+                                 std::string &sL,
+                                 std::string &sR,
+                                 unsigned long m,
+                                 std::map<std::string, double> &lkM);
 
-        double compute_lk_down(bpp::Node *tree,std::string &s);
+        double computeLK_X_local(double valM,
+                                 double valX,
+                                 double valY,
+                                 bpp::Node *node,
+                                 std::string &sL,
+                                 std::string &col_gap_R,
+                                 unsigned long m,
+                                 std::map<std::string, double> &lkX);
 
-        double computeLK_M_local_tree_s_opt(double valM,
-                                                  double valX,
-                                                  double valY,
-                                                  double nu,
-                                                  bpp::Node *tree,
-                                                  std::string &sL,
-                                                  std::string &sR,
-                                                  unsigned long m,
-                                                  std::map<std::string,double> &lkM);
+        double computeLK_Y_local(double valM,
+                                 double valX,
+                                 double valY,
+                                 bpp::Node *node,
+                                 std::string &col_gap_L,
+                                 std::string &sR,
+                                 unsigned long m,
+                                 std::map<std::string, double> &lkY);
 
-        double computeLK_X_local_tree_s_opt(double valM,
-                                                  double valX,
-                                                  double valY,
-                                                  double nu,
-                                                  bpp::Node *tree,
-                                                  std::string &sL,
-                                                  std::string &col_gap_R,
-                                                  unsigned long m,
-                                                  std::map<std::string,double> &lkX);
-
-        double computeLK_Y_local_tree_s_opt(double valM,
-                                                  double valX,
-                                                  double valY,
-                                                  double nu,
-                                                  bpp::Node *tree,
-                                                  std::string &col_gap_L,
-                                                  std::string &sR,
-                                                  unsigned long m,
-                                                  std::map<std::string,double> &lkY);
-
-        void DP3D_PIP(bpp::Node *node,
-                      UtreeBppUtils::treemap *tm,
-                      double gamma_rate,
-                      bool local);
+        void DP3D_PIP(bpp::Node *node, UtreeBppUtils::treemap *tm, double gamma_rate, bool local);
 
 
     };
