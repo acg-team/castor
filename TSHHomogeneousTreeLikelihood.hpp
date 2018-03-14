@@ -71,6 +71,10 @@ namespace bpp {
         AbstractHomogeneousTreeLikelihood *likelihoodFunc_;
         const UtreeBppUtils::treemap &treemap_;
         mutable tshlib::Utree *utree_;
+        mutable std::vector<DRASRTreeLikelihoodData *> referenceLikelihoodComponents_;
+        mutable std::vector<Node *> likelihoodNodes_;
+        mutable DRASRTreeLikelihoodData *likelihoodData_;
+        VVVdouble *pxy_;
 
 
     public:
@@ -104,14 +108,17 @@ namespace bpp {
 
         TSHHomogeneousTreeLikelihood *clone() const { return new TSHHomogeneousTreeLikelihood(*this); }
 
-    public:
-        void setData(const SiteContainer &sites) throw(Exception) {
-            RHomogeneousTreeLikelihood::setData(sites);
-        }
+        void setData(const SiteContainer &sites) throw(Exception) { RHomogeneousTreeLikelihood::setData(sites); }
 
         AbstractHomogeneousTreeLikelihood *getLikelihoodFunction() const;
 
-        UtreeBppUtils::treemap &getTreeMap() const { return dynamic_cast<RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc_)->getTreemap(); };
+        double getLikelihoodValue() { return likelihoodFunc_->getValue(); };
+
+        double updateLikelihood(std::vector<tshlib::VirtualNode *> &nodeList);
+
+        const UtreeBppUtils::treemap &getTreeMap() const;
+
+        //UtreeBppUtils::treemap &getTreeMap() const { return treemap_; };
 
         tshlib::Utree *getUtree() const { return utree_; }
         /**
@@ -147,6 +154,24 @@ namespace bpp {
             inUTree->removeVirtualRootNode();
         }
 
+        /*!
+         * @brief This method switch the DRASRT Likelihood data arrays with the original ones
+         */
+        void topology() {
+
+
+        }
+
+        /*!
+        * @brief This method switch the DRASRT Likelihood data arrays with the original ones
+        */
+        void topologyChangeSuccess() {
+
+
+        }
+
+
+
         void topologyChangeTested(const TopologyChangeEvent &event) {
             // getLikelihoodData()->reInit();
 
@@ -159,6 +184,24 @@ namespace bpp {
         void topologyChangeSuccessful(const TopologyChangeEvent &event) {
             //brLenTSHValues_.clear();
         }
+
+
+        std::vector<Node *> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const {
+
+            std::vector<Node *> newList;
+
+            for (auto &vnode:inputList) {
+
+                newList.push_back(tree_->getNode(treemap_.right.at(vnode)));
+            }
+
+            return newList;
+        }
+
+    protected:
+
+        void updateLikelihoodArrays(const Node *node);
+
 
         /** @} */
     };

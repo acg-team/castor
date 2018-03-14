@@ -100,7 +100,7 @@ void TSHHomogeneousTreeLikelihood::fixTopologyChanges(tshlib::Utree *inUTree) {
 
     std::vector<tshlib::VirtualNode *> nodelist;
     nodelist = inUTree->listVNodes;
-    UtreeBppUtils::treemap &tm = getTreeMap();
+    UtreeBppUtils::treemap tm = getTreeMap();
 
     std::map<int, bpp::Node *> tempMap;
     // reset inBtree
@@ -195,4 +195,124 @@ void TSHHomogeneousTreeLikelihood::optimiseBranches(std::vector<tshlib::VirtualN
     likelihoodFunc_->setParameters(optimiser_->getParameters());
 
 
+}
+
+double TSHHomogeneousTreeLikelihood::updateLikelihood(std::vector<tshlib::VirtualNode *> &nodeList) {
+
+    // check if the likelihood function has been instanziated on the PIP model.
+    bpp::RHomogeneousTreeLikelihood_PIP *flk_pip;
+    bpp::RHomogeneousTreeLikelihood *flk;
+    bool indelModel = false;
+
+    if (dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(getLikelihoodFunction())) {
+        flk_pip = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(getLikelihoodFunction());
+        indelModel = true;
+    }
+
+    // Add root to the utree structure
+    utree_->addVirtualRootNode();
+
+    // 0. convert the list of tshlib::VirtualNodes into bpp::Node
+    std::vector<Node *> rearrangedNodes = remapVirtualNodeLists(nodeList);
+
+    // 1. Recombine FV arrays after move
+    if (indelModel) {
+        flk_pip->fireTopologyChange(rearrangedNodes);
+    } else {
+        flk = dynamic_cast<bpp::RHomogeneousTreeLikelihood *>(getLikelihoodFunction());
+        likelihoodData_ = flk->getLikelihoodData();
+        for (auto &node:rearrangedNodes) {
+            updateLikelihoodArrays(node);
+        }
+    }
+
+    double logLk;
+
+    // 2. Compute the log likelihood with the updated components
+    if (indelModel) {
+        logLk = flk_pip->getLogLikelihoodOnTopologyChange();
+    } else {
+        logLk = flk->getLogLikelihood();
+    }
+
+    // Remove root node from the utree structure
+    utree_->removeVirtualRootNode();
+
+
+    return logLk;
+}
+
+void TSHHomogeneousTreeLikelihood::updateLikelihoodArrays(const Node *node) {
+
+    if (node->isLeaf()) return;
+
+    auto *flk = dynamic_cast<bpp::RHomogeneousTreeLikelihood *>(getLikelihoodFunction());
+
+    //size_t nbSites = likelihoodData_->getLikelihoodArray(node->getId()).size();
+    size_t nbSites = likelihoodData_->getNumberOfDistinctSites();
+    size_t nbClasses = likelihoodData_->getNumberOfClasses();
+    size_t nbStates = likelihoodData_->getNumberOfStates();
+
+    // Must reset the likelihood array first (i.e. set all of them to 1):
+    VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
+    for (size_t i = 0; i < nbSites; i++) {
+        //For each site in the sequence,
+        VVdouble *_likelihoods_node_i = &(*_likelihoods_node)[i];
+        for (size_t c = 0; c < nbClasses; c++) {
+            //For each rate classe,
+            Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
+            for (size_t x = 0; x < nbStates; x++) {
+                //For each initial state,
+                (*_likelihoods_node_i_c)[x] = 1.;
+            }
+        }
+    }
+
+
+    // Get mapped node on Utree
+    std::vector<int> sonsIDs;
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+    sonsIDs.push_back(treemap_.right.at(vnode_left));
+    sonsIDs.push_back(treemap_.right.at(vnode_right));
+    size_t nbNodes = sonsIDs.size();
+
+    for (size_t l = 0; l < nbNodes; l++) {
+        //For each son node,
+
+        const Node *son = tree_->getNode(sonsIDs.at(l));
+
+        VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(son->getId());
+
+        for (size_t i = 0; i < nbSites; i++) {
+            //For each site in the sequence,
+            VVdouble *_likelihoods_son_i = &(*_likelihoods_son)[i];
+            VVdouble *_likelihoods_node_i = &(*_likelihoods_node)[i];
+            VVVdouble pxy__son = flk->getTransitionProbabilitiesPerRateClass(son->getId(), i);
+
+            for (size_t c = 0; c < nbClasses; c++) {
+                //For each rate classe,
+                Vdouble *_likelihoods_son_i_c = &(*_likelihoods_son_i)[c];
+                Vdouble *_likelihoods_node_i_c = &(*_likelihoods_node_i)[c];
+
+                VVdouble *pxy__son_c = &pxy__son[c];
+
+                for (size_t x = 0; x < nbStates; x++) {
+                    //For each initial state,
+                    Vdouble *pxy__son_c_x = &(*pxy__son_c)[x];
+                    double likelihood = 0;
+                    for (size_t y = 0; y < nbStates; y++)
+                        likelihood += (*pxy__son_c_x)[y] * (*_likelihoods_son_i_c)[y];
+
+                    (*_likelihoods_node_i_c)[x] *= likelihood;
+                }
+            }
+        }
+    }
+
+}
+
+const UtreeBppUtils::treemap &TSHHomogeneousTreeLikelihood::getTreeMap() const {
+    return treemap_;
 }
