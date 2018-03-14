@@ -64,12 +64,9 @@ namespace bpp {
 
         ~pPIP(){};
 
-        void init(const Tree *tree,
+        void init(const Tree *tree, bpp::SubstitutionModel *smodel,
              UtreeBppUtils::treemap *tm,
-             std::vector<tshlib::VirtualNode *> &listNodes,
-             const Vdouble &pi,
-             double lambda,
-             double mu, bool local);
+             std::vector<tshlib::VirtualNode *> &listNodes, bool local);
 
         void PIPAligner(UtreeBppUtils::treemap *tm,
                         std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
@@ -88,6 +85,7 @@ namespace bpp {
 
     private:
         mutable TreeTemplate<Node> *_tree;
+        mutable bpp::SubstitutionModel *_substModel;
         std::vector< double > _iota;
         std::vector< double > _beta;
         std::vector< bpp::RowMatrix<double> > _pr;
@@ -111,6 +109,8 @@ namespace bpp {
         void _reserve(unsigned long numNodes);
 
         void _setNu();
+
+        void _setSubstModel(bpp::SubstitutionModel *smodel);
 
         void _setTree(const Tree *tree);
 
@@ -221,6 +221,10 @@ namespace bpp {
 
         void DP3D_PIP(bpp::Node *node, UtreeBppUtils::treemap *tm, double gamma_rate, bool local);
 
+
+        double add_lns_2(double a_ln,double b_ln);
+
+        void DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,double temperature,int num_SB);
 
     };
 

@@ -69,20 +69,18 @@ pPIP::pPIP(bpp::Alphabet *alphabet){
 
 };
 void pPIP::init(const Tree *tree,
+                bpp::SubstitutionModel *smodel,
                 UtreeBppUtils::treemap *tm,
                 std::vector<tshlib::VirtualNode *> &listNodes,
-                const Vdouble &pi,
-                double lambda,
-                double mu,
                 bool local){
 
 
     _reserve(listNodes.size());
-
+    _setSubstModel(smodel);
     _setTree(tree);
-    _setLambda(lambda);
-    _setMu(mu);
-    _setPi(pi);
+    _setLambda(smodel->getParameter("lambda").getValue());
+    _setMu(smodel->getParameter("mu").getValue());
+    _setPi(smodel->getFrequencies());
     _computePr(tm,listNodes);
 
     if(!local){
@@ -106,6 +104,9 @@ void pPIP::_reserve(unsigned long numNodes){
 }
 void pPIP::_setTree(const Tree *tree) {
     _tree = new TreeTemplate<Node>(*tree);
+}
+void pPIP::_setSubstModel(bpp::SubstitutionModel *smodel) {
+    _substModel = smodel;
 }
 bool pPIP::is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned long yf,unsigned long xt,unsigned long yt){
 
@@ -664,7 +665,36 @@ void pPIP::_computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode
     }
 
 }
-
+//void pPIP::computePr(std::vector<tshlib::VirtualNode *> &listNodes) {
+//
+//    const bpp::Matrix<double> Q = _substModel->getGenerator();
+//
+//    // TODO: the following 4 lines have to be computed only when Q changes!!!
+//    if(this->Q.rows()==5){
+//        Eigen::EigenSolver<MatrixExtended_5> solver(this->Q);
+//        this->sigma = solver.eigenvalues().real();
+//        this->V = solver.eigenvectors().real();
+//
+//    }else if(this->Q.rows()==21){
+//        Eigen::EigenSolver<MatrixExtended_21> solver(this->Q);
+//        this->sigma = solver.eigenvalues().real();
+//        this->V = solver.eigenvectors().real();
+//    }
+//
+//    this->Vi = this->V.inverse();
+//
+//    for (auto &vnode:listNodes) {
+//
+//        // Clear the matrix containing the probability matrix
+//        _pr.at(node->getId()).resize(0, 0);
+//
+//        // Recompute the Q matrix with the exponential equal to the branch lenght
+//        _pr.at(node->getId()).resize(extended_alphabet_size, extended_alphabet_size);
+//
+//        _pr.at(node->getId()) = this->V * (this->sigma * vnode->vnode_branchlength).array().exp().matrix().asDiagonal() * this->Vi;
+//
+//    }
+//}
 bpp::ColMatrix<double> pPIP::fv_observed(std::string &s, unsigned long &idx){
     bpp::ColMatrix<double> fv;
     int ii;
@@ -1596,22 +1626,891 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     }
     free(TR);
 }
+
+//function gappy_traceback_cell_vector=SB_DP_leaves(segment1,segment2,params,P){
+//
+//    gappy_traceback_cell_vector=cell(params.num_SB,1);
+//
+//    mapAA=params.map;
+//    extended_alphabet_size=params.extended_alphabet_size;
+//    nu=params.nu;
+//    Pi=params.Pi;
+//    bl=params.bl;
+//    iotas=params.iotas;
+//    betas=params.betas;
+//    iotaV0=iotas(1);
+//    iotaV1=iotas(2);
+//    iotaV2=iotas(3);
+//    betaV0=betas(1);
+//    betaV1=betas(2);
+//    betaV2=betas(3);
+//
+//    h=length(segment1+1);
+//    w=length(segment2+1);
+//    d=(h-1)+(w-1)+1;
+//
+//    M=ones(h,w,d)*(-inf);
+//    X=ones(h,w,d)*(-inf);
+//    Y=ones(h,w,d)*(-inf);
+//
+//    Mp=ones(h,w,d)*(-inf);
+//    Xp=ones(h,w,d)*(-inf);
+//    Yp=ones(h,w,d)*(-inf);
+//
+//    FV=zeros(extended_alphabet_size,1);
+//    fv=zeros(extended_alphabet_size,1);
+//    for k=1:extended_alphabet_size
+//        fv=fv*0;
+//        fv(k)=1;
+//        FV(k)=sum(Pi.*fv);
+//    end
+//
+//    lk_empty=iotaV0*(1+(betaV0*(-1+P(end,end))))+...
+//    iotaV1*(1+(betaV1*(-1+FV(end))))+...
+//    iotaV2*(1+(betaV2*(-1+FV(end))));
+//
+//    p0=nu*(lk_empty-1);
+//
+//    M(1,1,1)=p0;
+//    X(1,1,1)=p0;
+//    Y(1,1,1)=p0;
+//
+//    Mp(1,1,1)=p0;
+//    Xp(1,1,1)=p0;
+//    Yp(1,1,1)=p0;
+//
+//    for k=2:d
+//        for i=1:h
+//            col_i=segment1(i);
+//            idx_i=mapAA(col_i);
+//
+//            for j=1:w
+//
+//                col_j=segment2(j);
+//                idx_j=mapAA(col_j);
+//
+//                if i-1>0 && j-1>0
+//                    if not(isinf(M(i-1,j-1,k-1))) || not(isinf(X(i-1,j-1,k-1))) || not(isinf(Y(i-1,j-1,k-1)))
+//                        lk_c=log(iotaV0*betaV0*P(idx_i,idx_j));
+//                        lk=-log(k-1)+log(nu)+lk_c;
+//                        l1=add_lns_2(M(i-1,j-1,k-1),X(i-1,j-1,k-1));
+//                        l2=add_lns_2(l1,Y(i-1,j-1,k-1));
+//                        M(i,j,k)=add_lns_2(lk,l2);
+//                        Mp(i,j,k)=lk_c;
+//                    end
+//                end
+//
+//                if i-1>0
+//                    if not(isinf(M(i-1,j,k-1))) || not(isinf(X(i-1,j,k-1))) || not(isinf(Y(i-1,j,k-1)))
+//                        lk_c=log(iotaV0*betaV0*P(idx_i,idx_j)+...
+//                        iotaV1+betaV1*FV(idx_i));
+//                        lk=-log(k-1)+log(nu)+lk_c;
+//                        l1=add_lns_2(M(i-1,j,k-1),X(i-1,j,k-1));
+//                        l2=add_lns_2(l1,Y(i-1,j,k-1));
+//                        X(i,j,k)=add_lns_2(lk,l2);
+//                        Xp(i,j,k)=lk_c;
+//                    end
+//                end
+//
+//                if j-1>0
+//                    if not(isinf(M(i,j-1,k-1))) || not(isinf(X(i,j-1,k-1))) || not(isinf(Y(i,j-1,k-1)))
+//                        lk_c=log(iotaV0*betaV0*P(idx_i,idx_j)+...
+//                        iotaV2+betaV2*FV(idx_j));
+//                        lk=-log(k-1)+log(nu)+lk_c;
+//                        l1=add_lns_2(M(i,j-1,k-1),X(i,j-1,k-1));
+//                        l2=add_lns_2(l1,Y(i,j-1,k-1));
+//                        Y(i,j,k)=add_lns_2(lk,l2);
+//                        Yp(i,j,k)=lk_c;
+//                    end
+//                end
+//
+//            end
+//        end
+//    end
+//
+//    for sb=1:params.params.num_SB
+//
+//        Temperature=params.Temperature;
+//
+//        [max_M,idx_M]=max(M(end,end,:));
+//        [max_X,idx_X]=max(X(end,end,:));
+//        [max_Y,idx_Y]=max(Y(end,end,:));
+//        level_max=[idx_M,idx_X,idx_Y];
+//
+//        [LK,T]=max([max_M,max_X,max_Y]);
+//
+//        i=int32(h);
+//        j=int32(w);
+//        k=int32(level_max(T));
+//
+//        log_Zm=M(i,j,k);
+//        log_Zx=X(i,j,k);
+//        log_Zy=Y(i,j,k);
+//
+//        if isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)
+//            error('ERROR 1: Zm, Zx and Zy are inf')
+//        end
+//
+//        log_Zmx=add_lns_2(log_Zm,log_Zx);
+//        log_Z=add_lns_2(log_Zmx,log_Zy);
+//
+//        if isinf(log_Z)
+//            error('ERROR 2 Z: is inf')
+//        end
+//
+//        if isinf(log_Zm)
+//            pm=0;
+//            pmn=0;
+//        else
+//            log_pm=log_Zm-log_Z;
+//            pm=exp(log_pm);
+//            pmn=exp(-(1-pm)/Temperature);
+//        end
+//
+//        if isinf(log_Zx)
+//            px=0;
+//            pxn=0;
+//        else
+//            log_px=log_Zx-log_Z;
+//            px=exp(log_px);
+//            pxn=exp(-(1-px)/Temperature);
+//        end
+//
+//        if isinf(log_Zy)
+//            py=0;
+//            pyn=0;
+//        else
+//            log_py=log_Zy-log_Z;
+//            py=exp(log_py);
+//            pyn=exp(-(1-py)/Temperature);
+//        end
+//
+//        z=pmn+pxn+pyn;
+//        pm=pmn./z;
+//        px=pxn./z;
+//        py=pyn./z;
+//
+//        traceback=[];
+//
+//        m=1;
+//        lk=-log(m)+log(nu)+p0;
+//
+//        while i>1 || j>1 || k>1
+//
+//            r=rand(1);
+//
+//            if r<pm
+//                log_P=Mp(i,j,k);
+//                i=i-1;
+//                j=j-1;
+//                k=k-1;
+//                T=1;
+//            elseif r<(pm+px)
+//                log_P=Xp(i,j,k);
+//                i=i-1;
+//                k=k-1;
+//                T=2;
+//            else
+//                log_P=Yp(i,j,k);
+//                j=j-1;
+//                k=k-1;
+//                T=3;
+//            end
+//
+//            if isinf(log_P)
+//                error('ERROR 3: P inf')
+//            end
+//
+//            lk=lk+log_P;
+//
+//            traceback=[T,traceback];
+//
+//            log_Zm=M(i,j,k);
+//            log_Zx=X(i,j,k);
+//            log_Zy=Y(i,j,k);
+//
+//            if isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)
+//                error('ERROR 1: Zm, Zx and Zy are inf')
+//            end
+//
+//            log_Zmx=add_lns_2(log_Zm,log_Zx);
+//            log_Z=add_lns_2(log_Zmx,log_Zy);
+//
+//            if isinf(log_Z)
+//                error('ERROR 2 Z: is inf')
+//            end
+//
+//            if isinf(log_Zm)
+//                pm=0;
+//                pmn=0;
+//            else
+//                log_pm=log_Zm-log_Z;
+//                pm=exp(log_pm);
+//                pmn=exp(-(1-pm)/Temperature);
+//            end
+//
+//            if isinf(log_Zx)
+//                px=0;
+//                pxn=0;
+//            else
+//                log_px=log_Zx-log_Z;
+//                px=exp(log_px);
+//                pxn=exp(-(1-px)/Temperature);
+//            end
+//
+//            if isinf(log_Zy)
+//                py=0;
+//                pyn=0;
+//            else
+//                log_py=log_Zy-log_Z;
+//                py=exp(log_py);
+//                pyn=exp(-(1-py)/Temperature);
+//            end
+//
+//            z=pmn+pxn+pyn;
+//            pm=pmn./z;
+//            px=pxn./z;
+//            py=pyn./z;
+//
+//        end
+//
+//        gappy_traceback_cell_vector{sb}.tr=traceback;
+//        gappy_traceback_cell_vector{sb}.dim=[h,w,d];
+//    end
+//
+//    if params.COMPUTE_NUM_CELLS==1
+//        m1=not(isnan(M(:)));
+//        x1=not(isnan(X(:)));
+//        y1=not(isnan(Y(:)));
+//        tot=sum(m1(:)+x1(:)+y1(:));
+//    else
+//        tot=0;
+//    end
+//
+//}
+double pPIP::add_lns_2(double a_ln,double b_ln){
+    //ln(a + b) = ln{exp[ln(a) - ln(b)] + 1} + ln(b)
+
+    double R;
+
+    if(isinf(a_ln) && isinf(b_ln)){
+        R=-std::numeric_limits<double>::infinity();
+    }else if(isinf(a_ln)){
+        R=b_ln;
+    }else if(isinf(b_ln)){
+        R=a_ln;
+    }else if((abs(a_ln - b_ln) >= 36.043653389117155)){
+        //2^52-1 = 4503599627370495.	log of that is 36.043653389117155867651465390794
+        R = max(a_ln, b_ln);
+    }else{
+        R = log(exp(a_ln - b_ln) + 1) + b_ln;
+    }
+
+    return R;
+}
+
+void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,double temperature,int num_SB){
+
+    //TODO: place as argument
+    bool randomSeed = true;
+
+    //TODO: re-implement gamma distribution
+    double lambda_gamma = _lambda * gamma_rate;
+    double mu_gamma = _mu * gamma_rate;
+
+    if(local){
+        _setLocalTau(node);
+        _setNu();
+        _setAllIotas(node,true);
+        _setAllBetas(node,true);
+    }else{
+    }
+
+    unsigned long lw;
+    unsigned long h,w;
+
+    auto sons = node->getSons();
+
+    int s1ID = sons.at(LEFT)->getId();
+    int s2ID = sons.at(RIGHT)->getId();
+
+    int nodeID = node->getId();
+
+    h = _MSA.at(s1ID).size()+1;
+    w = _MSA.at(s2ID).size()+1;
+
+    unsigned long d=(h-1)+(w-1)+1;
+
+    double pc0;
+
+    std::string sLs;
+    std::string sRs;
+    std::string col_gap_Ls;
+    std::string col_gap_Rs;
+
+    unsigned long numLeavesLeft = _seqNames.at(s1ID).size();
+    unsigned long numLeavesRight = _seqNames.at(s2ID).size();
+
+    col_gap_Ls=createGapCol(numLeavesLeft);
+    col_gap_Rs=createGapCol(numLeavesRight);
+
+    signed long seed;
+    if(randomSeed){
+        seed = std::chrono::system_clock::now().time_since_epoch().count();
+    }else{
+        seed = 0;
+    }
+
+    std::default_random_engine generator(seed);
+    std::uniform_real_distribution<double> distribution(0.0,1.0);
+
+    auto epsilon=DBL_EPSILON;
+
+    //***************************************************************************************
+    //***************************************************************************************
+    if(local){
+        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs);
+    }else{
+        /*
+        pc0 = compute_pr_gap_all_edges_s(node,
+                                         col_gap_Ls,
+                                         col_gap_Rs,
+                                         pi,
+                                         originalAlphabetSize,
+                                         alphabet);
+        */
+    }
+    //***************************************************************************************
+    //***************************************************************************************
+
+    double ***LogM = new double**[d];
+    double ***LogX = new double**[d];
+    double ***LogY = new double**[d];
+    double ***Mp = new double**[d];
+    double ***Xp = new double**[d];
+    double ***Yp = new double**[d];
+    int ***TR = new int**[d];
+    for(int i =0; i<d; i++){
+        LogM[i] = new double*[h];
+        LogX[i] = new double*[h];
+        LogY[i] = new double*[h];
+        Mp[i] = new double*[h];
+        Xp[i] = new double*[h];
+        Yp[i] = new double*[h];
+        TR[i] = new int*[h];
+        for(int j =0; j<h; j++){
+            LogM[i][j] = new double[w];
+            LogX[i][j] = new double[w];
+            LogY[i][j] = new double[w];
+            Mp[i][j] = new double[w];
+            Xp[i][j] = new double[w];
+            Yp[i][j] = new double[w];
+            TR[i][j] = new int[w];
+            for(int k = 0; k<w;k++){
+                LogM[i][j][k] = -std::numeric_limits<double>::infinity();
+                LogX[i][j][k] = -std::numeric_limits<double>::infinity();
+                LogY[i][j][k] = -std::numeric_limits<double>::infinity();
+                Mp[i][j][k] = -std::numeric_limits<double>::infinity();
+                Xp[i][j][k] = -std::numeric_limits<double>::infinity();
+                Yp[i][j][k] = -std::numeric_limits<double>::infinity();
+                TR[i][j][k] = 0;
+            }
+        }
+    }
+
+    LogM[0][0][0]=_nu*(pc0-1.0);
+    LogX[0][0][0]=_nu*(pc0-1.0);
+    LogY[0][0][0]=_nu*(pc0-1.0);
+
+    //TR[0] = new int[1]();
+    TR[0][0][0]=STOP_STATE;
+
+    double max_of_3=-std::numeric_limits<double>::infinity();
+
+    signed long level_max_lk=INT_MIN;
+    double val;
+    unsigned long m_binary_this;
+    unsigned long m_binary_prev;
+
+    double valM;
+    double valX;
+    double valY;
+
+    signed long idx;
+
+    unsigned long coordSeq_1;
+    unsigned long coordSeq_2;
+    unsigned long coordTriangle_this_i;
+    unsigned long coordTriangle_this_j;
+    unsigned long coordTriangle_prev_i;
+    unsigned long coordTriangle_prev_j;
+
+    double score=-std::numeric_limits<double>::infinity();
+    int start_depth;
+    unsigned long depth;
+
+    bool flag_exit=false;
+    unsigned long last_d=d-1;
+    unsigned long size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
+    std::map<std::string,double> lkM;
+    std::map<std::string,double> lkX;
+    std::map<std::string,double> lkY;
+
+    unsigned long m,i,j;
+
+    for(m=1;m<d;m++) {
+
+        if (flag_exit) {
+            break;
+        }
+
+        for (i = 0; i < h; i++) {
+
+            coordSeq_1 = i;
+
+            sLs = (_MSA.at(s1ID).at(coordSeq_1));
+
+            for (j = 0; j < w; j++) {
+
+                coordSeq_2 = j;
+
+                sRs = (_MSA.at(s2ID).at(coordSeq_2));
+
+                if (i - 1 > 0 && j - 1 > 0) {
+                    if (!(isinf(LogM[m - 1][i - 1][j - 1])) | !(isinf(LogX[m - 1][i - 1][j - 1])) |
+                        !(isinf(LogY[m - 1][i - 1][j - 1]))) {
+
+
+                        if (local) {
+                            val = computeLK_M_local(valM,
+                                                    valX,
+                                                    valY,
+                                                    node,
+                                                    sLs,
+                                                    sRs,
+                                                    m,
+                                                    lkM);
+                        } else {
+                            /*
+                            val=computeLK_M_all_edges_s_opt(valM,
+                                                            valX,
+                                                            valY,
+                                                            nu,
+                                                            node,
+                                                            sLs, sRs,
+                                                            pi,
+                                                            m,
+                                                            lkM,
+                                                            originalAlphabetSize, alphabet);
+                            */
+                        }
+                        double lk_c = val;
+                        //lk_c=log(iotaV0*betaV0*P(idx_i,idx_j));
+                        double lk = -log(m - 1) + log(_nu) + lk_c;
+                        double l1 = add_lns_2(LogM[m - 1][i - 1][j - 1], LogX[m - 1][i - 1][j - 1]);
+                        double l2 = add_lns_2(l1, LogY[m - 1][i - 1][j - 1]);
+                        LogM[m][i][j] = add_lns_2(lk, l2);
+                        Mp[m][i][j] = lk_c;
+                    }
+                }
+
+                if (i - 1 > 0) {
+                    if (!(isinf(LogM[m - 1][i - 1][j])) || !(isinf(LogX[m - 1][i - 1][j])) ||
+                        !(isinf(LogY[m - 1][i - 1][j]))) {
+
+                        if (local) {
+                            val = computeLK_X_local(valM,
+                                                    valX,
+                                                    valY,
+                                                    node,
+                                                    sLs, col_gap_Rs,
+                                                    m,
+                                                    lkX);
+                        } else {
+                            /*
+                            val=computeLK_X_all_edges_s_opt(valM,
+                                                            valX,
+                                                            valY,
+                                                            nu,
+                                                            node,
+                                                            sLs, col_gap_Rs,
+                                                            pi,
+                                                            m,
+                                                            lkX,
+                                                            originalAlphabetSize, alphabet);
+                            */
+                        }
+
+                        double lk_c = val;
+                        //lk_c = log(iotaV0 * betaV0 * P(idx_i, idx_j) + iotaV1 + betaV1 * FV(idx_i));
+                        double lk = -log(m - 1) + log(_nu) + lk_c;
+                        double l1 = add_lns_2(LogM[m - 1][i - 1][j], LogX[m - 1][i - 1][j]);
+                        double l2 = add_lns_2(l1, LogY[m - 1][i - 1][j]);
+                        LogX[m][i][j] = add_lns_2(lk, l2);
+                        Xp[m][i][j] = lk_c;
+                    }
+                }
+
+                if (j - 1 > 0) {
+                    if (!(isinf(LogM[m - 1][i][j - 1])) || !(isinf(LogX[m - 1][i][j - 1])) ||
+                        !(isinf(LogY[m - 1][i][j - 1]))) {
+
+                        if (local) {
+                            val = computeLK_Y_local(valM,
+                                                    valX,
+                                                    valY,
+                                                    node,
+                                                    col_gap_Ls, sRs,
+                                                    m,
+                                                    lkY);
+                        } else {
+                            /*
+                            val=computeLK_Y_all_edges_s_opt(valM,
+                                                            valX,
+                                                            valY,
+                                                            nu,
+                                                            node,
+                                                            col_gap_Ls, sRs,
+                                                            pi,
+                                                            m,
+                                                            lkY,
+                                                            originalAlphabetSize, alphabet);
+                             */
+                        }
+                        double lk_c = val;
+                        //lk_c = log(iotaV0 * betaV0 * P(idx_i, idx_j) + iotaV2 + betaV2 * FV(idx_j));
+                        double lk = -log(m - 1) + log(_nu) + lk_c;
+                        double l1 = add_lns_2(LogM[m - 1][i][j - 1], LogX[m - 1][i][j - 1]);
+                        double l2 = add_lns_2(l1, LogY[m - 1][i][j - 1]);
+                        LogY[m][i][j] = add_lns_2(lk, l2);
+                        Yp[m][i][j] = lk_c;
+                    }
+                }
+            }
+        }
+    }
+
+    double pm;
+    double pmn;
+    double log_pm;
+    double px;
+    double pxn;
+    double log_px;
+    double py;
+    double pyn;
+    double log_py;
+    double z;
+    double lk;
+    double p0;
+    double r;
+    double log_P;
+    double T;
+    for(int sb=0;sb<num_SB;sb++) {
+
+        //[max_M, idx_M] = max(M(end, end,:));
+        //[max_X, idx_X] = max(X(end, end,:));
+        //[max_Y, idx_Y] = max(Y(end, end,:));
+        //level_max = [idx_M, idx_X, idx_Y];
+
+        //[LK, T] = max([max_M, max_X, max_Y]);
+
+        i = h;
+        j = w;
+        //m = level_max(T);
+
+        double log_Zm = LogM[m][i][j];
+        double log_Zx = LogX[m][i][j];
+        double log_Zy = LogY[m][i][j];
+
+        if(isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)){
+            perror("ERROR 1: Zm, Zx and Zy are inf");
+        }
+
+        double log_Zmx = add_lns_2(log_Zm, log_Zx);
+        double log_Z = add_lns_2(log_Zmx, log_Zy);
+
+        if(isinf(log_Z)){
+            perror("ERROR 2 Z: is inf");
+        }
+
+        if(isinf(log_Zm)){
+            pm = 0;
+            pmn = 0;
+        }else{
+            log_pm = log_Zm - log_Z;
+            pm = exp(log_pm);
+            pmn = exp(-(1 - pm) / temperature);
+        }
+
+        if(isinf(log_Zx)){
+            px = 0;
+            pxn = 0;
+        }else{
+            log_px = log_Zx - log_Z;
+            px = exp(log_px);
+            pxn = exp(-(1 - px) / temperature);
+        }
+
+        if(isinf(log_Zy)){
+            py = 0;
+            pyn = 0;
+        }else{
+            log_py = log_Zy - log_Z;
+            py = exp(log_py);
+            pyn = exp(-(1 - py) / temperature);
+        }
+
+        z = pmn + pxn + pyn;
+        pm = pmn/z;
+        px = pxn/z;
+        py = pyn/z;
+
+        //traceback = [];
+
+        m = 1;
+        lk = -log(m) + log(_nu) + p0;
+
+        while (i > 1 || j > 1 || m > 1) {
+
+            //r = rand(1);
+
+            if (r < pm) {
+                log_P = Mp[m][i][j];
+                i = i - 1;
+                j = j - 1;
+                m = m - 1;
+                T = 1;
+            }else if(r < (pm + px)){
+                log_P = Xp[m][i][j];
+                i = i - 1;
+                m = m - 1;
+                T = 2;
+            }else{
+                log_P = Yp[m][i][j];
+                j = j - 1;
+                m = m - 1;
+                T = 3;
+            }
+
+            if(isinf(log_P)){
+                perror("ERROR 3: P inf");
+            }
+
+            lk = lk + log_P;
+
+            //traceback = [T, traceback];
+
+            log_Zm = LogM[m][i][j];
+            log_Zx = LogX[m][i][j];
+            log_Zy = LogY[m][i][j];
+
+            if (isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)) {
+                perror("ERROR 1: Zm, Zx and Zy are inf");
+            }
+
+            log_Zmx = add_lns_2(log_Zm, log_Zx);
+            log_Z = add_lns_2(log_Zmx, log_Zy);
+
+            if(isinf(log_Z)){
+                perror("ERROR 2 Z: is inf");
+            }
+
+            if(isinf(log_Zm)) {
+                pm = 0;
+                pmn = 0;
+            }else {
+                log_pm = log_Zm - log_Z;
+                pm = exp(log_pm);
+                pmn = exp(-(1 - pm) / temperature);
+            }
+
+            if(isinf(log_Zx)){
+                px = 0;
+                pxn = 0;
+            }else {
+                log_px = log_Zx - log_Z;
+                px = exp(log_px);
+                pxn = exp(-(1 - px) / temperature);
+            }
+
+            if(isinf(log_Zy)) {
+                py = 0;
+                pyn = 0;
+            }else {
+                log_py = log_Zy - log_Z;
+                py = exp(log_py);
+                pyn = exp(-(1 - py) / temperature);
+            }
+
+            z = pmn + pxn + pyn;
+            pm = pmn/z;
+            px = pxn/z;
+            py = pyn/z;
+
+        }
+
+        //gappy_traceback_cell_vector{sb}.tr = traceback;
+        //gappy_traceback_cell_vector{sb}.dim = [h, w, d];
+    }
+
+
+        /*
+        size_tr=(unsigned long)ceil((tr_down_i-tr_up_i+1)*(tr_up_j-tr_down_j+1+1)/2);
+
+        //TODO: optimize size TR
+        TR[m] = new int[size_tr]();
+        memset(TR[m],0,size_tr*sizeof(TR[m][0]));
+        set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+
+        if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)){
+
+            lw=0;
+            for(unsigned long i=up_corner_i;i<=bot_corner_i;i++){
+                coordTriangle_this_i=i;
+                for(int j=0;j<=lw;j++){
+                    coordTriangle_this_j=up_corner_j-j;
+
+                    double mval;
+                    double xval;
+                    double yval;
+
+                    idx=get_indices_M(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
+                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+                    if(idx>=0){
+                        mval=LogM[m_binary_this][idx];
+                    }else{
+                        mval=-std::numeric_limits<double>::infinity();
+                    }
+
+                    idx=get_indices_X(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
+                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+                    if(idx>=0){
+                        xval=LogX[m_binary_this][idx];
+                    }else{
+                        xval=-std::numeric_limits<double>::infinity();
+                    }
+
+                    idx=get_indices_Y(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
+                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+                    if(idx>=0){
+                        yval=LogY[m_binary_this][idx];
+                    }else{
+                        yval=-std::numeric_limits<double>::infinity();
+                    }
+
+                    mval=fabs((long double)mval)<epsilon?-std::numeric_limits<double>::infinity():mval;
+                    xval=fabs((long double)xval)<epsilon?-std::numeric_limits<double>::infinity():xval;
+                    yval=fabs((long double)yval)<epsilon?-std::numeric_limits<double>::infinity():yval;
+
+                    int ttrr;
+
+                    ttrr=index_of_max(mval,xval,yval,epsilon,generator,distribution);
+
+                    idx=get_indices_T(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
+                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+
+                    if(TR[m][idx]!=0){
+                        exit(EXIT_FAILURE);
+                    }
+
+                    TR[m][idx]=ttrr;
+
+                    if( (coordTriangle_this_i==(h-1)) & (coordTriangle_this_j==(w-1)) ){
+
+                        max_of_3=max_of_three(mval,xval,yval,epsilon);
+
+                        if(max_of_3>score){
+                            score=max_of_3;
+                            level_max_lk=m;
+                        }
+
+                    }
+
+                }
+                lw++;
+            }
+        }
+    }
+
+    depth=level_max_lk;
+
+    _score.at(nodeID)=score;
+
+    std::string traceback_path (depth, ' ');
+    int id1=h-1;
+    int id2=w-1;
+    for(int lev=depth;lev>0;lev--){
+        set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,lev,h,w);
+        idx=get_indices_T(id1,id2,up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,lev,h,w);
+        int state = TR[lev][idx];
+        switch(TR[lev][idx]){
+            case MATCH_STATE:
+                id1=id1-1;
+                id2=id2-1;
+                traceback_path[lev-1]=MATCH_CHAR;
+                break;
+            case GAP_X_STATE:
+                id1=id1-1;
+                traceback_path[lev-1]=GAP_X_CHAR;
+                break;
+            case GAP_Y_STATE:
+                id2=id2-1;
+                traceback_path[lev-1]=GAP_Y_CHAR;
+                break;
+            default:
+                perror("ERROR in alignment_reconstruction !!!");
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    _traceback_path=traceback_path;
+
+    build_MSA(node,traceback_path);
+
+    setMSAsequenceNames(node);
+
+    free(LogM[1]);
+    free(LogM[0]);
+    free(LogM);
+
+    free(LogX[1]);
+    free(LogX[0]);
+    free(LogX);
+
+    free(LogY[1]);
+    free(LogY[0]);
+    free(LogY);
+
+    for(int i=last_d;i>=0;i--){
+        free(TR[i]);
+    }
+    free(TR);
+    */
+}
 std::vector< std::string > pPIP::getMSA(bpp::Node *node){
 
     return _MSA.at(node->getId());
 
 }
 double pPIP::getScore(bpp::Node *node){
+
     return _score.at(node->getId());
+
 }
 std::vector< std::string > pPIP::getSeqnames(bpp::Node *node) {
+
     return _seqNames.at(node->getId());
+
 }
 bpp::Node * pPIP::getRootNode(){
+
     return _tree->getRootNode();
+
 }
 bpp::Alphabet *pPIP::getAlphabet(){
+
     return _alphabet;
+
 }
 void pPIP::PIPAligner(UtreeBppUtils::treemap *tm,
                   std::vector<tshlib::VirtualNode *> &list_vnode_to_root,

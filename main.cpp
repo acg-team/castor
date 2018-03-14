@@ -374,9 +374,12 @@ int main(int argc, char *argv[]) {
         bpp::SubstitutionModel *smodel = nullptr;
         bpp::TransitionModel *model = nullptr;
 
-
+        /////////////////////////
+        //TODO:to be removed
         Eigen::MatrixXd Q;
         Eigen::VectorXd pi;
+        /////////////////////////
+
         double lambda;
         double mu;
 
@@ -446,10 +449,9 @@ int main(int argc, char *argv[]) {
             //********************************************************************************
             //********************************************************************************
 
-            double score;
             auto progressivePIP=new bpp::pPIP(alphabet);
 
-            progressivePIP->init(tree, &tm, fullTraversalNodes, smodel->getFrequencies(), lambda, mu,true);
+            progressivePIP->init(tree,smodel, &tm, fullTraversalNodes, true);
 
             progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
 
@@ -458,14 +460,11 @@ int main(int argc, char *argv[]) {
             bpp::Fasta seqWriter;
             seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
 
-            score=progressivePIP->getScore(progressivePIP->getRootNode());
-
             std::ofstream lkFile;
             lkFile << std::setprecision(18);
             lkFile.open(PAR_output_file_lk);
-            lkFile << score;
+            lkFile << progressivePIP->getScore(progressivePIP->getRootNode());;
             lkFile.close();
-
 
             std::cout<<"PIPAligner done...\n";
 
