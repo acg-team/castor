@@ -72,14 +72,14 @@ time     ${MINIJATI_RELDATE} ${MINIJATI_RELTIME}")
 
 set(CMAKE_CXX_STANDARD 14)
 
-SET(CMAKE_CXX_FLAGS_DEBUG  "-Wall -Wshadow -Weffc++ -O0 -g")
-SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g")
+SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wshadow -Weffc++ -O0 -g -DNDEBUG=1")
+SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g -DNDEBUG=1")
 
-SET(CMAKE_CXX_FLAGS_RELEASE  "-O3")
-SET(CMAKE_C_FLAGS_RELEASE "-O3")
+SET(CMAKE_CXX_FLAGS_RELEASE "-O3  -g0 -DNDEBUG=0")
+SET(CMAKE_C_FLAGS_RELEASE "-O3  -g0 -DNDEBUG=0")
 
-SET(CMAKE_CXX_FLAGS_INTEL  "-O3")
-SET(CMAKE_C_FLAGS_INTEL "-O3")
+SET(CMAKE_CXX_FLAGS_INTEL "-O3  -g0 -DNDEBUG=0")
+SET(CMAKE_C_FLAGS_INTEL "-O3  -g0 -DNDEBUG=0")
 
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -153,7 +153,6 @@ set(SOURCES
         Utilities.hpp
         PIP.cpp
         PIP.hpp
-        CommandLineFlags.hpp
         Version.hpp
         progressivePIP.hpp
         RHomogeneousTreeLikelihood_PIP.cpp
@@ -181,14 +180,4 @@ target_link_libraries(miniJATI glog)
 target_link_libraries(miniJATI gflags)
 target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
 target_link_libraries(miniJATI ${Boost_LIBRARIES})
-
-
-SET(SOURCES_EXTBPP  Jati.cpp PIP.cpp PIP.hpp Version.hpp Jati.cpp)
-
-add_executable(miniJATI_onBPP ${SOURCES_EXTBPP})
-
-target_link_libraries(miniJATI_onBPP tshlib)
-target_link_libraries(miniJATI_onBPP glog)
-target_link_libraries(miniJATI_onBPP gflags)
-target_link_libraries(miniJATI_onBPP ${BPP_LIBS_SHARED})
 
