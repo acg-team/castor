@@ -433,25 +433,18 @@ namespace bpp {
                     treesearch->setStartingNodes(PAR_optim_topology_hillclimbing_startnodes);
                     treesearch->setTreemap(flk->getTreeMap());
                     treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
-
-                    if (flk) {
-                        // if we are using an indel model
-                        treesearch->setModelIndels(true);
-                        treesearch->setLikelihoodFunc(flk);
-                    } else {
-                        // without indel model
-                        treesearch->setModelIndels(false);
-                    }
+                    treesearch->setLikelihoodFunc(flk);
                     treesearch->performTreeSearch(flk->getUtree());
 
                     // Root the tree
                     flk->getUtree()->addVirtualRootNode();
                     // Get the likelihood function
                     tl = treesearch->getLikelihoodFunc()->getLikelihoodFunction();
-                    std::cout << tl->getLogLikelihood() << std::endl;
+
+                    DLOG(INFO) << "[TSH Cycle] Likelihood after tree-search lk=" << tl->getLogLikelihood();
 
                 }
-                OutputUtils::printParametersLikelihood(flk);
+                //OutputUtils::printParametersLikelihood(flk);
             }
 
         } else if (optName == "FullD") {
@@ -518,7 +511,7 @@ namespace bpp {
         }
 
 
-        LOG(INFO) << "[Parameter optimization]\tPerformed " << n << " function evaluations. New Likelihood lk=" << std::setprecision(12) << -tl->getValue();
+        DLOG(INFO) << "[Parameter optimization]\tPerformed " << n << " function evaluations. New Likelihood lk=" << std::setprecision(12) << -tl->getValue();
 
         if (backupFile != "none") {
             string bf = backupFile + ".def";
