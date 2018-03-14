@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit:
  */
 
 #include <chrono>
@@ -358,59 +358,55 @@ int pPIP::getIndexOfMax(double m, double x, double y, double epsilon,
                     return int(GAP_Y_STATE);
                 }
             } else {
-PLOG(<< "ERROR in getIndexOfMax";
+                PLOG(FATAL) << "ERROR in getIndexOfMax";
                 exit(EXIT_FAILURE);
             }
         }
-} else if (x > m) {
-if (x > y) {
+    } else if (x > m) {
+        if (x > y) {
             return int(GAP_X_STATE);
-} else if (y > x) {
+        } else if (y > x) {
             return int(GAP_Y_STATE);
-} else {
-if (
-abs(x
-- y) < epsilon) {
+        } else {
+            if (abs(x - y) < epsilon) {
                 //x or y
                 random_number = distribution(generator);
-if (random_number < (1.0 / 2.0)) {
+                if (random_number < (1.0 / 2.0)) {
                     return int(GAP_X_STATE);
-} else {
+                } else {
                     return int(GAP_Y_STATE);
                 }
-} else {
-PLOG << "ERROR in index_of_max_3";
+            } else {
+                PLOG(FATAL) << "ERROR in index_of_max_3";
                 exit(EXIT_FAILURE);
             }
         }
-} else {
+    } else {
 
-double mx = x;
-if (mx > y) {
+        double mx = x;
+        if (mx > y) {
             //m or x
             random_number = distribution(generator);
-if (random_number < (1.0 / 2.0)) {
+            if (random_number < (1.0 / 2.0)) {
                 return int(MATCH_STATE);
-} else {
+            } else {
                 return int(GAP_X_STATE);
             }
-} else if (y > mx) {
+        } else if (y > mx) {
             return int(GAP_Y_STATE);
-} else {
-if (
-abs(mx
-- y) < epsilon) {
+        } else {
+            if (abs(mx - y) < epsilon) {
                 //m or x or y
                 random_number = distribution(generator);
-if (random_number < (1.0 / 3.0)) {
+                if (random_number < (1.0 / 3.0)) {
                     return int(MATCH_STATE);
-} else if (random_number < (2.0 / 3.0)) {
+                } else if (random_number < (2.0 / 3.0)) {
                     return int(GAP_X_STATE);
-} else {
+                } else {
                     return int(GAP_Y_STATE);
                 }
-} else {
-PLOG << "ERROR in index_of_max_3";
+            } else {
+                PLOG(FATAL) << "ERROR in index_of_max_3";
                 exit(EXIT_FAILURE);
             }
         }
@@ -431,7 +427,7 @@ double pPIP::getMaxOfThree(double a, double b, double c, double epsilon) {
     }
 
     if (std::isinf(a) && std::isinf(b) && std::isinf(c)) {
-        PLOG << "getMaxOfThree: all inf";
+        PLOG(FATAL) << "getMaxOfThree: all inf";
         exit(EXIT_FAILURE);
     }
 
@@ -509,7 +505,7 @@ void pPIP::buildMSA(bpp::Node *node, std::string traceback_path) {
             idx_j++;
 
         } else {
-            PLOG << "ERROR";
+            PLOG(FATAL) << "ERROR";
         }
     }
 
@@ -573,7 +569,7 @@ void pPIP::_setLambda(double lambda) {
 void pPIP::_setMu(double mu) {
 
     if (fabs(mu) < SMALL_DOUBLE) {
-        PLOG << "ERROR: mu is too small";
+        PLOG(FATAL) << "ERROR: mu is too small";
     }
 
     mu_ = mu;
@@ -597,7 +593,7 @@ void pPIP::_setAllIotas(UtreeBppUtils::treemap *tm, std::vector<tshlib::VirtualN
     T = tau_ + 1 / mu_;
 
     if (fabs(T) < SMALL_DOUBLE) {
-        PLOG << "ERROR in set_iota: T too small";
+        PLOG(FATAL) << "ERROR in set_iota: T too small";
     }
 
     for (auto &vnode:listNodes) {
@@ -618,7 +614,7 @@ void pPIP::_setAllIotas(bpp::Node *node, bool local_root) {
     T = tau_ + 1 / mu_;
 
     if (fabs(T) < SMALL_DOUBLE) {
-        PLOG << "ERROR in set_iota: T too small";
+        PLOG(FATAL) << "ERROR in set_iota: T too small";
     }
 
     if (local_root) {
@@ -648,7 +644,7 @@ void pPIP::_setAllBetas(bpp::Node *node, bool local_root) {
         double muT = mu_ * node->getDistanceToFather();
 
         if (fabs(muT) < SMALL_DOUBLE) {
-            PLOG << "ERROR mu * T is too small";
+            PLOG(FATAL) << "ERROR mu * T is too small";
         }
 
         beta_.at(node->getId()) = (1.0 - exp(-mu_ * node->getDistanceToFather())) / muT;
@@ -677,7 +673,7 @@ void pPIP::_setAllBetas(UtreeBppUtils::treemap *tm, std::vector<tshlib::VirtualN
 
             double muT = mu_ * node->getDistanceToFather();
             if (fabs(muT) < SMALL_DOUBLE) {
-                PLOG << "ERROR mu * T is too small";
+                PLOG(FATAL) << "ERROR mu * T is too small";
             }
 
             beta_.at(node->getId()) = (1.0 - exp(-mu_ * node->getDistanceToFather())) / muT;
@@ -1615,7 +1611,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, UtreeBppUtils::treemap *tm, double gamma_ra
                 traceback_path[lev - 1] = GAP_Y_CHAR;
                 break;
             default:
-                PLOG << "ERROR in alignment_reconstruction !!!";
+                PLOG(FATAL) << "ERROR in alignment_reconstruction !!!";
                 exit(EXIT_FAILURE);
         }
     }
@@ -1675,6 +1671,8 @@ void pPIP::PIPAligner(UtreeBppUtils::treemap *tm,
     for (auto &vnode:list_vnode_to_root) {
 
         auto node = tree_->getNode(tm->right.at(vnode), false);
+
+        DVLOG(1) << "[pPIP] Processing node " << vnode->getNodeName();
 
         if (node->isLeaf()) {
 
