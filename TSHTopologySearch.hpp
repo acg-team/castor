@@ -78,18 +78,7 @@ namespace bpp {
                 unsigned int verbose = 2) :
                 searchableTree_(&tree), algorithm_(algorithm), verbose_(verbose), topoListeners_() {}
 
-        /*
-        TSHTopologySearch(const TSHSearchable& ts) :
-                searchableTree_(ts.searchableTree_),
-                algorithm_(ts.algorithm_),
-                verbose_(ts.verbose_),
-                topoListeners_(ts.topoListeners_)
-        {
-            //Hard-copy all listeners:
-            for (unsigned int i = 0; i < topoListeners_.size(); i++)
-                topoListeners_[i] = dynamic_cast<TopologyListener*>(ts.topoListeners_[i]->clone());
-        }
-        */
+
         TSHTopologySearch &operator=(const TSHTopologySearch &ts) {
             searchableTree_ = ts.searchableTree_;
             algorithm_ = ts.algorithm_;
@@ -180,7 +169,6 @@ namespace tshlib {
         TreeSearchStopCondition stopConditionMethod;
         double stopConditionValue;
         std::string scoringMethod;
-        bool model_indels;
         int performed_moves;
         int search_startingnodes;
         bpp::VectorSiteContainer *tmp_sites;
@@ -196,7 +184,6 @@ namespace tshlib {
             likelihoodFunc = nullptr;
             initialLikelihoodValue = -std::numeric_limits<double>::infinity();
             stopConditionValue = 0;
-            model_indels = false;
             performed_moves = 0;
             search_startingnodes = 0;
         };
@@ -251,14 +238,6 @@ namespace tshlib {
 
         void setScoringMethod(const std::string &inScoringMethod) {
             scoringMethod = inScoringMethod;
-        }
-
-        bool isIndelsIncluded() const {
-            return model_indels;
-        }
-
-        void setModelIndels(bool in_model_indes) {
-            model_indels = in_model_indes;
         }
 
         int getStartingNodes() const {

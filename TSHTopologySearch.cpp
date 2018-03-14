@@ -264,27 +264,29 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         //utree->saveTreeOnFile("../data/test.txt");
 
         // ------------------------------------
-        // bool isLKImproved = false;
-        // bool computeMoveLikelihood = true;
-
-        // ------------------------------------
         // Add the root
-        inputTree->addVirtualRootNode();
+        //inputTree->addVirtualRootNode();
 
-        if (model_indels) {
+        moveLogLK = likelihoodFunc->updateLikelihood(listNodesWithinPath);
+
+        //if (model_indels) {
             // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
             // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
             // we use a map to navigate between utree and bpp tree. The map is constant.
-            bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc->getLikelihoodFunction());
-            moveLogLK = c_likelihoodFunc->getLogLikelihood(listNodesWithinPath);
+        //bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc->getLikelihoodFunction());
+        //    moveLogLK = likelihoodFunc->updateLikelihood(listNodesWithinPath);
+        //moveLogLK = c_likelihoodFunc->getLogLikelihood(listNodesWithinPath);
 
-        } else {
+        //} else {
 
-            bpp::Tree *tree = UtreeBppUtils::convertTree_u2b(inputTree);
-            auto c_likelihoodFunc = new bpp::RHomogeneousTreeLikelihood(*tree, *tmp_sites, tmp_transmodel, tmp_rdist, false, false, false);
-            c_likelihoodFunc->initialize();
-            moveLogLK = c_likelihoodFunc->getLogLikelihood();
-        }
+        //bpp::Tree *tree = UtreeBppUtils::convertTree_u2b(inputTree);
+        //auto c_likelihoodFunc = new bpp::RHomogeneousTreeLikelihood(*tree, *tmp_sites, tmp_transmodel, tmp_rdist, false, false, false);
+        //c_likelihoodFunc->initialize();
+        //moveLogLK = c_likelihoodFunc->getLogLikelihood();
+
+        //    moveLogLK = likelihoodFunc->updateLikelihood(listNodesWithinPath);
+
+        //}
 
         // ------------------------------------
         // Store likelihood of the move
@@ -292,7 +294,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
 
         // ------------------------------------
         // Remove virtual root
-        inputTree->removeVirtualRootNode();
+        //inputTree->removeVirtualRootNode();
 
         candidateMoves->displayRearrangmentStatus(i, true);
 
@@ -302,23 +304,27 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
 
         // ------------------------------------
         // Add the root
-        inputTree->addVirtualRootNode();
+        //inputTree->addVirtualRootNode();
 
         // ------------------------------------
         if (scoringMethod.find("bothways") != std::string::npos) {
-            if (model_indels) {
+
+            moveLogLK = likelihoodFunc->updateLikelihood(listNodesWithinPath);
+
+            //if (model_indels) {
                 // the dynamic_cast is necessary to access methods which belong to the class itself and not to the parent class
                 // in this case the class is the RHomogeneousTreeLikelihood_PIP, a derived class for PIP likelihood.
-                bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc->getLikelihoodFunction());
+            //bpp::RHomogeneousTreeLikelihood_PIP *c_likelihoodFunc = dynamic_cast<bpp::RHomogeneousTreeLikelihood_PIP *>(likelihoodFunc->getLikelihoodFunction());
                 // we use a map to navigate between utree and bpp tree. The map is constant.
+            //    moveLogLK = likelihoodFunc->updateLikelihood(listNodesWithinPath);
 
-                moveLogLK = c_likelihoodFunc->getLogLikelihood(listNodesWithinPath);
+            //moveLogLK = c_likelihoodFunc->getLogLikelihood(listNodesWithinPath);
 
                 // ------------------------------------
                 // Store likelihood of the move
                 //rearrangmentList->getMove(i)->move_lk = moveLogLK;
 
-            } else {
+            //} else {
                 // If not required, the likelihood value won't be computed but the FV components must be restored
 
                 /*
@@ -331,18 +337,22 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
                 logLK = LKFunc::LKRearrangment(*likelihood, fullTraversalNodes, *alignment);
                  */
 
-                bpp::Tree *tree = UtreeBppUtils::convertTree_u2b(inputTree);
-                auto c_likelihoodFunc = new bpp::RHomogeneousTreeLikelihood(*tree, *tmp_sites, tmp_transmodel, tmp_rdist, false, false, false);
-                c_likelihoodFunc->initialize();
-                moveLogLK = c_likelihoodFunc->getLogLikelihood();
-            }
+            //bpp::Tree *tree = UtreeBppUtils::convertTree_u2b(inputTree);
+            //auto c_likelihoodFunc = new bpp::RHomogeneousTreeLikelihood(*tree, *tmp_sites, tmp_transmodel, tmp_rdist, false, false, false);
+            //c_likelihoodFunc->initialize();
+            //moveLogLK = c_likelihoodFunc->getLogLikelihood();
+
+            //    moveLogLK = likelihoodFunc->updateLikelihood(listNodesWithinPath);
+
+            //}
         }
 
         // ------------------------------------
         // Remove virtual root
-        inputTree->removeVirtualRootNode();
+        //inputTree->removeVirtualRootNode();
 
         //candidateMoves->displayRearrangmentStatus(i, true);
+        DLOG(INFO) << "return: " << moveLogLK;
 
         // ------------------------------------
         // Count moves performed
