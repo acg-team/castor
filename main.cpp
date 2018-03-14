@@ -115,17 +115,16 @@ using namespace tshlib;
 
 int main(int argc, char *argv[]) {
 
-    FLAGS_alsologtostderr = true;
+    FLAGS_logtostderr = 1;
     int OMP_max_avail_threads = 1;
     google::InitGoogleLogging(software::name.c_str());
-    //gflags::ParseCommandLineFlags(&argc, &argv, true);
 
     try {
         bpp::JATIApplication jatiapp(argc, argv, software::desc);
 
         if (argc < 2) {
             jatiapp.help();
-            return 0;
+            exit(0);
         } else {
             jatiapp.banner();
             jatiapp.startTimer();
@@ -137,7 +136,6 @@ int main(int argc, char *argv[]) {
         if (OMPENABLED) OMP_max_avail_threads = omp_get_max_threads();
         int PAR_execution_numthreads = ApplicationTools::getIntParameter("exec_numthreads", jatiapp.getParams(), OMP_max_avail_threads, "", true, 0);
 
-
         bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", jatiapp.getParams(), false);
         std::string PAR_model_substitution = ApplicationTools::getStringParameter("model", jatiapp.getParams(), "JC69", "", true, true);
         std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", jatiapp.getParams(), false, false, "", true, "", 1);
@@ -147,7 +145,7 @@ int main(int argc, char *argv[]) {
         std::string modelStringName;
         std::map<std::string, std::string> modelMap;
         KeyvalTools::parseProcedure(PAR_model_substitution, modelStringName, modelMap);
-        bool PAR_model_indels = (modelStringName == "PIP") ? true : false;
+        bool PAR_model_indels = modelStringName == "PIP";
 
 
         /* ***************************************************
@@ -183,7 +181,7 @@ int main(int argc, char *argv[]) {
 
         bpp::Alphabet *alphabet = bpp::SequenceApplicationTools::getAlphabet(jatiapp.getParams(), "", false, false);
         unique_ptr<GeneticCode> gCode;
-        bpp::CodonAlphabet *codonAlphabet = dynamic_cast<bpp::CodonAlphabet *>(alphabet);
+        auto *codonAlphabet = dynamic_cast<bpp::CodonAlphabet *>(alphabet);
         if (codonAlphabet) {
             std::string codeDesc = ApplicationTools::getStringParameter("genetic_code", jatiapp.getParams(), "Standard", "", true, true);
             //ApplicationTools::displayResult("Genetic Code", codeDesc);

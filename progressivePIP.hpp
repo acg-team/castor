@@ -176,7 +176,7 @@ namespace progressivePIP{
                         return int(GAP_Y_STATE);
                     }
                 }else{
-                    perror("ERROR in index_of_max\n");
+                    perror("ERROR in getIndexOfMax\n");
                     exit(EXIT_FAILURE);
                 }
             }
@@ -250,7 +250,7 @@ namespace progressivePIP{
         //------------------------------------
 
         if(std::isinf(a) && std::isinf(b) && std::isinf(c)){
-            perror("max_of_three: all inf\n");
+            perror("getMaxOfThree: all inf\n");
             exit(EXIT_FAILURE);
         }
 

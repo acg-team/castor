@@ -613,7 +613,6 @@ bpp::DistanceMatrix *InputUtils::parseDistanceMatrix(std::string filepath) {
 
     inFile >> matsize;
     std::string character;
-    double val;
 
     auto outmatrix = new bpp::DistanceMatrix(matsize);
     outmatrix->resize(matsize);
@@ -657,30 +656,6 @@ bpp::DistanceMatrix *InputUtils::parseDistanceMatrix(std::string filepath) {
         }
     }
 
-    /*
-    outmatrix->resize(matsize);
-
-    std::string line;
-    std::string segment;
-    std::vector<std::string> seglist;
-    while (std::getline(inFile, line, ' ')) {
-        seglist.push_back(segment);
-
-    }
-
-    for(int i=0;i<matsize;i++){
-        inFile >> character;
-        for(int j=0;j<=i;j++){
-
-        inFile >> val
-
-
-
-        }
-    }
-
-
-    */
 
     return outmatrix;
 }
