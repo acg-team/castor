@@ -407,11 +407,11 @@ int main(int argc, char *argv[]) {
             likelihood->computePr(fullTraversalNodes, alpha->getSize());
 
 
-            LOG(INFO) << "[Alignment sequences] Starting MSA inference using Pro-PIP...";
+            LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
             /*
             VirtualNode *root = utree->rootnode;
-            MSA = progressivePIP::compute_DP3D_PIP_tree_cross(root, tree, &tm, pi, lambda, mu, sequences, alpha, 1.0, false);
+            MSA_t = progressivePIP::compute_DP3D_PIP_tree_cross(root, tree, &tm, pi, lambda, mu, sequences, alpha, 1.0, false);
             */
 
             double score;
@@ -440,13 +440,13 @@ int main(int argc, char *argv[]) {
             lkFile << score;
             lkFile.close();
 
-            LOG(INFO) << "[Alignment sequences] MSA inference using Pro-PIP terminated successfully!";
+            LOG(INFO) << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
 
         }
 
         //--------------------------------------------------------------------------------------------------------------
-        // best tree from MSA marginalization
+        // best tree from MSA_t marginalization
         if(false){
             auto treesearch = new tshlib::TreeSearch;
             Utree *best_tree_from_MSA=progressivePIP::marginalizationOverMSAs(treesearch,alpha,pi,lambda, mu, sequences, tm);

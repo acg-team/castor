@@ -75,7 +75,7 @@ namespace progressivePIP{
     struct ProgressivePIPResult;
 
     struct ProgressivePIPResult{
-        //std::vector<std::pair<std::string,std::string > > MSA;
+        //std::vector<std::pair<std::string,std::string > > MSA_t;
         std::vector< std::pair<std::string,std::string> > MSAs;
         std::string traceback_path;
         double score;
@@ -1997,12 +1997,12 @@ namespace progressivePIP{
 
                 /*
                 auto sequences = new bpp::VectorSequenceContainer(alpha);
-                for (int i = 0; i < MSA.MSAs.size(); i++) {
-                    sequences->addSequence(*(new bpp::BasicSequence(MSA.MSAs.at(i).first, MSA.MSAs.at(i).second, alpha)), true);
+                for (int i = 0; i < MSA_t.MSAs.size(); i++) {
+                    sequences->addSequence(*(new bpp::BasicSequence(MSA_t.MSAs.at(i).first, MSA_t.MSAs.at(i).second, alpha)), true);
                 }
                 auto sites = new bpp::VectorSiteContainer(*sequences);
                 tree_msa.msas.push_back(sites);
-                tree_msa.lks.push_back(MSA.score);
+                tree_msa.lks.push_back(MSA_t.score);
                 */
 
                 marginal_lk+=MSA.score;

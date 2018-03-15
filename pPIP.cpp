@@ -44,6 +44,7 @@
 
 #include <chrono>
 #include <random>
+#include <algorithm>
 
 #include "pPIP.hpp"
 #include <Bpp/Numeric/Matrix/MatrixTools.h>
@@ -95,6 +96,7 @@ void pPIP::_reserve(unsigned long numNodes){
 
     _score.resize(numNodes);
     _score.assign(numNodes,-std::numeric_limits<double>::infinity());
+    _traceback_path.resize(numNodes);
     _iota.resize(numNodes);
     _beta.resize(numNodes);
     _pr.resize(numNodes);
@@ -470,8 +472,7 @@ std::string pPIP::createGapCol(unsigned long len){
 
     return colMSA;
 }
-void pPIP::build_MSA(bpp::Node *node, std::string traceback_path){
-
+void pPIP::build_MSA(bpp::Node *node, TracebackPath_t traceback_path){
 
     auto sons = node->getSons();
     auto s1 = sons.at(0);
@@ -479,13 +480,13 @@ void pPIP::build_MSA(bpp::Node *node, std::string traceback_path){
     unsigned long s1ID = (unsigned long)s1->getId();
     unsigned long s2ID = (unsigned long)s2->getId();
 
-    std::vector< std::string > *MSA_L=&(_MSA.at(s1ID));
-    std::vector< std::string > *MSA_R=&(_MSA.at(s2ID));
+    MSA_t *MSA_L=&(_MSA.at(s1ID));
+    MSA_t *MSA_R=&(_MSA.at(s2ID));
 
     unsigned long lenColL=MSA_L->at(0).size();
     unsigned long lenColR=MSA_R->at(0).size();
 
-    std::vector<std::string> MSA;
+    MSA_t MSA;
 
     int idx_i=0;
     int idx_j=0;
@@ -548,11 +549,11 @@ void pPIP::setMSAleaves(bpp::Node *node,const std::string &sequence){
 
     /* convert a string into a vector of single char strings */
     //std::vector<std::string> msa;
-    MSA msa;
+    MSA_t msa;
     msa.resize(sequence.size());
     for(int i=0;i<sequence.size();i++){
         //std::string s(1, MSAin.at(i));
-        MSAcolumn msa_col(1, sequence.at(i));
+        MSAcolumn_t msa_col(1, sequence.at(i));
         msa.at(i)=msa_col;
     }
 
@@ -722,7 +723,7 @@ void pPIP::_computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode
 //
 //    }
 //}
-bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn &s, unsigned long &idx){
+bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn_t &s, unsigned long &idx){
     bpp::ColMatrix<double> fv;
     int ii;
     char ch=s[idx];
@@ -738,7 +739,7 @@ bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn &s, unsigned long &idx){
 
     return fv;
 }
-bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn &s, unsigned long &idx){
+bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx){
     bpp::ColMatrix<double> fv;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
@@ -786,7 +787,7 @@ void pPIP::allgaps(bpp::Node *node,std::string &s, unsigned long &idx,bool &flag
     }
 
 }
-double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn &s){
+double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s){
 
     double pr=0;
     double pL=0;
@@ -824,19 +825,19 @@ double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn &s){
         allgaps(sons.at(RIGHT),s,idx,flagR);
         unsigned long len;
 
-        MSAcolumn sL;
+        MSAcolumn_t sL;
         len=ixx;
         sL=s.substr(0,len);
         pL=compute_lk_gap_down(sons.at(LEFT),sL);
 
-        MSAcolumn sR;
+        MSAcolumn_t sR;
         sR=s.substr(ixx);
         pR=compute_lk_gap_down(sons.at(RIGHT),sR);
     }
 
     return pr+pL+pR;
 }
-double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn &s){
+double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
 
     double pr;
     unsigned long idx;
@@ -890,7 +891,7 @@ double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn &s){
 
     return pr;
 }
-double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn &sL, MSAcolumn &sR){
+double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR){
     double fv0;
     double pr;
     bpp::ColMatrix<double> fvL;
@@ -931,16 +932,16 @@ double pPIP::computeLK_M_local(double valM,
                                double valX,
                                double valY,
                                bpp::Node *node,
-                               MSAcolumn &sL,
-                               MSAcolumn &sR,
+                               MSAcolumn_t &sL,
+                               MSAcolumn_t &sR,
                                unsigned long m,
-                               std::map<MSAcolumn, double> &lkM){
+                               std::map<MSAcolumn_t, double> &lkM){
 
 
     double pr;
     double val;
 
-    MSAcolumn s;
+    MSAcolumn_t s;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     bpp::ColMatrix<double> PrfvL;
@@ -989,16 +990,16 @@ double pPIP::computeLK_X_local(double valM,
                                double valX,
                                double valY,
                                bpp::Node *node,
-                               MSAcolumn &sL,
-                               MSAcolumn &col_gap_R,
+                               MSAcolumn_t &sL,
+                               MSAcolumn_t &col_gap_R,
                                unsigned long m,
-                               std::map<MSAcolumn, double> &lkX){
+                               std::map<MSAcolumn_t, double> &lkX){
 
 
     double pr;
     double val;
 
-    MSAcolumn s;
+    MSAcolumn_t s;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     bpp::ColMatrix<double> PrfvL;
@@ -1053,16 +1054,16 @@ double pPIP::computeLK_Y_local(double valM,
                                double valX,
                                double valY,
                                bpp::Node *node,
-                               MSAcolumn &col_gap_L,
-                               MSAcolumn &sR,
+                               MSAcolumn_t &col_gap_L,
+                               MSAcolumn_t &sR,
                                unsigned long m,
-                               std::map<MSAcolumn, double> &lkY){
+                               std::map<MSAcolumn_t, double> &lkY){
 
 
     double pr;
     double val;
 
-    MSAcolumn s;
+    MSAcolumn_t s;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     bpp::ColMatrix<double> PrfvL;
@@ -1153,10 +1154,10 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
 
     double pc0;
 
-    MSAcolumn sLs;
-    MSAcolumn sRs;
-    MSAcolumn col_gap_Ls;
-    MSAcolumn col_gap_Rs;
+    MSAcolumn_t sLs;
+    MSAcolumn_t sRs;
+    MSAcolumn_t col_gap_Ls;
+    MSAcolumn_t col_gap_Rs;
 
     unsigned long numLeavesLeft = _seqNames.at(s1ID).size();
     unsigned long numLeavesRight = _seqNames.at(s2ID).size();
@@ -1240,9 +1241,9 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     bool flag_exit=false;
     unsigned long last_d=d-1;
     unsigned long size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
-    std::map<MSAcolumn,double> lkM;
-    std::map<MSAcolumn,double> lkX;
-    std::map<MSAcolumn,double> lkY;
+    std::map<MSAcolumn_t,double> lkM;
+    std::map<MSAcolumn_t,double> lkX;
+    std::map<MSAcolumn_t,double> lkY;
 
     for(unsigned long m=1;m<d;m++){
 
@@ -1602,7 +1603,7 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
 
     _score.at(nodeID)=score;
 
-    std::string traceback_path (depth, ' ');
+    TracebackPath_t traceback_path (depth, ' ');
     int id1=h-1;
     int id2=w-1;
     for(int lev=depth;lev>0;lev--){
@@ -1629,7 +1630,8 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
         }
     }
 
-    _traceback_path=traceback_path;
+    //_traceback_path=traceback_path;
+    _traceback_path.at(nodeID)=traceback_path;
 
     build_MSA(node,traceback_path);
 
@@ -1652,289 +1654,6 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     }
     free(TR);
 }
-
-//function gappy_traceback_cell_vector=SB_DP_leaves(segment1,segment2,params,P){
-//
-//    gappy_traceback_cell_vector=cell(params.num_SB,1);
-//
-//    mapAA=params.map;
-//    extended_alphabet_size=params.extended_alphabet_size;
-//    nu=params.nu;
-//    Pi=params.Pi;
-//    bl=params.bl;
-//    iotas=params.iotas;
-//    betas=params.betas;
-//    iotaV0=iotas(1);
-//    iotaV1=iotas(2);
-//    iotaV2=iotas(3);
-//    betaV0=betas(1);
-//    betaV1=betas(2);
-//    betaV2=betas(3);
-//
-//    h=length(segment1+1);
-//    w=length(segment2+1);
-//    d=(h-1)+(w-1)+1;
-//
-//    M=ones(h,w,d)*(-inf);
-//    X=ones(h,w,d)*(-inf);
-//    Y=ones(h,w,d)*(-inf);
-//
-//    Mp=ones(h,w,d)*(-inf);
-//    Xp=ones(h,w,d)*(-inf);
-//    Yp=ones(h,w,d)*(-inf);
-//
-//    FV=zeros(extended_alphabet_size,1);
-//    fv=zeros(extended_alphabet_size,1);
-//    for k=1:extended_alphabet_size
-//        fv=fv*0;
-//        fv(k)=1;
-//        FV(k)=sum(Pi.*fv);
-//    end
-//
-//    lk_empty=iotaV0*(1+(betaV0*(-1+P(end,end))))+...
-//    iotaV1*(1+(betaV1*(-1+FV(end))))+...
-//    iotaV2*(1+(betaV2*(-1+FV(end))));
-//
-//    p0=nu*(lk_empty-1);
-//
-//    M(1,1,1)=p0;
-//    X(1,1,1)=p0;
-//    Y(1,1,1)=p0;
-//
-//    Mp(1,1,1)=p0;
-//    Xp(1,1,1)=p0;
-//    Yp(1,1,1)=p0;
-//
-//    for k=2:d
-//        for i=1:h
-//            col_i=segment1(i);
-//            idx_i=mapAA(col_i);
-//
-//            for j=1:w
-//
-//                col_j=segment2(j);
-//                idx_j=mapAA(col_j);
-//
-//                if i-1>0 && j-1>0
-//                    if not(isinf(M(i-1,j-1,k-1))) || not(isinf(X(i-1,j-1,k-1))) || not(isinf(Y(i-1,j-1,k-1)))
-//                        lk_c=log(iotaV0*betaV0*P(idx_i,idx_j));
-//                        lk=-log(k-1)+log(nu)+lk_c;
-//                        l1=add_lns_2(M(i-1,j-1,k-1),X(i-1,j-1,k-1));
-//                        l2=add_lns_2(l1,Y(i-1,j-1,k-1));
-//                        M(i,j,k)=add_lns_2(lk,l2);
-//                        Mp(i,j,k)=lk_c;
-//                    end
-//                end
-//
-//                if i-1>0
-//                    if not(isinf(M(i-1,j,k-1))) || not(isinf(X(i-1,j,k-1))) || not(isinf(Y(i-1,j,k-1)))
-//                        lk_c=log(iotaV0*betaV0*P(idx_i,idx_j)+...
-//                        iotaV1+betaV1*FV(idx_i));
-//                        lk=-log(k-1)+log(nu)+lk_c;
-//                        l1=add_lns_2(M(i-1,j,k-1),X(i-1,j,k-1));
-//                        l2=add_lns_2(l1,Y(i-1,j,k-1));
-//                        X(i,j,k)=add_lns_2(lk,l2);
-//                        Xp(i,j,k)=lk_c;
-//                    end
-//                end
-//
-//                if j-1>0
-//                    if not(isinf(M(i,j-1,k-1))) || not(isinf(X(i,j-1,k-1))) || not(isinf(Y(i,j-1,k-1)))
-//                        lk_c=log(iotaV0*betaV0*P(idx_i,idx_j)+...
-//                        iotaV2+betaV2*FV(idx_j));
-//                        lk=-log(k-1)+log(nu)+lk_c;
-//                        l1=add_lns_2(M(i,j-1,k-1),X(i,j-1,k-1));
-//                        l2=add_lns_2(l1,Y(i,j-1,k-1));
-//                        Y(i,j,k)=add_lns_2(lk,l2);
-//                        Yp(i,j,k)=lk_c;
-//                    end
-//                end
-//
-//            end
-//        end
-//    end
-//
-//    for sb=1:params.params.num_SB
-//
-//        Temperature=params.Temperature;
-//
-//        [max_M,idx_M]=max(M(end,end,:));
-//        [max_X,idx_X]=max(X(end,end,:));
-//        [max_Y,idx_Y]=max(Y(end,end,:));
-//        level_max=[idx_M,idx_X,idx_Y];
-//
-//        [LK,T]=max([max_M,max_X,max_Y]);
-//
-//        i=int32(h);
-//        j=int32(w);
-//        k=int32(level_max(T));
-//
-//        log_Zm=M(i,j,k);
-//        log_Zx=X(i,j,k);
-//        log_Zy=Y(i,j,k);
-//
-//        if isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)
-//            error('ERROR 1: Zm, Zx and Zy are inf')
-//        end
-//
-//        log_Zmx=add_lns_2(log_Zm,log_Zx);
-//        log_Z=add_lns_2(log_Zmx,log_Zy);
-//
-//        if isinf(log_Z)
-//            error('ERROR 2 Z: is inf')
-//        end
-//
-//        if isinf(log_Zm)
-//            pm=0;
-//            pmn=0;
-//        else
-//            log_pm=log_Zm-log_Z;
-//            pm=exp(log_pm);
-//            pmn=exp(-(1-pm)/Temperature);
-//        end
-//
-//        if isinf(log_Zx)
-//            px=0;
-//            pxn=0;
-//        else
-//            log_px=log_Zx-log_Z;
-//            px=exp(log_px);
-//            pxn=exp(-(1-px)/Temperature);
-//        end
-//
-//        if isinf(log_Zy)
-//            py=0;
-//            pyn=0;
-//        else
-//            log_py=log_Zy-log_Z;
-//            py=exp(log_py);
-//            pyn=exp(-(1-py)/Temperature);
-//        end
-//
-//        z=pmn+pxn+pyn;
-//        pm=pmn./z;
-//        px=pxn./z;
-//        py=pyn./z;
-//
-//        traceback=[];
-//
-//        m=1;
-//        lk=-log(m)+log(nu)+p0;
-//
-//        while i>1 || j>1 || k>1
-//
-//            r=rand(1);
-//
-//            if r<pm
-//                log_P=Mp(i,j,k);
-//                i=i-1;
-//                j=j-1;
-//                k=k-1;
-//                T=1;
-//            elseif r<(pm+px)
-//                log_P=Xp(i,j,k);
-//                i=i-1;
-//                k=k-1;
-//                T=2;
-//            else
-//                log_P=Yp(i,j,k);
-//                j=j-1;
-//                k=k-1;
-//                T=3;
-//            end
-//
-//            if isinf(log_P)
-//                error('ERROR 3: P inf')
-//            end
-//
-//            lk=lk+log_P;
-//
-//            traceback=[T,traceback];
-//
-//            log_Zm=M(i,j,k);
-//            log_Zx=X(i,j,k);
-//            log_Zy=Y(i,j,k);
-//
-//            if isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)
-//                error('ERROR 1: Zm, Zx and Zy are inf')
-//            end
-//
-//            log_Zmx=add_lns_2(log_Zm,log_Zx);
-//            log_Z=add_lns_2(log_Zmx,log_Zy);
-//
-//            if isinf(log_Z)
-//                error('ERROR 2 Z: is inf')
-//            end
-//
-//            if isinf(log_Zm)
-//                pm=0;
-//                pmn=0;
-//            else
-//                log_pm=log_Zm-log_Z;
-//                pm=exp(log_pm);
-//                pmn=exp(-(1-pm)/Temperature);
-//            end
-//
-//            if isinf(log_Zx)
-//                px=0;
-//                pxn=0;
-//            else
-//                log_px=log_Zx-log_Z;
-//                px=exp(log_px);
-//                pxn=exp(-(1-px)/Temperature);
-//            end
-//
-//            if isinf(log_Zy)
-//                py=0;
-//                pyn=0;
-//            else
-//                log_py=log_Zy-log_Z;
-//                py=exp(log_py);
-//                pyn=exp(-(1-py)/Temperature);
-//            end
-//
-//            z=pmn+pxn+pyn;
-//            pm=pmn./z;
-//            px=pxn./z;
-//            py=pyn./z;
-//
-//        end
-//
-//        gappy_traceback_cell_vector{sb}.tr=traceback;
-//        gappy_traceback_cell_vector{sb}.dim=[h,w,d];
-//    end
-//
-//    if params.COMPUTE_NUM_CELLS==1
-//        m1=not(isnan(M(:)));
-//        x1=not(isnan(X(:)));
-//        y1=not(isnan(Y(:)));
-//        tot=sum(m1(:)+x1(:)+y1(:));
-//    else
-//        tot=0;
-//    end
-//
-//}
-double pPIP::add_lns_2(double a_ln,double b_ln){
-    //ln(a + b) = ln{exp[ln(a) - ln(b)] + 1} + ln(b)
-
-    double R;
-
-    if(isinf(a_ln) && isinf(b_ln)){
-        R=-std::numeric_limits<double>::infinity();
-    }else if(isinf(a_ln)){
-        R=b_ln;
-    }else if(isinf(b_ln)){
-        R=a_ln;
-    }else if((abs(a_ln - b_ln) >= 36.043653389117155)){
-        //2^52-1 = 4503599627370495.	log of that is 36.043653389117155867651465390794
-        R = max(a_ln, b_ln);
-    }else{
-        R = log(exp(a_ln - b_ln) + 1) + b_ln;
-    }
-
-    return R;
-}
-
 void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,double temperature,int num_SB){
 
     //TODO: place as argument
@@ -2133,9 +1852,9 @@ void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_r
                         double lk_c = val;
                         //lk_c=log(iotaV0*betaV0*P(idx_i,idx_j));
                         double lk = -log(m - 1) + log(_nu) + lk_c;
-                        double l1 = add_lns_2(LogM[m - 1][i - 1][j - 1], LogX[m - 1][i - 1][j - 1]);
-                        double l2 = add_lns_2(l1, LogY[m - 1][i - 1][j - 1]);
-                        LogM[m][i][j] = add_lns_2(lk, l2);
+                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i - 1][j - 1], LogX[m - 1][i - 1][j - 1]);
+                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i - 1][j - 1]);
+                        LogM[m][i][j] = pPIPUtils::add_lns(lk, l2);
                         Mp[m][i][j] = lk_c;
                     }
                 }
@@ -2170,9 +1889,9 @@ void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_r
                         double lk_c = val;
                         //lk_c = log(iotaV0 * betaV0 * P(idx_i, idx_j) + iotaV1 + betaV1 * FV(idx_i));
                         double lk = -log(m - 1) + log(_nu) + lk_c;
-                        double l1 = add_lns_2(LogM[m - 1][i - 1][j], LogX[m - 1][i - 1][j]);
-                        double l2 = add_lns_2(l1, LogY[m - 1][i - 1][j]);
-                        LogX[m][i][j] = add_lns_2(lk, l2);
+                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i - 1][j], LogX[m - 1][i - 1][j]);
+                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i - 1][j]);
+                        LogX[m][i][j] = pPIPUtils::add_lns(lk, l2);
                         Xp[m][i][j] = lk_c;
                     }
                 }
@@ -2206,9 +1925,9 @@ void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_r
                         double lk_c = val;
                         //lk_c = log(iotaV0 * betaV0 * P(idx_i, idx_j) + iotaV2 + betaV2 * FV(idx_j));
                         double lk = -log(m - 1) + log(_nu) + lk_c;
-                        double l1 = add_lns_2(LogM[m - 1][i][j - 1], LogX[m - 1][i][j - 1]);
-                        double l2 = add_lns_2(l1, LogY[m - 1][i][j - 1]);
-                        LogY[m][i][j] = add_lns_2(lk, l2);
+                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i][j - 1], LogX[m - 1][i][j - 1]);
+                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i][j - 1]);
+                        LogY[m][i][j] = pPIPUtils::add_lns(lk, l2);
                         Yp[m][i][j] = lk_c;
                     }
                 }
@@ -2228,21 +1947,44 @@ void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_r
     double z;
     double lk;
     double p0;
-    double r;
+    double random_number;
     double log_P;
-    double T;
+    char T;
+    double max_M,max_X,max_Y;
+    int idx_M,idx_X,idx_Y;
+    int idxMax;
     for(int sb=0;sb<num_SB;sb++) {
 
-        //[max_M, idx_M] = max(M(end, end,:));
-        //[max_X, idx_X] = max(X(end, end,:));
-        //[max_Y, idx_Y] = max(Y(end, end,:));
-        //level_max = [idx_M, idx_X, idx_Y];
+        pPIPUtils::max_val_in_column(LogM,d,h,w,max_M,idx_M);
+        pPIPUtils::max_val_in_column(LogX,d,h,w,max_X,idx_X);
+        pPIPUtils::max_val_in_column(LogY,d,h,w,max_Y,idx_Y);
 
-        //[LK, T] = max([max_M, max_X, max_Y]);
+        score=max_of_three(max_M,max_X,max_Y,epsilon);
+
+        idxMax = index_of_max(max_M,max_X,max_Y,epsilon,generator,distribution);
+        switch(idxMax){
+            case MATCH_STATE:
+                T = MATCH_CHAR;
+                score = max_M;
+                m = idx_M;
+                break;
+            case GAP_X_STATE:
+                T = GAP_X_STATE;
+                score = max_X;
+                m = idx_X;
+                break;
+            case GAP_Y_STATE:
+                T = GAP_Y_CHAR;
+                score = max_Y;
+                m = idx_Y;
+                break;
+            default:
+                perror("state not recognized");
+        }
 
         i = h;
         j = w;
-        //m = level_max(T);
+
 
         double log_Zm = LogM[m][i][j];
         double log_Zx = LogX[m][i][j];
@@ -2252,8 +1994,8 @@ void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_r
             perror("ERROR 1: Zm, Zx and Zy are inf");
         }
 
-        double log_Zmx = add_lns_2(log_Zm, log_Zx);
-        double log_Z = add_lns_2(log_Zmx, log_Zy);
+        double log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
+        double log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
 
         if(isinf(log_Z)){
             perror("ERROR 2 Z: is inf");
@@ -2291,31 +2033,31 @@ void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_r
         px = pxn/z;
         py = pyn/z;
 
-        //traceback = [];
+        TracebackPath_t traceback;
 
         m = 1;
         lk = -log(m) + log(_nu) + p0;
 
         while (i > 1 || j > 1 || m > 1) {
 
-            //r = rand(1);
+            random_number  = distribution(generator);
 
-            if (r < pm) {
+            if (random_number < pm) {
                 log_P = Mp[m][i][j];
                 i = i - 1;
                 j = j - 1;
                 m = m - 1;
-                T = 1;
-            }else if(r < (pm + px)){
+                T = MATCH_CHAR;
+            }else if(random_number < (pm + px)){
                 log_P = Xp[m][i][j];
                 i = i - 1;
                 m = m - 1;
-                T = 2;
+                T = GAP_X_CHAR;
             }else{
                 log_P = Yp[m][i][j];
                 j = j - 1;
                 m = m - 1;
-                T = 3;
+                T = GAP_Y_CHAR;
             }
 
             if(isinf(log_P)){
@@ -2324,7 +2066,7 @@ void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_r
 
             lk = lk + log_P;
 
-            //traceback = [T, traceback];
+            traceback.append(&T);
 
             log_Zm = LogM[m][i][j];
             log_Zx = LogX[m][i][j];
@@ -2334,8 +2076,8 @@ void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_r
                 perror("ERROR 1: Zm, Zx and Zy are inf");
             }
 
-            log_Zmx = add_lns_2(log_Zm, log_Zx);
-            log_Z = add_lns_2(log_Zmx, log_Zy);
+            log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
+            log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
 
             if(isinf(log_Z)){
                 perror("ERROR 2 Z: is inf");
@@ -2375,143 +2117,16 @@ void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_r
 
         }
 
-        //gappy_traceback_cell_vector{sb}.tr = traceback;
-        //gappy_traceback_cell_vector{sb}.dim = [h, w, d];
+        reverse(traceback.begin(),traceback.end());
+
+        _traceback_path_ensemble.at(nodeID).push_back(traceback);
+
+        _score_ensemble.at(nodeID).push_back(score);
+
     }
 
+    //TODO:free memory
 
-        /*
-        size_tr=(unsigned long)ceil((tr_down_i-tr_up_i+1)*(tr_up_j-tr_down_j+1+1)/2);
-
-        //TODO: optimize size TR
-        TR[m] = new int[size_tr]();
-        memset(TR[m],0,size_tr*sizeof(TR[m][0]));
-        set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
-
-        if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)){
-
-            lw=0;
-            for(unsigned long i=up_corner_i;i<=bot_corner_i;i++){
-                coordTriangle_this_i=i;
-                for(int j=0;j<=lw;j++){
-                    coordTriangle_this_j=up_corner_j-j;
-
-                    double mval;
-                    double xval;
-                    double yval;
-
-                    idx=get_indices_M(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
-                    if(idx>=0){
-                        mval=LogM[m_binary_this][idx];
-                    }else{
-                        mval=-std::numeric_limits<double>::infinity();
-                    }
-
-                    idx=get_indices_X(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
-                    if(idx>=0){
-                        xval=LogX[m_binary_this][idx];
-                    }else{
-                        xval=-std::numeric_limits<double>::infinity();
-                    }
-
-                    idx=get_indices_Y(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
-                    if(idx>=0){
-                        yval=LogY[m_binary_this][idx];
-                    }else{
-                        yval=-std::numeric_limits<double>::infinity();
-                    }
-
-                    mval=fabs((long double)mval)<epsilon?-std::numeric_limits<double>::infinity():mval;
-                    xval=fabs((long double)xval)<epsilon?-std::numeric_limits<double>::infinity():xval;
-                    yval=fabs((long double)yval)<epsilon?-std::numeric_limits<double>::infinity():yval;
-
-                    int ttrr;
-
-                    ttrr=index_of_max(mval,xval,yval,epsilon,generator,distribution);
-
-                    idx=get_indices_T(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
-
-                    if(TR[m][idx]!=0){
-                        exit(EXIT_FAILURE);
-                    }
-
-                    TR[m][idx]=ttrr;
-
-                    if( (coordTriangle_this_i==(h-1)) & (coordTriangle_this_j==(w-1)) ){
-
-                        max_of_3=max_of_three(mval,xval,yval,epsilon);
-
-                        if(max_of_3>score){
-                            score=max_of_3;
-                            level_max_lk=m;
-                        }
-
-                    }
-
-                }
-                lw++;
-            }
-        }
-    }
-
-    depth=level_max_lk;
-
-    _score.at(nodeID)=score;
-
-    std::string traceback_path (depth, ' ');
-    int id1=h-1;
-    int id2=w-1;
-    for(int lev=depth;lev>0;lev--){
-        set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,lev,h,w);
-        idx=get_indices_T(id1,id2,up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,lev,h,w);
-        int state = TR[lev][idx];
-        switch(TR[lev][idx]){
-            case MATCH_STATE:
-                id1=id1-1;
-                id2=id2-1;
-                traceback_path[lev-1]=MATCH_CHAR;
-                break;
-            case GAP_X_STATE:
-                id1=id1-1;
-                traceback_path[lev-1]=GAP_X_CHAR;
-                break;
-            case GAP_Y_STATE:
-                id2=id2-1;
-                traceback_path[lev-1]=GAP_Y_CHAR;
-                break;
-            default:
-                perror("ERROR in alignment_reconstruction !!!");
-                exit(EXIT_FAILURE);
-        }
-    }
-
-    _traceback_path=traceback_path;
-
-    build_MSA(node,traceback_path);
-
-    setMSAsequenceNames(node);
-
-    free(LogM[1]);
-    free(LogM[0]);
-    free(LogM);
-
-    free(LogX[1]);
-    free(LogX[0]);
-    free(LogX);
-
-    free(LogY[1]);
-    free(LogY[0]);
-    free(LogY);
-
-    for(int i=last_d;i>=0;i--){
-        free(TR[i]);
-    }
-    free(TR);
-    */
 }
 void pPIP::PIPAligner(UtreeBppUtils::treemap *tm,
                   std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
@@ -2561,4 +2176,39 @@ bpp::SiteContainer * pPIPUtils::pPIPmsa2Sites(bpp::pPIP *progressivePIP){
     }
 
     return new bpp::VectorSiteContainer(*sequences);
+}
+double pPIPUtils::add_lns(double a_ln,double b_ln){
+    //ln(a + b) = ln{exp[ln(a) - ln(b)] + 1} + ln(b)
+
+    double R;
+
+    if(isinf(a_ln) && isinf(b_ln)){
+        R=-std::numeric_limits<double>::infinity();
+    }else if(isinf(a_ln)){
+        R=b_ln;
+    }else if(isinf(b_ln)){
+        R=a_ln;
+    }else if((abs(a_ln - b_ln) >= 36.043653389117155)){
+        //TODO:check this
+        //2^52-1 = 4503599627370495.	log of that is 36.043653389117155867651465390794
+        R = max(a_ln, b_ln);
+    }else{
+        R = log(exp(a_ln - b_ln) + 1) + b_ln;
+    }
+
+    return R;
+}
+void pPIPUtils::max_val_in_column(double ***M,int depth, int height, int width, double &val, int &level){
+
+    val = -std::numeric_limits<double>::infinity();
+    level = 0;
+
+    for(int k=0;k<depth;k++){
+        if(M[k][height-1][width-1]>val){
+            val = M[k][height-1][width-1];
+            level = k;
+        }
+    }
+
+
 }

@@ -60,9 +60,11 @@ namespace bpp {
 
     public:
 
-        typedef std::string MSAcolumn;
-        typedef std::vector<MSAcolumn> MSA;
-        typedef std::vector<MSA> MSAensemble;
+        typedef std::string MSAcolumn_t;
+        typedef std::vector<MSAcolumn_t> MSA_t;
+        typedef std::vector<MSA_t> MSAensemble_t; //for SB
+        typedef std::string TracebackPath_t;
+        typedef std::vector<TracebackPath_t> TracebackEnsemble_t; //for SB
 
         pPIP(bpp::Alphabet *alphabet);
 
@@ -94,9 +96,12 @@ namespace bpp {
         std::vector< double > _beta;
         std::vector< bpp::RowMatrix<double> > _pr;
         std::vector< std::vector< std::string > > _seqNames;
-        std::vector< std::vector< std::string > > _MSA;
-        std::string _traceback_path;
+        std::vector< MSA_t > _MSA; //MSA at each node
+        std::vector< MSAensemble_t > _MSAensemble; //MSAensemble at each node
+        std::vector<TracebackPath_t> _traceback_path;
+        std::vector<TracebackEnsemble_t> _traceback_path_ensemble;
         std::vector< double > _score;
+        std::vector<vector< double >> _score_ensemble;
         double _lambda;
         double _mu;
         double _nu;
@@ -184,17 +189,17 @@ namespace bpp {
 
         void setMSAleaves(bpp::Node *node,const std::string &sequence);
 
-        bpp::ColMatrix<double> fv_observed(MSAcolumn &s, unsigned long &idx);
+        bpp::ColMatrix<double> fv_observed(MSAcolumn_t &s, unsigned long &idx);
 
-        bpp::ColMatrix<double> go_down(bpp::Node *node,MSAcolumn &s, unsigned long &idx);
+        bpp::ColMatrix<double> go_down(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx);
 
-        void allgaps(bpp::Node *node,MSAcolumn &s, unsigned long &idx,bool &flag);
+        void allgaps(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx,bool &flag);
 
-        double compute_lk_gap_down(bpp::Node *node,MSAcolumn &s);
+        double compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s);
 
-        double computeLK_GapColumn_local(bpp::Node *node, MSAcolumn &sL, MSAcolumn &sR);
+        double computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR);
 
-        double compute_lk_down(bpp::Node *node,MSAcolumn &s);
+        double compute_lk_down(bpp::Node *node,MSAcolumn_t &s);
 
         double computeLK_M_local(double valM,
                                  double valX,
@@ -203,32 +208,30 @@ namespace bpp {
                                  std::string &sL,
                                  std::string &sR,
                                  unsigned long m,
-                                 std::map<MSAcolumn, double> &lkM);
+                                 std::map<MSAcolumn_t, double> &lkM);
 
         double computeLK_X_local(double valM,
                                  double valX,
                                  double valY,
                                  bpp::Node *node,
-                                 MSAcolumn &sL,
-                                 MSAcolumn &col_gap_R,
+                                 MSAcolumn_t &sL,
+                                 MSAcolumn_t &col_gap_R,
                                  unsigned long m,
-                                 std::map<MSAcolumn, double> &lkX);
+                                 std::map<MSAcolumn_t, double> &lkX);
 
         double computeLK_Y_local(double valM,
                                  double valX,
                                  double valY,
                                  bpp::Node *node,
-                                 MSAcolumn &col_gap_L,
-                                 MSAcolumn &sR,
+                                 MSAcolumn_t &col_gap_L,
+                                 MSAcolumn_t &sR,
                                  unsigned long m,
-                                 std::map<MSAcolumn, double> &lkY);
+                                 std::map<MSAcolumn_t, double> &lkY);
 
         void DP3D_PIP(bpp::Node *node, UtreeBppUtils::treemap *tm, double gamma_rate, bool local);
 
-
-        double add_lns_2(double a_ln,double b_ln);
-
-        void DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,double temperature,int num_SB);
+        void DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,
+                         double temperature,int num_SB);
 
     };
 
@@ -236,7 +239,13 @@ namespace bpp {
 }
 
 namespace pPIPUtils {
+
     bpp::SiteContainer *pPIPmsa2Sites(bpp::pPIP *progressivePIP);
+
+    double add_lns(double a_ln,double b_ln);
+
+    void max_val_in_column(double ***M,int depth, int height, int width, double &val, int &level);
+
 }
 
 #endif //MINIJATI_PPIP_HPP
