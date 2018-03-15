@@ -390,22 +390,34 @@ int main(int argc, char *argv[]) {
         bpp::PhylogeneticsApplicationTools::printParameters(smodel, s1, 1, true);
         LOG(INFO) << s1.str();
 
+        bpp::DiscreteDistribution *rDist = nullptr;
+
+        // Among site rate variation (ASVR)
+        if (smodel->getNumberOfStates() >= 2 * smodel->getAlphabet()->getSize()) {
+            // Markov-modulated Markov model!
+            rDist = new ConstantRateDistribution();
+        } else {
+            rDist = PhylogeneticsApplicationTools::getRateDistribution(jatiapp.getParams());
+        }
+
+
         //------------------------------------------------------------------------------------------------------------------
         // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
 
         progressivePIP::ProgressivePIPResult MSA;
-        auto likelihood = new tshlib::Likelihood;
+        //auto likelihood = new tshlib::Likelihood;
         std::vector<tshlib::VirtualNode *> fullTraversalNodes;
         if (PAR_alignment) {
 
-            likelihood->Init(utree, pi, Q, mu, lambda);
+            //likelihood->Init(utree, pi, Q, mu, lambda);
 
             // Traverse the tree in post-order filling a list of node ready for traversal
-            likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
+            //likelihood->compileNodeList_postorder(fullTraversalNodes, utree->rootnode);
+
+            std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // set probability matrix -- exponential of substitution rates
-            likelihood->computePr(fullTraversalNodes, alpha->getSize());
-
+            //likelihood->computePr(fullTraversalNodes, alpha->getSize());
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
@@ -415,11 +427,13 @@ int main(int argc, char *argv[]) {
             */
 
             double score;
-            auto progressivePIP = new bpp::pPIP(alphabet);
+            auto progressivePIP = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist);
 
-            progressivePIP->init(tree, smodel, &tm, fullTraversalNodes,true);
+            //progressivePIP->init(tree, smodel, &tm, fullTraversalNodes,true);
+            //progressivePIP->init(utree, tree, smodel, &tm, sequences, rDist);
 
-            progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
+            //progressivePIP->PIPAligner(&tm,fullTraversalNodes, sequences, 1.0, true);
+            progressivePIP->PIPAligner(ftn, true);
 
             sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
 
@@ -455,7 +469,6 @@ int main(int argc, char *argv[]) {
 
         ///// homogeneous modeling
         // Initialization likelihood functions
-        bpp::DiscreteDistribution *rDist = nullptr;
         bpp::AbstractHomogeneousTreeLikelihood *tl;
 
         // Get transition model from substitution model
@@ -467,13 +480,7 @@ int main(int argc, char *argv[]) {
             model = test.release();
         }
 
-        // Among site rate variation (ASVR)
-        if (model->getNumberOfStates() >= 2 * model->getAlphabet()->getSize()) {
-            // Markov-modulated Markov model!
-            rDist = new ConstantRateDistribution();
-        } else {
-            rDist = PhylogeneticsApplicationTools::getRateDistribution(jatiapp.getParams());
-        }
+
 
         // Initialise likelihood functions
         if (!PAR_model_indels) {

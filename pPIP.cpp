@@ -48,6 +48,7 @@
 
 #include "pPIP.hpp"
 #include <Bpp/Numeric/Matrix/MatrixTools.h>
+#include <glog/logging.h>
 
 #define ERR_STATE (-999)
 
@@ -62,79 +63,78 @@
 
 using namespace bpp;
 
-pPIP::pPIP(bpp::Alphabet *alphabet){
+pPIP::pPIP(tshlib::Utree *utree, bpp::Tree *tree, bpp::SubstitutionModel *smodel, UtreeBppUtils::treemap &inTreeMap, bpp::SequenceContainer *sequences, bpp::DiscreteDistribution *rDist) {
 
-    _alphabet=alphabet;
-    _alphabetSize=_alphabet->getSize();
-    _extendedAlphabetSize=_alphabet->getSize()+1;
+    utree_ = utree;
+    _setTree(tree);
+    substModel_ = smodel;
+    treemap_ = inTreeMap;
+    sequences_ = sequences;
+    rDist_ = rDist;
+    alphabet_ = substModel_->getAlphabet();
+    alphabetSize_ = alphabet_->getSize() - 1;
+    extendedAlphabetSize_ = alphabet_->getSize();
 
 };
-void pPIP::init(const Tree *tree,
-                bpp::SubstitutionModel *smodel,
-                UtreeBppUtils::treemap *tm,
-                std::vector<tshlib::VirtualNode *> &listNodes,
-                bool local){
 
 
-    _reserve(listNodes.size());
-    _setSubstModel(smodel);
-    _setTree(tree);
-    _setLambda(smodel->getParameter("lambda").getValue());
-    _setMu(smodel->getParameter("mu").getValue());
-    _setPi(smodel->getFrequencies());
-    _computePr(tm,listNodes);
+void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
 
-    if(!local){
-        _setLocalTau(this->getRootNode());
-        _setNu();
-        _setAllIotas(tm,listNodes);
-        _setAllBetas(tm,listNodes);
+    int dimension = nodeList.size();
+
+    score_.resize(dimension);
+    score_.assign(dimension, -std::numeric_limits<double>::infinity());
+    traceback_path_.resize(dimension);
+    prNode_.resize(dimension);
+    seqNames_.resize(dimension);
+    MSA_.resize(dimension);
+    lambda_.resize(rDist_->getCategories().size());
+    mu_.resize(rDist_->getCategories().size());
+    nu_.resize(rDist_->getCategories().size());
+
+
+    // Initialise iotas and betas maps
+    for (auto &vnode:nodeList) {
+        int nodeID = treemap_.right.at(vnode);
+
+        iotasNode_[nodeID].resize(rDist_->getCategories().size());
+        betasNode_[nodeID].resize(rDist_->getCategories().size());
+
     }
 
-}
-void pPIP::_reserve(unsigned long numNodes){
-
-    _score.resize(numNodes);
-    _score.assign(numNodes,-std::numeric_limits<double>::infinity());
-    _traceback_path.resize(numNodes);
-    _iota.resize(numNodes);
-    _beta.resize(numNodes);
-    _pr.resize(numNodes);
-    _seqNames.resize(numNodes);
-    _MSA.resize(numNodes);
 
 }
 void pPIP::_setTree(const Tree *tree) {
-    _tree = new TreeTemplate<Node>(*tree);
+    tree_ = new TreeTemplate<Node>(*tree);
 }
 void pPIP::_setSubstModel(bpp::SubstitutionModel *smodel) {
-    _substModel = smodel;
+    substModel_ = smodel;
 }
 std::vector< std::string > pPIP::getMSA(bpp::Node *node){
 
-    return _MSA.at(node->getId());
+    return MSA_.at(node->getId());
 
 }
 double pPIP::getScore(bpp::Node *node){
 
-    return _score.at(node->getId());
+    return score_.at(node->getId());
 
 }
 std::vector< std::string > pPIP::getSeqnames(bpp::Node *node) {
 
-    return _seqNames.at(node->getId());
+    return seqNames_.at(node->getId());
 
 }
 bpp::Node * pPIP::getRootNode(){
 
-    return _tree->getRootNode();
+    return tree_->getRootNode();
 
 }
-bpp::Alphabet *pPIP::getAlphabet(){
 
-    return _alphabet;
-
+const Alphabet *pPIP::getAlphabet() const {
+    return alphabet_;
 }
+
 bool pPIP::is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned long yf,unsigned long xt,unsigned long yt){
 
     if((xt<x0) || (yt>y0) || (xt>xf) || (yt<yf)){
@@ -474,14 +474,21 @@ std::string pPIP::createGapCol(unsigned long len){
 }
 void pPIP::build_MSA(bpp::Node *node, TracebackPath_t traceback_path){
 
-    auto sons = node->getSons();
-    auto s1 = sons.at(0);
-    auto s2 = sons.at(1);
-    unsigned long s1ID = (unsigned long)s1->getId();
-    unsigned long s2ID = (unsigned long)s2->getId();
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
 
-    MSA_t *MSA_L=&(_MSA.at(s1ID));
-    MSA_t *MSA_R=&(_MSA.at(s2ID));
+    int sonLeftID = treemap_.right.at(vnode_left);
+    int sonRightID = treemap_.right.at(vnode_right);
+
+
+    //auto sons = node->getSons();
+    //auto s1 = sons.at(0);
+    //auto s2 = sons.at(1);
+    //unsigned long s1ID = (unsigned long)s1->getId();
+    //unsigned long s2ID = (unsigned long)s2->getId();
+
+    MSA_t *MSA_L = &(MSA_.at(sonLeftID));
+    MSA_t *MSA_R = &(MSA_.at(sonRightID));
 
     unsigned long lenColL=MSA_L->at(0).size();
     unsigned long lenColR=MSA_R->at(0).size();
@@ -515,25 +522,31 @@ void pPIP::build_MSA(bpp::Node *node, TracebackPath_t traceback_path){
         }
     }
 
-    _MSA.at(node->getId())=MSA;
+    MSA_.at(node->getId()) = MSA;
 }
 void pPIP::setMSAsequenceNames(bpp::Node *node){
 
-    auto sons = node->getSons();
-    int s1ID = sons.at(LEFT)->getId();
-    int s2ID = sons.at(RIGHT)->getId();
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+    int sonLeftID = treemap_.right.at(vnode_left);
+    int sonRightID = treemap_.right.at(vnode_right);
+
+    //auto sons = node->getSons();
+    //int s1ID = sons.at(LEFT)->getId();
+    //int s2ID = sons.at(RIGHT)->getId();
 
     std::vector<std::string> seqNames;
 
-    for(int i=0;i<_seqNames.at(s1ID).size();i++){
-        seqNames.push_back(_seqNames.at(s1ID).at(i));
+    for (int i = 0; i < seqNames_.at(sonLeftID).size(); i++) {
+        seqNames.push_back(seqNames_.at(sonLeftID).at(i));
     }
 
-    for(int i=0;i<_seqNames.at(s2ID).size();i++){
-        seqNames.push_back(_seqNames.at(s2ID).at(i));
+    for (int i = 0; i < seqNames_.at(sonRightID).size(); i++) {
+        seqNames.push_back(seqNames_.at(sonRightID).at(i));
     }
 
-    _seqNames.at(node->getId())=seqNames;
+    seqNames_.at(node->getId()) = seqNames;
 
 }
 void pPIP::setMSAsequenceNames(bpp::Node *node,std::string seqname){
@@ -542,7 +555,7 @@ void pPIP::setMSAsequenceNames(bpp::Node *node,std::string seqname){
 
     seqNames.push_back(seqname);
 
-    _seqNames.at(node->getId())=seqNames;
+    seqNames_.at(node->getId()) = seqNames;
 
 }
 void pPIP::setMSAleaves(bpp::Node *node,const std::string &sequence){
@@ -557,39 +570,67 @@ void pPIP::setMSAleaves(bpp::Node *node,const std::string &sequence){
         msa.at(i)=msa_col;
     }
 
-    _MSA.at(node->getId())=msa;
+    MSA_.at(node->getId()) = msa;
 
 }
 void pPIP::_setNu() {
 
-    _nu  = _lambda * (_tau + 1 / _mu);
+
+    for (int i = 0; i < rDist_->getCategories().size(); i++) {
+
+        nu_.at(i) = lambda_.at(i) * (tau_ + 1 / mu_.at(i));
+    }
+
 
 }
 void pPIP::_setLambda(double lambda){
-    _lambda=lambda;
+
+    for (int i = 0; i < rDist_->getCategories().size(); i++) {
+
+        lambda_.at(i) = lambda * rDist_->getCategories().at(i);
+    }
+
+
+    //lambda_=lambda;
 }
 void pPIP::_setMu(double mu){
 
     if (fabs(mu) < SMALL_DOUBLE) {
-        perror("ERROR: mu is too small");
+        PLOG(FATAL) << "ERROR: mu is too small";
     }
 
-    _mu=mu;
+    for (int i = 0; i < rDist_->getCategories().size(); i++) {
+
+        mu_.at(i) = mu * rDist_->getCategories().at(i);
+    }
+
+    //mu_=mu;
 }
 void pPIP::_setPi(const Vdouble &pi){
-    _pi.resize(pi.size(),1);
+    pi_.resize(pi.size(), 1);
     for(int i=0;i<pi.size();i++){
-        _pi(i,0)=pi.at(i);
+        pi_(i, 0) = pi.at(i);
     }
 }
-void pPIP::_setLocalTau(bpp::Node *node) {
-    bpp::Tree *subtree = _tree->cloneSubtree(node->getId());
-    _tau = subtree->getTotalLength();
+
+void pPIP::_setTau(tshlib::VirtualNode *vnode) {
+
+    std::vector<tshlib::VirtualNode *> ponl = utree_->getPostOrderNodeList(vnode);
+    std::vector<bpp::Node *> bpp_ponl = UtreeBppUtils::remapNodeLists(ponl, tree_, treemap_);
+
+    tau_ = 0;
+    for (auto &node:bpp_ponl) {
+        if (node->hasFather()) {
+            tau_ += node->getDistanceToFather();
+        }
+    }
 }
-void pPIP::_setAllIotas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes) {
+
+/*
+void pPIP::_setAllIotas(std::vector<tshlib::VirtualNode *> &listNodes) {
     double T;
 
-    T = _tau + 1/_mu;
+    T = tau_ + 1/mu_;
 
     if (fabs(T) < SMALL_DOUBLE) {
         perror("ERROR in set_iota: T too small");
@@ -597,35 +638,53 @@ void pPIP::_setAllIotas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNo
 
     for (auto &vnode:listNodes) {
 
-        auto node = _tree->getNode(tm->right.at(vnode),false);
+        auto node = tree_->getNode(treemap_->right.at(vnode),false);
 
         if (!node->hasFather()) {
-            _iota.at(node->getId())=(1/_mu)/T;
+            iotaNode_.at(node->getId())=(1/mu_)/T;
         } else {
-            _iota.at(node->getId())=node->getDistanceToFather()/T;
+            iotaNode_.at(node->getId())=node->getDistanceToFather()/T;
         }
     }
 }
+ */
 void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
     double T;
 
-    T = _tau + 1/_mu;
+    if (local_root) {
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            T = tau_ + 1 / mu_.at(i);
 
-    if (fabs(T) < SMALL_DOUBLE) {
-        perror("ERROR in set_iota: T too small");
-    }
+            if (fabs(T) < SMALL_DOUBLE) {
+                PLOG(WARNING) << "ERROR in set_iota: T too small";
+            }
 
-    if(local_root){
-        _iota.at(node->getId())=(1/_mu)/T;
+            iotasNode_[node->getId()][i] = (1 / mu_.at(i)) / T;
+
+        }
     }else{
-        _iota.at(node->getId())=node->getDistanceToFather()/T;
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            T = tau_ + 1 / mu_.at(i);
+
+            if (fabs(T) < SMALL_DOUBLE) {
+                PLOG(WARNING) << "ERROR in set_iota: T too small";
+            }
+            iotasNode_[node->getId()][i] = node->getDistanceToFather() / T;
+        }
     }
 
     if(!node->isLeaf()){
-        auto sons = node->getSons();
+        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
 
-        _setAllIotas(sons.at(LEFT),false);
-        _setAllIotas(sons.at(RIGHT),false);
+        int sonLeftID = treemap_.right.at(vnode_left);
+        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+        int sonRightID = treemap_.right.at(vnode_right);
+        bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+        _setAllIotas(sonLeft, false);
+        _setAllIotas(sonRight, false);
 
     }
 
@@ -634,105 +693,95 @@ void pPIP::_setAllBetas(bpp::Node *node,bool local_root) {
 
     if(local_root){
 
-        _beta.at(node->getId())=1.0;
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            betasNode_[node->getId()][i] = 1.0;
+        }
 
     }else{
 
-        double muT = _mu * node->getDistanceToFather();
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
 
-        if (fabs(muT) < SMALL_DOUBLE) {
-            perror("ERROR mu * T is too small");
-        }
+            double muT = mu_.at(i) * node->getDistanceToFather();
 
-        _beta.at(node->getId())= (1.0 - exp(-_mu * node->getDistanceToFather())) / muT;
-
-    }
-
-    if(!node->isLeaf()){
-        auto sons = node->getSons();
-
-        _setAllBetas(sons.at(LEFT),false);
-        _setAllBetas(sons.at(RIGHT),false);
-
-    }
-
-}
-void pPIP::_setAllBetas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes) {
-
-    for (auto &vnode:listNodes) {
-
-        auto node = _tree->getNode(tm->right.at(vnode),false);
-
-        if (!node->hasFather()) {
-            _beta.at(node->getId())=1.0;
-        } else {
-
-            double muT = _mu * node->getDistanceToFather();
             if (fabs(muT) < SMALL_DOUBLE) {
                 perror("ERROR mu * T is too small");
             }
 
-            _beta.at(node->getId())= (1.0 - exp(-_mu * node->getDistanceToFather())) / muT;
+            betasNode_[node->getId()][i] = (1.0 - exp(-mu_.at(i) * node->getDistanceToFather())) / muT;
+        }
+    }
+
+
+    if(!node->isLeaf()){
+
+        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+        int sonLeftID = treemap_.right.at(vnode_left);
+        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+        int sonRightID = treemap_.right.at(vnode_right);
+        bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+        //auto sons = node->getSons();
+
+        _setAllBetas(sonLeft, false);
+        _setAllBetas(sonRight, false);
+
+    }
+
+}
+
+/*
+void pPIP::_setAllBetas(std::vector<tshlib::VirtualNode *> &listNodes) {
+
+    for (auto &vnode:listNodes) {
+
+        auto node = tree_->getNode(treemap_->right.at(vnode),false);
+
+        if (!node->hasFather()) {
+            betaNode_.at(node->getId())=1.0;
+        } else {
+
+            double muT = mu_ * node->getDistanceToFather();
+            if (fabs(muT) < SMALL_DOUBLE) {
+                perror("ERROR mu * T is too small");
+            }
+
+            betaNode_.at(node->getId())= (1.0 - exp(-mu_ * node->getDistanceToFather())) / muT;
         }
 
     }
 
 }
-void pPIP::_computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes) {
+ */
+void pPIP::_getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNodes) {
 
     for (auto &vnode:listNodes) {
 
-        auto node = _tree->getNode(tm->right.at(vnode),false);
+        auto node = tree_->getNode(treemap_.right.at(vnode), false);
 
         if (!node->hasFather()) {
 
         } else {
-            _pr.at(node->getId()) = MatrixBppUtils::Eigen2Matrix(vnode->getPr());
+            //prNode_.at(node->getId()) = MatrixBppUtils::Eigen2Matrix(vnode->getPr());
+            prNode_.at(node->getId()) = substModel_->getPij_t(node->getDistanceToFather());
         }
 
     }
 
 }
-//void pPIP::computePr(std::vector<tshlib::VirtualNode *> &listNodes) {
-//
-//    const bpp::Matrix<double> Q = _substModel->getGenerator();
-//
-//    // TODO: the following 4 lines have to be computed only when Q changes!!!
-//    if(this->Q.rows()==5){
-//        Eigen::EigenSolver<MatrixExtended_5> solver(this->Q);
-//        this->sigma = solver.eigenvalues().real();
-//        this->V = solver.eigenvectors().real();
-//
-//    }else if(this->Q.rows()==21){
-//        Eigen::EigenSolver<MatrixExtended_21> solver(this->Q);
-//        this->sigma = solver.eigenvalues().real();
-//        this->V = solver.eigenvectors().real();
-//    }
-//
-//    this->Vi = this->V.inverse();
-//
-//    for (auto &vnode:listNodes) {
-//
-//        // Clear the matrix containing the probability matrix
-//        _pr.at(node->getId()).resize(0, 0);
-//
-//        // Recompute the Q matrix with the exponential equal to the branch lenght
-//        _pr.at(node->getId()).resize(extended_alphabet_size, extended_alphabet_size);
-//
-//        _pr.at(node->getId()) = this->V * (this->sigma * vnode->vnode_branchlength).array().exp().matrix().asDiagonal() * this->Vi;
-//
-//    }
-//}
+
 bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn_t &s, unsigned long &idx){
     bpp::ColMatrix<double> fv;
     int ii;
     char ch=s[idx];
 
-    fv.resize(_extendedAlphabetSize,1);
+    fv.resize(extendedAlphabetSize_, 1);
     bpp::MatrixTools::fill(fv,0.0);
 
-    ii=_alphabet->charToInt(&ch);
-    ii=ii<0?_alphabetSize:ii;
+    ii = alphabet_->charToInt(&ch);
+    ii = ii < 0 ? alphabetSize_ : ii;
 
     fv(ii,0)=1.0;
     idx++;
@@ -753,15 +802,25 @@ bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned lo
 
     }else{
 
-        auto sons = node->getSons();
-        int sonLeftID = sons.at(LEFT)->getId();
-        int sonRightID = sons.at(RIGHT)->getId();
 
-        fvL=go_down(sons.at(LEFT),s,idx);
-        fvR=go_down(sons.at(RIGHT),s,idx);
+        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
 
-        bpp::MatrixTools::mult(_pr.at(sonLeftID),fvL,PrfvL);
-        bpp::MatrixTools::mult(_pr.at(sonRightID),fvR,PrfvR);
+        int sonLeftID = treemap_.right.at(vnode_left);
+        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+        int sonRightID = treemap_.right.at(vnode_right);
+        bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+        //auto sons = node->getSons();
+        //int sonLeftID = sons.at(LEFT)->getId();
+        //int sonRightID = sons.at(RIGHT)->getId();
+
+        fvL = go_down(sonLeft, s, idx);
+        fvR = go_down(sonRight, s, idx);
+
+        bpp::MatrixTools::mult(prNode_.at(sonLeftID), fvL, PrfvL);
+        bpp::MatrixTools::mult(prNode_.at(sonRightID), fvR, PrfvR);
         bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
     }
@@ -781,9 +840,18 @@ void pPIP::allgaps(bpp::Node *node,std::string &s, unsigned long &idx,bool &flag
 
     }else{
 
-        auto sons = node->getSons();
-        allgaps(sons.at(LEFT),s,idx,flag);
-        allgaps(sons.at(RIGHT),s,idx,flag);
+        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+        int sonLeftID = treemap_.right.at(vnode_left);
+        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+        int sonRightID = treemap_.right.at(vnode_right);
+        bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+        //auto sons = node->getSons();
+        allgaps(sonLeft, s, idx, flag);
+        allgaps(sonRight, s, idx, flag);
     }
 
 }
@@ -798,55 +866,73 @@ double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s){
     bpp::ColMatrix<double> fvR;
     double fv0;
 
-    auto sons = node->getSons();
-
     int nodeID = node->getId();
 
     if(node->isLeaf()){
         idx=0;
         fv=go_down(node,s,idx);
 
-        fv0=MatrixBppUtils::dotProd(fv,_pi);
+        fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        pr=_iota.at(nodeID)-_iota.at(nodeID)*_beta.at(nodeID)+_iota.at(nodeID)*_beta.at(nodeID)*fv0;
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+
+            pr += iotasNode_[nodeID][i] - iotasNode_[nodeID][i] * betasNode_[nodeID][i] + iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+
+        }
         return pr;
+
     }else{
+
+        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+        int sonLeftID = treemap_.right.at(vnode_left);
+        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+        int sonRightID = treemap_.right.at(vnode_right);
+        bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+
         idx=0;
         fv=go_down(node,s,idx);
 
-        fv0=MatrixBppUtils::dotProd(fv,_pi);
+        fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        pr=_iota.at(nodeID)-_iota.at(nodeID)*_beta.at(nodeID)+_iota.at(nodeID)*_beta.at(nodeID)*fv0;
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+
+            pr += iotasNode_[nodeID][i] - iotasNode_[nodeID][i] * betasNode_[nodeID][i] + iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+        }
+
         bool flagL=true;
         bool flagR=true;
         idx=0;
-        allgaps(sons.at(LEFT),s,idx,flagL);
+        allgaps(sonLeft, s, idx, flagL);
         unsigned long ixx=idx;
-        allgaps(sons.at(RIGHT),s,idx,flagR);
+        allgaps(sonRight, s, idx, flagR);
         unsigned long len;
 
         MSAcolumn_t sL;
         len=ixx;
         sL=s.substr(0,len);
-        pL=compute_lk_gap_down(sons.at(LEFT),sL);
+        pL = compute_lk_gap_down(sonLeft, sL);
 
         MSAcolumn_t sR;
         sR=s.substr(ixx);
-        pR=compute_lk_gap_down(sons.at(RIGHT),sR);
+        pR = compute_lk_gap_down(sonRight, sR);
     }
 
     return pr+pL+pR;
 }
 double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
 
-    double pr;
+    double pr = 0;
     unsigned long idx;
     bpp::ColMatrix<double> fv;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     double fv0;
 
-    auto sons = node->getSons();
+    //auto sons = node->getSons();
 
     int nodeID = node->getId();
 
@@ -854,37 +940,53 @@ double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
 
         idx=0;
         fv=go_down(node,s,idx);
-        fv0=MatrixBppUtils::dotProd(fv,_pi);
-        pr=_iota.at(nodeID)*_beta.at(nodeID)*fv0;
+        fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+        }
         return pr;
 
     }else{
 
+        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+        int sonLeftID = treemap_.right.at(vnode_left);
+        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+        int sonRightID = treemap_.right.at(vnode_right);
+        bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+
+
         idx=0;
         fv=go_down(node,s,idx);
-        fv0=MatrixBppUtils::dotProd(fv,_pi);
-        pr=_iota.at(nodeID)*_beta.at(nodeID)*fv0;
+        fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+        }
 
         bool flagL=true;
         bool flagR=true;
         idx=0;
-        allgaps(sons.at(LEFT),s,idx,flagL);
+        allgaps(sonLeft, s, idx, flagL);
         unsigned long ixx=idx;
-        allgaps(sons.at(RIGHT),s,idx,flagR);
+        allgaps(sonRight, s, idx, flagR);
 
         unsigned long len;
         if(flagR){
             std::string sL;
             len=ixx;
             sL=s.substr(0,len);
-            return pr + compute_lk_down(sons.at(LEFT),sL);
+            return pr + compute_lk_down(sonLeft, sL);
         }
 
         if(flagL){
             std::string sR;
             sR=s.substr(ixx);
-            return pr + compute_lk_down(sons.at(RIGHT),sR);
+            return pr + compute_lk_down(sonRight, sR);
         }
 
     }
@@ -893,7 +995,7 @@ double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
 }
 double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR){
     double fv0;
-    double pr;
+    double pr = 0;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     bpp::ColMatrix<double> PrfvL;
@@ -901,33 +1003,47 @@ double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolu
     bpp::ColMatrix<double> fv;
     unsigned long idx;
 
-    auto sons = node->getSons();
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
 
-    int sonLeftID = sons.at(LEFT)->getId();
-    int sonRightID = sons.at(RIGHT)->getId();
+    int sonLeftID = treemap_.right.at(vnode_left);
+    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+    int sonRightID = treemap_.right.at(vnode_right);
+    bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+    //auto sons = node->getSons();
+
+    //int sonLeftID = sons.at(LEFT)->getId();
+    //int sonRightID = sons.at(RIGHT)->getId();
 
     idx=0;
-    fvL=go_down(sons.at(LEFT),sL,idx);
+    fvL = go_down(sonLeft, sL, idx);
 
     idx=0;
-    fvR=go_down(sons.at(RIGHT),sR,idx);
+    fvR = go_down(sonRight, sR, idx);
 
-    bpp::MatrixTools::mult(_pr.at(sonLeftID),fvL,PrfvL);
-    bpp::MatrixTools::mult(_pr.at(sonRightID),fvR,PrfvR);
+    bpp::MatrixTools::mult(prNode_.at(sonLeftID), fvL, PrfvL);
+    bpp::MatrixTools::mult(prNode_.at(sonRightID), fvR, PrfvR);
     bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
-    fv0=MatrixBppUtils::dotProd(fv,_pi);
-
-    pr = _iota.at(node->getId()) * fv0;
+    fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
     double pL,pR;
-    pL=compute_lk_gap_down(sons.at(LEFT),sL);
-    pR=compute_lk_gap_down(sons.at(RIGHT),sR);
+    double partialLK;
 
-    pr=pr+pL+pR;
+
+    for (int i = 0; i < rDist_->getCategories().size(); i++) {
+
+        partialLK = iotasNode_[node->getId()][i] * fv0 * rDist_->getCategories().at(i);
+        pL = compute_lk_gap_down(sonLeft, sL);
+        pR = compute_lk_gap_down(sonRight, sR);
+        pr += partialLK + pL + pR;
+    }
 
     return pr;
 }
+
 double pPIP::computeLK_M_local(double valM,
                                double valX,
                                double valY,
@@ -938,7 +1054,7 @@ double pPIP::computeLK_M_local(double valM,
                                std::map<MSAcolumn_t, double> &lkM){
 
 
-    double pr;
+    double pr = 0;
     double val;
 
     MSAcolumn_t s;
@@ -950,10 +1066,22 @@ double pPIP::computeLK_M_local(double valM,
     double fv0;
     unsigned long idx;
 
-    auto sons = node->getSons();
+
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+    int sonLeftID = treemap_.right.at(vnode_left);
+    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+    int sonRightID = treemap_.right.at(vnode_right);
+    bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+    //auto sons = node->getSons();
+    //int sonLeftID = sons.at(LEFT)->getId();
+    //int sonRightID = sons.at(RIGHT)->getId();
+
     int nodeID = node->getId();
-    int sonLeftID = sons.at(LEFT)->getId();
-    int sonRightID = sons.at(RIGHT)->getId();
+
 
     s.append(sL);
     s.append(sR);
@@ -961,18 +1089,19 @@ double pPIP::computeLK_M_local(double valM,
     auto it=lkM.find(s);
     if(it == lkM.end()){
         idx=0;
-        fvL=go_down(sons.at(LEFT),sL,idx);
+        fvL = go_down(sonLeft, sL, idx);
 
         idx=0;
-        fvR=go_down(sons.at(RIGHT),sR,idx);
+        fvR = go_down(sonRight, sR, idx);
 
-        bpp::MatrixTools::mult(_pr.at(sonLeftID),fvL,PrfvL);
-        bpp::MatrixTools::mult(_pr.at(sonRightID),fvR,PrfvR);
+        bpp::MatrixTools::mult(prNode_.at(sonLeftID), fvL, PrfvL);
+        bpp::MatrixTools::mult(prNode_.at(sonRightID), fvR, PrfvR);
         bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
-        fv0=MatrixBppUtils::dotProd(fv,_pi);
-
-        pr=_iota.at(nodeID)*_beta.at(nodeID)*fv0;
+        fv0 = MatrixBppUtils::dotProd(fv, pi_);
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+        }
 
         pr=log((long double)pr);
 
@@ -981,8 +1110,10 @@ double pPIP::computeLK_M_local(double valM,
     }else{
         pr=it->second;
     }
-
-    val=-log((long double)m)+log((long double)_nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
+    //TODO: check the sum of logs for discrete categories
+    for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        val += -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    }
 
     return val;
 }
@@ -996,7 +1127,7 @@ double pPIP::computeLK_X_local(double valM,
                                std::map<MSAcolumn_t, double> &lkX){
 
 
-    double pr;
+    double pr = 0;
     double val;
 
     MSAcolumn_t s;
@@ -1008,10 +1139,20 @@ double pPIP::computeLK_X_local(double valM,
     unsigned long idx;
     double fv0;
 
-    auto sons = node->getSons();
+
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+    int sonLeftID = treemap_.right.at(vnode_left);
+    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+    int sonRightID = treemap_.right.at(vnode_right);
+    bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+    //auto sons = node->getSons();
     int nodeID = node->getId();
-    int sonLeftID = sons.at(LEFT)->getId();
-    int sonRightID = sons.at(RIGHT)->getId();
+    //int sonLeftID = sons.at(LEFT)->getId();
+    //int sonRightID = sons.at(RIGHT)->getId();
 
     s.append(sL);
     s.append(col_gap_R);
@@ -1019,22 +1160,27 @@ double pPIP::computeLK_X_local(double valM,
     auto it=lkX.find(s);
     if(it == lkX.end()){
         idx=0;
-        fvL=go_down(sons.at(LEFT),sL,idx);
+        fvL = go_down(sonLeft, sL, idx);
 
         idx=0;
-        fvR=go_down(sons.at(RIGHT),col_gap_R,idx);
+        fvR = go_down(sonRight, col_gap_R, idx);
 
-        bpp::MatrixTools::mult(_pr.at(sonLeftID),fvL,PrfvL);
-        bpp::MatrixTools::mult(_pr.at(sonRightID),fvR,PrfvR);
+        bpp::MatrixTools::mult(prNode_.at(sonLeftID), fvL, PrfvL);
+        bpp::MatrixTools::mult(prNode_.at(sonRightID), fvR, PrfvR);
         bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
-        fv0=MatrixBppUtils::dotProd(fv,_pi);
+        fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        pr=_iota.at(nodeID)*_beta.at(nodeID)*fv0;
+        //pr=iotaNode_.at(nodeID)*betaNode_.at(nodeID)*fv0;
+
+
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+        }
 
         double pL;
 
-        pL=compute_lk_down(sons.at(LEFT),sL);
+        pL = compute_lk_down(sonLeft, sL);
 
         pr+=pL;
 
@@ -1046,7 +1192,11 @@ double pPIP::computeLK_X_local(double valM,
         pr=it->second;
     }
 
-    val=-log((long double)m)+log((long double)_nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
+    //TODO: check the sum of logs for discrete categories
+    for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        val += -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    }
+
 
     return val;
 }
@@ -1060,7 +1210,7 @@ double pPIP::computeLK_Y_local(double valM,
                                std::map<MSAcolumn_t, double> &lkY){
 
 
-    double pr;
+    double pr = 0;
     double val;
 
     MSAcolumn_t s;
@@ -1072,10 +1222,20 @@ double pPIP::computeLK_Y_local(double valM,
     unsigned long idx;
     double fv0;
 
-    auto sons = node->getSons();
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+    int sonLeftID = treemap_.right.at(vnode_left);
+    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+    int sonRightID = treemap_.right.at(vnode_right);
+    bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+
+    //auto sons = node->getSons();
     int nodeID = node->getId();
-    int sonLeftID = sons.at(LEFT)->getId();
-    int sonRightID = sons.at(RIGHT)->getId();
+    //int sonLeftID = sons.at(LEFT)->getId();
+    //int sonRightID = sons.at(RIGHT)->getId();
 
     s.append(col_gap_L);
     s.append(sR);
@@ -1083,23 +1243,28 @@ double pPIP::computeLK_Y_local(double valM,
     auto it=lkY.find(s);
     if(it == lkY.end()){
         idx=0;
-        fvL=go_down(sons.at(LEFT),col_gap_L,idx);
+        fvL = go_down(sonLeft, col_gap_L, idx);
 
         idx=0;
-        fvR=go_down(sons.at(RIGHT),sR,idx);
+        fvR = go_down(sonRight, sR, idx);
 
-        bpp::MatrixTools::mult(_pr.at(sonLeftID),fvL,PrfvL);
-        bpp::MatrixTools::mult(_pr.at(sonRightID),fvR,PrfvR);
+        bpp::MatrixTools::mult(prNode_.at(sonLeftID), fvL, PrfvL);
+        bpp::MatrixTools::mult(prNode_.at(sonRightID), fvR, PrfvR);
         bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
-        fv0=MatrixBppUtils::dotProd(fv,_pi);
+        fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        pr=_iota.at(nodeID)*_beta.at(nodeID)*fv0;
+        //pr=iotaNode_.at(nodeID)*betaNode_.at(nodeID)*fv0;
+
+        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+        }
+
 
         double pR;
 
 
-        pR=compute_lk_down(sons.at(RIGHT),sR);
+        pR = compute_lk_down(sonRight, sR);
 
         pr+=pR;
 
@@ -1111,27 +1276,28 @@ double pPIP::computeLK_Y_local(double valM,
         pr=it->second;
     }
 
-    val=-log((long double)m)+log((long double)_nu)+pr+max_of_three(valM,valX,valY,DBL_EPSILON);
+
+    //TODO: check the sum of logs for discrete categories
+    for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        val += -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    }
 
 
     return val;
 }
-void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local){
+
+void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     //TODO: place as argument
     bool randomSeed = true;
 
-    //TODO: re-implement gamma distribution
-    double lambda_gamma = _lambda * gamma_rate;
-    double mu_gamma = _mu * gamma_rate;
-
     if(local){
-        _setLocalTau(node);
+        _setTau(treemap_.left.at(node->getId()));
         _setNu();
         _setAllIotas(node,true);
         _setAllBetas(node,true);
-    }else{
     }
+
 
     unsigned long up_corner_i;
     unsigned long up_corner_j;
@@ -1140,15 +1306,22 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     unsigned long lw;
     unsigned long h,w;
 
-    auto sons = node->getSons();
 
-    int s1ID = sons.at(LEFT)->getId();
-    int s2ID = sons.at(RIGHT)->getId();
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+    int s1ID = treemap_.right.at(vnode_left);
+    int s2ID = treemap_.right.at(vnode_right);
+
+    //auto sons = node->getSons();
+
+    //int s1ID = sons.at(LEFT)->getId();
+    //int s2ID = sons.at(RIGHT)->getId();
 
     int nodeID = node->getId();
 
-    h = _MSA.at(s1ID).size()+1;
-    w = _MSA.at(s2ID).size()+1;
+    h = MSA_.at(s1ID).size() + 1;
+    w = MSA_.at(s2ID).size() + 1;
 
     unsigned long d=(h-1)+(w-1)+1;
 
@@ -1159,8 +1332,8 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     MSAcolumn_t col_gap_Ls;
     MSAcolumn_t col_gap_Rs;
 
-    unsigned long numLeavesLeft = _seqNames.at(s1ID).size();
-    unsigned long numLeavesRight = _seqNames.at(s2ID).size();
+    unsigned long numLeavesLeft = seqNames_.at(s1ID).size();
+    unsigned long numLeavesRight = seqNames_.at(s2ID).size();
 
     col_gap_Ls=createGapCol(numLeavesLeft);
     col_gap_Rs=createGapCol(numLeavesRight);
@@ -1207,9 +1380,15 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     LogX[1] = new double[int((w*(h+1))/2)];
     LogY[1] = new double[int((w*(h+1))/2)];
 
-    LogM[0][0]=_nu*(pc0-1.0);
-    LogX[0][0]=_nu*(pc0-1.0);
-    LogY[0][0]=_nu*(pc0-1.0);
+    LogM[0][0] = 0;
+    LogX[0][0] = 0;
+    LogY[0][0] = 0;
+
+    for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        LogM[0][0] += nu_.at(i) * (pc0 - 1.0);
+        LogX[0][0] += nu_.at(i) * (pc0 - 1.0);
+        LogY[0][0] += nu_.at(i) * (pc0 - 1.0);
+    }
 
     TR[0] = new int[1]();
     TR[0][0]=STOP_STATE;
@@ -1266,7 +1445,7 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
                 coordSeq_1 = coordTriangle_this_i - 1;
                 coordTriangle_prev_i = coordTriangle_this_i - 1;
 
-                sLs = (_MSA.at(s1ID).at(coordSeq_1));
+                sLs = (MSA_.at(s1ID).at(coordSeq_1));
 
                 for (int j = 0; j <= lw; j++) {
 
@@ -1274,7 +1453,7 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
                     coordSeq_2 = coordTriangle_this_j - 1;
                     coordTriangle_prev_j = coordTriangle_this_j - 1;
 
-                    sRs = (_MSA.at(s2ID).at(coordSeq_2));
+                    sRs = (MSA_.at(s2ID).at(coordSeq_2));
 
                     idx = get_indices_M(coordTriangle_prev_i, coordTriangle_prev_j, up_corner_i, up_corner_j,
                                         bot_corner_i, bot_corner_j, m - 1, h, w);
@@ -1358,7 +1537,7 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
                 coordTriangle_prev_i=coordTriangle_this_i-1;
                 coordSeq_1=coordTriangle_this_i-1;
 
-                sLs=(_MSA.at(s1ID).at(coordSeq_1));
+                sLs = (MSA_.at(s1ID).at(coordSeq_1));
 
                 for(int j=0;j<=lw;j++){
 
@@ -1450,7 +1629,7 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
                     coordTriangle_prev_j=coordTriangle_this_j-1;
                     coordSeq_2=coordTriangle_this_j-1;
 
-                    sRs=(_MSA.at(s2ID).at(coordSeq_2));
+                    sRs = (MSA_.at(s2ID).at(coordSeq_2));
 
                     idx=get_indices_M(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
                                       up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
@@ -1601,7 +1780,7 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
 
     depth=level_max_lk;
 
-    _score.at(nodeID)=score;
+    score_.at(nodeID) = score;
 
     TracebackPath_t traceback_path (depth, ' ');
     int id1=h-1;
@@ -1631,7 +1810,7 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     }
 
     //_traceback_path=traceback_path;
-    _traceback_path.at(nodeID)=traceback_path;
+    traceback_path_.at(nodeID) = traceback_path;
 
     build_MSA(node,traceback_path);
 
@@ -1654,504 +1833,529 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     }
     free(TR);
 }
-void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,double temperature,int num_SB){
 
-    //TODO: place as argument
-    bool randomSeed = true;
 
-    //TODO: re-implement gamma distribution
-    double lambda_gamma = _lambda * gamma_rate;
-    double mu_gamma = _mu * gamma_rate;
+//void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,double temperature,int num_SB){
+//
+//    //TODO: place as argument
+//    bool randomSeed = true;
+//
+//    //TODO: re-implement gamma distribution
+//    double lambda_gamma = lambda_ * gamma_rate;
+//    double mu_gamma = mu_ * gamma_rate;
+//
+//    if(local){
+//        _setTau(node);
+//        _setNu();
+//        _setAllIotas(node,true);
+//        _setAllBetas(node,true);
+//    }else{
+//    }
+//
+//    unsigned long lw;
+//    unsigned long h,w;
+//
+//    auto sons = node->getSons();
+//
+//    int s1ID = sons.at(LEFT)->getId();
+//    int s2ID = sons.at(RIGHT)->getId();
+//
+//    int nodeID = node->getId();
+//
+//    h = MSA_.at(s1ID).size()+1;
+//    w = MSA_.at(s2ID).size()+1;
+//
+//    unsigned long d=(h-1)+(w-1)+1;
+//
+//    double pc0;
+//
+//    std::string sLs;
+//    std::string sRs;
+//    std::string col_gap_Ls;
+//    std::string col_gap_Rs;
+//
+//    unsigned long numLeavesLeft = seqNames_.at(s1ID).size();
+//    unsigned long numLeavesRight = seqNames_.at(s2ID).size();
+//
+//    col_gap_Ls=createGapCol(numLeavesLeft);
+//    col_gap_Rs=createGapCol(numLeavesRight);
+//
+//    signed long seed;
+//    if(randomSeed){
+//        seed = std::chrono::system_clock::now().time_since_epoch().count();
+//    }else{
+//        seed = 0;
+//    }
+//
+//    std::default_random_engine generator(seed);
+//    std::uniform_real_distribution<double> distribution(0.0,1.0);
+//
+//    auto epsilon=DBL_EPSILON;
+//
+//    //***************************************************************************************
+//    //***************************************************************************************
+//    if(local){
+//        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs);
+//    }
+//
+//    //else{
+//    //    pc0 = compute_pr_gap_all_edges_s(node,
+//    //                                     col_gap_Ls,
+//    //                                     col_gap_Rs,
+//    //                                     pi,
+//    //                                     originalAlphabetSize,
+//    //                                     alphabet);
+//
+//    //}
+//
+//
+//    double ***LogM = new double**[d];
+//    double ***LogX = new double**[d];
+//    double ***LogY = new double**[d];
+//    double ***Mp = new double**[d];
+//    double ***Xp = new double**[d];
+//    double ***Yp = new double**[d];
+//    int ***TR = new int**[d];
+//    for(int i =0; i<d; i++){
+//        LogM[i] = new double*[h];
+//        LogX[i] = new double*[h];
+//        LogY[i] = new double*[h];
+//        Mp[i] = new double*[h];
+//        Xp[i] = new double*[h];
+//        Yp[i] = new double*[h];
+//        TR[i] = new int*[h];
+//        for(int j =0; j<h; j++){
+//            LogM[i][j] = new double[w];
+//            LogX[i][j] = new double[w];
+//            LogY[i][j] = new double[w];
+//            Mp[i][j] = new double[w];
+//            Xp[i][j] = new double[w];
+//            Yp[i][j] = new double[w];
+//            TR[i][j] = new int[w];
+//            for(int k = 0; k<w;k++){
+//                LogM[i][j][k] = -std::numeric_limits<double>::infinity();
+//                LogX[i][j][k] = -std::numeric_limits<double>::infinity();
+//                LogY[i][j][k] = -std::numeric_limits<double>::infinity();
+//                Mp[i][j][k] = -std::numeric_limits<double>::infinity();
+//                Xp[i][j][k] = -std::numeric_limits<double>::infinity();
+//                Yp[i][j][k] = -std::numeric_limits<double>::infinity();
+//                TR[i][j][k] = 0;
+//            }
+//        }
+//    }
+//
+//    LogM[0][0][0]=nu_*(pc0-1.0);
+//    LogX[0][0][0]=nu_*(pc0-1.0);
+//    LogY[0][0][0]=nu_*(pc0-1.0);
+//
+//    //TR[0] = new int[1]();
+//    TR[0][0][0]=STOP_STATE;
+//
+//    double max_of_3=-std::numeric_limits<double>::infinity();
+//
+//    signed long level_max_lk=INT_MIN;
+//    double val;
+//    unsigned long m_binary_this;
+//    unsigned long m_binary_prev;
+//
+//    double valM;
+//    double valX;
+//    double valY;
+//
+//    signed long idx;
+//
+//    unsigned long coordSeq_1;
+//    unsigned long coordSeq_2;
+//    unsigned long coordTriangle_this_i;
+//    unsigned long coordTriangle_this_j;
+//    unsigned long coordTriangle_prev_i;
+//    unsigned long coordTriangle_prev_j;
+//
+//    double score=-std::numeric_limits<double>::infinity();
+//    int start_depth;
+//    unsigned long depth;
+//
+//    bool flag_exit=false;
+//    unsigned long last_d=d-1;
+//    unsigned long size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
+//    std::map<std::string,double> lkM;
+//    std::map<std::string,double> lkX;
+//    std::map<std::string,double> lkY;
+//
+//    unsigned long m,i,j;
+//
+//    for(m=1;m<d;m++) {
+//
+//        if (flag_exit) {
+//            break;
+//        }
+//
+//        for (i = 0; i < h; i++) {
+//
+//            coordSeq_1 = i;
+//
+//            sLs = (MSA_.at(s1ID).at(coordSeq_1));
+//
+//            for (j = 0; j < w; j++) {
+//
+//                coordSeq_2 = j;
+//
+//                sRs = (MSA_.at(s2ID).at(coordSeq_2));
+//
+//                if (i - 1 > 0 && j - 1 > 0) {
+//                    if (!(isinf(LogM[m - 1][i - 1][j - 1])) | !(isinf(LogX[m - 1][i - 1][j - 1])) |
+//                        !(isinf(LogY[m - 1][i - 1][j - 1]))) {
+//
+//
+//                        if (local) {
+//                            val = computeLK_M_local(valM,
+//                                                    valX,
+//                                                    valY,
+//                                                    node,
+//                                                    sLs,
+//                                                    sRs,
+//                                                    m,
+//                                                    lkM);
+//                        } else {
+//                            /*
+//                            val=computeLK_M_all_edges_s_opt(valM,
+//                                                            valX,
+//                                                            valY,
+//                                                            nu,
+//                                                            node,
+//                                                            sLs, sRs,
+//                                                            pi,
+//                                                            m,
+//                                                            lkM,
+//                                                            originalAlphabetSize, alphabet);
+//                            */
+//                        }
+//                        double lk_c = val;
+//                        //lk_c=log(iotaV0*betaV0*P(idx_i,idx_j));
+//                        double lk = -log(m - 1) + log(nu_) + lk_c;
+//                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i - 1][j - 1], LogX[m - 1][i - 1][j - 1]);
+//                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i - 1][j - 1]);
+//                        LogM[m][i][j] = pPIPUtils::add_lns(lk, l2);
+//                        Mp[m][i][j] = lk_c;
+//                    }
+//                }
+//
+//                if (i - 1 > 0) {
+//                    if (!(isinf(LogM[m - 1][i - 1][j])) || !(isinf(LogX[m - 1][i - 1][j])) ||
+//                        !(isinf(LogY[m - 1][i - 1][j]))) {
+//
+//                        if (local) {
+//                            val = computeLK_X_local(valM,
+//                                                    valX,
+//                                                    valY,
+//                                                    node,
+//                                                    sLs, col_gap_Rs,
+//                                                    m,
+//                                                    lkX);
+//                        } else {
+//                            /*
+//                            val=computeLK_X_all_edges_s_opt(valM,
+//                                                            valX,
+//                                                            valY,
+//                                                            nu,
+//                                                            node,
+//                                                            sLs, col_gap_Rs,
+//                                                            pi,
+//                                                            m,
+//                                                            lkX,
+//                                                            originalAlphabetSize, alphabet);
+//                            */
+//                        }
+//
+//                        double lk_c = val;
+//                        //lk_c = log(iotaV0 * betaV0 * P(idx_i, idx_j) + iotaV1 + betaV1 * FV(idx_i));
+//                        double lk = -log(m - 1) + log(nu_) + lk_c;
+//                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i - 1][j], LogX[m - 1][i - 1][j]);
+//                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i - 1][j]);
+//                        LogX[m][i][j] = pPIPUtils::add_lns(lk, l2);
+//                        Xp[m][i][j] = lk_c;
+//                    }
+//                }
+//
+//                if (j - 1 > 0) {
+//                    if (!(isinf(LogM[m - 1][i][j - 1])) || !(isinf(LogX[m - 1][i][j - 1])) ||
+//                        !(isinf(LogY[m - 1][i][j - 1]))) {
+//
+//                        if (local) {
+//                            val = computeLK_Y_local(valM,
+//                                                    valX,
+//                                                    valY,
+//                                                    node,
+//                                                    col_gap_Ls, sRs,
+//                                                    m,
+//                                                    lkY);
+//                        } else {
+//                            /*
+//                            val=computeLK_Y_all_edges_s_opt(valM,
+//                                                            valX,
+//                                                            valY,
+//                                                            nu,
+//                                                            node,
+//                                                            col_gap_Ls, sRs,
+//                                                            pi,
+//                                                            m,
+//                                                            lkY,
+//                                                            originalAlphabetSize, alphabet);
+//                             */
+//                        }
+//                        double lk_c = val;
+//                        //lk_c = log(iotaV0 * betaV0 * P(idx_i, idx_j) + iotaV2 + betaV2 * FV(idx_j));
+//                        double lk = -log(m - 1) + log(nu_) + lk_c;
+//                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i][j - 1], LogX[m - 1][i][j - 1]);
+//                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i][j - 1]);
+//                        LogY[m][i][j] = pPIPUtils::add_lns(lk, l2);
+//                        Yp[m][i][j] = lk_c;
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//    double pm;
+//    double pmn;
+//    double log_pm;
+//    double px;
+//    double pxn;
+//    double log_px;
+//    double py;
+//    double pyn;
+//    double log_py;
+//    double z;
+//    double lk;
+//    double p0;
+//    double random_number;
+//    double log_P;
+//    char T;
+//    double max_M,max_X,max_Y;
+//    int idx_M,idx_X,idx_Y;
+//    int idxMax;
+//    for(int sb=0;sb<num_SB;sb++) {
+//
+//        pPIPUtils::max_val_in_column(LogM,d,h,w,max_M,idx_M);
+//        pPIPUtils::max_val_in_column(LogX,d,h,w,max_X,idx_X);
+//        pPIPUtils::max_val_in_column(LogY,d,h,w,max_Y,idx_Y);
+//
+//        score=max_of_three(max_M,max_X,max_Y,epsilon);
+//
+//        idxMax = index_of_max(max_M,max_X,max_Y,epsilon,generator,distribution);
+//        switch(idxMax){
+//            case MATCH_STATE:
+//                T = MATCH_CHAR;
+//                score = max_M;
+//                m = idx_M;
+//                break;
+//            case GAP_X_STATE:
+//                T = GAP_X_STATE;
+//                score = max_X;
+//                m = idx_X;
+//                break;
+//            case GAP_Y_STATE:
+//                T = GAP_Y_CHAR;
+//                score = max_Y;
+//                m = idx_Y;
+//                break;
+//            default:
+//                perror("state not recognized");
+//        }
+//
+//        i = h;
+//        j = w;
+//
+//
+//        double log_Zm = LogM[m][i][j];
+//        double log_Zx = LogX[m][i][j];
+//        double log_Zy = LogY[m][i][j];
+//
+//        if(isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)){
+//            perror("ERROR 1: Zm, Zx and Zy are inf");
+//        }
+//
+//        double log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
+//        double log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
+//
+//        if(isinf(log_Z)){
+//            perror("ERROR 2 Z: is inf");
+//        }
+//
+//        if(isinf(log_Zm)){
+//            pm = 0;
+//            pmn = 0;
+//        }else{
+//            log_pm = log_Zm - log_Z;
+//            pm = exp(log_pm);
+//            pmn = exp(-(1 - pm) / temperature);
+//        }
+//
+//        if(isinf(log_Zx)){
+//            px = 0;
+//            pxn = 0;
+//        }else{
+//            log_px = log_Zx - log_Z;
+//            px = exp(log_px);
+//            pxn = exp(-(1 - px) / temperature);
+//        }
+//
+//        if(isinf(log_Zy)){
+//            py = 0;
+//            pyn = 0;
+//        }else{
+//            log_py = log_Zy - log_Z;
+//            py = exp(log_py);
+//            pyn = exp(-(1 - py) / temperature);
+//        }
+//
+//        z = pmn + pxn + pyn;
+//        pm = pmn/z;
+//        px = pxn/z;
+//        py = pyn/z;
+//
+//        TracebackPath_t traceback;
+//
+//        m = 1;
+//        lk = -log(m) + log(nu_) + p0;
+//
+//        while (i > 1 || j > 1 || m > 1) {
+//
+//            random_number  = distribution(generator);
+//
+//            if (random_number < pm) {
+//                log_P = Mp[m][i][j];
+//                i = i - 1;
+//                j = j - 1;
+//                m = m - 1;
+//                T = MATCH_CHAR;
+//            }else if(random_number < (pm + px)){
+//                log_P = Xp[m][i][j];
+//                i = i - 1;
+//                m = m - 1;
+//                T = GAP_X_CHAR;
+//            }else{
+//                log_P = Yp[m][i][j];
+//                j = j - 1;
+//                m = m - 1;
+//                T = GAP_Y_CHAR;
+//            }
+//
+//            if(isinf(log_P)){
+//                perror("ERROR 3: P inf");
+//            }
+//
+//            lk = lk + log_P;
+//
+//            traceback.append(&T);
+//
+//            log_Zm = LogM[m][i][j];
+//            log_Zx = LogX[m][i][j];
+//            log_Zy = LogY[m][i][j];
+//
+//            if (isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)) {
+//                perror("ERROR 1: Zm, Zx and Zy are inf");
+//            }
+//
+//            log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
+//            log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
+//
+//            if(isinf(log_Z)){
+//                perror("ERROR 2 Z: is inf");
+//            }
+//
+//            if(isinf(log_Zm)) {
+//                pm = 0;
+//                pmn = 0;
+//            }else {
+//                log_pm = log_Zm - log_Z;
+//                pm = exp(log_pm);
+//                pmn = exp(-(1 - pm) / temperature);
+//            }
+//
+//            if(isinf(log_Zx)){
+//                px = 0;
+//                pxn = 0;
+//            }else {
+//                log_px = log_Zx - log_Z;
+//                px = exp(log_px);
+//                pxn = exp(-(1 - px) / temperature);
+//            }
+//
+//            if(isinf(log_Zy)) {
+//                py = 0;
+//                pyn = 0;
+//            }else {
+//                log_py = log_Zy - log_Z;
+//                py = exp(log_py);
+//                pyn = exp(-(1 - py) / temperature);
+//            }
+//
+//            z = pmn + pxn + pyn;
+//            pm = pmn/z;
+//            px = pxn/z;
+//            py = pyn/z;
+//
+//        }
+//
+//        reverse(traceback.begin(),traceback.end());
+//
+//        traceback_path_ensemble_.at(nodeID).push_back(traceback);
+//
+//        score_ensemble_.at(nodeID).push_back(score);
+//
+//    }
+//
+//    //TODO:free memory
+//
+//}
 
-    if(local){
-        _setLocalTau(node);
+
+
+
+void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local) {
+
+
+    _reserve(list_vnode_to_root);
+    _setLambda(substModel_->getParameter("lambda").getValue());
+    _setMu(substModel_->getParameter("mu").getValue());
+    _setPi(substModel_->getFrequencies());
+    _getPrFromSubstutionModel(list_vnode_to_root);
+
+    /*
+    if(!local){
+        utree_->addVirtualRootNode();
+        _setTau(utree_->rootnode);
+        utree_->removeVirtualRootNode();
         _setNu();
-        _setAllIotas(node,true);
-        _setAllBetas(node,true);
-    }else{
+        _setAllIotas(list_vnode_to_root);
+        _setAllBetas(list_vnode_to_root);
     }
+     */
 
-    unsigned long lw;
-    unsigned long h,w;
 
-    auto sons = node->getSons();
-
-    int s1ID = sons.at(LEFT)->getId();
-    int s2ID = sons.at(RIGHT)->getId();
-
-    int nodeID = node->getId();
-
-    h = _MSA.at(s1ID).size()+1;
-    w = _MSA.at(s2ID).size()+1;
-
-    unsigned long d=(h-1)+(w-1)+1;
-
-    double pc0;
-
-    std::string sLs;
-    std::string sRs;
-    std::string col_gap_Ls;
-    std::string col_gap_Rs;
-
-    unsigned long numLeavesLeft = _seqNames.at(s1ID).size();
-    unsigned long numLeavesRight = _seqNames.at(s2ID).size();
-
-    col_gap_Ls=createGapCol(numLeavesLeft);
-    col_gap_Rs=createGapCol(numLeavesRight);
-
-    signed long seed;
-    if(randomSeed){
-        seed = std::chrono::system_clock::now().time_since_epoch().count();
-    }else{
-        seed = 0;
-    }
-
-    std::default_random_engine generator(seed);
-    std::uniform_real_distribution<double> distribution(0.0,1.0);
-
-    auto epsilon=DBL_EPSILON;
-
-    //***************************************************************************************
-    //***************************************************************************************
-    if(local){
-        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs);
-    }else{
-        /*
-        pc0 = compute_pr_gap_all_edges_s(node,
-                                         col_gap_Ls,
-                                         col_gap_Rs,
-                                         pi,
-                                         originalAlphabetSize,
-                                         alphabet);
-        */
-    }
-    //***************************************************************************************
-    //***************************************************************************************
-
-    double ***LogM = new double**[d];
-    double ***LogX = new double**[d];
-    double ***LogY = new double**[d];
-    double ***Mp = new double**[d];
-    double ***Xp = new double**[d];
-    double ***Yp = new double**[d];
-    int ***TR = new int**[d];
-    for(int i =0; i<d; i++){
-        LogM[i] = new double*[h];
-        LogX[i] = new double*[h];
-        LogY[i] = new double*[h];
-        Mp[i] = new double*[h];
-        Xp[i] = new double*[h];
-        Yp[i] = new double*[h];
-        TR[i] = new int*[h];
-        for(int j =0; j<h; j++){
-            LogM[i][j] = new double[w];
-            LogX[i][j] = new double[w];
-            LogY[i][j] = new double[w];
-            Mp[i][j] = new double[w];
-            Xp[i][j] = new double[w];
-            Yp[i][j] = new double[w];
-            TR[i][j] = new int[w];
-            for(int k = 0; k<w;k++){
-                LogM[i][j][k] = -std::numeric_limits<double>::infinity();
-                LogX[i][j][k] = -std::numeric_limits<double>::infinity();
-                LogY[i][j][k] = -std::numeric_limits<double>::infinity();
-                Mp[i][j][k] = -std::numeric_limits<double>::infinity();
-                Xp[i][j][k] = -std::numeric_limits<double>::infinity();
-                Yp[i][j][k] = -std::numeric_limits<double>::infinity();
-                TR[i][j][k] = 0;
-            }
-        }
-    }
-
-    LogM[0][0][0]=_nu*(pc0-1.0);
-    LogX[0][0][0]=_nu*(pc0-1.0);
-    LogY[0][0][0]=_nu*(pc0-1.0);
-
-    //TR[0] = new int[1]();
-    TR[0][0][0]=STOP_STATE;
-
-    double max_of_3=-std::numeric_limits<double>::infinity();
-
-    signed long level_max_lk=INT_MIN;
-    double val;
-    unsigned long m_binary_this;
-    unsigned long m_binary_prev;
-
-    double valM;
-    double valX;
-    double valY;
-
-    signed long idx;
-
-    unsigned long coordSeq_1;
-    unsigned long coordSeq_2;
-    unsigned long coordTriangle_this_i;
-    unsigned long coordTriangle_this_j;
-    unsigned long coordTriangle_prev_i;
-    unsigned long coordTriangle_prev_j;
-
-    double score=-std::numeric_limits<double>::infinity();
-    int start_depth;
-    unsigned long depth;
-
-    bool flag_exit=false;
-    unsigned long last_d=d-1;
-    unsigned long size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
-    std::map<std::string,double> lkM;
-    std::map<std::string,double> lkX;
-    std::map<std::string,double> lkY;
-
-    unsigned long m,i,j;
-
-    for(m=1;m<d;m++) {
-
-        if (flag_exit) {
-            break;
-        }
-
-        for (i = 0; i < h; i++) {
-
-            coordSeq_1 = i;
-
-            sLs = (_MSA.at(s1ID).at(coordSeq_1));
-
-            for (j = 0; j < w; j++) {
-
-                coordSeq_2 = j;
-
-                sRs = (_MSA.at(s2ID).at(coordSeq_2));
-
-                if (i - 1 > 0 && j - 1 > 0) {
-                    if (!(isinf(LogM[m - 1][i - 1][j - 1])) | !(isinf(LogX[m - 1][i - 1][j - 1])) |
-                        !(isinf(LogY[m - 1][i - 1][j - 1]))) {
-
-
-                        if (local) {
-                            val = computeLK_M_local(valM,
-                                                    valX,
-                                                    valY,
-                                                    node,
-                                                    sLs,
-                                                    sRs,
-                                                    m,
-                                                    lkM);
-                        } else {
-                            /*
-                            val=computeLK_M_all_edges_s_opt(valM,
-                                                            valX,
-                                                            valY,
-                                                            nu,
-                                                            node,
-                                                            sLs, sRs,
-                                                            pi,
-                                                            m,
-                                                            lkM,
-                                                            originalAlphabetSize, alphabet);
-                            */
-                        }
-                        double lk_c = val;
-                        //lk_c=log(iotaV0*betaV0*P(idx_i,idx_j));
-                        double lk = -log(m - 1) + log(_nu) + lk_c;
-                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i - 1][j - 1], LogX[m - 1][i - 1][j - 1]);
-                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i - 1][j - 1]);
-                        LogM[m][i][j] = pPIPUtils::add_lns(lk, l2);
-                        Mp[m][i][j] = lk_c;
-                    }
-                }
-
-                if (i - 1 > 0) {
-                    if (!(isinf(LogM[m - 1][i - 1][j])) || !(isinf(LogX[m - 1][i - 1][j])) ||
-                        !(isinf(LogY[m - 1][i - 1][j]))) {
-
-                        if (local) {
-                            val = computeLK_X_local(valM,
-                                                    valX,
-                                                    valY,
-                                                    node,
-                                                    sLs, col_gap_Rs,
-                                                    m,
-                                                    lkX);
-                        } else {
-                            /*
-                            val=computeLK_X_all_edges_s_opt(valM,
-                                                            valX,
-                                                            valY,
-                                                            nu,
-                                                            node,
-                                                            sLs, col_gap_Rs,
-                                                            pi,
-                                                            m,
-                                                            lkX,
-                                                            originalAlphabetSize, alphabet);
-                            */
-                        }
-
-                        double lk_c = val;
-                        //lk_c = log(iotaV0 * betaV0 * P(idx_i, idx_j) + iotaV1 + betaV1 * FV(idx_i));
-                        double lk = -log(m - 1) + log(_nu) + lk_c;
-                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i - 1][j], LogX[m - 1][i - 1][j]);
-                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i - 1][j]);
-                        LogX[m][i][j] = pPIPUtils::add_lns(lk, l2);
-                        Xp[m][i][j] = lk_c;
-                    }
-                }
-
-                if (j - 1 > 0) {
-                    if (!(isinf(LogM[m - 1][i][j - 1])) || !(isinf(LogX[m - 1][i][j - 1])) ||
-                        !(isinf(LogY[m - 1][i][j - 1]))) {
-
-                        if (local) {
-                            val = computeLK_Y_local(valM,
-                                                    valX,
-                                                    valY,
-                                                    node,
-                                                    col_gap_Ls, sRs,
-                                                    m,
-                                                    lkY);
-                        } else {
-                            /*
-                            val=computeLK_Y_all_edges_s_opt(valM,
-                                                            valX,
-                                                            valY,
-                                                            nu,
-                                                            node,
-                                                            col_gap_Ls, sRs,
-                                                            pi,
-                                                            m,
-                                                            lkY,
-                                                            originalAlphabetSize, alphabet);
-                             */
-                        }
-                        double lk_c = val;
-                        //lk_c = log(iotaV0 * betaV0 * P(idx_i, idx_j) + iotaV2 + betaV2 * FV(idx_j));
-                        double lk = -log(m - 1) + log(_nu) + lk_c;
-                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i][j - 1], LogX[m - 1][i][j - 1]);
-                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i][j - 1]);
-                        LogY[m][i][j] = pPIPUtils::add_lns(lk, l2);
-                        Yp[m][i][j] = lk_c;
-                    }
-                }
-            }
-        }
-    }
-
-    double pm;
-    double pmn;
-    double log_pm;
-    double px;
-    double pxn;
-    double log_px;
-    double py;
-    double pyn;
-    double log_py;
-    double z;
-    double lk;
-    double p0;
-    double random_number;
-    double log_P;
-    char T;
-    double max_M,max_X,max_Y;
-    int idx_M,idx_X,idx_Y;
-    int idxMax;
-    for(int sb=0;sb<num_SB;sb++) {
-
-        pPIPUtils::max_val_in_column(LogM,d,h,w,max_M,idx_M);
-        pPIPUtils::max_val_in_column(LogX,d,h,w,max_X,idx_X);
-        pPIPUtils::max_val_in_column(LogY,d,h,w,max_Y,idx_Y);
-
-        score=max_of_three(max_M,max_X,max_Y,epsilon);
-
-        idxMax = index_of_max(max_M,max_X,max_Y,epsilon,generator,distribution);
-        switch(idxMax){
-            case MATCH_STATE:
-                T = MATCH_CHAR;
-                score = max_M;
-                m = idx_M;
-                break;
-            case GAP_X_STATE:
-                T = GAP_X_STATE;
-                score = max_X;
-                m = idx_X;
-                break;
-            case GAP_Y_STATE:
-                T = GAP_Y_CHAR;
-                score = max_Y;
-                m = idx_Y;
-                break;
-            default:
-                perror("state not recognized");
-        }
-
-        i = h;
-        j = w;
-
-
-        double log_Zm = LogM[m][i][j];
-        double log_Zx = LogX[m][i][j];
-        double log_Zy = LogY[m][i][j];
-
-        if(isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)){
-            perror("ERROR 1: Zm, Zx and Zy are inf");
-        }
-
-        double log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
-        double log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
-
-        if(isinf(log_Z)){
-            perror("ERROR 2 Z: is inf");
-        }
-
-        if(isinf(log_Zm)){
-            pm = 0;
-            pmn = 0;
-        }else{
-            log_pm = log_Zm - log_Z;
-            pm = exp(log_pm);
-            pmn = exp(-(1 - pm) / temperature);
-        }
-
-        if(isinf(log_Zx)){
-            px = 0;
-            pxn = 0;
-        }else{
-            log_px = log_Zx - log_Z;
-            px = exp(log_px);
-            pxn = exp(-(1 - px) / temperature);
-        }
-
-        if(isinf(log_Zy)){
-            py = 0;
-            pyn = 0;
-        }else{
-            log_py = log_Zy - log_Z;
-            py = exp(log_py);
-            pyn = exp(-(1 - py) / temperature);
-        }
-
-        z = pmn + pxn + pyn;
-        pm = pmn/z;
-        px = pxn/z;
-        py = pyn/z;
-
-        TracebackPath_t traceback;
-
-        m = 1;
-        lk = -log(m) + log(_nu) + p0;
-
-        while (i > 1 || j > 1 || m > 1) {
-
-            random_number  = distribution(generator);
-
-            if (random_number < pm) {
-                log_P = Mp[m][i][j];
-                i = i - 1;
-                j = j - 1;
-                m = m - 1;
-                T = MATCH_CHAR;
-            }else if(random_number < (pm + px)){
-                log_P = Xp[m][i][j];
-                i = i - 1;
-                m = m - 1;
-                T = GAP_X_CHAR;
-            }else{
-                log_P = Yp[m][i][j];
-                j = j - 1;
-                m = m - 1;
-                T = GAP_Y_CHAR;
-            }
-
-            if(isinf(log_P)){
-                perror("ERROR 3: P inf");
-            }
-
-            lk = lk + log_P;
-
-            traceback.append(&T);
-
-            log_Zm = LogM[m][i][j];
-            log_Zx = LogX[m][i][j];
-            log_Zy = LogY[m][i][j];
-
-            if (isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)) {
-                perror("ERROR 1: Zm, Zx and Zy are inf");
-            }
-
-            log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
-            log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
-
-            if(isinf(log_Z)){
-                perror("ERROR 2 Z: is inf");
-            }
-
-            if(isinf(log_Zm)) {
-                pm = 0;
-                pmn = 0;
-            }else {
-                log_pm = log_Zm - log_Z;
-                pm = exp(log_pm);
-                pmn = exp(-(1 - pm) / temperature);
-            }
-
-            if(isinf(log_Zx)){
-                px = 0;
-                pxn = 0;
-            }else {
-                log_px = log_Zx - log_Z;
-                px = exp(log_px);
-                pxn = exp(-(1 - px) / temperature);
-            }
-
-            if(isinf(log_Zy)) {
-                py = 0;
-                pyn = 0;
-            }else {
-                log_py = log_Zy - log_Z;
-                py = exp(log_py);
-                pyn = exp(-(1 - py) / temperature);
-            }
-
-            z = pmn + pxn + pyn;
-            pm = pmn/z;
-            px = pxn/z;
-            py = pyn/z;
-
-        }
-
-        reverse(traceback.begin(),traceback.end());
-
-        _traceback_path_ensemble.at(nodeID).push_back(traceback);
-
-        _score_ensemble.at(nodeID).push_back(score);
-
-    }
-
-    //TODO:free memory
-
-}
-void pPIP::PIPAligner(UtreeBppUtils::treemap *tm,
-                  std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-                  bpp::SequenceContainer *sequences,
-                  double gamma_rate,
-                  bool local) {
 
     for (auto &vnode:list_vnode_to_root) {
 
-        auto node = _tree->getNode(tm->right.at(vnode),false);
+        auto node = tree_->getNode(treemap_.right.at(vnode), false);
+        VLOG(1) << "[pPIP] Processing node " << node->getId();
 
         if(node->isLeaf()){
 
-            std::string seqname = sequences->getSequencesNames().at((unsigned long)vnode->vnode_seqid);
+            std::string seqname = sequences_->getSequencesNames().at((unsigned long) vnode->vnode_seqid);
 
+            // associate the sequence name to the leaf node
             setMSAsequenceNames(node,seqname);
-
-            setMSAleaves(node,sequences->getSequence(seqname).toString());
+            // create a column containing the sequence associated to the leaf node
+            setMSAleaves(node, sequences_->getSequence(seqname).toString());
 
         }else{
 
-            DP3D_PIP(node, tm, gamma_rate, local);
+            DP3D_PIP(node, local);
 
         }
     }
+
 
 }
 

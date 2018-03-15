@@ -66,56 +66,64 @@ namespace bpp {
         typedef std::string TracebackPath_t;
         typedef std::vector<TracebackPath_t> TracebackEnsemble_t; //for SB
 
-        pPIP(bpp::Alphabet *alphabet);
+        pPIP(tshlib::Utree *utree,
+             bpp::Tree *tree,
+             bpp::SubstitutionModel *smodel,
+             UtreeBppUtils::treemap &inTreeMap,
+             bpp::SequenceContainer *sequences,
+             bpp::DiscreteDistribution *rDist);
 
         ~pPIP(){};
 
-        void init(const Tree *tree, bpp::SubstitutionModel *smodel,
-             UtreeBppUtils::treemap *tm,
-             std::vector<tshlib::VirtualNode *> &listNodes, bool local);
 
-        void PIPAligner(UtreeBppUtils::treemap *tm,
-                        std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-                        bpp::SequenceContainer *sequences,
-                        double gamma_rate,
-                        bool local);
+        void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local);
 
 
         std::vector< std::string > getMSA(bpp::Node *node);
         double getScore(bpp::Node *node);
         std::vector< std::string > getSeqnames(bpp::Node *node);
         bpp::Node *getRootNode();
-        bpp::Alphabet *getAlphabet();
+
+        const Alphabet *getAlphabet() const;
+
 
     protected:
 
     private:
-        mutable TreeTemplate<Node> *_tree;
-        mutable bpp::SubstitutionModel *_substModel;
-        std::vector< double > _iota;
-        std::vector< double > _beta;
-        std::vector< bpp::RowMatrix<double> > _pr;
-        std::vector< std::vector< std::string > > _seqNames;
-        std::vector< MSA_t > _MSA; //MSA at each node
-        std::vector< MSAensemble_t > _MSAensemble; //MSAensemble at each node
-        std::vector<TracebackPath_t> _traceback_path;
-        std::vector<TracebackEnsemble_t> _traceback_path_ensemble;
-        std::vector< double > _score;
-        std::vector<vector< double >> _score_ensemble;
-        double _lambda;
-        double _mu;
-        double _nu;
-        double _tau;
 
-        bpp::ColMatrix<double> _pi;
+        tshlib::Utree *utree_;
+        bpp::TreeTemplate<bpp::Node> *tree_;
+        bpp::SubstitutionModel *substModel_;
+        mutable UtreeBppUtils::treemap treemap_;
+        bpp::SequenceContainer *sequences_;
+        bpp::DiscreteDistribution *rDist_;
 
-        bpp::Alphabet *_alphabet;
+        std::map<unsigned long, std::vector<double>> iotasNode_;
+        std::map<unsigned long, std::vector<double>> betasNode_;
+        std::vector<double> iotaNode_;
+        std::vector<double> betaNode_;
+        std::vector<bpp::RowMatrix<double> > prNode_;
+        std::vector<std::vector<std::string> > seqNames_;
+        std::vector<MSA_t> MSA_; //MSA at each node
+        std::vector<MSAensemble_t> MSAensemble_; //MSAensemble at each node
+        std::vector<TracebackPath_t> traceback_path_;
+        std::vector<TracebackEnsemble_t> traceback_path_ensemble_;
+        std::vector<double> score_;
+        std::vector<vector<double >> score_ensemble_;
+        std::vector<double> lambda_;
+        std::vector<double> mu_;
+        std::vector<double> nu_;
+        double tau_;
 
-        long _alphabetSize;
+        bpp::ColMatrix<double> pi_;
 
-        long _extendedAlphabetSize;
+        const bpp::Alphabet *alphabet_;
 
-        void _reserve(unsigned long numNodes);
+        long alphabetSize_;
+
+        long extendedAlphabetSize_;
+
+        void _reserve(std::vector<tshlib::VirtualNode *> &nodeList);
 
         void _setNu();
 
@@ -129,17 +137,17 @@ namespace bpp {
 
         void _setPi(const Vdouble &pi);
 
-        void _setLocalTau(bpp::Node *node);
+        void _setTau(tshlib::VirtualNode *vnode);
 
-        void _setAllIotas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes);
+        //void _setAllIotas(std::vector<tshlib::VirtualNode *> &listNodes);
 
         void _setAllIotas(bpp::Node *node,bool local_root);
 
-        void _setAllBetas(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes);
+        //void _setAllBetas(std::vector<tshlib::VirtualNode *> &listNodes);
 
         void _setAllBetas(bpp::Node *node,bool local_root);
 
-        void _computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode *> &listNodes);
+        void _getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNodes);
 
         bool is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned long yf,unsigned long xt,unsigned long yt);
 
@@ -228,7 +236,7 @@ namespace bpp {
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkY);
 
-        void DP3D_PIP(bpp::Node *node, UtreeBppUtils::treemap *tm, double gamma_rate, bool local);
+        void DP3D_PIP(bpp::Node *node, bool local);
 
         void DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,
                          double temperature,int num_SB);
