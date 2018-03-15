@@ -108,6 +108,31 @@ void pPIP::_setTree(const Tree *tree) {
 void pPIP::_setSubstModel(bpp::SubstitutionModel *smodel) {
     _substModel = smodel;
 }
+std::vector< std::string > pPIP::getMSA(bpp::Node *node){
+
+    return _MSA.at(node->getId());
+
+}
+double pPIP::getScore(bpp::Node *node){
+
+    return _score.at(node->getId());
+
+}
+std::vector< std::string > pPIP::getSeqnames(bpp::Node *node) {
+
+    return _seqNames.at(node->getId());
+
+}
+bpp::Node * pPIP::getRootNode(){
+
+    return _tree->getRootNode();
+
+}
+bpp::Alphabet *pPIP::getAlphabet(){
+
+    return _alphabet;
+
+}
 bool pPIP::is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned long yf,unsigned long xt,unsigned long yt){
 
     if((xt<x0) || (yt>y0) || (xt>xf) || (yt<yf)){
@@ -519,14 +544,16 @@ void pPIP::setMSAsequenceNames(bpp::Node *node,std::string seqname){
     _seqNames.at(node->getId())=seqNames;
 
 }
-void pPIP::setMSAleaves(bpp::Node *node,const std::string &MSA){
+void pPIP::setMSAleaves(bpp::Node *node,const std::string &sequence){
 
     /* convert a string into a vector of single char strings */
-    std::vector<std::string> msa;
-    msa.resize(MSA.size());
-    for(int i=0;i<MSA.size();i++){
-        std::string s(1, MSA.at(i));
-        msa.at(i)=s;
+    //std::vector<std::string> msa;
+    MSA msa;
+    msa.resize(sequence.size());
+    for(int i=0;i<sequence.size();i++){
+        //std::string s(1, MSAin.at(i));
+        MSAcolumn msa_col(1, sequence.at(i));
+        msa.at(i)=msa_col;
     }
 
     _MSA.at(node->getId())=msa;
@@ -695,7 +722,7 @@ void pPIP::_computePr(UtreeBppUtils::treemap *tm,std::vector<tshlib::VirtualNode
 //
 //    }
 //}
-bpp::ColMatrix<double> pPIP::fv_observed(std::string &s, unsigned long &idx){
+bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn &s, unsigned long &idx){
     bpp::ColMatrix<double> fv;
     int ii;
     char ch=s[idx];
@@ -711,7 +738,7 @@ bpp::ColMatrix<double> pPIP::fv_observed(std::string &s, unsigned long &idx){
 
     return fv;
 }
-bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,std::string &s, unsigned long &idx){
+bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn &s, unsigned long &idx){
     bpp::ColMatrix<double> fv;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
@@ -759,7 +786,7 @@ void pPIP::allgaps(bpp::Node *node,std::string &s, unsigned long &idx,bool &flag
     }
 
 }
-double pPIP::compute_lk_gap_down(bpp::Node *node,std::string &s){
+double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn &s){
 
     double pr=0;
     double pL=0;
@@ -797,19 +824,19 @@ double pPIP::compute_lk_gap_down(bpp::Node *node,std::string &s){
         allgaps(sons.at(RIGHT),s,idx,flagR);
         unsigned long len;
 
-        std::string sL;
+        MSAcolumn sL;
         len=ixx;
         sL=s.substr(0,len);
         pL=compute_lk_gap_down(sons.at(LEFT),sL);
 
-        std::string sR;
+        MSAcolumn sR;
         sR=s.substr(ixx);
         pR=compute_lk_gap_down(sons.at(RIGHT),sR);
     }
 
     return pr+pL+pR;
 }
-double pPIP::compute_lk_down(bpp::Node *node,std::string &s){
+double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn &s){
 
     double pr;
     unsigned long idx;
@@ -863,7 +890,7 @@ double pPIP::compute_lk_down(bpp::Node *node,std::string &s){
 
     return pr;
 }
-double pPIP::computeLK_GapColumn_local(bpp::Node *node, std::string &sL, std::string &sR){
+double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn &sL, MSAcolumn &sR){
     double fv0;
     double pr;
     bpp::ColMatrix<double> fvL;
@@ -904,16 +931,16 @@ double pPIP::computeLK_M_local(double valM,
                                double valX,
                                double valY,
                                bpp::Node *node,
-                               std::string &sL,
-                               std::string &sR,
+                               MSAcolumn &sL,
+                               MSAcolumn &sR,
                                unsigned long m,
-                               std::map<std::string, double> &lkM){
+                               std::map<MSAcolumn, double> &lkM){
 
 
     double pr;
     double val;
 
-    std::string s;
+    MSAcolumn s;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     bpp::ColMatrix<double> PrfvL;
@@ -962,16 +989,16 @@ double pPIP::computeLK_X_local(double valM,
                                double valX,
                                double valY,
                                bpp::Node *node,
-                               std::string &sL,
-                               std::string &col_gap_R,
+                               MSAcolumn &sL,
+                               MSAcolumn &col_gap_R,
                                unsigned long m,
-                               std::map<std::string, double> &lkX){
+                               std::map<MSAcolumn, double> &lkX){
 
 
     double pr;
     double val;
 
-    std::string s;
+    MSAcolumn s;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     bpp::ColMatrix<double> PrfvL;
@@ -1026,17 +1053,16 @@ double pPIP::computeLK_Y_local(double valM,
                                double valX,
                                double valY,
                                bpp::Node *node,
-                               std::string &col_gap_L,
-                               std::string &sR,
+                               MSAcolumn &col_gap_L,
+                               MSAcolumn &sR,
                                unsigned long m,
-                               std::map<std::string, double> &lkY){
+                               std::map<MSAcolumn, double> &lkY){
 
 
     double pr;
     double val;
 
-    std::string s;
-
+    MSAcolumn s;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     bpp::ColMatrix<double> PrfvL;
@@ -1127,10 +1153,10 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
 
     double pc0;
 
-    std::string sLs;
-    std::string sRs;
-    std::string col_gap_Ls;
-    std::string col_gap_Rs;
+    MSAcolumn sLs;
+    MSAcolumn sRs;
+    MSAcolumn col_gap_Ls;
+    MSAcolumn col_gap_Rs;
 
     unsigned long numLeavesLeft = _seqNames.at(s1ID).size();
     unsigned long numLeavesRight = _seqNames.at(s2ID).size();
@@ -1214,9 +1240,9 @@ void pPIP::DP3D_PIP(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate
     bool flag_exit=false;
     unsigned long last_d=d-1;
     unsigned long size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
-    std::map<std::string,double> lkM;
-    std::map<std::string,double> lkX;
-    std::map<std::string,double> lkY;
+    std::map<MSAcolumn,double> lkM;
+    std::map<MSAcolumn,double> lkX;
+    std::map<MSAcolumn,double> lkY;
 
     for(unsigned long m=1;m<d;m++){
 
@@ -2486,31 +2512,6 @@ void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_r
     }
     free(TR);
     */
-}
-std::vector< std::string > pPIP::getMSA(bpp::Node *node){
-
-    return _MSA.at(node->getId());
-
-}
-double pPIP::getScore(bpp::Node *node){
-
-    return _score.at(node->getId());
-
-}
-std::vector< std::string > pPIP::getSeqnames(bpp::Node *node) {
-
-    return _seqNames.at(node->getId());
-
-}
-bpp::Node * pPIP::getRootNode(){
-
-    return _tree->getRootNode();
-
-}
-bpp::Alphabet *pPIP::getAlphabet(){
-
-    return _alphabet;
-
 }
 void pPIP::PIPAligner(UtreeBppUtils::treemap *tm,
                   std::vector<tshlib::VirtualNode *> &list_vnode_to_root,

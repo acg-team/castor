@@ -60,6 +60,10 @@ namespace bpp {
 
     public:
 
+        typedef std::string MSAcolumn;
+        typedef std::vector<MSAcolumn> MSA;
+        typedef std::vector<MSA> MSAensemble;
+
         pPIP(bpp::Alphabet *alphabet);
 
         ~pPIP(){};
@@ -178,19 +182,19 @@ namespace bpp {
 
         void setMSAsequenceNames(bpp::Node *node,std::string seqname);
 
-        void setMSAleaves(bpp::Node *node,const std::string &MSA);
+        void setMSAleaves(bpp::Node *node,const std::string &sequence);
 
-        bpp::ColMatrix<double> fv_observed(std::string &s, unsigned long &idx);
+        bpp::ColMatrix<double> fv_observed(MSAcolumn &s, unsigned long &idx);
 
-        bpp::ColMatrix<double> go_down(bpp::Node *node,std::string &s, unsigned long &idx);
+        bpp::ColMatrix<double> go_down(bpp::Node *node,MSAcolumn &s, unsigned long &idx);
 
-        void allgaps(bpp::Node *node,std::string &s, unsigned long &idx,bool &flag);
+        void allgaps(bpp::Node *node,MSAcolumn &s, unsigned long &idx,bool &flag);
 
-        double compute_lk_gap_down(bpp::Node *node,std::string &s);
+        double compute_lk_gap_down(bpp::Node *node,MSAcolumn &s);
 
-        double computeLK_GapColumn_local(bpp::Node *node, std::string &sL, std::string &sR);
+        double computeLK_GapColumn_local(bpp::Node *node, MSAcolumn &sL, MSAcolumn &sR);
 
-        double compute_lk_down(bpp::Node *node,std::string &s);
+        double compute_lk_down(bpp::Node *node,MSAcolumn &s);
 
         double computeLK_M_local(double valM,
                                  double valX,
@@ -199,25 +203,25 @@ namespace bpp {
                                  std::string &sL,
                                  std::string &sR,
                                  unsigned long m,
-                                 std::map<std::string, double> &lkM);
+                                 std::map<MSAcolumn, double> &lkM);
 
         double computeLK_X_local(double valM,
                                  double valX,
                                  double valY,
                                  bpp::Node *node,
-                                 std::string &sL,
-                                 std::string &col_gap_R,
+                                 MSAcolumn &sL,
+                                 MSAcolumn &col_gap_R,
                                  unsigned long m,
-                                 std::map<std::string, double> &lkX);
+                                 std::map<MSAcolumn, double> &lkX);
 
         double computeLK_Y_local(double valM,
                                  double valX,
                                  double valY,
                                  bpp::Node *node,
-                                 std::string &col_gap_L,
-                                 std::string &sR,
+                                 MSAcolumn &col_gap_L,
+                                 MSAcolumn &sR,
                                  unsigned long m,
-                                 std::map<std::string, double> &lkY);
+                                 std::map<MSAcolumn, double> &lkY);
 
         void DP3D_PIP(bpp::Node *node, UtreeBppUtils::treemap *tm, double gamma_rate, bool local);
 
