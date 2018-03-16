@@ -154,7 +154,7 @@ set(SOURCES
         PIP.cpp
         PIP.hpp
         Version.hpp
-        progressivePIP.hpp
+        #progressivePIP.hpp
         RHomogeneousTreeLikelihood_PIP.cpp
         RHomogeneousTreeLikelihood_PIP.hpp
         ExtendedAlphabet.cpp
@@ -167,7 +167,9 @@ set(SOURCES
         JATIApplication.cpp
         JATIApplication.hpp
         pPIP.cpp
-        pPIP.hpp Optimizators.cpp Optimizators.hpp)
+        pPIP.hpp
+        Optimizators.cpp
+        Optimizators.hpp)
 
 if (CMAKE_BUILD_TYPE EQUAL "Release")
     set_target_properties(miniJATI PROPERTIES LINK_FLAGS "-static")
