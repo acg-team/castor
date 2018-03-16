@@ -50,9 +50,11 @@
 
 using namespace bpp;
 
-JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name) : appName_(name), params_(), timerStarted_(false) {
+JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name, const std::string &strVersion, const std::string &build_date) :
+        appName_(name), appBuild_(build_date), appVersion_(strVersion), params_(), timerStarted_(false) {
     //LOG(INFO) << "Parsing options:";
     params_ = bpp::AttributesTools::parseOptions(argc, argv);
+    bool showversion = bpp::ApplicationTools::getBooleanParameter("--version", params_, false, "", true, 3);
     bpp::ApplicationTools::warningLevel = bpp::ApplicationTools::getIntParameter("--warning", params_, 0, "", true, 3);
     bool noint = bpp::ApplicationTools::getBooleanParameter("--noninteractive", params_, false, "", true, 3);
     bpp::ApplicationTools::interactive = !noint;
@@ -60,6 +62,10 @@ JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name
     if (seed >= 0) {
         bpp::RandomTools::setSeed(seed);
         bpp::ApplicationTools::displayResult("Random seed set to", seed);
+    }
+    if (showversion) {
+        this->version();
+        exit(0);
     }
 }
 

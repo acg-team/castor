@@ -49,16 +49,20 @@
 #include <Bpp/Exceptions.h>
 #include <glog/logging.h>
 #include <iostream>
+#include <Bpp/App/ApplicationTools.h>
+
 
 namespace bpp {
     class JATIApplication {
     private:
         std::string appName_;
+        std::string appBuild_;
+        std::string appVersion_;
         mutable std::map<std::string, std::string> params_;
         bool timerStarted_;
 
     public:
-        JATIApplication(int argc, char *argv[], const std::string &name);
+        JATIApplication(int argc, char *argv[], const std::string &name, const std::string &strVersion, const std::string &build_date);
 
     public:
         void startTimer();
@@ -380,15 +384,14 @@ namespace bpp {
 
         void banner() {
 
-            LOG(INFO) << "*****************************************************************************************************************************************";
-            LOG(INFO) << "* " << appName_ << "  *";
-            LOG(INFO) << "* Authors: Lorenzo Gatti & Massimo Maiolo                                                                                               *";
-            LOG(INFO) << "* ------------------------------------------------------------------------------------------------------------------------------------- *";
-            LOG(INFO) << "* Based on Bio++ by J. Dutheil, B. Boussau, L. Guéguen, M. Groussin                                                                     *";
-            LOG(INFO) << "* Inspired on codonPhyML (Gil M. et al.)                                                                                                *";
-            LOG(INFO) << "* Inspired on PrographMSA (Szalkowski A. et al.)                                                                                        *";
-            LOG(INFO) << "* Implements the Poisson Indel Model (Bouchard-Cote A. et al.)                                                                          *";
-            LOG(INFO) << "*****************************************************************************************************************************************";
+
+            bpp::ApplicationTools::displayMessage("*****************************************************************************************************************************************");
+            bpp::ApplicationTools::displayMessage("* " + appName_ + " by Lorenzo Gatti & Massimo Maiolo                                                                                      *");
+            bpp::ApplicationTools::displayMessage("* Build on commit: " + appVersion_ + " on date: " + appBuild_ + "                           *");
+            bpp::ApplicationTools::displayMessage("*****************************************************************************************************************************************");
+            bpp::ApplicationTools::displayMessage("Execution started on:");
+
+
 
 
         }
