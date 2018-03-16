@@ -716,8 +716,8 @@ void RHomogeneousTreeLikelihood_PIP::setAllIotas() {
 
     if (fabs(mu_.getValue()) < 1e-8) {
         //perror("ERROR in set_iota: mu too small");
-        DLOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu_.getValue();
-
+        //DLOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << ;
+        LOG(WARNING) << "Constraint match at parameter mu, badValue = " << mu_.getValue() << " [ 1e-08; 10000]";
     }
 
     // Compute tau value;
@@ -725,7 +725,9 @@ void RHomogeneousTreeLikelihood_PIP::setAllIotas() {
 
     if (fabs(T_) < 1e-8) {
         //perror("ERROR in set_iota: T too small");
-        DLOG(WARNING) << "[Parameter value] The parameter T is too small! T = " << T_;
+        //DLOG(WARNING) << "[Parameter value] The parameter T is too small! T = " << T_;
+        LOG(WARNING) << "Constraint match at parameter T, badValue = " << T_ << " [ 1e-08; 10000]";
+
     }
 
     for (auto &node:tree_->getNodes()) {
@@ -751,7 +753,7 @@ void RHomogeneousTreeLikelihood_PIP::setAllBetas() {
 
     if (fabs(mu_.getValue()) < 1e-8) {
         //perror("ERROR in set_iota: mu too small");
-        DLOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu_.getValue();
+        LOG(WARNING) << "Constraint match at parameter mu, badValue = " << mu_.getValue() << " [ 1e-08; 10000]";
 
     }
 
@@ -796,8 +798,8 @@ void RHomogeneousTreeLikelihood_PIP::computeNu() {
 
     if (fabs(mu_) < 1e-8) {
         //perror("ERROR in setNu: mu too small");
-        DLOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu_;
-
+        //DLOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu_;
+        LOG(WARNING) << "Constraint match at parameter mu, badValue = " << mu_ << " [ 1e-08; 10000]";
     }
 
     nu_ = lambda_ * (tau_ + 1 / mu_);

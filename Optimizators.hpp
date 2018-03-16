@@ -85,6 +85,49 @@ namespace bpp {
 
 
         /**
+       * @brief Optimize numerical parameters (branch length, substitution model & rate distribution) of a TreeLikelihood function.
+       *
+       * Uses Newton's method for branch length and Brent or BFGS one dimensional method for other parameters.
+       *
+       * A condition over function values is used as a stop condition for the algorithm.
+       *
+       * @see BrentOneDimension, BFGSMultiDimensions
+       *
+       * @param tl             A pointer toward the TreeLikelihood object to optimize.
+       * @param parameters     The list of parameters to optimize. Use tl->getIndependentParameters() in order to estimate all parameters.
+       * @param listener       A pointer toward an optimization listener, if needed.
+       * @param nstep          The number of progressive steps to perform (see NewtonBrentMetaOptimizer). 1 means full precision from start.
+       * @param tolerance      The tolerance to use in the algorithm.
+       * @param tlEvalMax      The maximum number of function evaluations.
+       * @param messageHandler The massage handler.
+       * @param profiler       The profiler.
+       * @param reparametrization Tell if parameters should be transformed in order to remove constraints.
+       *                          This can improve optimization, but is a bit slower.
+       * @param verbose        The verbose level.
+       * @param optMethodDeriv Optimization type for derivable parameters (first or second order derivatives).
+       * @see OPTIMIZATION_NEWTON, OPTIMIZATION_GRADIENT
+       * @param optMethodModel Optimization type for model parameters (Brent or BFGS).
+       * @see OPTIMIZATION_BRENT, OPTIMIZATION_BFGS
+       * @throw Exception any exception thrown by the Optimizer.
+       */
+        static unsigned int optimizeNumericalParametersUsingNumericalDerivatives(
+                DiscreteRatesAcrossSitesTreeLikelihood *tl,
+                const ParameterList &parameters,
+                OptimizationListener *listener = 0,
+                unsigned int nstep = 1,
+                double tolerance = 0.000001,
+                unsigned int tlEvalMax = 1000000,
+                OutputStream *messageHandler = ApplicationTools::message,
+                OutputStream *profiler = ApplicationTools::message,
+                bool reparametrization = false,
+                unsigned int verbose = 1,
+                const std::string &optMethodDeriv = OPTIMIZATION_NEWTON,
+                const std::string &optMethodModel = OPTIMIZATION_BRENT)
+        throw(Exception);
+
+
+
+        /**
        * @brief Build a tree using a distance method.
        *
        * This method estimate a distance matrix using a DistanceEstimation object, and then builds the phylogenetic tree using a AgglomerativeDistanceMethod object.
@@ -123,6 +166,11 @@ namespace bpp {
         static TreeTemplate <Node> *buildDistanceTreeGenericFromDistanceMatrix(DistanceMatrix *dmatrix,
                                                                                AgglomerativeDistanceMethod &reconstructionMethod,
                                                                                unsigned int verbose);
+
+        static std::string OPTIMIZATION_GRADIENT;
+        static std::string OPTIMIZATION_NEWTON;
+        static std::string OPTIMIZATION_BRENT;
+        static std::string OPTIMIZATION_BFGS;
 
         static std::string DISTANCEMETHOD_INIT;
         static std::string DISTANCEMETHOD_PAIRWISE;

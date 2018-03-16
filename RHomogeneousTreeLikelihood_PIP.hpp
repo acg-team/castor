@@ -63,12 +63,13 @@ namespace bpp {
         mutable DRASRTreeLikelihoodData *likelihoodData_;
         mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;
 
-        mutable std::vector<Node *> likelihoodNodes_;
+        mutable std::vector<Node *> likelihoodNodes_;                       //TODO: Change into node-getId()
+
         mutable std::vector<tshlib::VirtualNode *> treesearchNodes_;
 
 
-        mutable std::map<int, std::pair<std::vector<int>, bpp::Node *>> descCountData_;
-        mutable std::map<int, std::pair<std::vector<bool>, bpp::Node *>> setAData_;
+        mutable std::map<int, std::pair<std::vector<int>, bpp::Node *>> descCountData_;     //TODO: Change into node-getId()
+        mutable std::map<int, std::pair<std::vector<bool>, bpp::Node *>> setAData_;         //TODO: Change into node-getId()
         mutable std::map<int, double> iotasData_;
         mutable std::map<int, double> betasData_;
         mutable std::map<int, std::vector<std::vector<double>>> indicatorFun_;
