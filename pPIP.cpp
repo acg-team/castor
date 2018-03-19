@@ -2334,8 +2334,12 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
      */
 
 
+    size_t i = 0;
 
     for (auto &vnode:list_vnode_to_root) {
+
+        ApplicationTools::displayGauge(i, list_vnode_to_root.size());
+        i++;
 
         auto node = tree_->getNode(treemap_.right.at(vnode), false);
         VLOG(1) << "[pPIP] Processing node " << node->getId();

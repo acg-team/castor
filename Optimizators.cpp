@@ -468,18 +468,21 @@ namespace bpp {
                     std::string PAR_optim_topology_branchoptim = ApplicationTools::getStringParameter("optimization.topology.branch_optimizer", params, "Brent", "", true, 0);
 
                     if (verbose) ApplicationTools::displayResult("Topology optimization | Algorithm", PAR_optim_topology_algorithm);
-                    if (verbose) ApplicationTools::displayResult("Topology optimization | Moves", PAR_optim_topology_operations);
-                    if (verbose) ApplicationTools::displayResult("Topology optimization | Branch opt", PAR_optim_topology_branchoptim);
+                    if (verbose) ApplicationTools::displayResult("Topology optimization | Moves class", PAR_optim_topology_operations);
+                    if (verbose) ApplicationTools::displayResult("Topology optimization | BrLen optimisation", PAR_optim_topology_branchoptim);
                     if (verbose) ApplicationTools::displayResult("Topology optimization | Max # cycles", PAR_optim_topology_maxcycles);
-                    if (verbose) ApplicationTools::displayResult("Topology optimization | # start nodes", PAR_optim_topology_hillclimbing_startnodes);
 
-                    if (PAR_optim_topology_operations.find("best-search") != std::string::npos) {
+                    if (verbose && PAR_optim_topology_algorithm == "hillclimbing")
+                        ApplicationTools::displayResult("Topology optimization | # start nodes", PAR_optim_topology_hillclimbing_startnodes);
+
+                    if (PAR_optim_topology_operations == "best-search") {
                         treesearch_operations = tshlib::TreeRearrangmentOperations::classic_Mixed;
-                    } else if (PAR_optim_topology_operations.find("nni-search") != std::string::npos) {
+                    } else if (PAR_optim_topology_operations == "nni-search") {
                         treesearch_operations = tshlib::TreeRearrangmentOperations::classic_NNI;
-                    } else if (PAR_optim_topology_operations.find("spr-search") != std::string::npos) {
+                    } else if (PAR_optim_topology_operations == "spr-search") {
                         treesearch_operations = tshlib::TreeRearrangmentOperations::classic_SPR;
-                    } else {}
+                    } else
+                        throw Exception("Unknown tree rearrangement strategy: " + PAR_optim_topology_operations);
 
                     auto treesearch = new tshlib::TreeSearch;
 
@@ -525,7 +528,7 @@ namespace bpp {
 
         string finalMethod = ApplicationTools::getStringParameter("optimization.final", params, "none", suffix, suffixIsOptional, warn + 1);
         //LOG(INFO) << "[Parameter optimization]\tFinal optimization step: " << finalMethod;
-        if (verbose) ApplicationTools::displayResult("Final optimization step", finalMethod);
+        if (verbose) ApplicationTools::displayResult("\nFinal optimization step", finalMethod);
 
         Optimizer *finalOptimizer = nullptr;
         if (finalMethod == "none") {}
@@ -568,7 +571,10 @@ namespace bpp {
             delete finalOptimizer;
         }
 
-        if (verbose) ApplicationTools::displayResult("\nPerformed ", TextTools::toString(n) + " function evaluations.");
+        if (verbose) ApplicationTools::displayResult("\nPerformed", TextTools::toString(n) + " function evaluations.");
+
+        if (verbose) ApplicationTools::displayResult("Likelihood after num/top optimisation", -tl->getValue());
+
 
         ///////////////////////////
         // Alignment optimization
@@ -587,7 +593,6 @@ namespace bpp {
         }
 
 
-        if (verbose) ApplicationTools::displayResult("Final likelihood", -tl->getValue());
 
         if (backupFile != "none") {
             string bf = backupFile + ".def";

@@ -605,7 +605,6 @@ std::vector<double> MatrixBppUtils::matrixVectorProd(bpp::RowMatrix<double> &M, 
 
 bpp::DistanceMatrix *InputUtils::parseDistanceMatrix(std::string filepath) {
 
-
     std::ifstream inFile;
     inFile.open(filepath);
 
@@ -656,8 +655,8 @@ bpp::DistanceMatrix *InputUtils::parseDistanceMatrix(std::string filepath) {
         }
     }
 
-
     return outmatrix;
+
 }
 
 void OutputUtils::printParametersLikelihood(bpp::AbstractHomogeneousTreeLikelihood *tl) {
