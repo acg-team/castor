@@ -63,7 +63,12 @@
 
 using namespace bpp;
 
-pPIP::pPIP(tshlib::Utree *utree, bpp::Tree *tree, bpp::SubstitutionModel *smodel, UtreeBppUtils::treemap &inTreeMap, bpp::SequenceContainer *sequences, bpp::DiscreteDistribution *rDist) {
+pPIP::pPIP(tshlib::Utree *utree,
+           bpp::Tree *tree,
+           bpp::SubstitutionModel *smodel,
+           UtreeBppUtils::treemap &inTreeMap,
+           bpp::SequenceContainer *sequences,
+           bpp::DiscreteDistribution *rDist) {
 
     utree_ = utree;
     _setTree(tree);
@@ -81,25 +86,26 @@ pPIP::pPIP(tshlib::Utree *utree, bpp::Tree *tree, bpp::SubstitutionModel *smodel
 void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
 
     int dimension = nodeList.size();
+    int numCatg=rDist_->getNumberOfCategories();
 
     score_.resize(dimension);
     score_.assign(dimension, -std::numeric_limits<double>::infinity());
+
     traceback_path_.resize(dimension);
-    prNode_.resize(dimension);
+
     seqNames_.resize(dimension);
     MSA_.resize(dimension);
-    lambda_.resize(rDist_->getCategories().size());
-    mu_.resize(rDist_->getCategories().size());
-    nu_.resize(rDist_->getCategories().size());
-
+    lambda_.resize(numCatg);
+    mu_.resize(numCatg);
+    nu_.resize(numCatg);
 
     // Initialise iotas and betas maps
     for (auto &vnode:nodeList) {
         int nodeID = treemap_.right.at(vnode);
 
-        iotasNode_[nodeID].resize(rDist_->getCategories().size());
-        betasNode_[nodeID].resize(rDist_->getCategories().size());
-
+        iotasNode_[nodeID].resize(numCatg);
+        betasNode_[nodeID].resize(numCatg);
+        prNode_[nodeID].resize(numCatg);
     }
 
 
@@ -575,21 +581,16 @@ void pPIP::setMSAleaves(bpp::Node *node,const std::string &sequence){
 }
 void pPIP::_setNu() {
 
-
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
-
+    for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
         nu_.at(i) = lambda_.at(i) * (tau_ + 1 / mu_.at(i));
     }
-
 
 }
 void pPIP::_setLambda(double lambda){
 
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
-
+    for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
         lambda_.at(i) = lambda * rDist_->getCategories().at(i);
     }
-
 
     //lambda_=lambda;
 }
@@ -600,7 +601,6 @@ void pPIP::_setMu(double mu){
     }
 
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
-
         mu_.at(i) = mu * rDist_->getCategories().at(i);
     }
 
@@ -652,7 +652,7 @@ void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
     double T;
 
     if (local_root) {
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
             T = tau_ + 1 / mu_.at(i);
 
             if (fabs(T) < SMALL_DOUBLE) {
@@ -663,13 +663,13 @@ void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
 
         }
     }else{
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
             T = tau_ + 1 / mu_.at(i);
 
             if (fabs(T) < SMALL_DOUBLE) {
                 PLOG(WARNING) << "ERROR in set_iota: T too small";
             }
-            iotasNode_[node->getId()][i] = node->getDistanceToFather() / T;
+            iotasNode_[node->getId()][i] = node->getDistanceToFather() * rDist_->getCategory(i) / T;
         }
     }
 
@@ -701,13 +701,13 @@ void pPIP::_setAllBetas(bpp::Node *node,bool local_root) {
 
         for (int i = 0; i < rDist_->getCategories().size(); i++) {
 
-            double muT = mu_.at(i) * node->getDistanceToFather();
+            double muT = mu_.at(i) * node->getDistanceToFather() * rDist_->getCategory(i);
 
             if (fabs(muT) < SMALL_DOUBLE) {
                 perror("ERROR mu * T is too small");
             }
 
-            betasNode_[node->getId()][i] = (1.0 - exp(-mu_.at(i) * node->getDistanceToFather())) / muT;
+            betasNode_[node->getId()][i] = (1.0 - exp(-mu_.at(i) * node->getDistanceToFather() * rDist_->getCategory(i) )) / muT;
         }
     }
 
@@ -765,7 +765,9 @@ void pPIP::_getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNod
 
         } else {
             //prNode_.at(node->getId()) = MatrixBppUtils::Eigen2Matrix(vnode->getPr());
-            prNode_.at(node->getId()) = substModel_->getPij_t(node->getDistanceToFather());
+            for(int i=0;i<rDist_->getNumberOfCategories();i++) {
+                prNode_[node->getId()].at(i)=substModel_->getPij_t(node->getDistanceToFather() * rDist_->getCategory(i));
+            }
         }
 
     }
@@ -788,7 +790,7 @@ bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn_t &s, unsigned long &idx){
 
     return fv;
 }
-bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx){
+bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx,int catg){
     bpp::ColMatrix<double> fv;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
@@ -816,11 +818,11 @@ bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned lo
         //int sonLeftID = sons.at(LEFT)->getId();
         //int sonRightID = sons.at(RIGHT)->getId();
 
-        fvL = go_down(sonLeft, s, idx);
-        fvR = go_down(sonRight, s, idx);
+        fvL = go_down(sonLeft, s, idx, catg);
+        fvR = go_down(sonRight, s, idx, catg);
 
-        bpp::MatrixTools::mult(prNode_.at(sonLeftID), fvL, PrfvL);
-        bpp::MatrixTools::mult(prNode_.at(sonRightID), fvR, PrfvR);
+        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
         bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
     }
@@ -857,7 +859,7 @@ void pPIP::allgaps(bpp::Node *node,std::string &s, unsigned long &idx,bool &flag
 }
 double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s){
 
-    double pr=0;
+    double pr;
     double pL=0;
     double pR=0;
     unsigned long idx;
@@ -869,12 +871,12 @@ double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s){
     int nodeID = node->getId();
 
     if(node->isLeaf()){
-        idx=0;
-        fv=go_down(node,s,idx);
-
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
-
+        pr=0;
         for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            idx=0;
+            fv=go_down(node,s,idx,i);
+
+            fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
             pr += iotasNode_[nodeID][i] - iotasNode_[nodeID][i] * betasNode_[nodeID][i] + iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
 
@@ -892,13 +894,12 @@ double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s){
         int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-
-        idx=0;
-        fv=go_down(node,s,idx);
-
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
-
+        pr=0;
         for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            idx=0;
+            fv=go_down(node,s,idx,i);
+
+            fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
             pr += iotasNode_[nodeID][i] - iotasNode_[nodeID][i] * betasNode_[nodeID][i] + iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
         }
@@ -925,7 +926,7 @@ double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s){
 }
 double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
 
-    double pr = 0;
+    double pr;
     unsigned long idx;
     bpp::ColMatrix<double> fv;
     bpp::ColMatrix<double> fvL;
@@ -937,12 +938,12 @@ double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
     int nodeID = node->getId();
 
     if(node->isLeaf()){
-
-        idx=0;
-        fv=go_down(node,s,idx);
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
-
+        pr = 0;
         for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            idx=0;
+            fv=go_down(node,s,idx,i);
+            fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
             pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
         }
         return pr;
@@ -958,13 +959,12 @@ double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
         int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-
-
-        idx=0;
-        fv=go_down(node,s,idx);
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
-
+        pr = 0;
         for (int i = 0; i < rDist_->getCategories().size(); i++) {
+            idx=0;
+            fv=go_down(node,s,idx,i);
+            fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
             pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
         }
 
@@ -995,7 +995,7 @@ double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
 }
 double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR){
     double fv0;
-    double pr = 0;
+    double pr;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     bpp::ColMatrix<double> PrfvL;
@@ -1017,23 +1017,22 @@ double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolu
     //int sonLeftID = sons.at(LEFT)->getId();
     //int sonRightID = sons.at(RIGHT)->getId();
 
-    idx=0;
-    fvL = go_down(sonLeft, sL, idx);
-
-    idx=0;
-    fvR = go_down(sonRight, sR, idx);
-
-    bpp::MatrixTools::mult(prNode_.at(sonLeftID), fvL, PrfvL);
-    bpp::MatrixTools::mult(prNode_.at(sonRightID), fvR, PrfvR);
-    bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
-
-    fv0 = MatrixBppUtils::dotProd(fv, pi_);
-
-    double pL,pR;
-    double partialLK;
-
-
+    pr = 0;
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        idx=0;
+        fvL = go_down(sonLeft, sL, idx, i);
+
+        idx=0;
+        fvR = go_down(sonRight, sR, idx, i);
+
+        bpp::MatrixTools::mult(prNode_[sonLeftID].at(i), fvL, PrfvL);
+        bpp::MatrixTools::mult(prNode_[sonRightID].at(i), fvR, PrfvR);
+        bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
+
+        fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
+        double pL,pR;
+        double partialLK;
 
         partialLK = iotasNode_[node->getId()][i] * fv0 * rDist_->getCategories().at(i);
         pL = compute_lk_gap_down(sonLeft, sL);
@@ -1054,7 +1053,7 @@ double pPIP::computeLK_M_local(double valM,
                                std::map<MSAcolumn_t, double> &lkM){
 
 
-    double pr = 0;
+    double pr;
     double val;
 
     MSAcolumn_t s;
@@ -1088,31 +1087,33 @@ double pPIP::computeLK_M_local(double valM,
 
     auto it=lkM.find(s);
     if(it == lkM.end()){
-        idx=0;
-        fvL = go_down(sonLeft, sL, idx);
-
-        idx=0;
-        fvR = go_down(sonRight, sR, idx);
-
-        bpp::MatrixTools::mult(prNode_.at(sonLeftID), fvL, PrfvL);
-        bpp::MatrixTools::mult(prNode_.at(sonRightID), fvR, PrfvR);
-        bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
-
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
+        pr = 0;
         for (int i = 0; i < rDist_->getCategories().size(); i++) {
-            pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+            idx=0;
+            fvL = go_down(sonLeft, sL, idx, i);
+
+            idx=0;
+            fvR = go_down(sonRight, sR, idx, i);
+
+            bpp::MatrixTools::mult(prNode_[sonLeftID].at(i), fvL, PrfvL);
+            bpp::MatrixTools::mult(prNode_[sonRightID].at(i), fvR, PrfvR);
+            bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
+
+            fv0 = MatrixBppUtils::dotProd(fv, pi_);
+            for (int i = 0; i < rDist_->getCategories().size(); i++) {
+                pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+            }
+
+            pr += log((long double)pr);
         }
-
-        pr=log((long double)pr);
-
         lkM[s]=pr;
 
     }else{
         pr=it->second;
     }
-    //TODO: check the sum of logs for discrete categories
+
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        val += -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+        val += (rDist_->getProbability((size_t)i)) -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
     }
 
     return val;
@@ -1127,7 +1128,7 @@ double pPIP::computeLK_X_local(double valM,
                                std::map<MSAcolumn_t, double> &lkX){
 
 
-    double pr = 0;
+    double pr;
     double val;
 
     MSAcolumn_t s;
@@ -1159,42 +1160,45 @@ double pPIP::computeLK_X_local(double valM,
 
     auto it=lkX.find(s);
     if(it == lkX.end()){
-        idx=0;
-        fvL = go_down(sonLeft, sL, idx);
-
-        idx=0;
-        fvR = go_down(sonRight, col_gap_R, idx);
-
-        bpp::MatrixTools::mult(prNode_.at(sonLeftID), fvL, PrfvL);
-        bpp::MatrixTools::mult(prNode_.at(sonRightID), fvR, PrfvR);
-        bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
-
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
-
-        //pr=iotaNode_.at(nodeID)*betaNode_.at(nodeID)*fv0;
-
-
+        pr = 0;
         for (int i = 0; i < rDist_->getCategories().size(); i++) {
-            pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+            idx = 0;
+            fvL = go_down(sonLeft, sL, idx, i);
+
+            idx = 0;
+            fvR = go_down(sonRight, col_gap_R, idx, i);
+
+            bpp::MatrixTools::mult(prNode_[sonLeftID].at(i), fvL, PrfvL);
+            bpp::MatrixTools::mult(prNode_[sonRightID].at(i), fvR, PrfvR);
+            bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+            fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
+            //pr=iotaNode_.at(nodeID)*betaNode_.at(nodeID)*fv0;
+
+
+            for (int i = 0; i < rDist_->getCategories().size(); i++) {
+                pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+            }
+
+            double pL;
+
+            pL = compute_lk_down(sonLeft, sL);
+
+            pr += pL;
+
+            pr += log((long double) pr);
         }
 
-        double pL;
+        lkX[s] = pr;
 
-        pL = compute_lk_down(sonLeft, sL);
-
-        pr+=pL;
-
-        pr=log((long double)pr);
-
-        lkX[s]=pr;
 
     }else{
         pr=it->second;
     }
 
-    //TODO: check the sum of logs for discrete categories
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        val += -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+        val += (rDist_->getProbability((size_t)i)) -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
     }
 
 
@@ -1210,7 +1214,7 @@ double pPIP::computeLK_Y_local(double valM,
                                std::map<MSAcolumn_t, double> &lkY){
 
 
-    double pr = 0;
+    double pr;
     double val;
 
     MSAcolumn_t s;
@@ -1242,44 +1246,46 @@ double pPIP::computeLK_Y_local(double valM,
 
     auto it=lkY.find(s);
     if(it == lkY.end()){
-        idx=0;
-        fvL = go_down(sonLeft, col_gap_L, idx);
-
-        idx=0;
-        fvR = go_down(sonRight, sR, idx);
-
-        bpp::MatrixTools::mult(prNode_.at(sonLeftID), fvL, PrfvL);
-        bpp::MatrixTools::mult(prNode_.at(sonRightID), fvR, PrfvR);
-        bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
-
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
-
-        //pr=iotaNode_.at(nodeID)*betaNode_.at(nodeID)*fv0;
-
+        pr = 0;
         for (int i = 0; i < rDist_->getCategories().size(); i++) {
-            pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+            idx = 0;
+            fvL = go_down(sonLeft, col_gap_L, idx, i);
+
+            idx = 0;
+            fvR = go_down(sonRight, sR, idx, i);
+
+            bpp::MatrixTools::mult(prNode_[sonLeftID].at(i), fvL, PrfvL);
+            bpp::MatrixTools::mult(prNode_[sonRightID].at(i), fvR, PrfvR);
+            bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+            fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
+            //pr=iotaNode_.at(nodeID)*betaNode_.at(nodeID)*fv0;
+
+            for (int i = 0; i < rDist_->getCategories().size(); i++) {
+                pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+            }
+
+
+            double pR;
+
+
+            pR = compute_lk_down(sonRight, sR);
+
+            pr += pR;
+
+            pr += log((long double) pr);
         }
 
+        lkY[s] = pr;
 
-        double pR;
-
-
-        pR = compute_lk_down(sonRight, sR);
-
-        pr+=pR;
-
-        pr=log((long double)pr);
-
-        lkY[s]=pr;
 
     }else{
         pr=it->second;
     }
 
-
-    //TODO: check the sum of logs for discrete categories
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        val += -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+        val += (rDist_->getProbability((size_t)i)) -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
     }
 
 
@@ -2317,6 +2323,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
 
 
     _reserve(list_vnode_to_root);
+
     _setLambda(substModel_->getParameter("lambda").getValue());
     _setMu(substModel_->getParameter("mu").getValue());
     _setPi(substModel_->getFrequencies());

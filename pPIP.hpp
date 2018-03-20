@@ -102,7 +102,8 @@ namespace bpp {
         std::map<unsigned long, std::vector<double>> betasNode_;
         std::vector<double> iotaNode_;
         std::vector<double> betaNode_;
-        std::vector<bpp::RowMatrix<double> > prNode_;
+        //std::vector<bpp::RowMatrix<double> > prNode_;
+        std::map<unsigned long, std::vector<bpp::RowMatrix<double> > >prNode_;
         std::vector<std::vector<std::string> > seqNames_;
         std::vector<MSA_t> MSA_; //MSA at each node
         std::vector<MSAensemble_t> MSAensemble_; //MSAensemble at each node
@@ -199,7 +200,7 @@ namespace bpp {
 
         bpp::ColMatrix<double> fv_observed(MSAcolumn_t &s, unsigned long &idx);
 
-        bpp::ColMatrix<double> go_down(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx);
+        bpp::ColMatrix<double> go_down(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx,int catg);
 
         void allgaps(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx,bool &flag);
 
