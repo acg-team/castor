@@ -41,17 +41,35 @@
  *
  * @see For more information visit: 
  */
+#include <Bpp/Numeric/Function/DownhillSimplexMethod.h>
+#include <Bpp/Numeric/Function/PowellMultiDimensions.h>
+#include <Bpp/Numeric/Function/BfgsMultiDimensions.h>
+#include <Bpp/Numeric/Function/ConjugateGradientMultiDimensions.h>
+#include <Bpp/Numeric/Function/TwoPointsNumericalDerivative.h>
+#include <Bpp/Numeric/Function/ThreePointsNumericalDerivative.h>
+#include <Bpp/Numeric/Function/FivePointsNumericalDerivative.h>
+
 #include "TSHHomogeneousTreeLikelihood.hpp"
 
 using namespace bpp;
 
+std::string TSHHomogeneousTreeLikelihood::OPTIMIZATION_NEWTON = "newton";
+std::string TSHHomogeneousTreeLikelihood::OPTIMIZATION_GRADIENT = "gradient";
+std::string TSHHomogeneousTreeLikelihood::OPTIMIZATION_BRENT = "Brent";
+std::string TSHHomogeneousTreeLikelihood::OPTIMIZATION_BFGS = "BFGS";
 
 TSHHomogeneousTreeLikelihood::TSHHomogeneousTreeLikelihood(AbstractHomogeneousTreeLikelihood *lk,
                                                            const SiteContainer &data,
                                                            TransitionModel *model,
                                                            DiscreteDistribution *rDist,
                                                            tshlib::Utree *inUtree,
-                                                           UtreeBppUtils::treemap &inTreeMap)
+                                                           UtreeBppUtils::treemap &inTreeMap,
+                                                           bool optNumericalDerivatives,
+                                                           std::map<std::string, std::string> &params,
+                                                           const std::string &suffix,
+                                                           bool suffixIsOptional,
+                                                           bool verbose,
+                                                           int warn)
 throw(Exception) :
         RHomogeneousTreeLikelihood(lk->getTree(), model, rDist, false, false),
         optimiser_(0),
@@ -61,13 +79,60 @@ throw(Exception) :
     // Import the likelihood function
     likelihoodFunc_ = lk;
 
-    // Initialise the optimiser
-    optimiser_ = new BfgsMultiDimensions(lk);
-    optimiser_->setConstraintPolicy(AutoParameter::CONSTRAINTS_AUTO);
-    optimiser_->setProfiler(new StdOut);
-    optimiser_->setMessageHandler(new StdOut);
-    optimiser_->setVerbose(0);
+    // -------------------------------------------------------------------------
+    // Optimisation algorithm
+    std::string optBrLenMethod = ApplicationTools::getStringParameter("optimization.topology.brlen_optimization", params, "Brent", suffix, suffixIsOptional, warn);
+    optMethodModel_ = optBrLenMethod;
 
+    // -------------------------------------------------------------------------
+    // Message handler
+    std::string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", params, false, false, suffix, suffixIsOptional, "none", warn + 1);
+    auto *messageHandler = static_cast<OutputStream *>((mhPath == "none") ? 0 : (mhPath == "std") ? ApplicationTools::message : new StlOutputStream(
+            new std::ofstream(mhPath.c_str(), std::ios::app)));
+
+    // -------------------------------------------------------------------------
+    // Profiler
+    std::string prPath = ApplicationTools::getAFilePath("optimization.profiler", params, false, false, suffix, suffixIsOptional, "none", warn + 1);
+    auto *profiler = static_cast<OutputStream *>((prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message : new StlOutputStream(
+            new std::ofstream(prPath.c_str(), std::ios::app)));
+    if (profiler) profiler->setPrecision(20);
+
+
+    auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", params, 1000000, suffix, suffixIsOptional, warn + 1);
+
+
+    if (optNumericalDerivatives) {
+
+        AbstractNumericalDerivative *dn_3points = new ThreePointsNumericalDerivative(likelihoodFunc_);
+        AbstractNumericalDerivative *dn_5points = new FivePointsNumericalDerivative(likelihoodFunc_);
+
+        // Initialise branch optimiser
+        if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_BRENT) {
+            optimiser_ = new SimpleMultiDimensions(dn_5points);
+        } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_BFGS) {
+            optimiser_ = new BfgsMultiDimensions(dn_5points);
+        } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_NEWTON) {
+            optimiser_ = new PseudoNewtonOptimizer(dn_3points);
+        } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_GRADIENT) {
+            optimiser_ = new ConjugateGradientMultiDimensions(dn_5points);
+        }
+    } else {
+        // Initialise branch optimiser
+        if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_BRENT) {
+            optimiser_ = new SimpleMultiDimensions(lk);
+        } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_BFGS) {
+            optimiser_ = new BfgsMultiDimensions(lk);
+        } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_NEWTON) {
+            optimiser_ = new PseudoNewtonOptimizer(lk);
+        } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_GRADIENT) {
+            optimiser_ = new ConjugateGradientMultiDimensions(lk);
+        }
+    }
+    optimiser_->setConstraintPolicy(AutoParameter::CONSTRAINTS_AUTO);
+    optimiser_->setProfiler(profiler);
+    optimiser_->setMessageHandler(messageHandler);
+    optimiser_->setMaximumNumberOfEvaluations(nbEvalMax);
+    optimiser_->setVerbose(1);
 }
 
 TSHHomogeneousTreeLikelihood::TSHHomogeneousTreeLikelihood(const TSHHomogeneousTreeLikelihood &lik) :
@@ -76,13 +141,35 @@ TSHHomogeneousTreeLikelihood::TSHHomogeneousTreeLikelihood(const TSHHomogeneousT
         utree_(),
         treemap_(lik.getTreeMap()) {
 
-    optimiser_ = dynamic_cast<BfgsMultiDimensions *>(lik.optimiser_->clone());
+    //optimiser_ = dynamic_cast<BfgsMultiDimensions *>(lik.optimiser_->clone());
+
+    if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_BRENT) {
+        optimiser_ = dynamic_cast<SimpleMultiDimensions *>(lik.optimiser_->clone());
+    } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_BFGS) {
+        optimiser_ = dynamic_cast<BfgsMultiDimensions *>(lik.optimiser_->clone());
+    } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_NEWTON) {
+        optimiser_ = dynamic_cast<PseudoNewtonOptimizer *>(lik.optimiser_->clone());
+    } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_GRADIENT) {
+        optimiser_ = dynamic_cast<ConjugateGradientMultiDimensions *>(lik.optimiser_->clone());
+    }
+
 };
 
 TSHHomogeneousTreeLikelihood &TSHHomogeneousTreeLikelihood::operator=(const TSHHomogeneousTreeLikelihood &lik) {
     RHomogeneousTreeLikelihood::operator=(lik);
     if (optimiser_) delete optimiser_;
-    optimiser_ = dynamic_cast<BfgsMultiDimensions *>(lik.optimiser_->clone());
+
+    //optimiser_ = dynamic_cast<BfgsMultiDimensions *>(lik.optimiser_->clone());
+
+    if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_BRENT) {
+        optimiser_ = dynamic_cast<SimpleMultiDimensions *>(lik.optimiser_->clone());
+    } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_BFGS) {
+        optimiser_ = dynamic_cast<BfgsMultiDimensions *>(lik.optimiser_->clone());
+    } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_NEWTON) {
+        optimiser_ = dynamic_cast<PseudoNewtonOptimizer *>(lik.optimiser_->clone());
+    } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_GRADIENT) {
+        optimiser_ = dynamic_cast<ConjugateGradientMultiDimensions *>(lik.optimiser_->clone());
+    }
 
     return *this;
 }
@@ -186,14 +273,46 @@ void TSHHomogeneousTreeLikelihood::optimiseBranches(std::vector<tshlib::VirtualN
     likelihoodFunc_->setParameters(parameters);
 
     // Re-estimate branch length:
-    optimiser_->init(parameters);
-    optimiser_->doInit(parameters);
-    optimiser_->getStopCondition()->setTolerance(0.001);
-    optimiser_->optimize();
+    if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_BRENT) {
+        auto optimiserInstance = dynamic_cast<SimpleMultiDimensions *>(optimiser_);
+        optimiserInstance->init(parameters);
+        optimiserInstance->doInit(parameters);
+        optimiserInstance->getStopCondition()->setTolerance(0.001);
+        optimiserInstance->optimize();
 
-    // set parameters on the likelihood function (inherited)
-    likelihoodFunc_->setParameters(optimiser_->getParameters());
+        // set parameters on the likelihood function (inherited)
+        likelihoodFunc_->setParameters(optimiserInstance->getParameters());
 
+    } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_BFGS) {
+        auto optimiserInstance = dynamic_cast<BfgsMultiDimensions *>(optimiser_);
+        optimiserInstance->init(parameters);
+        optimiserInstance->doInit(parameters);
+        optimiserInstance->getStopCondition()->setTolerance(0.001);
+        optimiserInstance->optimize();
+
+        // set parameters on the likelihood function (inherited)
+        likelihoodFunc_->setParameters(optimiserInstance->getParameters());
+
+    } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_NEWTON) {
+        auto optimiserInstance = dynamic_cast<PseudoNewtonOptimizer *>(optimiser_);
+        optimiserInstance->init(parameters);
+        optimiserInstance->doInit(parameters);
+        optimiserInstance->getStopCondition()->setTolerance(0.001);
+        optimiserInstance->optimize();
+
+        // set parameters on the likelihood function (inherited)
+        likelihoodFunc_->setParameters(optimiserInstance->getParameters());
+
+    } else if (optMethodModel_ == TSHHomogeneousTreeLikelihood::OPTIMIZATION_GRADIENT) {
+        auto optimiserInstance = dynamic_cast<ConjugateGradientMultiDimensions *>(optimiser_);
+        optimiserInstance->init(parameters);
+        optimiserInstance->doInit(parameters);
+        optimiserInstance->getStopCondition()->setTolerance(0.001);
+        optimiserInstance->optimize();
+
+        // set parameters on the likelihood function (inherited)
+        likelihoodFunc_->setParameters(optimiserInstance->getParameters());
+    }
 
 }
 

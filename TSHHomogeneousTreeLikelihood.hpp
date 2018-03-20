@@ -67,17 +67,25 @@ namespace bpp {
          * @brief Optimizer used for testing TSH moves.
          */
 
-        BfgsMultiDimensions *optimiser_;
+        //BfgsMultiDimensions *optimiser_;
+        AbstractOptimizer *optimiser_;
         AbstractHomogeneousTreeLikelihood *likelihoodFunc_;
         const UtreeBppUtils::treemap &treemap_;
         mutable tshlib::Utree *utree_;
-        mutable std::vector<DRASRTreeLikelihoodData *> referenceLikelihoodComponents_;
         mutable std::vector<Node *> likelihoodNodes_;
         mutable DRASRTreeLikelihoodData *likelihoodData_;
+        mutable DRASRTreeLikelihoodData *likelihoodDataRearrangement_;
+        std::string optMethodModel_;
+
         VVVdouble *pxy_;
 
-
     public:
+
+        static std::string OPTIMIZATION_GRADIENT;
+        static std::string OPTIMIZATION_NEWTON;
+        static std::string OPTIMIZATION_BRENT;
+        static std::string OPTIMIZATION_BFGS;
+
         /**
          * @brief Build a new NNIHomogeneousTreeLikelihood object.
          *
@@ -94,7 +102,13 @@ namespace bpp {
                                      TransitionModel *model,
                                      DiscreteDistribution *rDist,
                                      tshlib::Utree *inUtree,
-                                     UtreeBppUtils::treemap &inTreeMap)
+                                     UtreeBppUtils::treemap &inTreeMap,
+                                     bool optNumericalDerivatives,
+                                     std::map<std::string, std::string> &params,
+                                     const std::string &suffix = "",
+                                     bool suffixIsOptional = true,
+                                     bool verbose = true,
+                                     int warn = 1)
         throw(Exception);
 
         /**

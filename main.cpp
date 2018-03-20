@@ -628,7 +628,6 @@ int main(int argc, char *argv[]) {
 
         ApplicationTools::displayMessage("\n[Parameter sanity check]");
 
-
         //Listing parameters
         string paramNameFile = ApplicationTools::getAFilePath("output.parameter_names.file", jatiapp.getParams(), false, false, "", true, "none", 1);
         if (paramNameFile != "none") {
@@ -639,8 +638,6 @@ int main(int argc, char *argv[]) {
                 pnfile << pl[i].getName() << endl;
             }
             pnfile.close();
-            cout << "BppML's done." << endl;
-            exit(0);
         }
 
         //Check initial likelihood:
@@ -715,12 +712,19 @@ int main(int argc, char *argv[]) {
 
         ApplicationTools::displayMessage("\n[Executing numerical parameters and topology optimization]");
 
-        auto ntl = new bpp::TSHHomogeneousTreeLikelihood(tl, (*tl->getData()), (tl->getModel()), (tl->getRateDistribution()), utree, tm);
+        auto ntl = new bpp::TSHHomogeneousTreeLikelihood(tl,
+                                                         (*tl->getData()),
+                                                         (tl->getModel()),
+                                                         (tl->getRateDistribution()),
+                                                         utree,
+                                                         tm,
+                                                         PAR_model_indels,
+                                                         jatiapp.getParams(),
+                                                         "",
+                                                         true,
+                                                         true,
+                                                         0);
         tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(ntl, ntl->getParameters(), jatiapp.getParams(), "", true, true, 0));
-
-        //OutputUtils::printParametersLikelihood(tl);
-
-
 
         /////////////////////////
         // OUTPUT
@@ -737,7 +741,7 @@ int main(int argc, char *argv[]) {
         PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
 
         // Write parameters to screen:
-        ApplicationTools::displayResult("Log likelihood", TextTools::toString(-tl->getValue(), 15));
+        ApplicationTools::displayResult("Log likelihood", TextTools::toString(-tl->getLogLikelihood(), 15));
         parameters = tl->getSubstitutionModelParameters();
         for (size_t i = 0; i < parameters.size(); i++) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));

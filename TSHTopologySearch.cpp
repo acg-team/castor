@@ -366,16 +366,18 @@ double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
             ApplicationTools::displayMessage(taskDescription.str());
 
 
-            std::vector<tshlib::VirtualNode *> listNodesWithinPath;
+            std::vector<tshlib::VirtualNode *> listNodesWithinPath, updatedNodesWithinPath;
             listNodesWithinPath = utree->computePathBetweenNodes(bestMove->getSourceNode(), bestMove->getTargetNode());
-            listNodesWithinPath.push_back(utree->rootnode);
+            updatedNodesWithinPath = candidateMoves->updatePathBetweenNodes(bestMove->move_id, listNodesWithinPath);
+            updatedNodesWithinPath.push_back(utree->rootnode);
 
             // Commit final move on the topology
             candidateMoves->commitMove(bestMove->move_id);
             DVLOG(1) << "utree after commit " << utree->printTreeNewick(true);
 
-            likelihoodFunc->topologyChange(listNodesWithinPath, utree);
-
+            ApplicationTools::displayTask("Optimising " + TextTools::toString(updatedNodesWithinPath.size()) + " branches");
+            likelihoodFunc->topologyChange(updatedNodesWithinPath, utree);
+            ApplicationTools::displayTaskDone();
 
             bpp::Newick treeWriter;
             bpp::TreeTemplate<Node> ttree(likelihoodFunc->getLikelihoodFunction()->getTree());

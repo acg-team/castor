@@ -48,10 +48,10 @@
 #include <Bpp/Io/BppODiscreteDistributionFormat.h>
 #include <Bpp/Text/KeyvalTools.h>
 #include <Bpp/Numeric/AutoParameter.h>
+#include <Bpp/Numeric/Function/ReparametrizationFunctionWrapper.h>
 #include <Bpp/Numeric/Function/DownhillSimplexMethod.h>
 #include <Bpp/Numeric/Function/PowellMultiDimensions.h>
 #include <Bpp/Numeric/Function/BfgsMultiDimensions.h>
-#include <Bpp/Numeric/Function/ReparametrizationFunctionWrapper.h>
 #include <Bpp/Numeric/Function/ConjugateGradientMultiDimensions.h>
 #include <Bpp/Numeric/Function/TwoPointsNumericalDerivative.h>
 #include <Bpp/Numeric/Function/ThreePointsNumericalDerivative.h>
@@ -126,7 +126,7 @@ namespace bpp {
         // Profiler
         std::string prPath = ApplicationTools::getAFilePath("optimization.profiler", params, false, false, suffix, suffixIsOptional, "none", warn + 1);
         auto *profiler = static_cast<OutputStream *>((prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message : new StlOutputStream(
-                new std::ofstream(prPath.c_str(), std::ios::out)));
+                new std::ofstream(prPath.c_str(), std::ios::app)));
         if (profiler) profiler->setPrecision(20);
 
         if (verbose) ApplicationTools::displayResult("Optimizator profiler", prPath);
@@ -465,7 +465,7 @@ namespace bpp {
                     std::string PAR_optim_topology_operations = ApplicationTools::getStringParameter("optimization.topology.algorithm.operations", params, "best-search", "", true, true);
                     int PAR_optim_topology_maxcycles = ApplicationTools::getIntParameter("optimization.topology.algorithm.maxcycles", params, 1, "", true, 0);
                     int PAR_optim_topology_hillclimbing_startnodes = ApplicationTools::getIntParameter("optimization.topology.algorithm.hillclimbing.startnodes", params, 1, "", true, 0);
-                    std::string PAR_optim_topology_branchoptim = ApplicationTools::getStringParameter("optimization.topology.branch_optimizer", params, "Brent", "", true, 0);
+                    std::string PAR_optim_topology_branchoptim = ApplicationTools::getStringParameter("optimization.topology.brlen_optimization", params, "Brent", "", true, 0);
 
                     if (verbose) ApplicationTools::displayResult("Topology optimization | Algorithm", PAR_optim_topology_algorithm);
                     if (verbose) ApplicationTools::displayResult("Topology optimization | Moves class", PAR_optim_topology_operations);
@@ -500,7 +500,7 @@ namespace bpp {
                     // Get the likelihood function
                     tl = treesearch->getLikelihoodFunc()->getLikelihoodFunction();
 
-                    DLOG(INFO) << "[TSH Cycle] Likelihood after tree-search lk=" << tl->getLogLikelihood();
+                    LOG(INFO) << "[TSH Cycle] Likelihood after tree-search lk=" << std::setprecision(18) << tl->getLogLikelihood();
 
                 }
                 //OutputUtils::printParametersLikelihood(flk);
@@ -533,14 +533,14 @@ namespace bpp {
         Optimizer *finalOptimizer = nullptr;
         if (finalMethod == "none") {}
         else if (finalMethod == "simplex") {
-            finalOptimizer = new DownhillSimplexMethod(tl);
+            finalOptimizer = new DownhillSimplexMethod(flk->getLikelihoodFunction());
         } else if (finalMethod == "powell") {
-            finalOptimizer = new PowellMultiDimensions(tl);
+            finalOptimizer = new PowellMultiDimensions(flk->getLikelihoodFunction());
         } else if (finalMethod == "bfgs") {
-            parametersToEstimate.matchParametersValues(tl->getParameters());
+            parametersToEstimate.matchParametersValues(flk->getLikelihoodFunction()->getParameters());
 
             n = OptimizationTools::optimizeNumericalParameters(
-                    dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl),
+                    dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(flk->getLikelihoodFunction()),
                     parametersToEstimate,
                     backupListener.get(),
                     100,
@@ -573,7 +573,7 @@ namespace bpp {
 
         if (verbose) ApplicationTools::displayResult("\nPerformed", TextTools::toString(n) + " function evaluations.");
 
-        if (verbose) ApplicationTools::displayResult("Likelihood after num/top optimisation", -tl->getValue());
+        if (verbose) ApplicationTools::displayResult("Likelihood after num/top optimisation", TextTools::toString(-flk->getLikelihoodFunction()->getValue(), 15));
 
 
         ///////////////////////////
@@ -598,7 +598,7 @@ namespace bpp {
             string bf = backupFile + ".def";
             rename(backupFile.c_str(), bf.c_str());
         }
-        return tl;
+        return flk;
     }
 
     std::string Optimizators::DISTANCEMETHOD_INIT = "init";

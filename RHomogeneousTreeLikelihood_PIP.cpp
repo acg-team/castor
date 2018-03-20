@@ -616,13 +616,13 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
 
     if (onTopologyChange) {
         // Set the likelihoodNodeList to the postorder one
-        std::vector<Node *> ponl = getNodeListPostOrder(tree_->getRootNode());
-        setLikelihoodNodes(ponl);
+        //std::vector<Node *> ponl = getNodeListPostOrder(tree_->getRootNode());
+        //setLikelihoodNodes(ponl);
 
-        setIndicatorFunction(*data_);
+        //setIndicatorFunction(*data_);
 
         // Set ancestral histories
-        setInsertionHistories(*data_);
+        //setInsertionHistories(*data_);
 
     }
 
