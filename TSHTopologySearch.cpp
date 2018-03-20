@@ -202,6 +202,8 @@ double tshlib::TreeSearch::performTreeSearch(tshlib::Utree *inputTree) {
 
     }
 
+    LOG(INFO) << "[TSH Optimisation] Initial topology: " << inputTree->printTreeNewick(true);
+
     // define the high-level strategy to evaluate the tree rearrangement operations
     std::string strategy;
     switch (tshStrategy) {
@@ -241,18 +243,17 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
     for (unsigned long i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
         ApplicationTools::displayGauge(i + 1, candidateMoves->getNumberOfMoves(), '>', std::string("node " + candidateMoves->getMove(i)->getSourceNode()->vnode_name));
 
-
+        std::vector<tshlib::VirtualNode *> listNodesWithinPath, updatedNodesWithinPath;
         double moveLogLK = 0;
-
-        // Get source node and target node references
-        VirtualNode *pnode = candidateMoves->getMove(i)->getSourceNode();
-        VirtualNode *qnode = candidateMoves->getMove(i)->getTargetNode();
 
         // ------------------------------------
         // Prepare the list of nodes involved in the move (Required here!)
-        std::vector<tshlib::VirtualNode *> listNodesWithinPath;
-        listNodesWithinPath = inputTree->computePathBetweenNodes(pnode, qnode);
-        listNodesWithinPath.push_back(inputTree->rootnode);
+        //std::vector<tshlib::VirtualNode *> listNodesWithinPath = candidateMoves->getNodesInMovePath(i);
+        //listNodesWithinPath = inputTree->computePathBetweenNodes(pnode, qnode);
+        listNodesWithinPath = inputTree->computePathBetweenNodes(candidateMoves->getMove(i)->getSourceNode(), candidateMoves->getMove(i)->getTargetNode());
+        updatedNodesWithinPath = candidateMoves->updatePathBetweenNodes(i, listNodesWithinPath);
+
+        //listNodesWithinPath = candidateMoves->getNodesInMovePath(i);
 
         // ------------------------------------
         // Log move details
@@ -262,56 +263,44 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         // ------------------------------------
         // Apply the move
         candidateMoves->applyMove(i);
+        VLOG(1) << "[TSH Cycle - Topology] [A] MOVE#" << candidateMoves->getMove(i)->move_id << " | " << inputTree->printTreeNewick(true);
 
         // ------------------------------------
         // Print root reachability from every node (includes rotations)
-        //utree->_testReachingPseudoRoot();
+        // inputTree->_testReachingPseudoRoot();
 
         // ------------------------------------
         // Print tree on file
-        //utree->saveTreeOnFile("../data/test.txt");
+        //inputTree->saveTreeOnFile("../data/test.txt");
+        updatedNodesWithinPath.push_back(inputTree->rootnode);
 
-        // ------------------------------------
-        // Add the root
-        //inputTree->addVirtualRootNode();
-
-        moveLogLK = likelihoodFunc->updateLikelihood(listNodesWithinPath);
+        moveLogLK = likelihoodFunc->updateLikelihood(updatedNodesWithinPath);
 
         if (isinf(moveLogLK)) {
             std::ostringstream nodepath;
-            for (auto &node:listNodesWithinPath) {
+            for (auto &node:updatedNodesWithinPath) {
                 nodepath << node->getNodeName() << ">";
             }
-            LOG_IF(WARNING, isinf(moveLogLK)) << "Likelihood value is -inf for move " << candidateMoves->getMove(i)->move_name << " node-path:" << nodepath.str();
+            LOG_IF(WARNING, isinf(moveLogLK)) << "Likelihood value is -inf for move " << candidateMoves->getMove(i)->move_id << " node-path:" << nodepath.str();
         }
         // ------------------------------------
         // Store likelihood of the move
         candidateMoves->getMove(i)->move_lk = moveLogLK;
 
-        // ------------------------------------
-        // Remove virtual root
-        //inputTree->removeVirtualRootNode();
-
         candidateMoves->displayRearrangmentStatus(i, true);
+
 
         // ------------------------------------
         // Revert the move, and return to the original tree
         candidateMoves->revertMove(i);
+        VLOG(1) << "[TSH Cycle - Topology] [R] MOVE#" << candidateMoves->getMove(i)->move_id << " | " << inputTree->printTreeNewick(true);
 
-        // ------------------------------------
-        // Add the root
-        //inputTree->addVirtualRootNode();
+        //listNodesWithinPath = candidateMoves->getNodesInMovePath(i);
 
         // ------------------------------------
         if (scoringMethod.find("bothways") != std::string::npos) {
-
             moveLogLK = likelihoodFunc->updateLikelihood(listNodesWithinPath);
-
         }
-
-        // ------------------------------------
-        // Remove virtual root
-        //inputTree->removeVirtualRootNode();
 
         //candidateMoves->displayRearrangmentStatus(i, true);
         DLOG(INFO) << "return: " << moveLogLK;
