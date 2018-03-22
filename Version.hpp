@@ -2,7 +2,7 @@
  * Licensed Materials - Property of Lorenzo Gatti & Massimo Maiolo
  *
  *
- * Copyright (C) 2015-2017 by Lorenzo Gatti & Massimo Maiolo
+ * Copyright (C) 2015-2018 by Lorenzo Gatti & Massimo Maiolo
  *******************************************************************************
  *
  * This file is part of miniJATI
@@ -22,10 +22,10 @@
  *******************************************************************************/
 
 /**
- * @file utils.hpp
+ * @file Version.hpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
- * @date 21 12 2017
+ * @date 05 01 2018
  * @version 1.0
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
@@ -41,28 +41,28 @@
  *
  * @see For more information visit: 
  */
-#ifndef MINIJATI_UTILS_HPP
-#define MINIJATI_UTILS_HPP
-#include <Utree.hpp>
-
-#include <Bpp/Phyl/Tree.h>
-#include <Bpp/Phyl/TreeTemplate.h>
-
-namespace UtreeBppUtils{
-
-    void convertUtree(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree);
-    void _traverseTree(Utree *in_tree, VirtualNode *target, bpp::Node *source);
+#ifndef MINIJATI_VERSION_HPP
+#define MINIJATI_VERSION_HPP
 
 
+
+#include <string>
+
+namespace software{
+
+    //version 1.0.0 (master 1a8e6107, 16 Jun 2013, 17:50:26)
+    std::string version(PRJ_VERSION);
+    std::string releasegitbranch(PRJ_GITBRANCH);
+    std::string releasegitref(PRJ_GITREF);
+    std::string releasedate(PRJ_DATE);
+    std::string releasetime(PRJ_TIME);
+
+    std::string build = version +  " (" +releasegitbranch + " " + releasegitref + ", "+ releasedate + ", " + releasetime + ")";
+    std::string name(PRJ_NAME);
+    std::string name_extended(PRJ_DESC);
+
+    std::string desc = name_extended + " ("+ name + ") " + build;
 }
-
-namespace MatrixBppUtils{
-
-
-    Eigen::MatrixXd Matrix2Eigen(const bpp::Matrix<double> &inMatrix);
-    Eigen::VectorXd Vector2Eigen(std::vector<double> &inVector);
-
-}
+#endif //MINIJATI_VERSION_HPP
 
 
-#endif //MINIJATI_UTILS_HPP
