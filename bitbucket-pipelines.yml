@@ -1,14 +1,17 @@
-# This is a sample build configuration for C++ â€“ Make.
+# This is a sample build configuration for C++ – Make.
 # Check our guides at https://confluence.atlassian.com/x/5Q4SMw for more examples.
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: gcc:6.1
+image:
+  name: lorenzogatti89/minijati:8u66
+  username: lorenzogatti89
+  password: Unica_9010
+  email: lorenzo.gatti.89@gmail.com
 
 pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
-          - ./configure
+          - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
           - make
-          - make test
