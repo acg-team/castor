@@ -585,6 +585,7 @@ int main(int argc, char *argv[]) {
             lkFile.close();
 
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
+
         }
 
         //--------------------------------------------------------------------------------------------------------------
@@ -724,7 +725,7 @@ int main(int argc, char *argv[]) {
                                                          true,
                                                          true,
                                                          0);
-        tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(ntl, ntl->getParameters(), jatiapp.getParams(), "", true, true, 0));
+        ntl = dynamic_cast<TSHHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(ntl, ntl->getParameters(), jatiapp.getParams(), "", true, true, 0));
 
         /////////////////////////
         // OUTPUT
@@ -737,22 +738,22 @@ int main(int argc, char *argv[]) {
 
         delete sequences;
 
-        tree = new TreeTemplate<Node>(tl->getTree());
+        tree = new TreeTemplate<Node>(ntl->getLikelihoodFunction()->getTree());
         PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
 
         // Write parameters to screen:
-        ApplicationTools::displayResult("Log likelihood", TextTools::toString(-tl->getLogLikelihood(), 15));
-        parameters = tl->getSubstitutionModelParameters();
+        ApplicationTools::displayResult("Log likelihood", TextTools::toString(ntl->getLikelihoodFunction()->getLogLikelihood(), 15));
+        parameters = ntl->getLikelihoodFunction()->getSubstitutionModelParameters();
         for (size_t i = 0; i < parameters.size(); i++) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
         }
-        parameters = tl->getRateDistributionParameters();
+        parameters = ntl->getLikelihoodFunction()->getRateDistributionParameters();
         for (size_t i = 0; i < parameters.size(); i++) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
         }
 
         // Checking convergence:
-        PhylogeneticsApplicationTools::checkEstimatedParameters(tl->getParameters());
+        PhylogeneticsApplicationTools::checkEstimatedParameters(ntl->getLikelihoodFunction()->getParameters());
 
         // Write parameters to file:
         string parametersFile = ApplicationTools::getAFilePath("output.estimates", jatiapp.getParams(), false, false, "none", 1);
@@ -766,7 +767,7 @@ int main(int argc, char *argv[]) {
 
 
             out << "# Log likelihood = ";
-            out.setPrecision(20) << (-tl->getValue());
+            out.setPrecision(20) << (-ntl->getLikelihoodFunction()->getValue());
             out.endLine();
             out << "# Number of sites = ";
             out.setPrecision(20) << sites->getNumberOfSites();
@@ -775,12 +776,12 @@ int main(int argc, char *argv[]) {
             out << "# Substitution model parameters:";
             out.endLine();
 
-            smodel->matchParametersValues(tl->getParameters());
+            smodel->matchParametersValues(ntl->getLikelihoodFunction()->getParameters());
             PhylogeneticsApplicationTools::printParameters(smodel, out, 1, withAlias);
 
             out.endLine();
             (out << "# Rate distribution parameters:").endLine();
-            rDist->matchParametersValues(tl->getParameters());
+            rDist->matchParametersValues(ntl->getLikelihoodFunction()->getParameters());
             PhylogeneticsApplicationTools::printParameters(rDist, out, withAlias);
         }
 
