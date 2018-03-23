@@ -78,36 +78,38 @@ pPIP::pPIP(tshlib::Utree *utree,
     rDist_ = rDist;
     alphabet_ = substModel_->getAlphabet();
     alphabetSize_ = alphabet_->getSize() - 1;
-    extendedAlphabetSize_ = alphabet_->getSize();
+    extendedAlphabetSize_ = alphabetSize_ + 1;
 
 };
 
 
 void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
 
-    int dimension = nodeList.size();
+    int numNodes = nodeList.size();
     int numCatg=rDist_->getNumberOfCategories();
 
-    score_.resize(dimension);
-    score_.assign(dimension, -std::numeric_limits<double>::infinity());
+    score_.resize(numNodes);
+    score_.assign(numNodes, -std::numeric_limits<double>::infinity());
 
-    traceback_path_.resize(dimension);
+    traceback_path_.resize(numNodes);
 
-    seqNames_.resize(dimension);
-    MSA_.resize(dimension);
+    seqNames_.resize(numNodes);
+
+    MSA_.resize(numNodes);
+
     lambda_.resize(numCatg);
+
     mu_.resize(numCatg);
+
     nu_.resize(numCatg);
 
     // Initialise iotas and betas maps
     for (auto &vnode:nodeList) {
         int nodeID = treemap_.right.at(vnode);
-
         iotasNode_[nodeID].resize(numCatg);
         betasNode_[nodeID].resize(numCatg);
         prNode_[nodeID].resize(numCatg);
     }
-
 
 }
 void pPIP::_setTree(const Tree *tree) {
@@ -117,30 +119,20 @@ void pPIP::_setSubstModel(bpp::SubstitutionModel *smodel) {
     substModel_ = smodel;
 }
 std::vector< std::string > pPIP::getMSA(bpp::Node *node){
-
     return MSA_.at(node->getId());
-
 }
 double pPIP::getScore(bpp::Node *node){
-
     return score_.at(node->getId());
-
 }
 std::vector< std::string > pPIP::getSeqnames(bpp::Node *node) {
-
     return seqNames_.at(node->getId());
-
 }
 bpp::Node * pPIP::getRootNode(){
-
     return tree_->getRootNode();
-
 }
-
 const Alphabet *pPIP::getAlphabet() const {
     return alphabet_;
 }
-
 bool pPIP::is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned long yf,unsigned long xt,unsigned long yt){
 
     if((xt<x0) || (yt>y0) || (xt>xf) || (yt<yf)){
@@ -588,33 +580,61 @@ void pPIP::_setNu() {
 }
 void pPIP::_setLambda(double lambda){
 
+    lambda0 = lambda;
+
+    // insertion rate with rate variation among site
     for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
         lambda_.at(i) = lambda * rDist_->getCategories().at(i);
     }
 
-    //lambda_=lambda;
 }
 void pPIP::_setMu(double mu){
 
+    // checks division by 0 or very small value
     if (fabs(mu) < SMALL_DOUBLE) {
         PLOG(FATAL) << "ERROR: mu is too small";
     }
 
+    mu0 = mu;
+
+    // deletion rate with rate variation among site
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
         mu_.at(i) = mu * rDist_->getCategories().at(i);
     }
 
-    //mu_=mu;
 }
 void pPIP::_setPi(const Vdouble &pi){
+
+    // copy pi (steady state frequency distribution)
     pi_.resize(pi.size(), 1);
     for(int i=0;i<pi.size();i++){
         pi_(i, 0) = pi.at(i);
     }
 }
+double pPIP::_setTauRecursive(tshlib::VirtualNode *vnode){
 
+    if(vnode->isTerminalNode()){
+        // return the branch length
+        return tree_->getNode(treemap_.right.at(vnode),false)->getDistanceToFather();
+    }else{
+        // recursive call
+        double bl=_setTauRecursive(vnode->getNodeLeft());
+        double br=_setTauRecursive(vnode->getNodeRight());
+
+        // actual branch length (at the given node)
+        double b0 = tree_->getNode(treemap_.right.at(vnode),false)->getDistanceToFather();
+
+        // sum of actual branch length + total branch length of left subtree + total branch length right subtree
+        return b0+bl+br;
+    }
+
+}
 void pPIP::_setTau(tshlib::VirtualNode *vnode) {
 
+    // computes the total tree length of the subtree rooted at vnode
+    tau_=_setTauRecursive(vnode->getNodeLeft()) + _setTauRecursive(vnode->getNodeRight());
+
+    /*
     std::vector<tshlib::VirtualNode *> ponl = utree_->getPostOrderNodeList(vnode);
     std::vector<bpp::Node *> bpp_ponl = UtreeBppUtils::remapNodeLists(ponl, tree_, treemap_);
 
@@ -624,6 +644,7 @@ void pPIP::_setTau(tshlib::VirtualNode *vnode) {
             tau_ += node->getDistanceToFather();
         }
     }
+    */
 }
 
 /*
@@ -651,10 +672,15 @@ void pPIP::_setAllIotas(std::vector<tshlib::VirtualNode *> &listNodes) {
 void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
     double T;
 
+    // recursive function that computes the insertion probability on the actual branch
+    //local_root: flag true only the at the first recursive call (local root) then always false
+
     if (local_root) {
+
         for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
             T = tau_ + 1 / mu_.at(i);
 
+            // checks division by 0 or too small number
             if (fabs(T) < SMALL_DOUBLE) {
                 PLOG(WARNING) << "ERROR in set_iota: T too small";
             }
@@ -662,15 +688,20 @@ void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
             iotasNode_[node->getId()][i] = (1 / mu_.at(i)) / T;
 
         }
+
     }else{
+
         for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
             T = tau_ + 1 / mu_.at(i);
 
+            // checks division by 0 or too small number
             if (fabs(T) < SMALL_DOUBLE) {
                 PLOG(WARNING) << "ERROR in set_iota: T too small";
             }
+
             iotasNode_[node->getId()][i] = node->getDistanceToFather() * rDist_->getCategory(i) / T;
         }
+
     }
 
     if(!node->isLeaf()){
@@ -691,6 +722,9 @@ void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
 }
 void pPIP::_setAllBetas(bpp::Node *node,bool local_root) {
 
+    // recursive function that computes the survival probability on the actual branch
+    //local_root: flag true only the at the first recursive call (local root) then always false
+
     if(local_root){
 
         for (int i = 0; i < rDist_->getCategories().size(); i++) {
@@ -703,6 +737,7 @@ void pPIP::_setAllBetas(bpp::Node *node,bool local_root) {
 
             double muT = mu_.at(i) * node->getDistanceToFather() * rDist_->getCategory(i);
 
+            // checks division by 0 or too small value
             if (fabs(muT) < SMALL_DOUBLE) {
                 perror("ERROR mu * T is too small");
             }
@@ -762,10 +797,10 @@ void pPIP::_getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNod
         auto node = tree_->getNode(treemap_.right.at(vnode), false);
 
         if (!node->hasFather()) {
-
+            // root node doesn't have Pr
         } else {
-            //prNode_.at(node->getId()) = MatrixBppUtils::Eigen2Matrix(vnode->getPr());
             for(int i=0;i<rDist_->getNumberOfCategories();i++) {
+                // exp(branchLength * rateVariation * Q)
                 prNode_[node->getId()].at(i)=substModel_->getPij_t(node->getDistanceToFather() * rDist_->getCategory(i));
             }
         }
@@ -804,7 +839,6 @@ bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned lo
 
     }else{
 
-
         tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
         tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
 
@@ -813,10 +847,6 @@ bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned lo
 
         int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
-
-        //auto sons = node->getSons();
-        //int sonLeftID = sons.at(LEFT)->getId();
-        //int sonRightID = sons.at(RIGHT)->getId();
 
         fvL = go_down(sonLeft, s, idx, catg);
         fvR = go_down(sonRight, s, idx, catg);
@@ -859,7 +889,7 @@ void pPIP::allgaps(bpp::Node *node,std::string &s, unsigned long &idx,bool &flag
 }
 double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s){
 
-    double pr;
+    double pr=0;
     double pL=0;
     double pR=0;
     unsigned long idx;
@@ -872,15 +902,16 @@ double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s){
 
     if(node->isLeaf()){
         pr=0;
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
             idx=0;
-            fv=go_down(node,s,idx,i);
+            fv=go_down(node,s,idx,catg);
 
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            pr += iotasNode_[nodeID][i] - iotasNode_[nodeID][i] * betasNode_[nodeID][i] + iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+            pr += iotasNode_[nodeID][catg] - iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] + iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
         }
+
         return pr;
 
     }else{
@@ -895,13 +926,13 @@ double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s){
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
         pr=0;
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
             idx=0;
-            fv=go_down(node,s,idx,i);
+            fv=go_down(node,s,idx,catg);
 
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            pr += iotasNode_[nodeID][i] - iotasNode_[nodeID][i] * betasNode_[nodeID][i] + iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
+            pr += iotasNode_[nodeID][catg] - iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] + iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
         }
 
         bool flagL=true;
@@ -1012,21 +1043,16 @@ double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolu
     int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    //auto sons = node->getSons();
-
-    //int sonLeftID = sons.at(LEFT)->getId();
-    //int sonRightID = sons.at(RIGHT)->getId();
-
     pr = 0;
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
+    for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
         idx=0;
-        fvL = go_down(sonLeft, sL, idx, i);
+        fvL = go_down(sonLeft, sL, idx, catg);
 
         idx=0;
-        fvR = go_down(sonRight, sR, idx, i);
+        fvR = go_down(sonRight, sR, idx, catg);
 
-        bpp::MatrixTools::mult(prNode_[sonLeftID].at(i), fvL, PrfvL);
-        bpp::MatrixTools::mult(prNode_[sonRightID].at(i), fvR, PrfvR);
+        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
         bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
         fv0 = MatrixBppUtils::dotProd(fv, pi_);
@@ -1034,9 +1060,10 @@ double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolu
         double pL,pR;
         double partialLK;
 
-        partialLK = iotasNode_[node->getId()][i] * fv0 * rDist_->getCategories().at(i);
+        partialLK = iotasNode_[node->getId()][catg] * fv0 * rDist_->getCategories().at(catg);
         pL = compute_lk_gap_down(sonLeft, sL);
         pR = compute_lk_gap_down(sonRight, sR);
+
         pr += partialLK + pL + pR;
     }
 
@@ -1052,7 +1079,6 @@ double pPIP::computeLK_M_local(double valM,
                                unsigned long m,
                                std::map<MSAcolumn_t, double> &lkM){
 
-
     double pr;
     double val;
 
@@ -1065,7 +1091,6 @@ double pPIP::computeLK_M_local(double valM,
     double fv0;
     unsigned long idx;
 
-
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
 
@@ -1075,45 +1100,45 @@ double pPIP::computeLK_M_local(double valM,
     int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    //auto sons = node->getSons();
-    //int sonLeftID = sons.at(LEFT)->getId();
-    //int sonRightID = sons.at(RIGHT)->getId();
-
     int nodeID = node->getId();
 
-
+    // create left + right column
     s.append(sL);
     s.append(sR);
 
     auto it=lkM.find(s);
     if(it == lkM.end()){
         pr = 0;
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
             idx=0;
-            fvL = go_down(sonLeft, sL, idx, i);
+            fvL = go_down(sonLeft, sL, idx, catg);
 
             idx=0;
-            fvR = go_down(sonRight, sR, idx, i);
+            fvR = go_down(sonRight, sR, idx, catg);
 
-            bpp::MatrixTools::mult(prNode_[sonLeftID].at(i), fvL, PrfvL);
-            bpp::MatrixTools::mult(prNode_[sonRightID].at(i), fvR, PrfvR);
+            bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+            bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
             bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
-            for (int i = 0; i < rDist_->getCategories().size(); i++) {
-                pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
-            }
 
-            pr += log((long double)pr);
+            pr += iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+
         }
+
+        pr = log((long double)pr);
+
         lkM[s]=pr;
 
     }else{
         pr=it->second;
     }
 
+    val=0.0;
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        val += (rDist_->getProbability((size_t)i)) -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+        double logPrCat = log(rDist_->getProbability((size_t)i));
+        logPrCat=0;
+        val += (logPrCat -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
     }
 
     return val;
@@ -1150,36 +1175,29 @@ double pPIP::computeLK_X_local(double valM,
     int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    //auto sons = node->getSons();
     int nodeID = node->getId();
-    //int sonLeftID = sons.at(LEFT)->getId();
-    //int sonRightID = sons.at(RIGHT)->getId();
 
+    // create left + right column
     s.append(sL);
     s.append(col_gap_R);
 
     auto it=lkX.find(s);
     if(it == lkX.end()){
         pr = 0;
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
             idx = 0;
-            fvL = go_down(sonLeft, sL, idx, i);
+            fvL = go_down(sonLeft, sL, idx, catg);
 
             idx = 0;
-            fvR = go_down(sonRight, col_gap_R, idx, i);
+            fvR = go_down(sonRight, col_gap_R, idx, catg);
 
-            bpp::MatrixTools::mult(prNode_[sonLeftID].at(i), fvL, PrfvL);
-            bpp::MatrixTools::mult(prNode_[sonRightID].at(i), fvR, PrfvR);
+            bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+            bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
             bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            //pr=iotaNode_.at(nodeID)*betaNode_.at(nodeID)*fv0;
-
-
-            for (int i = 0; i < rDist_->getCategories().size(); i++) {
-                pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
-            }
+            pr += iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
             double pL;
 
@@ -1187,18 +1205,21 @@ double pPIP::computeLK_X_local(double valM,
 
             pr += pL;
 
-            pr += log((long double) pr);
         }
 
-        lkX[s] = pr;
+        pr = log((long double) pr);
 
+        lkX[s] = pr;
 
     }else{
         pr=it->second;
     }
 
+    val=0.0;
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        val += (rDist_->getProbability((size_t)i)) -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+        double logPrCat = log(rDist_->getProbability((size_t)i));
+        logPrCat=0;
+        val += (logPrCat -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
     }
 
 
@@ -1235,11 +1256,7 @@ double pPIP::computeLK_Y_local(double valM,
     int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-
-    //auto sons = node->getSons();
     int nodeID = node->getId();
-    //int sonLeftID = sons.at(LEFT)->getId();
-    //int sonRightID = sons.at(RIGHT)->getId();
 
     s.append(col_gap_L);
     s.append(sR);
@@ -1247,47 +1264,43 @@ double pPIP::computeLK_Y_local(double valM,
     auto it=lkY.find(s);
     if(it == lkY.end()){
         pr = 0;
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
             idx = 0;
-            fvL = go_down(sonLeft, col_gap_L, idx, i);
+            fvL = go_down(sonLeft, col_gap_L, idx, catg);
 
             idx = 0;
-            fvR = go_down(sonRight, sR, idx, i);
+            fvR = go_down(sonRight, sR, idx, catg);
 
-            bpp::MatrixTools::mult(prNode_[sonLeftID].at(i), fvL, PrfvL);
-            bpp::MatrixTools::mult(prNode_[sonRightID].at(i), fvR, PrfvR);
+            bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+            bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
             bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            //pr=iotaNode_.at(nodeID)*betaNode_.at(nodeID)*fv0;
-
-            for (int i = 0; i < rDist_->getCategories().size(); i++) {
-                pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
-            }
-
+            pr += iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
             double pR;
-
 
             pR = compute_lk_down(sonRight, sR);
 
             pr += pR;
 
-            pr += log((long double) pr);
         }
 
-        lkY[s] = pr;
+        pr = log((long double) pr);
 
+        lkY[s] = pr;
 
     }else{
         pr=it->second;
     }
 
+    val=0.0;
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        val += (rDist_->getProbability((size_t)i)) -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+        double logPrCat = log(rDist_->getProbability((size_t)i));
+        logPrCat=0;
+        val += (logPrCat -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
     }
-
 
     return val;
 }
@@ -1295,15 +1308,14 @@ double pPIP::computeLK_Y_local(double valM,
 void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     //TODO: place as argument
-    bool randomSeed = true;
+    bool randomSeed = true; // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
 
     if(local){
-        _setTau(treemap_.left.at(node->getId()));
-        _setNu();
-        _setAllIotas(node,true);
-        _setAllBetas(node,true);
+        _setTau(treemap_.left.at(node->getId()));  // recompute local tau, total tree length of a tree root at the given node
+        _setNu(); // recompute the normalizing factor nu for the local tree
+        _setAllIotas(node,true); // recompute lambdas with the new normalizing factor (local tree), flag true = tree rooted here
+        _setAllBetas(node,true); // recompute betas with the new normalizing factor (local tree), flag true = tree rooted here
     }
-
 
     unsigned long up_corner_i;
     unsigned long up_corner_j;
@@ -1312,54 +1324,48 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     unsigned long lw;
     unsigned long h,w;
 
-
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight(); // bpp::Node to tshlib::VirtualNode
 
     int s1ID = treemap_.right.at(vnode_left);
     int s2ID = treemap_.right.at(vnode_right);
 
-    //auto sons = node->getSons();
-
-    //int s1ID = sons.at(LEFT)->getId();
-    //int s2ID = sons.at(RIGHT)->getId();
-
     int nodeID = node->getId();
 
-    h = MSA_.at(s1ID).size() + 1;
-    w = MSA_.at(s2ID).size() + 1;
+    h = MSA_.at(s1ID).size() + 1; // dimension of the alignment on the left side
+    w = MSA_.at(s2ID).size() + 1; // dimension of the alignment on the riht side
 
-    unsigned long d=(h-1)+(w-1)+1;
+    unsigned long d=(h-1)+(w-1)+1; // third dimension of the DP matrix
 
-    double pc0;
+    double pc0;  // lk of empty column (full of gaps)
 
     MSAcolumn_t sLs;
     MSAcolumn_t sRs;
     MSAcolumn_t col_gap_Ls;
     MSAcolumn_t col_gap_Rs;
 
-    unsigned long numLeavesLeft = seqNames_.at(s1ID).size();
-    unsigned long numLeavesRight = seqNames_.at(s2ID).size();
+    unsigned long numLeavesLeft = seqNames_.at(s1ID).size(); // number of leaves in the left sub-tree
+    unsigned long numLeavesRight = seqNames_.at(s2ID).size(); // number of leaves in the right sub-tree
 
-    col_gap_Ls=createGapCol(numLeavesLeft);
-    col_gap_Rs=createGapCol(numLeavesRight);
+    col_gap_Ls=createGapCol(numLeavesLeft); // create column of gaps for the left sub-tree
+    col_gap_Rs=createGapCol(numLeavesRight); // create column of gaps for the right sub-tree
 
     signed long seed;
     if(randomSeed){
-        seed = std::chrono::system_clock::now().time_since_epoch().count();
+        seed = std::chrono::system_clock::now().time_since_epoch().count(); // "random" seed
     }else{
         seed = 0;
     }
 
     std::default_random_engine generator(seed);
-    std::uniform_real_distribution<double> distribution(0.0,1.0);
+    std::uniform_real_distribution<double> distribution(0.0,1.0); // Uniform distribution for the selection of lks with the same value
 
     auto epsilon=DBL_EPSILON;
 
     //***************************************************************************************
     //***************************************************************************************
     if(local){
-        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs);
+        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs); // compute the lk of a column full of gaps
     }else{
         /*
         pc0 = compute_pr_gap_all_edges_s(node,
@@ -1373,11 +1379,11 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     //***************************************************************************************
     //***************************************************************************************
 
-    auto** LogM = new double*[2];
-    auto** LogX = new double*[2];
-    auto** LogY = new double*[2];
+    auto** LogM = new double*[2]; // DP sparse matrix for MATCH case (only 2 layer are needed)
+    auto** LogX = new double*[2]; // DP sparse matrix for GAPX case (only 2 layer are needed)
+    auto** LogY = new double*[2]; // DP sparse matrix for GAPY case (only 2 layer are needed)
 
-    auto** TR = new int*[d];
+    auto** TR = new int*[d]; // 3D traceback matrix
 
     LogM[0] = new double[int((w*(h+1))/2)];
     LogX[0] = new double[int((w*(h+1))/2)];
@@ -1391,9 +1397,9 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     LogY[0][0] = 0;
 
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        LogM[0][0] += nu_.at(i) * (pc0 - 1.0);
-        LogX[0][0] += nu_.at(i) * (pc0 - 1.0);
-        LogY[0][0] += nu_.at(i) * (pc0 - 1.0);
+        LogM[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
+        LogX[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
+        LogY[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
     }
 
     TR[0] = new int[1]();
@@ -1436,6 +1442,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
             break;
         }
 
+        // alternate the two layers
         m_binary_this=m%2;
         m_binary_prev=(m+1)%2;
         //***************************************************************************************
@@ -1451,6 +1458,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                 coordSeq_1 = coordTriangle_this_i - 1;
                 coordTriangle_prev_i = coordTriangle_this_i - 1;
 
+                // get left MSA column
                 sLs = (MSA_.at(s1ID).at(coordSeq_1));
 
                 for (int j = 0; j <= lw; j++) {
@@ -1459,6 +1467,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     coordSeq_2 = coordTriangle_this_j - 1;
                     coordTriangle_prev_j = coordTriangle_this_j - 1;
 
+                    // get right MSA column
                     sRs = (MSA_.at(s2ID).at(coordSeq_2));
 
                     idx = get_indices_M(coordTriangle_prev_i, coordTriangle_prev_j, up_corner_i, up_corner_j,
@@ -1490,6 +1499,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     }
 
                     if (local) {
+                        // compute MATCH lk
                         val = computeLK_M_local(valM,
                                                 valX,
                                                 valY,
@@ -1543,6 +1553,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                 coordTriangle_prev_i=coordTriangle_this_i-1;
                 coordSeq_1=coordTriangle_this_i-1;
 
+                // get left MSA column
                 sLs = (MSA_.at(s1ID).at(coordSeq_1));
 
                 for(int j=0;j<=lw;j++){
@@ -1579,6 +1590,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     }
 
                     if(local){
+                        // compute GAPX lk
                         val= computeLK_X_local(valM,
                                                valX,
                                                valY,
@@ -1635,6 +1647,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     coordTriangle_prev_j=coordTriangle_this_j-1;
                     coordSeq_2=coordTriangle_this_j-1;
 
+                    // get right MSA column
                     sRs = (MSA_.at(s2ID).at(coordSeq_2));
 
                     idx=get_indices_M(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
@@ -1666,6 +1679,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     }
 
                     if(local){
+                        // compute GAPY lk
                         val= computeLK_Y_local(valM,
                                                valX,
                                                valY,
@@ -1784,10 +1798,12 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
         }
     }
 
+    // level (k position) in the DP matrix that contains the highest lk value
     depth=level_max_lk;
 
     score_.at(nodeID) = score;
 
+    // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
     TracebackPath_t traceback_path (depth, ' ');
     int id1=h-1;
     int id2=w-1;
@@ -1815,7 +1831,6 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
         }
     }
 
-    //_traceback_path=traceback_path;
     traceback_path_.at(nodeID) = traceback_path;
 
     build_MSA(node,traceback_path);
@@ -2321,7 +2336,6 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
 void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local) {
 
-
     _reserve(list_vnode_to_root);
 
     _setLambda(substModel_->getParameter("lambda").getValue());
@@ -2357,12 +2371,14 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
 
             // associate the sequence name to the leaf node
             setMSAsequenceNames(node,seqname);
+
             // create a column containing the sequence associated to the leaf node
             setMSAleaves(node, sequences_->getSequence(seqname).toString());
 
         }else{
 
-            DP3D_PIP(node, local);
+            // align using 3D DP PIP
+            DP3D_PIP(node, local); // local: tree rooted at the given node
 
         }
     }

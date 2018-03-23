@@ -60,21 +60,20 @@ namespace bpp {
 
     public:
 
-        typedef std::string MSAcolumn_t;
-        typedef std::vector<MSAcolumn_t> MSA_t;
-        typedef std::vector<MSA_t> MSAensemble_t; //for SB
-        typedef std::string TracebackPath_t;
-        typedef std::vector<TracebackPath_t> TracebackEnsemble_t; //for SB
+        typedef std::string MSAcolumn_t;           // MSA column type
+        typedef std::vector<MSAcolumn_t> MSA_t;    // MSA as vector of columns
+        typedef std::vector<MSA_t> MSAensemble_t;  // for SB: set (vector) of MSAs
+        typedef std::string TracebackPath_t;       // traceback path type
+        typedef std::vector<TracebackPath_t> TracebackEnsemble_t; //for SB: set (vector) of traceback paths
 
-        pPIP(tshlib::Utree *utree,
-             bpp::Tree *tree,
-             bpp::SubstitutionModel *smodel,
-             UtreeBppUtils::treemap &inTreeMap,
-             bpp::SequenceContainer *sequences,
-             bpp::DiscreteDistribution *rDist);
+        pPIP(tshlib::Utree *utree,              // tshlib:: tree
+             bpp::Tree *tree,                   // bpp::tree
+             bpp::SubstitutionModel *smodel,    // extended substitution model
+             UtreeBppUtils::treemap &inTreeMap, // bpp::Node * <-> tshlib::VirtualNode *
+             bpp::SequenceContainer *sequences, // un-aligned input sequences
+             bpp::DiscreteDistribution *rDist); // distribution for rate variation among sites
 
         ~pPIP(){};
-
 
         void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local);
 
@@ -86,43 +85,44 @@ namespace bpp {
 
         const Alphabet *getAlphabet() const;
 
-
     protected:
 
     private:
 
-        tshlib::Utree *utree_;
-        bpp::TreeTemplate<bpp::Node> *tree_;
-        bpp::SubstitutionModel *substModel_;
-        mutable UtreeBppUtils::treemap treemap_;
-        bpp::SequenceContainer *sequences_;
-        bpp::DiscreteDistribution *rDist_;
+        tshlib::Utree *utree_;                   // tshlib:: tree
+        bpp::TreeTemplate<bpp::Node> *tree_;     // bpp::tree
+        bpp::SubstitutionModel *substModel_;     // extended substitution model
+        mutable UtreeBppUtils::treemap treemap_; // bpp::Node * <-> tshlib::VirtualNode *
+        bpp::SequenceContainer *sequences_;      // un-aligned input sequences
+        bpp::DiscreteDistribution *rDist_;       // distribution for rate variation among sites
 
-        std::map<unsigned long, std::vector<double>> iotasNode_;
-        std::map<unsigned long, std::vector<double>> betasNode_;
-        std::vector<double> iotaNode_;
-        std::vector<double> betaNode_;
+        std::map<unsigned long, std::vector<double>> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
+        std::map<unsigned long, std::vector<double>> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
+        //std::vector<double> iotaNode_;
+        //std::vector<double> betaNode_;
         //std::vector<bpp::RowMatrix<double> > prNode_;
-        std::map<unsigned long, std::vector<bpp::RowMatrix<double> > >prNode_;
-        std::vector<std::vector<std::string> > seqNames_;
-        std::vector<MSA_t> MSA_; //MSA at each node
-        std::vector<MSAensemble_t> MSAensemble_; //MSAensemble at each node
-        std::vector<TracebackPath_t> traceback_path_;
-        std::vector<TracebackEnsemble_t> traceback_path_ensemble_;
-        std::vector<double> score_;
-        std::vector<vector<double >> score_ensemble_;
-        std::vector<double> lambda_;
-        std::vector<double> mu_;
-        std::vector<double> nu_;
-        double tau_;
+        std::map<unsigned long, std::vector<bpp::RowMatrix<double> > >prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
+        std::vector<std::vector<std::string> > seqNames_;          // vector[nodeId] of sequence names (MSAs seq. names at each internal node) node
+        std::vector<MSA_t> MSA_;                                   // vector[nodeId] MSA at each node
+        std::vector<MSAensemble_t> MSAensemble_;                   // MSA ensemble at each node (for SB)
+        std::vector<TracebackPath_t> traceback_path_;              // vector[nodeId] of traceback paths (1 at each internal node)
+        std::vector<TracebackEnsemble_t> traceback_path_ensemble_; // traceback path ensemble at each internal node (for SB)
+        std::vector<double> score_;                                // vector[nodeId] of likelihood score
+        std::vector<vector<double >> score_ensemble_;              // set of likelihoods at each internal node (for SB)
+        double lambda0;                                            // original lambda (no Gamma distribution)
+        double mu0;                                                // original mu (no Gamma distribution)
+        std::vector<double> lambda_;                               // vector[rate] of lambda rate with Gamma distribution
+        std::vector<double> mu_;                                   // vector[rate] of mu rate with Gamma distribution
+        std::vector<double> nu_;                                   // vector[rate] of nu (normalizing constant) with Gamma distribution
+        double tau_;                                               // total tree length
 
-        bpp::ColMatrix<double> pi_;
+        bpp::ColMatrix<double> pi_;                                // steady state base frequencies
 
-        const bpp::Alphabet *alphabet_;
+        const bpp::Alphabet *alphabet_;                            // extended alphabet (alphabet U {'-'}
 
-        long alphabetSize_;
+        long alphabetSize_;                                        // original alphabet size
 
-        long extendedAlphabetSize_;
+        long extendedAlphabetSize_;                                // extended alphabet size
 
         void _reserve(std::vector<tshlib::VirtualNode *> &nodeList);
 
@@ -137,6 +137,8 @@ namespace bpp {
         void _setMu(double mu);
 
         void _setPi(const Vdouble &pi);
+
+        double _setTauRecursive(tshlib::VirtualNode *vnode);
 
         void _setTau(tshlib::VirtualNode *vnode);
 

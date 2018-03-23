@@ -585,6 +585,9 @@ int main(int argc, char *argv[]) {
             lkFile.close();
 
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
+
+            exit(EXIT_SUCCESS);
+
         }
 
         //--------------------------------------------------------------------------------------------------------------
