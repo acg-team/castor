@@ -586,8 +586,6 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
 
-            exit(EXIT_SUCCESS);
-
         }
 
         //--------------------------------------------------------------------------------------------------------------
