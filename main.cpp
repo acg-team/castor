@@ -584,6 +584,8 @@ int main(int argc, char *argv[]) {
             lkFile << score;
             lkFile.close();
 
+            ApplicationTools::displayResult("\nLog likelihood", TextTools::toString(score, 15));
+
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
 
         }
@@ -731,6 +733,7 @@ int main(int argc, char *argv[]) {
         // OUTPUT
 
         if (PAR_output_file_msa.find("none") == std::string::npos) {
+            ApplicationTools::displayResult("Output alignment to file", PAR_output_file_msa);
             LOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
             bpp::Fasta seqWriter;
             seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);

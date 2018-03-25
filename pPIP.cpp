@@ -2355,7 +2355,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
      */
 
 
-    size_t i = 0;
+    size_t i = 1;
 
     for (auto &vnode:list_vnode_to_root) {
 
