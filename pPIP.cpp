@@ -516,7 +516,7 @@ void pPIP::build_MSA(bpp::Node *node, TracebackPath_t traceback_path){
             idx_j++;
 
         }else{
-            perror("ERROR");
+            std::cerr << "ERROR";
         }
     }
 
@@ -592,7 +592,7 @@ void pPIP::_setMu(double mu){
 
     // checks division by 0 or very small value
     if (fabs(mu) < SMALL_DOUBLE) {
-        PLOG(FATAL) << "ERROR: mu is too small";
+        std::cerr << "ERROR: mu is too small";
     }
 
     mu0 = mu;
@@ -739,7 +739,7 @@ void pPIP::_setAllBetas(bpp::Node *node,bool local_root) {
 
             // checks division by 0 or too small value
             if (fabs(muT) < SMALL_DOUBLE) {
-                perror("ERROR mu * T is too small");
+                std::cerr << "ERROR mu * T is too small";
             }
 
             betasNode_[node->getId()][i] = (1.0 - exp(-mu_.at(i) * node->getDistanceToFather() * rDist_->getCategory(i) )) / muT;
@@ -1826,7 +1826,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                 traceback_path[lev-1]=GAP_Y_CHAR;
                 break;
             default:
-                perror("ERROR in alignment_reconstruction !!!");
+                std::cerr << "ERROR in alignment_reconstruction !!!";
                 exit(EXIT_FAILURE);
         }
     }
