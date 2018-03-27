@@ -335,18 +335,17 @@ int main(int argc, char *argv[]) {
                 // Optimisation method verbosity
                 unsigned int optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose", jatiapp.getParams(), 2);
                 string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", jatiapp.getParams(), false, false);
-                OutputStream *messenger =
-                        (mhPath == "none") ? 0 :
-                        (mhPath == "std") ? ApplicationTools::message :
-                        new StlOutputStream(new ofstream(mhPath.c_str(), ios::out));
+                OutputStream *messenger = static_cast<OutputStream *>((mhPath == "none") ? 0 :
+                                                                      (mhPath == "std") ?
+                                                                      ApplicationTools::message : new StlOutputStream(new ofstream(mhPath.c_str(), ios::out)));
                 ApplicationTools::displayResult("Initial tree optimization handler", mhPath);
 
                 // Optimisation method profiler
                 string prPath = ApplicationTools::getAFilePath("optimization.profiler", jatiapp.getParams(), false, false);
                 OutputStream *profiler =
-                        (prPath == "none") ? 0 :
-                        (prPath == "std") ? ApplicationTools::message :
-                        new StlOutputStream(new ofstream(prPath.c_str(), ios::out));
+                        static_cast<OutputStream *>((prPath == "none") ? 0 :
+                                                    (prPath == "std") ? ApplicationTools::message :
+                                                    new StlOutputStream(new ofstream(prPath.c_str(), ios::out)));
                 if (profiler) profiler->setPrecision(20);
                 ApplicationTools::displayResult("Initial tree optimization profiler", prPath);
 
