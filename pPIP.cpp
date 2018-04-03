@@ -1024,15 +1024,18 @@ double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
 
     return pr;
 }
-double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR){
+std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR){
     double fv0;
-    double pr;
+    //double pr;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     bpp::ColMatrix<double> PrfvL;
     bpp::ColMatrix<double> PrfvR;
     bpp::ColMatrix<double> fv;
     unsigned long idx;
+
+    int num_gamma_categories = rDist_->getNumberOfCategories();
+    std::vector<double> pc0 = new double(num_gamma_categories)
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -1043,8 +1046,9 @@ double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolu
     int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    pr = 0;
+    //pr = 0;
     for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
+
         idx=0;
         fvL = go_down(sonLeft, sL, idx, catg);
 
@@ -1064,10 +1068,10 @@ double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolu
         pL = compute_lk_gap_down(sonLeft, sL);
         pR = compute_lk_gap_down(sonRight, sR);
 
-        pr += partialLK + pL + pR;
+        pc0.at(catg) = partialLK + pL + pR;
     }
 
-    return pr;
+    return pc0;
 }
 
 double pPIP::computeLK_M_local(double valM,
@@ -1077,8 +1081,11 @@ double pPIP::computeLK_M_local(double valM,
                                MSAcolumn_t &sL,
                                MSAcolumn_t &sR,
                                unsigned long m,
-                               std::map<MSAcolumn_t, double> &lkM){
+                               std::map<MSAcolumn_t, double> &lkM,
+                               std::vector<double> &phi){
 
+    int num_gamma_categories = rDist_->getNumberOfCategories();
+    //std::vector<double> pr = new double(num_gamma_categories);
     double pr;
     double val;
 
@@ -1108,8 +1115,9 @@ double pPIP::computeLK_M_local(double valM,
 
     auto it=lkM.find(s);
     if(it == lkM.end()){
+
         pr = 0;
-        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
+        for (int catg = 0; catg < num_gamma_categories; catg++) {
             idx=0;
             fvL = go_down(sonLeft, sL, idx, catg);
 
@@ -1122,8 +1130,9 @@ double pPIP::computeLK_M_local(double valM,
 
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            pr += iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+            double p = rDist_->getProbability((size_t)catg) * iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
+            pr += p;
         }
 
         pr = log((long double)pr);
@@ -1134,12 +1143,12 @@ double pPIP::computeLK_M_local(double valM,
         pr=it->second;
     }
 
-    val=0.0;
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        double logPrCat = log(rDist_->getProbability((size_t)i));
-        logPrCat=0;
-        val += (logPrCat -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
+    double phi_gamma=0.0;
+    for (int catg = 0; catg < num_gamma_categories; catg++) {
+        phi_gamma += log(rDist_->getProbability((size_t)catg)) -log((long double) m) + log((long double) nu_.at(catg)) + phi.at(catg);
     }
+
+    val = phi_gamma + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
 
     return val;
 }
@@ -1150,8 +1159,11 @@ double pPIP::computeLK_X_local(double valM,
                                MSAcolumn_t &sL,
                                MSAcolumn_t &col_gap_R,
                                unsigned long m,
-                               std::map<MSAcolumn_t, double> &lkX){
+                               std::map<MSAcolumn_t, double> &lkX,
+                               std::vector<double> &phi){
 
+
+    int num_gamma_categories = rDist_->getNumberOfCategories();
 
     double pr;
     double val;
@@ -1183,6 +1195,7 @@ double pPIP::computeLK_X_local(double valM,
 
     auto it=lkX.find(s);
     if(it == lkX.end()){
+
         pr = 0;
         for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
             idx = 0;
@@ -1197,14 +1210,11 @@ double pPIP::computeLK_X_local(double valM,
 
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            pr += iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+            double p = rDist_->getProbability((size_t)catg) * iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
-            double pL;
+            double pL = compute_lk_down(sonLeft, sL);
 
-            pL = compute_lk_down(sonLeft, sL);
-
-            pr += pL;
-
+            pr += p + pL;
         }
 
         pr = log((long double) pr);
@@ -1215,13 +1225,12 @@ double pPIP::computeLK_X_local(double valM,
         pr=it->second;
     }
 
-    val=0.0;
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        double logPrCat = log(rDist_->getProbability((size_t)i));
-        logPrCat=0;
-        val += (logPrCat -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
+    double phi_gamma=0.0;
+    for (int catg = 0; catg < num_gamma_categories; catg++) {
+        phi_gamma += log(rDist_->getProbability((size_t)catg)) -log((long double) m) + log((long double) nu_.at(catg)) + phi.at(catg);
     }
 
+    val = phi_gamma + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
 
     return val;
 }
@@ -1232,8 +1241,11 @@ double pPIP::computeLK_Y_local(double valM,
                                MSAcolumn_t &col_gap_L,
                                MSAcolumn_t &sR,
                                unsigned long m,
-                               std::map<MSAcolumn_t, double> &lkY){
+                               std::map<MSAcolumn_t, double> &lkY,
+                               std::vector<double> &phi){
 
+
+    int num_gamma_categories = rDist_->getNumberOfCategories();
 
     double pr;
     double val;
@@ -1263,6 +1275,7 @@ double pPIP::computeLK_Y_local(double valM,
 
     auto it=lkY.find(s);
     if(it == lkY.end()){
+
         pr = 0;
         for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
             idx = 0;
@@ -1277,13 +1290,11 @@ double pPIP::computeLK_Y_local(double valM,
 
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            pr += iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+            double p = rDist_->getProbability((size_t)catg) * iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
-            double pR;
+            double pR = compute_lk_down(sonRight, sR);
 
-            pR = compute_lk_down(sonRight, sR);
-
-            pr += pR;
+            pr += p + pR;
 
         }
 
@@ -1295,12 +1306,12 @@ double pPIP::computeLK_Y_local(double valM,
         pr=it->second;
     }
 
-    val=0.0;
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        double logPrCat = log(rDist_->getProbability((size_t)i));
-        logPrCat=0;
-        val += (logPrCat -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
+    double phi_gamma=0.0;
+    for (int catg = 0; catg < num_gamma_categories; catg++) {
+        phi_gamma += log(rDist_->getProbability((size_t)catg)) -log((long double) m) + log((long double) nu_.at(catg)) + phi.at(catg);
     }
+
+    val = phi_gamma + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
 
     return val;
 }
@@ -1337,7 +1348,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     unsigned long d=(h-1)+(w-1)+1; // third dimension of the DP matrix
 
-    double pc0;  // lk of empty column (full of gaps)
+    //double pc0;  // lk of empty column (full of gaps)
+    std::vector<double> pc0;
 
     MSAcolumn_t sLs;
     MSAcolumn_t sRs;
@@ -1396,11 +1408,17 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     LogX[0][0] = 0;
     LogY[0][0] = 0;
 
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        LogM[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
-        LogX[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
-        LogY[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
+    int num_gamma_categories = rDist_->getNumberOfCategories();
+    std::vector<double> phi = new double(num_gamma_categories)
+    for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
+//        LogM[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
+//        LogX[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
+//        LogY[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
+
+        phi.at(catg)= nu_.at(catg) * (pc0.at(catg) - 1.0); // log( exp( ||nu|| (pc0-1) ) )
     }
+
+
 
     TR[0] = new int[1]();
     TR[0][0]=STOP_STATE;
@@ -1507,7 +1525,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                                 sLs,
                                                 sRs,
                                                 m,
-                                                lkM);
+                                                lkM,
+                                                phi);
                     } else {
                         /*
                         val=computeLK_M_all_edges_s_opt(valM,
@@ -1597,7 +1616,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                                node,
                                                sLs, col_gap_Rs,
                                                m,
-                                               lkX);
+                                               lkX,
+                                               phi);
                     }else{
                         /*
                         val=computeLK_X_all_edges_s_opt(valM,
@@ -1686,7 +1706,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                                node,
                                                col_gap_Ls, sRs,
                                                m,
-                                               lkY);
+                                               lkY,
+                                               phi);
                     }else{
                         /*
                         val=computeLK_Y_all_edges_s_opt(valM,

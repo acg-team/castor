@@ -208,7 +208,7 @@ namespace bpp {
 
         double compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s);
 
-        double computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR);
+        std::vector<double> computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR);
 
         double compute_lk_down(bpp::Node *node,MSAcolumn_t &s);
 
@@ -219,7 +219,8 @@ namespace bpp {
                                  std::string &sL,
                                  std::string &sR,
                                  unsigned long m,
-                                 std::map<MSAcolumn_t, double> &lkM);
+                                 std::map<MSAcolumn_t, double> &lkM,
+                                 std::vector<double> &phi);
 
         double computeLK_X_local(double valM,
                                  double valX,
@@ -228,7 +229,8 @@ namespace bpp {
                                  MSAcolumn_t &sL,
                                  MSAcolumn_t &col_gap_R,
                                  unsigned long m,
-                                 std::map<MSAcolumn_t, double> &lkX);
+                                 std::map<MSAcolumn_t, double> &lkX,
+                                 std::vector<double> &phi);
 
         double computeLK_Y_local(double valM,
                                  double valX,
@@ -237,7 +239,8 @@ namespace bpp {
                                  MSAcolumn_t &col_gap_L,
                                  MSAcolumn_t &sR,
                                  unsigned long m,
-                                 std::map<MSAcolumn_t, double> &lkY);
+                                 std::map<MSAcolumn_t, double> &lkY,
+                                 std::vector<double> &phi);
 
         void DP3D_PIP(bpp::Node *node, bool local);
 
