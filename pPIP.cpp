@@ -1051,7 +1051,7 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t
     bpp::ColMatrix<double> PrfvL;
     bpp::ColMatrix<double> PrfvR;
     bpp::ColMatrix<double> fv;
-    //unsigned long idx;
+    unsigned long idx;
 
     int num_gamma_categories = rDist_->getNumberOfCategories();
 
@@ -1070,11 +1070,11 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t
 
     for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
 
-        //idx=0;
-        fvL = go_down(sonLeft, sL, 0, catg);
+        idx=0;
+        fvL = go_down(sonLeft, sL, idx, catg);
 
-        //idx=0;
-        fvR = go_down(sonRight, sR, 0, catg);
+        idx=0;
+        fvR = go_down(sonRight, sR, idx, catg);
 
         // PrfvL = Pr_L * fv_L
         bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
@@ -1121,7 +1121,7 @@ double pPIP::computeLK_M_local(double valM,
     bpp::ColMatrix<double> fv;
     double fv0;
 
-    //unsigned long idx;
+    unsigned long idx;
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -1144,11 +1144,11 @@ double pPIP::computeLK_M_local(double valM,
         pr = 0;
         for (int catg = 0; catg < num_gamma_categories; catg++) {
 
-            //idx=0;
-            fvL = go_down(sonLeft, sL, 0, catg);
+            idx=0;
+            fvL = go_down(sonLeft, sL, idx, catg);
 
-            //idx=0;
-            fvR = go_down(sonRight, sR, 0, catg);
+            idx=0;
+            fvR = go_down(sonRight, sR, idx, catg);
 
             // PrfvL = Pr_L * fv_L
             bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
@@ -1209,7 +1209,7 @@ double pPIP::computeLK_X_local(double valM,
     bpp::ColMatrix<double> PrfvL;
     bpp::ColMatrix<double> PrfvR;
     bpp::ColMatrix<double> fv;
-    //unsigned long idx;
+    unsigned long idx;
     double fv0;
 
 
@@ -1234,11 +1234,11 @@ double pPIP::computeLK_X_local(double valM,
         pr = 0;
         for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
 
-            //idx = 0;
-            fvL = go_down(sonLeft, sL, 0, catg);
+            idx = 0;
+            fvL = go_down(sonLeft, sL, idx, catg);
 
-            //idx = 0;
-            fvR = go_down(sonRight, col_gap_R, 0, catg);
+            idx = 0;
+            fvR = go_down(sonRight, col_gap_R, idx, catg);
 
             // PrfvL = Pr_L * fv_L
             bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
@@ -1301,7 +1301,7 @@ double pPIP::computeLK_Y_local(double valM,
     bpp::ColMatrix<double> PrfvL;
     bpp::ColMatrix<double> PrfvR;
     bpp::ColMatrix<double> fv;
-    //unsigned long idx;
+    unsigned long idx;
     double fv0;
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
@@ -1325,11 +1325,11 @@ double pPIP::computeLK_Y_local(double valM,
         pr = 0;
         for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
 
-            //idx = 0;
-            fvL = go_down(sonLeft, col_gap_L, 0, catg);
+            idx = 0;
+            fvL = go_down(sonLeft, col_gap_L, idx, catg);
 
-            //idx = 0;
-            fvR = go_down(sonRight, sR, 0, catg);
+            idx = 0;
+            fvR = go_down(sonRight, sR, idx, catg);
 
             // PrfvL = Pr_L * fv_L
             bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
