@@ -88,26 +88,41 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     int numNodes = nodeList.size();
     int numCatg=rDist_->getNumberOfCategories();
 
+    // lk score at each node
     score_.resize(numNodes);
     score_.assign(numNodes, -std::numeric_limits<double>::infinity());
 
+    // traceback path at each node
     traceback_path_.resize(numNodes);
 
+    // sequence names in the MSA at each node
     seqNames_.resize(numNodes);
 
+    // MSA at each node
     MSA_.resize(numNodes);
 
+    // insertion rate with rate variation (gamma)
     lambda_.resize(numCatg);
 
+    // deletion rate with rate variation (gamma)
     mu_.resize(numCatg);
 
+    // normalizing constant with rate variation (gamma)
     nu_.resize(numCatg);
 
     // Initialise iotas and betas maps
     for (auto &vnode:nodeList) {
+
+        // get node ID
         int nodeID = treemap_.right.at(vnode);
+
+        // insertion probabilities at the given node with rate variation (gamma)
         iotasNode_[nodeID].resize(numCatg);
+
+        // survival probabilities at the given node with rate variation (gamma)
         betasNode_[nodeID].resize(numCatg);
+
+        // substitution/deletion probability matrices at the given node with rate variation (gamma)
         prNode_[nodeID].resize(numCatg);
     }
 
@@ -580,6 +595,7 @@ void pPIP::_setNu() {
 }
 void pPIP::_setLambda(double lambda){
 
+    // original lambda w/o rate variation
     lambda0 = lambda;
 
     // insertion rate with rate variation among site
@@ -595,6 +611,7 @@ void pPIP::_setMu(double mu){
         PLOG(FATAL) << "ERROR: mu is too small";
     }
 
+    // original mu w/o rate variation
     mu0 = mu;
 
     // deletion rate with rate variation among site
@@ -606,10 +623,12 @@ void pPIP::_setMu(double mu){
 void pPIP::_setPi(const Vdouble &pi){
 
     // copy pi (steady state frequency distribution)
+    // pi is a colMatrix (column array) to simplify the matrix multiplication
     pi_.resize(pi.size(), 1);
     for(int i=0;i<pi.size();i++){
         pi_(i, 0) = pi.at(i);
     }
+
 }
 double pPIP::_setTauRecursive(tshlib::VirtualNode *vnode){
 
@@ -800,8 +819,9 @@ void pPIP::_getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNod
             // root node doesn't have Pr
         } else {
             for(int i=0;i<rDist_->getNumberOfCategories();i++) {
-                // exp(branchLength * rateVariation * Q)
-                prNode_[node->getId()].at(i)=substModel_->getPij_t(node->getDistanceToFather() * rDist_->getCategory(i));
+                // substitution/deletion probabilities with rate variation (gamma)
+                // Pr = exp( branchLength * rateVariation * Q )
+                prNode_[node->getId()].at(i)=substModel_->getPij_t( node->getDistanceToFather() * rDist_->getCategory(i) );
             }
         }
 
@@ -1026,18 +1046,17 @@ double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
 }
 std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR){
     double fv0;
-    //double pr;
     bpp::ColMatrix<double> fvL;
     bpp::ColMatrix<double> fvR;
     bpp::ColMatrix<double> PrfvL;
     bpp::ColMatrix<double> PrfvR;
     bpp::ColMatrix<double> fv;
-    unsigned long idx;
+    //unsigned long idx;
 
     int num_gamma_categories = rDist_->getNumberOfCategories();
 
+    // array of lk (for each gamma rate) of a single column full of gaps
     std::vector<double> pc0;
-
     pc0.resize(num_gamma_categories);
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
@@ -1049,29 +1068,31 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t
     int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    //pr = 0;
     for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
 
-        idx=0;
-        fvL = go_down(sonLeft, sL, idx, catg);
+        //idx=0;
+        fvL = go_down(sonLeft, sL, 0, catg);
 
-        idx=0;
-        fvR = go_down(sonRight, sR, idx, catg);
+        //idx=0;
+        fvR = go_down(sonRight, sR, 0, catg);
 
+        // PrfvL = Pr_L * fv_L
         bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+
+        // PrfvR = Pr_R * fv_R
         bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+
+        // fv = PrfvL * PrfvR
         bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
+        // fv0 = pi * fv
         fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        double pL,pR;
-        double partialLK;
+        double p0 = iotasNode_[node->getId()][catg] * fv0 * rDist_->getCategories().at(catg);
+        double pL = compute_lk_gap_down(sonLeft, sL);
+        double pR = compute_lk_gap_down(sonRight, sR);
 
-        partialLK = iotasNode_[node->getId()][catg] * fv0 * rDist_->getCategories().at(catg);
-        pL = compute_lk_gap_down(sonLeft, sL);
-        pR = compute_lk_gap_down(sonRight, sR);
-
-        pc0.at(catg) = partialLK + pL + pR;
+        pc0.at(catg) = p0 + pL + pR;
     }
 
     return pc0;
@@ -1088,8 +1109,8 @@ double pPIP::computeLK_M_local(double valM,
                                std::vector<double> &phi){
 
     int num_gamma_categories = rDist_->getNumberOfCategories();
-    //std::vector<double> pr = new double(num_gamma_categories);
     double pr;
+    double log_pr;
     double val;
 
     MSAcolumn_t s;
@@ -1099,7 +1120,8 @@ double pPIP::computeLK_M_local(double valM,
     bpp::ColMatrix<double> PrfvR;
     bpp::ColMatrix<double> fv;
     double fv0;
-    unsigned long idx;
+
+    //unsigned long idx;
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -1121,37 +1143,46 @@ double pPIP::computeLK_M_local(double valM,
 
         pr = 0;
         for (int catg = 0; catg < num_gamma_categories; catg++) {
-            idx=0;
-            fvL = go_down(sonLeft, sL, idx, catg);
 
-            idx=0;
-            fvR = go_down(sonRight, sR, idx, catg);
+            //idx=0;
+            fvL = go_down(sonLeft, sL, 0, catg);
 
+            //idx=0;
+            fvR = go_down(sonRight, sR, 0, catg);
+
+            // PrfvL = Pr_L * fv_L
             bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+
+            // PrfvR = Pr_R * fv_R
             bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+
+            // fv = PrfvL * PrfvR
             bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
+            // fv0 = pi * fv
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
+            // match probability with gamma
             double p = rDist_->getProbability((size_t)catg) * iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
+            // marginal lk, marginalized over gamma discrete classes
             pr += p;
         }
 
-        pr = log((long double)pr);
+        log_pr = log((long double)pr);
 
-        lkM[s]=pr;
+        lkM[s]=log_pr;
 
     }else{
-        pr=it->second;
+        log_pr=it->second;
     }
 
-    double phi_gamma=0.0;
+    double log_phi_gamma=0.0;
     for (int catg = 0; catg < num_gamma_categories; catg++) {
-        phi_gamma += log(rDist_->getProbability((size_t)catg)) -log((long double) m) + log((long double) nu_.at(catg)) + phi.at(catg);
+        log_phi_gamma += log(rDist_->getProbability((size_t)catg)) -log((long double) m) + log((long double) nu_.at(catg)) + phi.at(catg);
     }
 
-    val = phi_gamma + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    val = log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 
     return val;
 }
@@ -1169,6 +1200,7 @@ double pPIP::computeLK_X_local(double valM,
     int num_gamma_categories = rDist_->getNumberOfCategories();
 
     double pr;
+    double log_pr;
     double val;
 
     MSAcolumn_t s;
@@ -1177,7 +1209,7 @@ double pPIP::computeLK_X_local(double valM,
     bpp::ColMatrix<double> PrfvL;
     bpp::ColMatrix<double> PrfvR;
     bpp::ColMatrix<double> fv;
-    unsigned long idx;
+    //unsigned long idx;
     double fv0;
 
 
@@ -1201,39 +1233,47 @@ double pPIP::computeLK_X_local(double valM,
 
         pr = 0;
         for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
-            idx = 0;
-            fvL = go_down(sonLeft, sL, idx, catg);
 
-            idx = 0;
-            fvR = go_down(sonRight, col_gap_R, idx, catg);
+            //idx = 0;
+            fvL = go_down(sonLeft, sL, 0, catg);
 
+            //idx = 0;
+            fvR = go_down(sonRight, col_gap_R, 0, catg);
+
+            // PrfvL = Pr_L * fv_L
             bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+
+            // PrfvR = Pr_R * fv_R
             bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+
+            // fv = PrfvL * PrfvR
             bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
+            // fv0 = pi * fv
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            double p = rDist_->getProbability((size_t)catg) * iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+            // gapX probability with gamma
+            double p0 = rDist_->getProbability((size_t)catg) * iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
             double pL = compute_lk_down(sonLeft, sL);
 
-            pr += p + pL;
+            pr += p0 + pL;
         }
 
-        pr = log((long double) pr);
+        log_pr = log((long double) pr);
 
-        lkX[s] = pr;
+        lkX[s] = log_pr;
 
     }else{
-        pr=it->second;
+        log_pr=it->second;
     }
 
-    double phi_gamma=0.0;
+    double log_phi_gamma=0.0;
     for (int catg = 0; catg < num_gamma_categories; catg++) {
-        phi_gamma += log(rDist_->getProbability((size_t)catg)) -log((long double) m) + log((long double) nu_.at(catg)) + phi.at(catg);
+        log_phi_gamma += log(rDist_->getProbability((size_t)catg)) -log((long double) m) + log((long double) nu_.at(catg)) + phi.at(catg);
     }
 
-    val = phi_gamma + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    val = log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 
     return val;
 }
@@ -1251,6 +1291,8 @@ double pPIP::computeLK_Y_local(double valM,
     int num_gamma_categories = rDist_->getNumberOfCategories();
 
     double pr;
+    double log_pr;
+
     double val;
 
     MSAcolumn_t s;
@@ -1259,7 +1301,7 @@ double pPIP::computeLK_Y_local(double valM,
     bpp::ColMatrix<double> PrfvL;
     bpp::ColMatrix<double> PrfvR;
     bpp::ColMatrix<double> fv;
-    unsigned long idx;
+    //unsigned long idx;
     double fv0;
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
@@ -1273,6 +1315,7 @@ double pPIP::computeLK_Y_local(double valM,
 
     int nodeID = node->getId();
 
+    // create left + right column
     s.append(col_gap_L);
     s.append(sR);
 
@@ -1281,32 +1324,40 @@ double pPIP::computeLK_Y_local(double valM,
 
         pr = 0;
         for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
-            idx = 0;
-            fvL = go_down(sonLeft, col_gap_L, idx, catg);
 
-            idx = 0;
-            fvR = go_down(sonRight, sR, idx, catg);
+            //idx = 0;
+            fvL = go_down(sonLeft, col_gap_L, 0, catg);
 
+            //idx = 0;
+            fvR = go_down(sonRight, sR, 0, catg);
+
+            // PrfvL = Pr_L * fv_L
             bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+
+            // PrfvR = Pr_R * fv_R
             bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+
+            // fv = PrfvL * PrfvR
             bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
+            // fv0 = pi * fv
             fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            double p = rDist_->getProbability((size_t)catg) * iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+            // gapY probability with gamma
+            double p0 = rDist_->getProbability((size_t)catg) * iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
             double pR = compute_lk_down(sonRight, sR);
 
-            pr += p + pR;
+            pr += p0 + pR;
 
         }
 
-        pr = log((long double) pr);
+        log_pr = log((long double) pr);
 
-        lkY[s] = pr;
+        lkY[s] = log_pr;
 
     }else{
-        pr=it->second;
+        log_pr=it->second;
     }
 
     double phi_gamma=0.0;
@@ -1314,7 +1365,7 @@ double pPIP::computeLK_Y_local(double valM,
         phi_gamma += log(rDist_->getProbability((size_t)catg)) -log((long double) m) + log((long double) nu_.at(catg)) + phi.at(catg);
     }
 
-    val = phi_gamma + pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    val = phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 
     return val;
 }
@@ -1325,10 +1376,17 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     bool randomSeed = true; // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
 
     if(local){
-        _setTau(treemap_.left.at(node->getId()));  // recompute local tau, total tree length of a tree root at the given node
-        _setNu(); // recompute the normalizing factor nu for the local tree
-        _setAllIotas(node,true); // recompute lambdas with the new normalizing factor (local tree), flag true = tree rooted here
-        _setAllBetas(node,true); // recompute betas with the new normalizing factor (local tree), flag true = tree rooted here
+        // recompute local tau, total tree length of a tree root at the given node
+        _setTau(treemap_.left.at(node->getId()));
+
+        // recompute the normalizing factor nu for the local tree
+        _setNu();
+
+        // recompute lambdas with the new normalizing factor (local tree), flag true = tree rooted here
+        _setAllIotas(node,true);
+
+        // recompute betas with the new normalizing factor (local tree), flag true = tree rooted here
+        _setAllBetas(node,true);
     }
 
     unsigned long up_corner_i;
@@ -1380,7 +1438,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     //***************************************************************************************
     //***************************************************************************************
     if(local){
-        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs); // compute the lk of a column full of gaps
+        // compute the lk of a column full of gaps
+        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs);
     }else{
         /*
         pc0 = compute_pr_gap_all_edges_s(node,
@@ -1412,18 +1471,18 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     LogY[0][0] = 0;
 
     int num_gamma_categories = rDist_->getNumberOfCategories();
-    std::vector<double> phi;
 
+    std::vector<double> phi;
     phi.resize(num_gamma_categories);
-    for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
+    for (int catg = 0; catg < num_gamma_categories; catg++) {
 //        LogM[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
 //        LogX[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
 //        LogY[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
 
-        phi.at(catg)= nu_.at(catg) * (pc0.at(catg) - 1.0); // log( exp( ||nu|| (pc0-1) ) )
+        // log( phi(0,pc0(r)) ): marginal lk for all empty columns of an alignment of size 0
+        // log( exp( ||nu||(r) (pc0(r) - 1 ) ) )
+        phi.at(catg)= nu_.at(catg) * (pc0.at(catg) - 1.0);
     }
-
-
 
     TR[0] = new int[1]();
     TR[0][0]=STOP_STATE;
@@ -1452,13 +1511,14 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     int start_depth;
     unsigned long depth;
 
-    bool flag_exit=false;
     unsigned long last_d=d-1;
     unsigned long size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
     std::map<MSAcolumn_t,double> lkM;
     std::map<MSAcolumn_t,double> lkX;
     std::map<MSAcolumn_t,double> lkY;
 
+    // early stop condition flag
+    bool flag_exit=false;
     for(unsigned long m=1;m<d;m++){
 
         if(flag_exit){
@@ -2362,11 +2422,19 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
 void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local) {
 
+    // resize vectors and maps
     _reserve(list_vnode_to_root);
 
+    // set lambdas with rate variation
     _setLambda(substModel_->getParameter("lambda").getValue());
+
+    // set mus with rate variation
     _setMu(substModel_->getParameter("mu").getValue());
+
+    // copy pi
     _setPi(substModel_->getFrequencies());
+
+    // set substitution/deletion probabilities with rate variation (gamma)
     _getPrFromSubstutionModel(list_vnode_to_root);
 
     /*
@@ -2389,6 +2457,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
         i++;
 
         auto node = tree_->getNode(treemap_.right.at(vnode), false);
+
         VLOG(1) << "[pPIP] Processing node " << node->getId();
 
         if(node->isLeaf()){
@@ -2403,7 +2472,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
 
         }else{
 
-            // align using 3D DP PIP
+            // align using progressive 3D DP PIP
             DP3D_PIP(node, local); // local: tree rooted at the given node
 
         }
