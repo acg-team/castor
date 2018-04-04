@@ -128,7 +128,7 @@ namespace bpp {
 
         void _setNu();
 
-        void _setSubstModel(bpp::SubstitutionModel *smodel);
+        //void _setSubstModel(bpp::SubstitutionModel *smodel);
 
         void _setTree(const Tree *tree);
 
@@ -152,43 +152,107 @@ namespace bpp {
 
         void _getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNodes);
 
-        bool is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned long yf,unsigned long xt,unsigned long yt);
+        bool is_inside(unsigned long x0,
+                       unsigned long y0,
+                       unsigned long xf,
+                       unsigned long yf,
+                       unsigned long xt,
+                       unsigned long yt);
 
-        void set_indeces_M(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
-                                 unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w);
+        void set_indeces_M(unsigned long &up_corner_i,
+                           unsigned long &up_corner_j,
+                           unsigned long &bot_corner_i,
+                           unsigned long &bot_corner_j,
+                           unsigned long level,
+                           unsigned long h,
+                           unsigned long w);
 
-        void set_indeces_X(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
-                                 unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w);
+        void set_indeces_X(unsigned long &up_corner_i,
+                           unsigned long &up_corner_j,
+                           unsigned long &bot_corner_i,
+                           unsigned long &bot_corner_j,
+                           unsigned long level,
+                           unsigned long h,
+                           unsigned long w);
 
-        void set_indeces_Y(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
-                                 unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w);
+        void set_indeces_Y(unsigned long &up_corner_i,
+                           unsigned long &up_corner_j,
+                           unsigned long &bot_corner_i,
+                           unsigned long &bot_corner_j,
+                           unsigned long level,
+                           unsigned long h,
+                           unsigned long w);
 
-        signed long get_indices_M(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
-                                        unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w);
+        signed long get_indices_M(unsigned long nx,
+                                  unsigned long ny,
+                                  unsigned long up_corner_i,
+                                  unsigned long up_corner_j,
+                                  unsigned long bot_corner_i,
+                                  unsigned long bot_corner_j,
+                                  unsigned long m,
+                                  unsigned long h,
+                                  unsigned long w);
 
-        signed long get_indices_X(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
-                                        unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w);
+        signed long get_indices_X(unsigned long nx,
+                                  unsigned long ny,
+                                  unsigned long up_corner_i,
+                                  unsigned long up_corner_j,
+                                  unsigned long bot_corner_i,
+                                  unsigned long bot_corner_j,
+                                  unsigned long m,
+                                  unsigned long h,
+                                  unsigned long w);
 
-        signed long get_indices_Y(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
-                                        unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w);
+        signed long get_indices_Y(unsigned long nx,
+                                  unsigned long ny,
+                                  unsigned long up_corner_i,
+                                  unsigned long up_corner_j,
+                                  unsigned long bot_corner_i,
+                                  unsigned long bot_corner_j,
+                                  unsigned long m,
+                                  unsigned long h,
+                                  unsigned long w);
 
-        void set_indeces_T(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
-                                 unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w);
+        void set_indeces_T(unsigned long &up_corner_i,
+                           unsigned long &up_corner_j,
+                           unsigned long &bot_corner_i,
+                           unsigned long &bot_corner_j,
+                           unsigned long level,
+                           unsigned long h,
+                           unsigned long w);
 
-        void reset_corner(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
-                                unsigned long &bot_corner_j,unsigned long h,unsigned long w);
+        void reset_corner(unsigned long &up_corner_i,
+                          unsigned long &up_corner_j,
+                          unsigned long &bot_corner_i,
+                          unsigned long &bot_corner_j,
+                          unsigned long h,
+                          unsigned long w);
 
-        unsigned long get_indices_T(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
-                                          unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w);
+        unsigned long get_indices_T(unsigned long nx,
+                                    unsigned long ny,
+                                    unsigned long up_corner_i,
+                                    unsigned long up_corner_j,
+                                    unsigned long bot_corner_i,
+                                    unsigned long bot_corner_j,
+                                    unsigned long m,
+                                    unsigned long h,
+                                    unsigned long w);
 
-        int index_of_max(double m, double x, double y,double epsilon,
-                               std::default_random_engine &generator,
-                               std::uniform_real_distribution<double> &distribution);
+        int index_of_max(double m,
+                         double x,
+                         double y,
+                         double epsilon,
+                         std::default_random_engine &generator,
+                         std::uniform_real_distribution<double> &distribution);
 
         double max_of_three(double a, double b, double c,double epsilon);
 
-        bool checkboundary(unsigned long up_corner_i,unsigned long up_corner_j,unsigned long bot_corner_i,
-                                 unsigned long bot_corner_j,unsigned long h,unsigned long w);
+        bool checkboundary(unsigned long up_corner_i,
+                           unsigned long up_corner_j,
+                           unsigned long bot_corner_i,
+                           unsigned long bot_corner_j,
+                           unsigned long h,
+                           unsigned long w);
 
         std::string createGapCol(unsigned long len);
 
@@ -206,41 +270,69 @@ namespace bpp {
 
         void allgaps(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx,bool &flag);
 
-        double compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s);
+        double compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
         std::vector<double> computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR);
 
-        double compute_lk_down(bpp::Node *node,MSAcolumn_t &s);
+        double compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
-        double computeLK_M_local(double valM,
+        double computeLK_M_local(double *PHI,
+                                 double valM,
                                  double valX,
                                  double valY,
                                  bpp::Node *node,
                                  std::string &sL,
                                  std::string &sR,
                                  unsigned long m,
-                                 std::map<MSAcolumn_t, double> &lkM,
-                                 std::vector<double> &phi);
+                                 std::map<MSAcolumn_t, double> &lkM);
 
-        double computeLK_X_local(double valM,
+//        double computeLK_M_local(double *valM_G,
+//                                       double *valX_G,
+//                                       double *valY_G,
+//                                       bpp::Node *node,
+//                                       MSAcolumn_t &sL,
+//                                       MSAcolumn_t &sR,
+//                                       unsigned long m,
+//                                       std::map<MSAcolumn_t, double> &lkM);
+
+        double computeLK_X_local(double *PHI,
+                                 double valM,
                                  double valX,
                                  double valY,
                                  bpp::Node *node,
                                  MSAcolumn_t &sL,
                                  MSAcolumn_t &col_gap_R,
                                  unsigned long m,
-                                 std::map<MSAcolumn_t, double> &lkX,
-                                 std::vector<double> &phi);
+                                 std::map<MSAcolumn_t, double> &lkX);
 
-        double computeLK_Y_local(double valM,
+//        double computeLK_X_local(double *valM_G,
+//                                       double *valX_G,
+//                                       double *valY_G,
+//                                       bpp::Node *node,
+//                                       MSAcolumn_t &sL,
+//                                       MSAcolumn_t &col_gap_R,
+//                                       unsigned long m,
+//                                       std::map<MSAcolumn_t, double> &lkX);
+
+        double computeLK_Y_local(double *PHI,
+                                 double valM,
                                  double valX,
                                  double valY,
                                  bpp::Node *node,
                                  MSAcolumn_t &col_gap_L,
                                  MSAcolumn_t &sR,
                                  unsigned long m,
-                                 std::map<MSAcolumn_t, double> &lkY,
-                                 std::vector<double> &phi);
+                                 std::map<MSAcolumn_t, double> &lkY);
+
+//        double computeLK_Y_local(double *valM_G,
+//                                       double *valX_G,
+//                                       double *valY_G,
+//                                       bpp::Node *node,
+//                                       MSAcolumn_t &col_gap_L,
+//                                       MSAcolumn_t &sR,
+//                                       unsigned long m,
+//                                       std::map<MSAcolumn_t, double> &lkY);
+
 
         void DP3D_PIP(bpp::Node *node, bool local);
 
@@ -254,8 +346,10 @@ namespace bpp {
 
 namespace pPIPUtils {
 
+    // convert MSA PIP into sites container
     bpp::SiteContainer *pPIPmsa2Sites(bpp::pPIP *progressivePIP);
 
+    // sum of logs
     double add_lns(double a_ln,double b_ln);
 
     void max_val_in_column(double ***M,int depth, int height, int width, double &val, int &level);
