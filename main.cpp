@@ -92,7 +92,7 @@
 * From TSHLib:
 */
 #include <Alignment.hpp>
-#include <Likelihood.hpp>
+//#include <Likelihood.hpp>
 #include <TreeRearrangment.hpp>
 #include <Bpp/Phyl/Distance/PGMA.h>
 #include <Bpp/Phyl/OptimizationTools.h>

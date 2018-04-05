@@ -81,33 +81,26 @@ SET(CMAKE_C_FLAGS_RELEASE "-O3  -g0 -DNDEBUG=0")
 SET(CMAKE_CXX_FLAGS_INTEL "-O3  -g0 -DNDEBUG=0")
 SET(CMAKE_C_FLAGS_INTEL "-O3  -g0 -DNDEBUG=0")
 
+# Dependencies not covered by find package should be found in the following directories
+include_directories("${CMAKE_PREFIX_PATH}/include")
+message(STATUS "Including directory: ${CMAKE_PREFIX_PATH}") 
+LINK_DIRECTORIES("${CMAKE_PREFIX_PATH}}/lib")
+LINK_DIRECTORIES("${CMAKE_PREFIX_PATH}/lib64")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(WINDOWS TRUE)
     message(STATUS "Compilation will be performed under Windows")
+
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(LINUX TRUE)
     message(STATUS "Compilation will be performed under Linux")
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lstdc++ -ldl -pthread ")
-    if (LOCAL_PATH)
-        message(STATUS "Local path is ${LOCAL_PATH}")
-        include_directories("${LOCAL_PATH}/include/")
-        link_directories("${LOCAL_PATH}/lib/")
-        link_directories("${LOCAL_PATH}/lib64/")
-    else ()
-        include_directories("/usr/local/include/glog")
-        include_directories("/usr/local/include/gflags")
-    endif ()
-    #find_library(gflags gflags)
-    #message(STATUS "Found Gflags at ${gflags}")
-    #find_package(glog REQUIRED)
-    #find_package(gflags 2.2 REQUIRED)
-
+    find_package(glog 0.3.5 REQUIRED)
+    
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
     message(STATUS "Compilation will be performed under Apple MacOS")
     find_package(glog 0.3.5 REQUIRED)
-    find_package(gflags REQUIRED)
+
 endif ()
 
 find_package(Boost)
@@ -115,19 +108,14 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-
-
 find_package("Eigen3")
 if (EIGEN3_FOUND)
-    message("Found Eigen3 in: ${EIGEN3_INCLUDE_DIR}")
+    message("-- Found Eigen3 in: ${EIGEN3_INCLUDE_DIR}")
 endif (EIGEN3_FOUND)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-
-find_package("TshLib")
-if (TSHLIB_FOUND)
-    message("Found TSHLIB in ${TSHLIB_INCLUDE_DIRS}")
-endif(TSHLIB_FOUND)
+find_package(TshLib)
+message("-- Found TSHLIB in ${TSHLIB_INCLUDE_DIRS}")
 include_directories(${TSHLIB_INCLUDE_DIRS})
 
 
@@ -154,7 +142,6 @@ set(SOURCES
         PIP.cpp
         PIP.hpp
         Version.hpp
-        #progressivePIP.hpp
         RHomogeneousTreeLikelihood_PIP.cpp
         RHomogeneousTreeLikelihood_PIP.hpp
         ExtendedAlphabet.cpp
@@ -179,7 +166,6 @@ add_executable(miniJATI ${SOURCES})
 
 target_link_libraries(miniJATI tshlib)
 target_link_libraries(miniJATI glog)
-target_link_libraries(miniJATI gflags)
 target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
 target_link_libraries(miniJATI ${Boost_LIBRARIES})
 
