@@ -98,9 +98,6 @@ namespace bpp {
 
         std::map<unsigned long, std::vector<double>> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
         std::map<unsigned long, std::vector<double>> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
-        //std::vector<double> iotaNode_;
-        //std::vector<double> betaNode_;
-        //std::vector<bpp::RowMatrix<double> > prNode_;
         std::map<unsigned long, std::vector<bpp::RowMatrix<double> > >prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
         std::vector<std::vector<std::string> > seqNames_;          // vector[nodeId] of sequence names (MSAs seq. names at each internal node) node
         std::vector<MSA_t> MSA_;                                   // vector[nodeId] MSA at each node
@@ -128,8 +125,6 @@ namespace bpp {
 
         void _setNu();
 
-        //void _setSubstModel(bpp::SubstitutionModel *smodel);
-
         void _setTree(const Tree *tree);
 
         void _setLambda(double lambda);
@@ -142,11 +137,7 @@ namespace bpp {
 
         void _setTau(tshlib::VirtualNode *vnode);
 
-        //void _setAllIotas(std::vector<tshlib::VirtualNode *> &listNodes);
-
         void _setAllIotas(bpp::Node *node,bool local_root);
-
-        //void _setAllBetas(std::vector<tshlib::VirtualNode *> &listNodes);
 
         void _setAllBetas(bpp::Node *node,bool local_root);
 
@@ -266,7 +257,7 @@ namespace bpp {
 
         bpp::ColMatrix<double> fv_observed(MSAcolumn_t &s, unsigned long &idx);
 
-        bpp::ColMatrix<double> go_down(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx,int catg);
+        bpp::ColMatrix<double> computeFVrec(bpp::Node *node, MSAcolumn_t &s, unsigned long &idx, int catg);
 
         void allgaps(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx,bool &flag);
 
@@ -276,7 +267,7 @@ namespace bpp {
 
         double compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
-        double computeLK_M_local(double *PHI,
+        double computeLK_M_local(double log_phi_gamma,
                                  double valM,
                                  double valX,
                                  double valY,
@@ -286,16 +277,7 @@ namespace bpp {
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkM);
 
-//        double computeLK_M_local(double *valM_G,
-//                                       double *valX_G,
-//                                       double *valY_G,
-//                                       bpp::Node *node,
-//                                       MSAcolumn_t &sL,
-//                                       MSAcolumn_t &sR,
-//                                       unsigned long m,
-//                                       std::map<MSAcolumn_t, double> &lkM);
-
-        double computeLK_X_local(double *PHI,
+        double computeLK_X_local(double log_phi_gamma,
                                  double valM,
                                  double valX,
                                  double valY,
@@ -305,16 +287,7 @@ namespace bpp {
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkX);
 
-//        double computeLK_X_local(double *valM_G,
-//                                       double *valX_G,
-//                                       double *valY_G,
-//                                       bpp::Node *node,
-//                                       MSAcolumn_t &sL,
-//                                       MSAcolumn_t &col_gap_R,
-//                                       unsigned long m,
-//                                       std::map<MSAcolumn_t, double> &lkX);
-
-        double computeLK_Y_local(double *PHI,
+        double computeLK_Y_local(double log_phi_gamma,
                                  double valM,
                                  double valX,
                                  double valY,
@@ -323,16 +296,6 @@ namespace bpp {
                                  MSAcolumn_t &sR,
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkY);
-
-//        double computeLK_Y_local(double *valM_G,
-//                                       double *valX_G,
-//                                       double *valY_G,
-//                                       bpp::Node *node,
-//                                       MSAcolumn_t &col_gap_L,
-//                                       MSAcolumn_t &sR,
-//                                       unsigned long m,
-//                                       std::map<MSAcolumn_t, double> &lkY);
-
 
         void DP3D_PIP(bpp::Node *node, bool local);
 

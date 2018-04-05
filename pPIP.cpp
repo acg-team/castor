@@ -641,7 +641,8 @@ void pPIP::setMSAleaves(bpp::Node *node,const std::string &sequence){
 void pPIP::_setNu() {
 
     for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
-        // computes the normalizing constant with discrete rate variation (gamma)
+        // computes the normalizing constant with discrete rate variation (gamma distribution)
+        // nu(r) = lambda * r * (tau + 1/(mu *r))
         nu_.at(i) = lambda_.at(i) * (tau_ + 1 / mu_.at(i));
     }
 
@@ -718,6 +719,8 @@ void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
     if (local_root) {
 
         for (int catg = 0; catg < rDist_->getNumberOfCategories(); catg++) {
+
+            // T(r) = tau + 1/ (mu * r)
             T = tau_ + 1 / mu_.at(catg);
 
             // checks division by 0 or too small number
@@ -725,7 +728,7 @@ void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
                 PLOG(WARNING) << "ERROR in set_iota: T too small";
             }
 
-            // iota(root,r) = (lambda * r)/ (mu * r) / (lambda * r * (tau + 1/ (mu *r) ) )
+            // iota(root,r) = (lambda * r)/ (mu * r) / (lambda * r * (tau + 1/ (mu * r) ) )
             //           = 1 / (mu * r) / (tau + 1/ (mu *r) )
             iotasNode_[node->getId()][catg] = (1 / mu_.at(catg)) / T;
 
@@ -735,7 +738,7 @@ void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
 
         for (int catg = 0; catg < rDist_->getNumberOfCategories(); catg++) {
 
-            // T = tau + 1/(mu * r)
+            // T(r) = tau + 1/(mu * r)
             T = tau_ + 1 / mu_.at(catg);
 
             // checks division by 0 or too small number
@@ -775,6 +778,7 @@ void pPIP::_setAllBetas(bpp::Node *node,bool local_root) {
     if(local_root){
 
         for (int catg = 0; catg < rDist_->getNumberOfCategories(); catg++) {
+            // by definition at the root (ev. local root) the survival probabiloty is 1
             betasNode_[node->getId()][catg] = 1.0;
         }
 
@@ -782,14 +786,14 @@ void pPIP::_setAllBetas(bpp::Node *node,bool local_root) {
 
         for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
 
-            // muT = r * mu * b(v)
+            // muT(r) = r * mu * b(v)
             double muT = rDist_->getCategory(catg) * mu_.at(catg) * node->getDistanceToFather();
 
             // checks division by 0 or too small value
             if (fabs(muT) < SMALL_DOUBLE) {
                 perror("ERROR mu * T is too small");
             }
-
+            // survival probability on node v (different from (local)-root)
             // beta(v,r) = (1 - exp( -mu * r * b(v) )) / (mu * r * b(v))
             betasNode_[node->getId()][catg] = (1.0 - exp(-muT)) / muT;
         }
@@ -834,7 +838,9 @@ void pPIP::_getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNod
 }
 bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn_t &s, unsigned long &idx){
 
-    // fill the indicator function (array) I
+    // TODO: indicator functions in the initialization, here only retrieval of values
+
+    // fills the indicator function (array) I
     // I is an array of zeros and a 1 only at the position of the observed char
 
     bpp::ColMatrix<double> fv;
@@ -852,12 +858,9 @@ bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn_t &s, unsigned long &idx){
 
     return fv;
 }
-bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx,int catg){
+bpp::ColMatrix<double> pPIP::computeFVrec(bpp::Node *node, MSAcolumn_t &s, unsigned long &idx, int catg){
+
     bpp::ColMatrix<double> fv;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    bpp::ColMatrix<double> PrfvL;
-    bpp::ColMatrix<double> PrfvR;
 
     if(node->isLeaf()){
 
@@ -875,15 +878,17 @@ bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned lo
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
         // computes the recursive Felsenstein's peeling weight on the left subtree
-        fvL = go_down(sonLeft, s, idx, catg);
+        bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, s, idx, catg);
 
         // computes the recursive Felsenstein's peeling weight on the right subtree
-        fvR = go_down(sonRight, s, idx, catg);
+        bpp::ColMatrix<double> fvR = computeFVrec(sonRight, s, idx, catg);
 
         // PrfvL = Pr_L * fv_L
+        bpp::ColMatrix<double> PrfvL;
         bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
 
         // PrfvR = Pr_R * fv_R
+        bpp::ColMatrix<double> PrfvR;
         bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
 
         // fv = PrfvL * PrfvR
@@ -924,26 +929,21 @@ void pPIP::allgaps(bpp::Node *node,std::string &s, unsigned long &idx,bool &flag
 }
 double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s,int catg){
 
-    double pr=0;
-    double pL=0;
-    double pR=0;
     unsigned long idx;
-    bpp::ColMatrix<double> fv;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    double fv0;
 
     int nodeID = node->getId();
 
     if(node->isLeaf()){
 
         idx=0;
-        fv=go_down(node,s,idx,catg);
+        bpp::ColMatrix<double> fv= computeFVrec(node, s, idx, catg);
 
         // fv0 = pi * fv
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
+        double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        pr = iotasNode_[nodeID][catg] - \
+        // lk of non survival till the leaves
+        // lk = iota(v,r) - iota(v,r)*beta(v,r) + iota(v,r)*beta(v,r)*fv
+        double pr = iotasNode_[nodeID][catg] - \
              iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] + \
              iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
@@ -961,12 +961,14 @@ double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s,int catg){
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
     idx=0;
-    fv=go_down(node,s,idx,catg);
+    bpp::ColMatrix<double> fv= computeFVrec(node, s, idx, catg);
 
     // fv0 = pi * fv
-    fv0 = MatrixBppUtils::dotProd(fv, pi_);
+    double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-    pr = iotasNode_[nodeID][catg] - \
+    // lk of non survival till the leaves
+    // lk = iota(v,r) - iota(v,r)*beta(v,r) + iota(v,r)*beta(v,r)*fv
+    double pr = iotasNode_[nodeID][catg] - \
          iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] + \
          iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
@@ -975,102 +977,86 @@ double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s,int catg){
     bool flagR=true;
     idx=0;
     allgaps(sonLeft, s, idx, flagL);
+
     unsigned long ixx=idx;
     allgaps(sonRight, s, idx, flagR);
+
     unsigned long len;
 
     MSAcolumn_t sL;
     len=ixx;
     sL=s.substr(0,len);
-    pL = compute_lk_gap_down(sonLeft, sL, catg);
+    double pL = compute_lk_gap_down(sonLeft, sL, catg);
 
     MSAcolumn_t sR;
     sR=s.substr(ixx);
-    pR = compute_lk_gap_down(sonRight, sR,catg);
+    double pR = compute_lk_gap_down(sonRight, sR,catg);
 
     return pr+pL+pR;
 }
 double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg){
 
-    double pr;
     unsigned long idx;
-    bpp::ColMatrix<double> fv;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    double fv0;
+    //bpp::ColMatrix<double> fvL;
+    //bpp::ColMatrix<double> fvR;
 
     int nodeID = node->getId();
 
     if(node->isLeaf()){
 
-        //pr = 0;
-        //for (int i = 0; i < rDist_->getCategories().size(); i++) {
         idx=0;
-        fv=go_down(node,s,idx,catg);
+        bpp::ColMatrix<double> fv= computeFVrec(node, s, idx, catg);
 
         // fv0 = pi * fv
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
+        double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        pr = iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
-        //}
+        double pr = iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+
         return pr;
 
-    }else{
+    }
 
-        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
 
-        int sonLeftID = treemap_.right.at(vnode_left);
-        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+    int sonLeftID = treemap_.right.at(vnode_left);
+    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
-        int sonRightID = treemap_.right.at(vnode_right);
-        bpp::Node *sonRight = tree_->getNode(sonRightID);
+    int sonRightID = treemap_.right.at(vnode_right);
+    bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-        //pr = 0;
-        //for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        idx=0;
-        fv=go_down(node,s,idx,catg);
+    idx=0;
+    bpp::ColMatrix<double> fv= computeFVrec(node, s, idx, catg);
 
-        // fv0 = pi * fv
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
+    // fv0 = pi * fv
+    double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        pr = iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
-        //}
+    double pr = iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
-        bool flagL=true;
-        bool flagR=true;
-        idx=0;
-        allgaps(sonLeft, s, idx, flagL);
-        unsigned long ixx=idx;
-        allgaps(sonRight, s, idx, flagR);
+    bool flagL=true;
+    bool flagR=true;
+    idx=0;
+    allgaps(sonLeft, s, idx, flagL);
+    unsigned long ixx=idx;
+    allgaps(sonRight, s, idx, flagR);
 
-        unsigned long len;
-        if(flagR){
-            std::string sL;
-            len=ixx;
-            sL=s.substr(0,len);
-            return pr + compute_lk_down(sonLeft, sL, catg);
-        }
+    unsigned long len;
+    if(flagR){
+        std::string sL;
+        len=ixx;
+        sL=s.substr(0,len);
+        return pr + compute_lk_down(sonLeft, sL, catg);
+    }
 
-        if(flagL){
-            std::string sR;
-            sR=s.substr(ixx);
-            return pr + compute_lk_down(sonRight, sR, catg);
-        }
-
+    if(flagL){
+        std::string sR;
+        sR=s.substr(ixx);
+        return pr + compute_lk_down(sonRight, sR, catg);
     }
 
     return pr;
 }
 std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR){
-
-    double fv0;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    bpp::ColMatrix<double> PrfvL;
-    bpp::ColMatrix<double> PrfvR;
-    bpp::ColMatrix<double> fv;
-    unsigned long idx;
 
     // number of discrete gamma categories
     int num_gamma_categories = rDist_->getNumberOfCategories();
@@ -1090,25 +1076,30 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t
 
     for (int catg = 0; catg < num_gamma_categories; catg++) {
 
+        unsigned long idx;
+
         // computes the recursive Felsenstein's peeling weight on the left subtree
         idx=0;
-        fvL = go_down(sonLeft, sL, idx, catg);
+        bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
 
         // computes the recursive Felsenstein's peeling weight on the right subtree
         idx=0;
-        fvR = go_down(sonRight, sR, idx, catg);
+        bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
 
         // PrfvL = Pr_L * fv_L
+        bpp::ColMatrix<double> PrfvL;
         bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
 
         // PrfvR = Pr_R * fv_R
+        bpp::ColMatrix<double> PrfvR;
         bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
 
         // fv = PrfvL * PrfvR
+        bpp::ColMatrix<double> fv;
         bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
         // fv0 = pi * fv
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
+        double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
         // lk at the actual node (considered as root node => beta = 1.0)
         double p0 = iotasNode_[node->getId()][catg] * fv0;
@@ -1123,7 +1114,7 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t
     return pc0;
 }
 
-double pPIP::computeLK_M_local(double *PHI,
+double pPIP::computeLK_M_local(double log_phi_gamma,
                                double valM,
                                double valX,
                                double valY,
@@ -1134,9 +1125,6 @@ double pPIP::computeLK_M_local(double *PHI,
                                std::map<MSAcolumn_t, double> &lkM){
 
     double log_pr;
-
-    // number of discrete gamma categories
-    int num_gamma_categories = rDist_->getNumberOfCategories();
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -1156,19 +1144,23 @@ double pPIP::computeLK_M_local(double *PHI,
 
     auto it=lkM.find(s);
     if(it == lkM.end()){
+        // is the first time that it computes the lk of this column
 
         unsigned long idx;
 
-        double pr = 0;
+        // number of discrete gamma categories
+        int num_gamma_categories = rDist_->getNumberOfCategories();
+
+        double pr = 0.0;
         for (int catg = 0; catg < num_gamma_categories; catg++) {
 
             // computes the recursive Felsenstein's peeling weight on the left subtree
             idx=0;
-            bpp::ColMatrix<double> fvL = go_down(sonLeft, sL, idx, catg);
+            bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
 
             // computes the recursive Felsenstein's peeling weight on the right subtree
             idx=0;
-            bpp::ColMatrix<double> fvR = go_down(sonRight, sR, idx, catg);
+            bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
 
             // PrfvL = Pr_L * fv_L
             bpp::ColMatrix<double> PrfvL;
@@ -1191,7 +1183,7 @@ double pPIP::computeLK_M_local(double *PHI,
                        betasNode_[nodeID][catg] * \
                        fv0;
 
-            // marginal lk, marginalized over gamma discrete classes
+            // marginal lk, marginalized over N gamma discrete classes
             pr += p;
         }
 
@@ -1200,20 +1192,16 @@ double pPIP::computeLK_M_local(double *PHI,
         lkM[s]=log_pr;
 
     }else{
+        // the lk of a column like this has been already computed,
+        // the lk value can be retrieved from the map
+
         log_pr=it->second;
     }
-
-    double phi_gamma;
-    for (int catg = 0; catg < num_gamma_categories; catg++) {
-        phi_gamma += exp(PHI[catg]);
-    }
-
-    double log_phi_gamma = log(phi_gamma);
 
     return  log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 
 }
-double pPIP::computeLK_X_local(double *PHI,
+double pPIP::computeLK_X_local(double log_phi_gamma,
                                double valM,
                                double valX,
                                double valY,
@@ -1224,9 +1212,6 @@ double pPIP::computeLK_X_local(double *PHI,
                                std::map<MSAcolumn_t, double> &lkX){
 
     double log_pr;
-
-    // number of discrete gamma categories
-    int num_gamma_categories = rDist_->getNumberOfCategories();
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -1246,19 +1231,23 @@ double pPIP::computeLK_X_local(double *PHI,
 
     auto it=lkX.find(s);
     if(it == lkX.end()){
+        // is the first time that it computes the lk of this column
 
         unsigned long idx;
 
-        double pr = 0;
+        // number of discrete gamma categories
+        int num_gamma_categories = rDist_->getNumberOfCategories();
+
+        double pr = 0.0;
         for (int catg = 0; catg < num_gamma_categories; catg++) {
 
             // computes the recursive Felsenstein's peeling weight on the left subtree
             idx = 0;
-            bpp::ColMatrix<double> fvL = go_down(sonLeft, sL, idx, catg);
+            bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
 
             // computes the recursive Felsenstein's peeling weight on the right subtree
             idx = 0;
-            bpp::ColMatrix<double> fvR = go_down(sonRight, col_gap_R, idx, catg);
+            bpp::ColMatrix<double> fvR = computeFVrec(sonRight, col_gap_R, idx, catg);
 
             // PrfvL = Pr_L * fv_L
             bpp::ColMatrix<double> PrfvL;
@@ -1291,20 +1280,16 @@ double pPIP::computeLK_X_local(double *PHI,
         lkX[s] = log_pr;
 
     }else{
+        // the lk of a column like this has been already computed,
+        // the lk value can be retrieved from the map
+
         log_pr=it->second;
     }
-
-    double phi_gamma;
-    for (int catg = 0; catg < num_gamma_categories; catg++) {
-        phi_gamma += exp(PHI[catg]);
-    }
-
-    double log_phi_gamma = log(phi_gamma);
 
     return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 
 }
-double pPIP::computeLK_Y_local(double *PHI,
+double pPIP::computeLK_Y_local(double log_phi_gamma,
                                double valM,
                                double valX,
                                double valY,
@@ -1315,9 +1300,6 @@ double pPIP::computeLK_Y_local(double *PHI,
                                std::map<MSAcolumn_t, double> &lkY){
 
     double log_pr;
-
-    // number of discrete gamma categories
-    int num_gamma_categories = rDist_->getNumberOfCategories();
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -1337,19 +1319,23 @@ double pPIP::computeLK_Y_local(double *PHI,
 
     auto it=lkY.find(s);
     if(it == lkY.end()){
+        // is the first time that it computes the lk of this column
+
+        // number of discrete gamma categories
+        int num_gamma_categories = rDist_->getNumberOfCategories();
 
         unsigned long idx;
 
-        double pr = 0;
+        double pr = 0.0;
         for (int catg = 0; catg < num_gamma_categories; catg++) {
 
             // computes the recursive Felsenstein's peeling weight on the left subtree
             idx = 0;
-            bpp::ColMatrix<double> fvL = go_down(sonLeft, col_gap_L, idx, catg);
+            bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, col_gap_L, idx, catg);
 
             // computes the recursive Felsenstein's peeling weight on the right subtree
             idx = 0;
-            bpp::ColMatrix<double> fvR = go_down(sonRight, sR, idx, catg);
+            bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
 
             // PrfvL = Pr_L * fv_L
             bpp::ColMatrix<double> PrfvL;
@@ -1383,24 +1369,21 @@ double pPIP::computeLK_Y_local(double *PHI,
         lkY[s] = log_pr;
 
     }else{
+        // the lk of a column like this has been already computed,
+        // the lk value can be retrieved from the map
+
         log_pr=it->second;
     }
 
-    double phi_gamma;
-    for (int catg = 0; catg < num_gamma_categories; catg++) {
-        phi_gamma += exp(PHI[catg]);
-    }
-
-    double log_phi_gamma = log(phi_gamma);
-
-    return phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 
 }
 
 void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
-    //TODO: place as argument
-    bool randomSeed = true; // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
+    // TODO: place as argument
+    // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
+    bool randomSeed = true;
 
     // number of discrete gamma categories
     int num_gamma_categories = rDist_->getNumberOfCategories();
@@ -1439,13 +1422,14 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     unsigned long d=(h-1)+(w-1)+1; // third dimension of the DP matrix
 
-    //double pc0;  // lk of empty column (full of gaps)
+    // lk of a single empty column (full of gaps) with rate variation (gamma distribution)
     std::vector<double> pc0;
 
-    MSAcolumn_t sLs;
-    MSAcolumn_t sRs;
-    MSAcolumn_t col_gap_Ls;
-    MSAcolumn_t col_gap_Rs;
+    // MSA columns
+    MSAcolumn_t sLs; // left column
+    MSAcolumn_t sRs; // right column
+    MSAcolumn_t col_gap_Ls; // left column full of gaps
+    MSAcolumn_t col_gap_Rs; //right column full of gaps
 
     unsigned long numLeavesLeft = seqNames_.at(s1ID).size(); // number of leaves in the left sub-tree
     unsigned long numLeavesRight = seqNames_.at(s2ID).size(); // number of leaves in the right sub-tree
@@ -1457,7 +1441,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     if(randomSeed){
         seed = std::chrono::system_clock::now().time_since_epoch().count(); // "random" seed
     }else{
-        seed = 0;
+        seed = 0; // fixed seed
     }
 
     std::default_random_engine generator(seed);
@@ -1489,8 +1473,10 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     auto** TR = new int*[d]; // 3D traceback matrix
 
+    // max num of cells occupied in a layer
     int numcells = int((w * (h + 1)) / 2);
 
+    // allocate memory for the 2 layers
     LogM[0] = new double[numcells];
     LogX[0] = new double[numcells];
     LogY[0] = new double[numcells];
@@ -1498,41 +1484,34 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     LogX[1] = new double[numcells];
     LogY[1] = new double[numcells];
 
-    auto** PHI = new double *[numcells];
+    //============================================================
+    // marginal likelihood for all empty columns with rate variation (gamma distribution)
+    // phi(m,pc0,r) depends on the MSA length m
 
-    for(int i=0;i<numcells;i++){
+    // marginal phi marginalized over gamma categories
+    double log_phi_gamma;
+    double prev_log_phi_gamma; // to store old value
+
+    auto** PHI = new double *[d];
+
+    for(int i=0;i<d;i++){
         PHI[i] = new double[num_gamma_categories];
     }
-
-    LogM[0][0] = 0;
-    LogX[0][0] = 0;
-    LogY[0][0] = 0;
-
-    //std::vector<double> phi;
-    //phi.resize(num_gamma_categories);
     for (int catg = 0; catg < num_gamma_categories; catg++) {
-//        LogM[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
-//        LogX[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
-//        LogY[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
-
-        // log( phi(0,pc0(r),r) ): marginal lk for all empty columns of an alignment of size 0
-        double phi = log(rDist_->getProbability((size_t)catg)) + (nu_.at(catg) * (pc0.at(catg) - 1.0));
-
-        PHI[0][catg] = phi;
-
-//        LogM_G[0][0][catg] = phi; // log( exp( ||nu||(r) * (pc0(r)-1) ) )
-//        LogX_G[0][0][catg] = phi; // log( exp( ||nu||(r) * (pc0(r)-1) ) )
-//        LogY_G[0][0][catg] = phi; // log( exp( ||nu||(r) * (pc0(r)-1) ) )
-
-        // log( phi(0,pc0(r)) ): marginal lk for all empty columns of an alignment of size 0
-        // log( exp( ||nu||(r) (pc0(r) - 1 ) ) )
-        //phi.at(catg)= nu_.at(catg) * (pc0.at(catg) - 1.0);
+        // log( P_gamma(r) * phi(0,pc0(r),r) ): marginal lk for all empty columns of an alignment of size 0
+        PHI[0][catg] = log(rDist_->getProbability((size_t)catg)) + \
+                     (nu_.at(catg) * (pc0.at(catg) - 1.0));
     }
+    // computes the marginal phi marginalized over all the gamma categories
+    log_phi_gamma = PHI[0][0];
+    for (int catg = 1; catg < num_gamma_categories; catg++) {
+        log_phi_gamma=pPIPUtils::add_lns(log_phi_gamma,PHI[0][catg]);
+    }
+    //============================================================
 
-//    auto* infArray = new double[num_gamma_categories];
-//    for (int catg = 0; catg < num_gamma_categories; catg++) {
-//        infArray[catg] = -std::numeric_limits<double>::infinity();
-//    }
+    LogM[0][0] = log_phi_gamma;
+    LogX[0][0] = log_phi_gamma;
+    LogY[0][0] = log_phi_gamma;
 
     TR[0] = new int[1]();
     TR[0][0]=STOP_STATE;
@@ -1547,9 +1526,6 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     double valM;
     double valX;
     double valY;
-//    double *valM_G;
-//    double *valX_G;
-//    double *valY_G;
 
     signed long idx;
 
@@ -1570,15 +1546,14 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     std::map<MSAcolumn_t,double> lkX;
     std::map<MSAcolumn_t,double> lkY;
 
-    //bool flagInfM, flagInfX, flagInfY;
-
+    //============================================================
     // early stop condition flag
     bool flag_exit=false;
+    int counter_to_early_stop;
+    int max_decrease_before_stop = 10;
+    double prev_lk = std::numeric_limits<double>::infinity();
+    //============================================================
     for(unsigned long m=1;m<d;m++){
-
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //TODO re-insert early stop condition
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         if(flag_exit){
             break;
@@ -1591,11 +1566,26 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
         //***************************************************************************************
         //***************************************************************************************
         for (int catg = 0; catg < num_gamma_categories; catg++) {
+            // computes the marginal phi(m,pc0(r),r) with gamma by multiplying the starting value
+            // phi(0,pco(r),r) = log( P_gamma(r) * exp( nu(r) * (pc0(r)-1) ) ) with
+            // 1/m * nu(r) at each new layer
             PHI[m][catg] = PHI[m-1][catg] - log((long double) m) + log((long double) nu_.at(catg));
         }
 
+        // store old value
+        prev_log_phi_gamma = log_phi_gamma;
+
+        // computes the marginal phi marginalized over all the gamma categories
+        log_phi_gamma = PHI[m][0];
+        for (int catg = 1; catg < num_gamma_categories; catg++) {
+            log_phi_gamma=pPIPUtils::add_lns(log_phi_gamma,PHI[m][catg]);
+        }
         //***************************************************************************************
         //***************************************************************************************
+
+        //***************************************************************************************
+        //***************************************************************************************
+        // COMPUTES MATCH LK
         set_indeces_M(up_corner_i,
                       up_corner_j,
                       bot_corner_i,
@@ -1636,12 +1626,9 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                         m - 1, h, w);
                     if (idx >= 0) {
                         valM = LogM[m_binary_prev][idx];
-                        //valM_G = LogM_G[m_binary_prev][idx];
-                        //flagInfM = false;
                     } else {
+                        // unreachable region of the 3D matrix
                         valM = -std::numeric_limits<double>::infinity();
-                        //valM_G = infArray;
-                        //flagInfM = true;
                     }
 
                     idx = get_indices_X(coordTriangle_prev_i,
@@ -1653,12 +1640,9 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                         m - 1, h, w);
                     if (idx >= 0) {
                         valX = LogX[m_binary_prev][idx];
-                        //valX_G = LogX_G[m_binary_prev][idx];
-                        //flagInfX = false;
                     } else {
+                        // unreachable region of the 3D matrix
                         valX = -std::numeric_limits<double>::infinity();
-                        //valX_G = infArray;
-                        //flagInfX = true;
                     }
 
                     idx = get_indices_Y(coordTriangle_prev_i,
@@ -1670,22 +1654,21 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                         m - 1, h, w);
                     if (idx >= 0) {
                         valY = LogY[m_binary_prev][idx];
-                        //valY_G = LogY_G[m_binary_prev][idx];
-                        //flagInfY = false;
                     } else {
+                        // unreachable region of the 3D matrix
                         valY = -std::numeric_limits<double>::infinity();
-                        //valY_G = infArray;
-                        //flagInfY = true;
                     }
 
                     if (std::isinf(valM) && std::isinf(valX) && std::isinf(valY)) {
-                    //if (flagInfM && flagInfX && flagInfY) {
                         exit(EXIT_FAILURE);
                     }
 
                     if (local) {
                         // compute MATCH lk
-                        val = computeLK_M_local(PHI[m],
+                        valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
+                        valX -= prev_log_phi_gamma;
+                        valY -= prev_log_phi_gamma;
+                        val = computeLK_M_local(log_phi_gamma,
                                                 valM,
                                                 valX,
                                                 valY,
@@ -1732,6 +1715,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
         }
         //***************************************************************************************
         //***************************************************************************************
+        // COMPUTES GAPX LK
         set_indeces_X(up_corner_i,
                       up_corner_j,
                       bot_corner_i,
@@ -1769,12 +1753,9 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                       m-1,h,w);
                     if(idx>=0){
                         valM=LogM[m_binary_prev][idx];
-                        //valM_G=LogM_G[m_binary_prev][idx];
-                        //flagInfM = false;
                     }else{
+                        // unreachable region of the 3D matrix
                         valM=-std::numeric_limits<double>::infinity();
-                        //valM_G = infArray;
-                        //flagInfM = true;
                     }
 
                     idx=get_indices_X(coordTriangle_prev_i,
@@ -1786,12 +1767,9 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                       m-1,h,w);
                     if(idx>=0){
                         valX=LogX[m_binary_prev][idx];
-                        //valX_G=LogX_G[m_binary_prev][idx];
-                        //flagInfX = false;
                     }else{
+                        // unreachable region of the 3D matrix
                         valX=-std::numeric_limits<double>::infinity();
-                        //valX_G = infArray;
-                        //flagInfX = true;
                     }
 
                     idx=get_indices_Y(coordTriangle_prev_i,
@@ -1803,22 +1781,21 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                       m-1,h,w);
                     if(idx>=0){
                         valY=LogY[m_binary_prev][idx];
-                        //valY_G=LogY_G[m_binary_prev][idx];
-                        //flagInfY = false;
                     }else{
+                        // unreachable region of the 3D matrix
                         valY=-std::numeric_limits<double>::infinity();
-                        //valY_G = infArray;
-                        //flagInfY = true;
                     }
 
                     if(std::isinf(valM) && std::isinf(valX) && std::isinf(valY)){
-                    //if(flagInfM && flagInfX && flagInfY){
                         exit(EXIT_FAILURE);
                     }
 
                     if(local){
                         // compute GAPX lk
-                        val= computeLK_X_local(PHI[m],
+                        valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
+                        valX -= prev_log_phi_gamma;
+                        valY -= prev_log_phi_gamma;
+                        val= computeLK_X_local(log_phi_gamma,
                                                valM,
                                                valX,
                                                valY,
@@ -1866,6 +1843,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
         }
         //***************************************************************************************
         //***************************************************************************************
+        // COMPUTES GAPY LK
         set_indeces_Y(up_corner_i,
                       up_corner_j,
                       bot_corner_i,
@@ -1901,12 +1879,9 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                       m-1,h,w);
                     if(idx>=0){
                         valM=LogM[m_binary_prev][idx];
-                        //valM_G=LogM_G[m_binary_prev][idx];
-                        //flagInfM = false;
                     }else{
+                        // unreachable region of the 3D matrix
                         valM=-std::numeric_limits<double>::infinity();
-                        //valM_G = infArray;
-                        //flagInfM = true;
                     }
 
                     idx=get_indices_X(coordTriangle_prev_i,
@@ -1918,12 +1893,9 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                       m-1,h,w);
                     if(idx>=0){
                         valX=LogX[m_binary_prev][idx];
-                        //valX_G=LogX_G[m_binary_prev][idx];
-                        //flagInfX = false;
                     }else{
+                        // unreachable region of the 3D matrix
                         valX=-std::numeric_limits<double>::infinity();
-                        //valX_G = infArray;
-                        //flagInfX = true;
                     }
 
                     idx=get_indices_Y(coordTriangle_prev_i,
@@ -1935,22 +1907,21 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                       m-1,h,w);
                     if(idx>=0){
                         valY=LogY[m_binary_prev][idx];
-                        //valY_G=LogY_G[m_binary_prev][idx];
-                        //flagInfY = false;
                     }else{
+                        // unreachable region of the 3D matrix
                         valY=-std::numeric_limits<double>::infinity();
-                        //valY_G = infArray;
-                        //flagInfY = true;
                     }
 
                     if(std::isinf(valM) && std::isinf(valX) && std::isinf(valY)){
-                    //if(flagInfM && flagInfX && flagInfY){
                         exit(EXIT_FAILURE);
                     }
 
                     if(local){
                         // compute GAPY lk
-                        val= computeLK_Y_local(PHI[m],
+                        valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
+                        valX -= prev_log_phi_gamma;
+                        valY -= prev_log_phi_gamma;
+                        val= computeLK_Y_local(log_phi_gamma,
                                                valM,
                                                valX,
                                                valY,
@@ -2087,6 +2058,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     TR[m][idx]=ttrr;
 
                     if( (coordTriangle_this_i==(h-1)) & (coordTriangle_this_j==(w-1)) ){
+                        // the algorithm is filling the last column of 3D DP matrix where
+                        // all the characters are in the MSA
 
                         max_of_3=max_of_three(mval,xval,yval,epsilon);
 
@@ -2094,6 +2067,21 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                             score=max_of_3;
                             level_max_lk=m;
                         }
+
+                        //=====================================================================
+                        // early stop condition
+                        if(score<prev_lk){
+                            prev_lk = score;
+                            counter_to_early_stop++;
+                            if(counter_to_early_stop>max_decrease_before_stop){
+                                // if for max_decrease_before_stop consecutive times
+                                // the lk decrease then exit, the maximum lk has been reached
+                                flag_exit = true;
+                            }
+                        }else{
+                            counter_to_early_stop = 0;
+                        }
+                        //=====================================================================
 
                     }
 
@@ -2108,6 +2096,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     score_.at(nodeID) = score;
 
+    //==========================================================================================
     // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
     TracebackPath_t traceback_path (depth, ' ');
     int id1=h-1;
@@ -2138,10 +2127,15 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     traceback_path_.at(nodeID) = traceback_path;
 
+    // converts traceback path into an MSA
     build_MSA(node,traceback_path);
 
+    // assigns the sequence names of the new alligned sequences to the current MSA
     setMSAsequenceNames(node);
-    
+    //==========================================================================================
+
+    //==========================================================================================
+    // memory freeing
     free(LogM[1]);
     free(LogM[0]);
     free(LogM);
@@ -2156,8 +2150,11 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     for(int i=last_d;i>=0;i--){
         free(TR[i]);
+        free(PHI[i]);
     }
     free(TR);
+    free(PHI);
+    //==========================================================================================
 }
 
 
@@ -2636,24 +2633,23 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 //
 //}
 
-
-
-
 void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local) {
+    // progressive PIP aligner
+    // local: local subtree, rooted at the current node
 
     // resize vectors and maps
     _reserve(list_vnode_to_root);
 
-    // set lambdas with rate variation
+    // set lambdas with rate variation (gamma distribution)
     _setLambda(substModel_->getParameter("lambda").getValue());
 
-    // set mus with rate variation
+    // set mus with rate variation (gamma distribution)
     _setMu(substModel_->getParameter("mu").getValue());
 
     // copy pi
     _setPi(substModel_->getFrequencies());
 
-    // set substitution/deletion probabilities with rate variation (gamma)
+    // set substitution/deletion probabilities with rate variation (gamma distribution)
     _getPrFromSubstutionModel(list_vnode_to_root);
 
     /*
@@ -2667,10 +2663,11 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
     }
      */
 
-
     size_t i = 0;
 
     for (auto &vnode:list_vnode_to_root) {
+        // traverses the list of nodes and aligns the MSAs on the left and right side
+        // if node is a leaf the resulting MSA is the sequence itself
 
         ApplicationTools::displayGauge(i, list_vnode_to_root.size());
         i++;
@@ -2699,7 +2696,6 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
 
 
 }
-
 bpp::SiteContainer * pPIPUtils::pPIPmsa2Sites(bpp::pPIP *progressivePIP){
     auto MSA = progressivePIP->getMSA(progressivePIP->getRootNode());
 
