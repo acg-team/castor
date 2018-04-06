@@ -150,6 +150,7 @@ int main(int argc, char *argv[]) {
         int PAR_execution_numthreads = ApplicationTools::getIntParameter("exec_numthreads", jatiapp.getParams(), OMP_max_avail_threads, "", true, 0);
 
         bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", jatiapp.getParams(), false);
+        double PAR_proportion = ApplicationTools::getDoubleParameter("alignment.proportion", jatiapp.getParams(), .1);
         std::string PAR_model_substitution = ApplicationTools::getStringParameter("model", jatiapp.getParams(), "JC69", "", true, true);
         std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", jatiapp.getParams(), false, false, "", true, "", 1);
         std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", jatiapp.getParams(), false, false, "", true, "", 1);
@@ -493,18 +494,37 @@ int main(int argc, char *argv[]) {
         bpp::SubstitutionModel *smodel = nullptr;
         bpp::TransitionModel *model = nullptr;
 
-
         Eigen::MatrixXd Q;
         Eigen::VectorXd pi;
         double lambda;
         double mu;
-
+        bool estimatePIPparameters;
+        // Extend the substitution model with PIP
         if (PAR_model_indels) {
+
             smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, modelMap, "", true, false, 0);
 
-            // Extend the substitution model with PIP
-            lambda = (modelMap.find("lambda") == modelMap.end()) ? 0.1 : std::stod(modelMap["lambda"]);
-            mu = (modelMap.find("mu") == modelMap.end()) ? 0.2 : std::stod(modelMap["mu"]);
+            estimatePIPparameters = (modelMap.find("estimated") == modelMap.end()) ? false : true;
+
+            if (estimatePIPparameters) {
+
+                if (PAR_alignment) {
+                    lambda = bpp::estimateLambdaFromData(tree, sequences, PAR_proportion);
+                    mu = bpp::estimateMuFromData(tree, PAR_proportion);
+                    DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input sequences (lambda=" << lambda << ",mu=" << mu << ")";
+                } else {
+                    lambda = bpp::estimateLambdaFromData(tree, sites);
+                    mu = bpp::estimateMuFromData(tree, sites);
+                    DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input alignment (lambda=" << lambda << ",mu=" << mu << ")";
+                }
+
+            } else {
+                lambda = (modelMap.find("lambda") == modelMap.end()) ? 0.1 : std::stod(modelMap["lambda"]);
+                mu = (modelMap.find("mu") == modelMap.end()) ? 0.2 : std::stod(modelMap["mu"]);
+            }
+
+
+
             // Instatiate the corrisponding PIP model given the alphabet
             if (PAR_Alphabet.find("DNA") != std::string::npos) {
                 smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alpha), lambda, mu, smodel);
@@ -551,6 +571,7 @@ int main(int argc, char *argv[]) {
 
         if (PAR_alignment) {
             ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
+            ApplicationTools::displayResult("\nProportion gappy sites", TextTools::toString(PAR_proportion, 4));
 
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";

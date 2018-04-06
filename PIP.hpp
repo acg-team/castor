@@ -49,6 +49,7 @@
 #include <Bpp/Phyl/Model/Nucleotide/NucleotideSubstitutionModel.h>
 #include <Bpp/Phyl/Model/Protein/ProteinSubstitutionModel.h>
 #include <Bpp/Phyl/Model/FrequenciesSet/ProteinFrequenciesSet.h>
+#include <Bpp/Phyl/TreeTemplate.h>
 
 using namespace bpp;
 namespace bpp {
@@ -181,6 +182,17 @@ namespace bpp {
 
     };
 
+    // If the user requires to estimate the model parameters (lambda/mu) from the data, then invoke the right method
+
+    // without given alignment
+    double estimateLambdaFromData(Tree *tree, SequenceContainer *sequences, double proportion);
+
+    double estimateMuFromData(Tree *tree, double proportion);
+
+    // with given alignment
+    double estimateLambdaFromData(Tree *tree, SiteContainer *alignment);
+
+    double estimateMuFromData(Tree *tree, SiteContainer *alignment);
 
 }
 #endif //MINIJATI_PIP_HPP
