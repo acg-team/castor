@@ -146,7 +146,6 @@ int main(int argc, char *argv[]) {
         //////////////////////////////////////////////
         // CLI ARGUMENTS
 
-        if (OMPENABLED) OMP_max_avail_threads = omp_get_max_threads();
         int PAR_execution_numthreads = ApplicationTools::getIntParameter("exec_numthreads", jatiapp.getParams(), OMP_max_avail_threads, "", true, 0);
 
         bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", jatiapp.getParams(), false);
@@ -788,6 +787,9 @@ int main(int argc, char *argv[]) {
         if (parametersFile != "none") {
             StlOutputStream out(new ofstream(parametersFile.c_str(), ios::out));
 
+            int numParametersModel = 0;
+
+            numParametersModel += tree->getNumberOfNodes() - 1;
 
             out << "# Log likelihood = ";
             out.setPrecision(20) << (-ntl->getLikelihoodFunction()->getValue());
@@ -800,12 +802,17 @@ int main(int argc, char *argv[]) {
             out.endLine();
 
             smodel->matchParametersValues(ntl->getLikelihoodFunction()->getParameters());
+            numParametersModel += smodel->getNumberOfParameters();
             PhylogeneticsApplicationTools::printParameters(smodel, out, 1, withAlias);
 
             out.endLine();
             (out << "# Rate distribution parameters:").endLine();
             rDist->matchParametersValues(ntl->getLikelihoodFunction()->getParameters());
+            numParametersModel += rDist->getNumberOfParameters();
             PhylogeneticsApplicationTools::printParameters(rDist, out, withAlias);
+            out.endLine();
+            out << "# Total number of parameters: " << numParametersModel;
+            out.endLine();
         }
 
         // Compute support measures

@@ -64,12 +64,6 @@ add_definitions(-DPRJ_GITBRANCH=\"${PROJECT_GIT_REF}\"
         -DPRJ_DATE=\"${MINIJATI_RELDATE}\"
         -DPRJ_TIME=\"${MINIJATI_RELTIME}\" )
 
-
-message("-- Compilation will be performed with the following release of the software:
-branch   ${PROJECT_GIT_REF}
-ref      ${PROJECT_SOURCE_VERSION}
-time     ${MINIJATI_RELDATE} ${MINIJATI_RELTIME}")
-
 set(CMAKE_CXX_STANDARD 14)
 
 SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wshadow -Weffc++ -O0 -g -DNDEBUG=1")
@@ -81,11 +75,12 @@ SET(CMAKE_C_FLAGS_RELEASE "-O3  -g0 -DNDEBUG=0")
 SET(CMAKE_CXX_FLAGS_INTEL "-O3  -g0 -DNDEBUG=0")
 SET(CMAKE_C_FLAGS_INTEL "-O3  -g0 -DNDEBUG=0")
 
-# Dependencies not covered by find package should be found in the following directories
-include_directories("${CMAKE_PREFIX_PATH}/include")
-message(STATUS "Including directory: ${CMAKE_PREFIX_PATH}") 
-LINK_DIRECTORIES("${CMAKE_PREFIX_PATH}}/lib")
-LINK_DIRECTORIES("${CMAKE_PREFIX_PATH}/lib64")
+string(FIND "${CMAKE_BUILD_TYPE}" "static" STATIC)
+
+message("-- Compilation will be performed with the following release of the software:
+\tbranch   ${PROJECT_GIT_REF}
+\tref      ${PROJECT_SOURCE_VERSION}
+\ttime     ${MINIJATI_RELDATE} ${MINIJATI_RELTIME}")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(WINDOWS TRUE)
@@ -98,42 +93,45 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
+    if (STATIC GREATER 0)
+        message(FATAL_ERROR "You can not build this project statically on Mac OS. Ask Apple why! CMake will exit.")
+    endif ()
     message(STATUS "Compilation will be performed under Apple MacOS")
     find_package(glog 0.3.5 REQUIRED)
 
 endif ()
 
-find_package(Boost)
+# Dependencies not covered by find package should be found in the following directories
+if (${CMAKE_PREFIX_PATH})
+    include_directories("${CMAKE_PREFIX_PATH}/include")
+    LINK_DIRECTORIES("${CMAKE_PREFIX_PATH}}/lib")
+    LINK_DIRECTORIES("${CMAKE_PREFIX_PATH}/lib64")
+    message(STATUS "Looking for libraries in the following directory: ${CMAKE_PREFIX_PATH}/lib")
+    message(STATUS "Looking for libraries in the following directory: ${CMAKE_PREFIX_PATH}/lib64")
+    message(STATUS "Looking for headers in the following directory: ${CMAKE_PREFIX_PATH}/include")
+endif ()
+
+find_package(Boost REQUIRED)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-find_package("Eigen3")
+find_package(Eigen3 REQUIRED)
 if (EIGEN3_FOUND)
     message("-- Found Eigen3 in: ${EIGEN3_INCLUDE_DIR}")
-endif (EIGEN3_FOUND)
-include_directories(${EIGEN3_INCLUDE_DIR})
+    include_directories(${EIGEN3_INCLUDE_DIR})
+endif ()
 
-find_package(TshLib)
-message("-- Found TSHLIB in ${TSHLIB_INCLUDE_DIRS}")
-include_directories(${TSHLIB_INCLUDE_DIRS})
+find_package(TshLib REQUIRED)
+if (TSHLIB_FOUND)
+    message("-- Found TSHLIB in ${TSHLIB_INCLUDE_DIRS}")
+    include_directories(${TSHLIB_INCLUDE_DIRS})
+endif ()
 
+find_package(bpp-core REQUIRED)
+find_package(bpp-seq REQUIRED)
+find_package(bpp-phyl REQUIRED)
 
-find_package(bpp-core)
-find_package(bpp-seq)
-find_package(bpp-phyl)
-
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-#find_package(OpenMP)
-#if (OPENMP_FOUND)
-#    message("OpenMP found")
-#    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-#    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-#    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-#endif()
-
-add_definitions(-DOMPENABLED=0)
 
 set(SOURCES
         main.cpp
@@ -158,14 +156,19 @@ set(SOURCES
         Optimizators.cpp
         Optimizators.hpp)
 
-if (CMAKE_BUILD_TYPE EQUAL "Release")
+
+if (STATIC GREATER 0)
+    message(STATUS "Compilation will produce a static executable")
+    add_executable(miniJATI ${SOURCES})
     set_target_properties(miniJATI PROPERTIES LINK_FLAGS "-static")
+    target_link_libraries(miniJATI tshlib-static)
+    target_link_libraries(miniJATI glog)
+    target_link_libraries(miniJATI ${BPP_LIBS_STATIC})
+    target_link_libraries(miniJATI ${Boost_LIBRARIES})
+else ()
+    add_executable(miniJATI ${SOURCES})
+    target_link_libraries(miniJATI tshlib)
+    target_link_libraries(miniJATI glog)
+    target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
+    target_link_libraries(miniJATI ${Boost_LIBRARIES})
 endif ()
-
-add_executable(miniJATI ${SOURCES})
-
-target_link_libraries(miniJATI tshlib)
-target_link_libraries(miniJATI glog)
-target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
-target_link_libraries(miniJATI ${Boost_LIBRARIES})
-
