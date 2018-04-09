@@ -64,10 +64,12 @@
 
 
 #include <TreeRearrangment.hpp>
+#include <Bpp/Seq/Io/Fasta.h>
 #include "Optimizators.hpp"
 #include "Utilities.hpp"
 #include "TSHHomogeneousTreeLikelihood.hpp"
 #include "TSHTopologySearch.hpp"
+#include "pPIP.hpp"
 
 using namespace bpp;
 
@@ -80,6 +82,7 @@ namespace bpp {
 
     TreeLikelihood *Optimizators::optimizeParameters(
             TreeLikelihood *inTL,
+            pPIP *pAlignment,
             const ParameterList &parameters,
             std::map<std::string, std::string> &params,
             const std::string &suffix,
@@ -573,7 +576,7 @@ namespace bpp {
 
         if (verbose) ApplicationTools::displayResult("\nPerformed", TextTools::toString(n) + " function evaluations.");
 
-        if (verbose) ApplicationTools::displayResult("Likelihood after num/top optimisation", TextTools::toString(-flk->getLikelihoodFunction()->getValue(), 15));
+        if (verbose) ApplicationTools::displayResult("Log likelihood after num/top optimisation", TextTools::toString(-flk->getLikelihoodFunction()->getValue(), 15));
 
 
         ///////////////////////////
@@ -586,13 +589,34 @@ namespace bpp {
             string PAR_align_algorithm_stopcond = ApplicationTools::getStringParameter("optimisation.alignment.algorithm.stopcondition", params, "steps", suffix, suffixIsOptional, warn + 1);
             double PAR_align_algorithm_tolerance = ApplicationTools::getDoubleParameter("optimisation.alignment.algorithm.tolerance", params, 0.001, suffix, suffixIsOptional, warn + 1);
             int PAR_align_algorithm_maxeval = ApplicationTools::getIntParameter("optimisation.alignment.algorithm.max_f_eval", params, 100, suffix, suffixIsOptional, warn + 1);
-            if (verbose) ApplicationTools::displayResult("MSA optimization | Algorithm", PAR_align_algorithm);
+            if (verbose) ApplicationTools::displayResult("\nMSA optimization | Algorithm", PAR_align_algorithm);
             if (verbose) ApplicationTools::displayResult("MSA optimization | Stop Condition", PAR_align_algorithm_stopcond);
             if (verbose) ApplicationTools::displayResult("MSA optimization | Tolerance", PAR_align_algorithm_tolerance);
             if (verbose) ApplicationTools::displayResult("MSA optimization | Max # ML evaluations", PAR_align_algorithm_maxeval);
+
+
+            ApplicationTools::displayMessage("\n[Alignment optimisation]");
+            LOG(INFO) << "[Alignment optimisation] pPIP("
+                      << PAR_align_algorithm << "," << PAR_align_algorithm_stopcond << ","
+                      << PAR_align_algorithm_tolerance << "," << PAR_align_algorithm_maxeval <<
+                      ")";
+
+            // Execute alignment on post-order node list
+            std::vector<tshlib::VirtualNode *> ftn = flk->getUtree()->getPostOrderNodeList();//getPostOrderNodeList();
+
+
+            // getting rid of const
+            auto tu_subModel = const_cast<SubstitutionModel *>(flk->getSubstitutionModel());
+
+            pAlignment->setSubstModel(tu_subModel);
+            pAlignment->setTree(&flk->getTree());
+            pAlignment->PIPAligner(ftn, true);
+
+            double score = pAlignment->getScore(pAlignment->getRootNode());
+            ApplicationTools::displayResult("\nLog likelihood after MSA optimisation", TextTools::toString(score, 15));
+            LOG(INFO) << "[Alignment optimisation] Alignment has a new lk=" << score;
+
         }
-
-
 
         if (backupFile != "none") {
             string bf = backupFile + ".def";

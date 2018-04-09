@@ -92,10 +92,13 @@
 * From TSHLib:
 */
 #include <Alignment.hpp>
-#include <Likelihood.hpp>
+//#include <Likelihood.hpp>
 #include <TreeRearrangment.hpp>
 #include <Bpp/Phyl/Distance/PGMA.h>
 #include <Bpp/Phyl/OptimizationTools.h>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 using namespace tshlib;
 
@@ -146,10 +149,11 @@ int main(int argc, char *argv[]) {
         //////////////////////////////////////////////
         // CLI ARGUMENTS
 
-        if (OMPENABLED) OMP_max_avail_threads = omp_get_max_threads();
         int PAR_execution_numthreads = ApplicationTools::getIntParameter("exec_numthreads", jatiapp.getParams(), OMP_max_avail_threads, "", true, 0);
 
         bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", jatiapp.getParams(), false);
+        bool PAR_align_optim = ApplicationTools::getBooleanParameter("optimisation.alignment", jatiapp.getParams(), false);
+        double PAR_proportion = ApplicationTools::getDoubleParameter("alignment.proportion", jatiapp.getParams(), .1);
         std::string PAR_model_substitution = ApplicationTools::getStringParameter("model", jatiapp.getParams(), "JC69", "", true, true);
         std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", jatiapp.getParams(), false, false, "", true, "", 1);
         std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", jatiapp.getParams(), false, false, "", true, "", 1);
@@ -335,18 +339,17 @@ int main(int argc, char *argv[]) {
                 // Optimisation method verbosity
                 unsigned int optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose", jatiapp.getParams(), 2);
                 string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", jatiapp.getParams(), false, false);
-                OutputStream *messenger =
-                        (mhPath == "none") ? 0 :
-                        (mhPath == "std") ? ApplicationTools::message :
-                        new StlOutputStream(new ofstream(mhPath.c_str(), ios::out));
+                OutputStream *messenger = static_cast<OutputStream *>((mhPath == "none") ? 0 :
+                                                                      (mhPath == "std") ?
+                                                                      ApplicationTools::message : new StlOutputStream(new ofstream(mhPath.c_str(), ios::out)));
                 ApplicationTools::displayResult("Initial tree optimization handler", mhPath);
 
                 // Optimisation method profiler
                 string prPath = ApplicationTools::getAFilePath("optimization.profiler", jatiapp.getParams(), false, false);
                 OutputStream *profiler =
-                        (prPath == "none") ? 0 :
-                        (prPath == "std") ? ApplicationTools::message :
-                        new StlOutputStream(new ofstream(prPath.c_str(), ios::out));
+                        static_cast<OutputStream *>((prPath == "none") ? 0 :
+                                                    (prPath == "std") ? ApplicationTools::message :
+                                                    new StlOutputStream(new ofstream(prPath.c_str(), ios::out)));
                 if (profiler) profiler->setPrecision(20);
                 ApplicationTools::displayResult("Initial tree optimization profiler", prPath);
 
@@ -494,18 +497,37 @@ int main(int argc, char *argv[]) {
         bpp::SubstitutionModel *smodel = nullptr;
         bpp::TransitionModel *model = nullptr;
 
-
         Eigen::MatrixXd Q;
         Eigen::VectorXd pi;
         double lambda;
         double mu;
-
+        bool estimatePIPparameters;
+        // Extend the substitution model with PIP
         if (PAR_model_indels) {
+
             smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, modelMap, "", true, false, 0);
 
-            // Extend the substitution model with PIP
-            lambda = (modelMap.find("lambda") == modelMap.end()) ? 0.1 : std::stod(modelMap["lambda"]);
-            mu = (modelMap.find("mu") == modelMap.end()) ? 0.2 : std::stod(modelMap["mu"]);
+            estimatePIPparameters = (modelMap.find("estimated") == modelMap.end()) ? false : true;
+
+            if (estimatePIPparameters) {
+
+                if (PAR_alignment) {
+                    lambda = bpp::estimateLambdaFromData(tree, sequences, PAR_proportion);
+                    mu = bpp::estimateMuFromData(tree, PAR_proportion);
+                    DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input sequences (lambda=" << lambda << ",mu=" << mu << ")";
+                } else {
+                    lambda = bpp::estimateLambdaFromData(tree, sites);
+                    mu = bpp::estimateMuFromData(tree, sites);
+                    DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input alignment (lambda=" << lambda << ",mu=" << mu << ")";
+                }
+
+            } else {
+                lambda = (modelMap.find("lambda") == modelMap.end()) ? 0.1 : std::stod(modelMap["lambda"]);
+                mu = (modelMap.find("mu") == modelMap.end()) ? 0.2 : std::stod(modelMap["mu"]);
+            }
+
+
+
             // Instatiate the corrisponding PIP model given the alphabet
             if (PAR_Alphabet.find("DNA") != std::string::npos) {
                 smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alpha), lambda, mu, smodel);
@@ -549,14 +571,15 @@ int main(int argc, char *argv[]) {
 
         /////////////////////////
         // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
-
+        pPIP *progressivePIP = nullptr;
         if (PAR_alignment) {
             ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
+            ApplicationTools::displayResult("\nProportion gappy sites", TextTools::toString(PAR_proportion, 4));
 
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
-            auto progressivePIP = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist);
+            progressivePIP = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist);
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
@@ -573,7 +596,7 @@ int main(int argc, char *argv[]) {
             if (PAR_output_file_msa.find("none") == std::string::npos) {
                 LOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
                 bpp::Fasta seqWriter;
-                seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
+                seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
             }
 
             // Get profiling statistics TODO: export this stats on XML file
@@ -585,6 +608,8 @@ int main(int argc, char *argv[]) {
             lkFile.open(PAR_output_file_lk);
             lkFile << score;
             lkFile.close();
+
+            ApplicationTools::displayResult("\nLog likelihood", TextTools::toString(score, 15));
 
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
 
@@ -727,12 +752,41 @@ int main(int argc, char *argv[]) {
                                                          true,
                                                          true,
                                                          0);
-        ntl = dynamic_cast<TSHHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(ntl, ntl->getParameters(), jatiapp.getParams(), "", true, true, 0));
+
+        ntl = dynamic_cast<TSHHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(ntl,
+                                                                                            progressivePIP,
+                                                                                            ntl->getParameters(),
+                                                                                            jatiapp.getParams(),
+                                                                                            "",
+                                                                                            true,
+                                                                                            true,
+                                                                                            0));
+
+
+        // Overwrite the initial alignment with the optimised one  | TODO: the likelihood function should not be reimplemented here.
+        if (PAR_alignment && PAR_align_optim) {
+            sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
+            logL = progressivePIP->getScore(progressivePIP->getRootNode());
+
+            const Tree &tmpTree = ntl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
+
+            auto nntl = new bpp::RHomogeneousTreeLikelihood_PIP(tmpTree, *sites, model, rDist, &tm, false, false, false);
+            nntl->initialize();
+            logL = nntl->getLogLikelihood();
+
+            //ntl->getLikelihoodFunction()->setData()   // this should be the only call here
+
+        } else {
+            logL = ntl->getLikelihoodFunction()->getLogLikelihood();
+        }
+
+
 
         /////////////////////////
         // OUTPUT
 
         if (PAR_output_file_msa.find("none") == std::string::npos) {
+            ApplicationTools::displayResult("\n\nOutput alignment to file", PAR_output_file_msa);
             LOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
             bpp::Fasta seqWriter;
             seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
@@ -744,7 +798,8 @@ int main(int argc, char *argv[]) {
         PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
 
         // Write parameters to screen:
-        ApplicationTools::displayResult("Log likelihood", TextTools::toString(ntl->getLikelihoodFunction()->getLogLikelihood(), 15));
+        ApplicationTools::displayResult("Final Log likelihood", TextTools::toString(logL, 15));
+
         parameters = ntl->getLikelihoodFunction()->getSubstitutionModelParameters();
         for (size_t i = 0; i < parameters.size(); i++) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
@@ -767,9 +822,12 @@ int main(int argc, char *argv[]) {
         if (parametersFile != "none") {
             StlOutputStream out(new ofstream(parametersFile.c_str(), ios::out));
 
+            int numParametersModel = 0;
+
+            numParametersModel += tree->getNumberOfNodes() - 1;
 
             out << "# Log likelihood = ";
-            out.setPrecision(20) << (-ntl->getLikelihoodFunction()->getValue());
+            out.setPrecision(20) << (logL);
             out.endLine();
             out << "# Number of sites = ";
             out.setPrecision(20) << sites->getNumberOfSites();
@@ -779,12 +837,17 @@ int main(int argc, char *argv[]) {
             out.endLine();
 
             smodel->matchParametersValues(ntl->getLikelihoodFunction()->getParameters());
+            numParametersModel += smodel->getNumberOfParameters();
             PhylogeneticsApplicationTools::printParameters(smodel, out, 1, withAlias);
 
             out.endLine();
             (out << "# Rate distribution parameters:").endLine();
             rDist->matchParametersValues(ntl->getLikelihoodFunction()->getParameters());
+            numParametersModel += rDist->getNumberOfParameters();
             PhylogeneticsApplicationTools::printParameters(rDist, out, withAlias);
+            out.endLine();
+            out << "# Total number of parameters: " << numParametersModel;
+            out.endLine();
         }
 
         // Compute support measures

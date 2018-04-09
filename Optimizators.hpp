@@ -44,6 +44,8 @@
 #ifndef MINIJATI_OPTIMIZATORS_HPP
 #define MINIJATI_OPTIMIZATORS_HPP
 
+#include "pPIP.hpp"
+
 namespace bpp {
 
     class Optimizators {
@@ -76,6 +78,7 @@ namespace bpp {
        */
         static TreeLikelihood *optimizeParameters(
                 TreeLikelihood *inTL,
+                pPIP *pAlignment,
                 const ParameterList &parameters,
                 std::map<std::string, std::string> &params,
                 const std::string &suffix = "",

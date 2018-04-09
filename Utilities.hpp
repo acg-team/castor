@@ -117,6 +117,13 @@ namespace InputUtils {
 
 }
 
+namespace TextUtils {
+
+
+    std::string appendToFilePath(std::string inputFilePath, std::string string2append);
+
+}
+
 namespace OutputUtils {
 
     void printParametersLikelihood(bpp::AbstractHomogeneousTreeLikelihood *tl);

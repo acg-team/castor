@@ -276,12 +276,12 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
 
         moveLogLK = likelihoodFunc->updateLikelihood(updatedNodesWithinPath);
 
-        if (isinf(moveLogLK)) {
+        if (std::isinf(moveLogLK)) {
             std::ostringstream nodepath;
             for (auto &node:updatedNodesWithinPath) {
                 nodepath << node->getNodeName() << ">";
             }
-            LOG_IF(WARNING, isinf(moveLogLK)) << "Likelihood value is -inf for move " << candidateMoves->getMove(i)->move_id << " node-path:" << nodepath.str();
+            LOG_IF(WARNING, std::isinf(moveLogLK)) << "Likelihood value is -inf for move " << candidateMoves->getMove(i)->move_id << " node-path:" << nodepath.str();
         }
         // ------------------------------------
         // Store likelihood of the move

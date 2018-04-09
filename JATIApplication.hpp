@@ -398,6 +398,8 @@ namespace bpp {
 
         void version() {
             std::cout << appName_ << std::endl;
+            std::cout << appVersion_ << std::endl;
+            std::cout << appBuild_ << std::endl;
         }
 
     };

@@ -51,8 +51,9 @@
 #include <Bpp/Phyl/Distance/NeighborJoining.h>
 #include <Bpp/Phyl/Distance/BioNJ.h>
 #include <Bpp/Phyl/OptimizationTools.h>
-
-//#include <elf.h>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 #include "Utilities.hpp"
 #include "TSHHomogeneousTreeLikelihood.hpp"
@@ -1013,3 +1014,28 @@ void DistanceMethodsUtils::setDistanceMatrix() {
 
 }
 
+std::string TextUtils::appendToFilePath(std::string inputFilePath, std::string string2append) {
+
+    // Split full filepath first and get filename
+
+    std::vector<std::string> fullpath;
+    boost::split(fullpath, inputFilePath, boost::is_any_of("/"));
+    std::string filename = fullpath.back();
+    fullpath.pop_back(); // remove element
+    std::string joinedFullPath = boost::algorithm::join(fullpath, "/");
+
+    // Split filename on dot
+    std::vector<std::string> segmentsFileName;
+    boost::split(segmentsFileName, filename, boost::is_any_of("."));
+    std::reverse(std::begin(segmentsFileName), std::end(segmentsFileName));
+    std::string lastelement = segmentsFileName.at(0);
+    segmentsFileName.at(0) = string2append;
+    std::reverse(std::begin(segmentsFileName), std::end(segmentsFileName));
+    segmentsFileName.push_back(lastelement);
+    std::string joinedString = boost::algorithm::join(segmentsFileName, ".");
+
+    // recompone string
+    std::string fullInitialMSAFilePath = joinedFullPath + "/" + joinedString;
+
+    return fullInitialMSAFilePath;
+}

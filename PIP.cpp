@@ -46,6 +46,9 @@
 #include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
 #include <Bpp/Seq/Container/SequenceContainerTools.h>
 #include <Bpp/Phyl/PatternTools.h>
+#include <boost/algorithm/string.hpp>
+
+
 
 PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, SubstitutionModel *basemodel) :
         AbstractParameterAliasable("PIP."),
@@ -426,3 +429,72 @@ void PIP_AA::setFreqFromData(const SequenceContainer &data, double pseudoCount) 
 }
 
 
+double bpp::estimateLambdaFromData(Tree *tree, SequenceContainer *sequences, double proportion) {
+    double N, lambda = 0;
+
+    // Get average sequence length
+    std::vector<std::string> seqNames = sequences->getSequencesNames();
+    for (auto &seqName : seqNames) {
+        N += sequences->getSequence(seqName).size();
+    }
+    N = N / sequences->getNumberOfSequences();
+
+    // Lambda estimates depends on the proportion of columns containing gaps
+    lambda = (N * proportion) / tree->getTotalLength();
+
+    return lambda;
+}
+
+double bpp::estimateMuFromData(Tree *tree, double proportion) {
+    double mu = 0;
+
+    mu = proportion / tree->getTotalLength();
+
+    return mu;
+}
+
+double bpp::estimateLambdaFromData(Tree *tree, SiteContainer *alignment) {
+    double N, M, t, lambda = 0;
+
+    // Alignment length with gaps
+    M = alignment->getNumberOfSites();
+
+    // Compute average sequence length without gaps
+    std::vector<std::string> seqNames = alignment->getSequencesNames();
+    for (auto &seqName : seqNames) {
+
+        std::string tmpseq = alignment->getSequence(seqName).toString();
+        boost::erase_all(tmpseq, "-");
+        N += tmpseq.size();
+    }
+    N = N / alignment->getNumberOfSequences();
+
+
+    lambda = (M - N) / tree->getTotalLength();
+
+
+    return lambda;
+}
+
+double bpp::estimateMuFromData(Tree *tree, SiteContainer *alignment) {
+    double N, M, t, mu = 0;
+
+    // Alignment length with gaps
+    M = alignment->getNumberOfSites();
+
+    // Compute average sequence length without gaps
+    std::vector<std::string> seqNames = alignment->getSequencesNames();
+    for (auto &seqName : seqNames) {
+
+        std::string tmpseq = alignment->getSequence(seqName).toString();
+        boost::erase_all(tmpseq, "-");
+        N += tmpseq.size();
+    }
+    N = N / alignment->getNumberOfSequences();
+
+
+    mu = (M - N) / tree->getTotalLength() * N;
+
+
+    return mu;
+}

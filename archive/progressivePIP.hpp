@@ -176,7 +176,7 @@ namespace progressivePIP{
                         return int(GAP_Y_STATE);
                     }
                 }else{
-                    perror("ERROR in getIndexOfMax\n");
+                    std::cerr << "ERROR in getIndexOfMax\n";
                     exit(EXIT_FAILURE);
                 }
             }
@@ -195,7 +195,7 @@ namespace progressivePIP{
                         return int(GAP_Y_STATE);
                     }
                 }else{
-                    perror("ERROR in index_of_max_3\n");
+                    std::cerr << "ERROR in index_of_max_3\n";
                     exit(EXIT_FAILURE);
                 }
             }
@@ -224,7 +224,7 @@ namespace progressivePIP{
                         return int(GAP_Y_STATE);
                     }
                 }else{
-                    perror("ERROR in index_of_max_3\n");
+                    std::cerr << "ERROR in index_of_max_3\n";
                     exit(EXIT_FAILURE);
                 }
             }
@@ -250,7 +250,7 @@ namespace progressivePIP{
         //------------------------------------
 
         if(std::isinf(a) && std::isinf(b) && std::isinf(c)){
-            perror("getMaxOfThree: all inf\n");
+            std::cerr << "getMaxOfThree: all inf\n";
             exit(EXIT_FAILURE);
         }
 
@@ -592,7 +592,7 @@ namespace progressivePIP{
                     seq_aligned[j]='-';
 
                 }else{
-                    perror("ERROR in align_seq_left");
+                    std::cerr << "ERROR in align_seq_left";
                 }
             }
 
@@ -635,7 +635,7 @@ namespace progressivePIP{
                     idx++;
 
                 }else{
-                    perror("ERROR in align_seq");
+                    std::cerr << "ERROR in align_seq";
                 }
             }
 
@@ -1275,7 +1275,7 @@ namespace progressivePIP{
         }
 
         if(!check_uniform_len_s(result)){
-            perror("ERROR in get_length_seq: non aligned");
+            std::cerr << "ERROR in get_length_seq: non aligned";
         }
 
         return result.at(0).second.length();
@@ -1862,7 +1862,7 @@ namespace progressivePIP{
                     traceback_path[lev-1]=GAP_Y_CHAR;
                     break;
                 default:
-                    perror("ERROR in alignment_reconstruction !!!");
+                    std::cerr << "ERROR in alignment_reconstruction !!!";
                     exit(EXIT_FAILURE);
             }
         }

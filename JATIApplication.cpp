@@ -54,7 +54,7 @@ JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name
         appName_(name), appBuild_(build_date), appVersion_(strVersion), params_(), timerStarted_(false) {
     //LOG(INFO) << "Parsing options:";
     params_ = bpp::AttributesTools::parseOptions(argc, argv);
-    bool showversion = bpp::ApplicationTools::getBooleanParameter("--version", params_, false, "", true, 3);
+    bool showversion = bpp::ApplicationTools::getBooleanParameter("version", params_, false, "", true, 3);
     bpp::ApplicationTools::warningLevel = bpp::ApplicationTools::getIntParameter("--warning", params_, 0, "", true, 3);
     bool noint = bpp::ApplicationTools::getBooleanParameter("--noninteractive", params_, false, "", true, 3);
     bpp::ApplicationTools::interactive = !noint;
