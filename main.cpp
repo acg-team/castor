@@ -550,6 +550,9 @@ int main(int argc, char *argv[]) {
         DLOG(INFO) << "[Substitution model] Number of states: " << (int) smodel->getNumberOfStates();
 
         ApplicationTools::displayResult("Substitution model", smodel->getName());
+
+        if (PAR_model_indels) ApplicationTools::displayResult("Indel parameter initial value", (estimatePIPparameters) ? "estimated" : "fixed");
+
         ParameterList parameters = smodel->getParameters();
         for (size_t i = 0; i < parameters.size(); i++) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
