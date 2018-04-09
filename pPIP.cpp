@@ -2633,6 +2633,15 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 //
 //}
 
+void pPIP::setSubstModel(bpp::SubstitutionModel *smodel) {
+    substModel_ = smodel;
+}
+
+void pPIP::setTree(const Tree *tree) {
+    tree_ = new TreeTemplate<Node>(*tree);
+}
+
+
 void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local) {
     // progressive PIP aligner
     // local: local subtree, rooted at the current node

@@ -85,13 +85,21 @@ namespace bpp {
 
         const Alphabet *getAlphabet() const;
 
+        void setSubstModel(bpp::SubstitutionModel *smodel);
+
+        void setTree(const Tree *tree);
+
+
     protected:
 
     private:
 
         tshlib::Utree *utree_;                   // tshlib:: tree
         bpp::TreeTemplate<bpp::Node> *tree_;     // bpp::tree
-        bpp::SubstitutionModel *substModel_;     // extended substitution model
+        bpp::SubstitutionModel *substModel_;
+
+    private:
+        // extended substitution model
         mutable UtreeBppUtils::treemap treemap_; // bpp::Node * <-> tshlib::VirtualNode *
         bpp::SequenceContainer *sequences_;      // un-aligned input sequences
         bpp::DiscreteDistribution *rDist_;       // distribution for rate variation among sites
