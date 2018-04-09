@@ -96,6 +96,9 @@
 #include <TreeRearrangment.hpp>
 #include <Bpp/Phyl/Distance/PGMA.h>
 #include <Bpp/Phyl/OptimizationTools.h>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 using namespace tshlib;
 
@@ -591,7 +594,7 @@ int main(int argc, char *argv[]) {
             if (PAR_output_file_msa.find("none") == std::string::npos) {
                 LOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
                 bpp::Fasta seqWriter;
-                seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
+                seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
             }
 
             // Get profiling statistics TODO: export this stats on XML file
@@ -757,14 +760,31 @@ int main(int argc, char *argv[]) {
                                                                                             true,
                                                                                             0));
 
-        if (PAR_align_optim) sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
+
+        // Overwrite the initial alignment with the optimised one  | TODO: the likelihood function should not be reimplemented here.
+        if (PAR_alignment && PAR_align_optim) {
+            sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
+            logL = progressivePIP->getScore(progressivePIP->getRootNode());
+
+            const Tree &tmpTree = ntl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
+
+            auto nntl = new bpp::RHomogeneousTreeLikelihood_PIP(tmpTree, *sites, model, rDist, &tm, false, false, false);
+            nntl->initialize();
+            logL = nntl->getLogLikelihood();
+
+            //ntl->getLikelihoodFunction()->setData()   // this should be the only call here
+
+        } else {
+            logL = ntl->getLikelihoodFunction()->getLogLikelihood();
+        }
+
 
 
         /////////////////////////
         // OUTPUT
 
         if (PAR_output_file_msa.find("none") == std::string::npos) {
-            ApplicationTools::displayResult("Output alignment to file", PAR_output_file_msa);
+            ApplicationTools::displayResult("\n\nOutput alignment to file", PAR_output_file_msa);
             LOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
             bpp::Fasta seqWriter;
             seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
@@ -776,7 +796,8 @@ int main(int argc, char *argv[]) {
         PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
 
         // Write parameters to screen:
-        ApplicationTools::displayResult("Log likelihood", TextTools::toString(ntl->getLikelihoodFunction()->getLogLikelihood(), 15));
+        ApplicationTools::displayResult("Final Log likelihood", TextTools::toString(logL, 15));
+
         parameters = ntl->getLikelihoodFunction()->getSubstitutionModelParameters();
         for (size_t i = 0; i < parameters.size(); i++) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
@@ -804,7 +825,7 @@ int main(int argc, char *argv[]) {
             numParametersModel += tree->getNumberOfNodes() - 1;
 
             out << "# Log likelihood = ";
-            out.setPrecision(20) << (-ntl->getLikelihoodFunction()->getValue());
+            out.setPrecision(20) << (logL);
             out.endLine();
             out << "# Number of sites = ";
             out.setPrecision(20) << sites->getNumberOfSites();
