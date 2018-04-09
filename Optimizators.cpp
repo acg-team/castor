@@ -64,10 +64,12 @@
 
 
 #include <TreeRearrangment.hpp>
+#include <Bpp/Seq/Io/Fasta.h>
 #include "Optimizators.hpp"
 #include "Utilities.hpp"
 #include "TSHHomogeneousTreeLikelihood.hpp"
 #include "TSHTopologySearch.hpp"
+#include "pPIP.hpp"
 
 using namespace bpp;
 
@@ -80,6 +82,7 @@ namespace bpp {
 
     TreeLikelihood *Optimizators::optimizeParameters(
             TreeLikelihood *inTL,
+            pPIP *pAlignment,
             const ParameterList &parameters,
             std::map<std::string, std::string> &params,
             const std::string &suffix,
@@ -590,9 +593,25 @@ namespace bpp {
             if (verbose) ApplicationTools::displayResult("MSA optimization | Stop Condition", PAR_align_algorithm_stopcond);
             if (verbose) ApplicationTools::displayResult("MSA optimization | Tolerance", PAR_align_algorithm_tolerance);
             if (verbose) ApplicationTools::displayResult("MSA optimization | Max # ML evaluations", PAR_align_algorithm_maxeval);
+
+
+            ApplicationTools::displayMessage("\n[Alignment optimisation]");
+            LOG(INFO) << "[Alignment optimisation] pPIP("
+                      << PAR_align_algorithm << "," << PAR_align_algorithm_stopcond << ","
+                      << PAR_align_algorithm_tolerance << "," << PAR_align_algorithm_maxeval <<
+                      ")";
+
+            // Execute alignment on post-order node list
+            std::vector<tshlib::VirtualNode *> ftn = flk->getUtree()->getPostOrderNodeList();//getPostOrderNodeList();
+            //pAlignment->setSubstModel(flk->getSubstitutionModel());
+            pAlignment->setTree(&flk->getTree());
+            pAlignment->PIPAligner(ftn, true);
+
+            double score = pAlignment->getScore(pAlignment->getRootNode());
+            ApplicationTools::displayResult("\nLog likelihood", TextTools::toString(score, 15));
+            LOG(INFO) << "[Alignment optimisation] Alignment has a new lk=" << score;
+
         }
-
-
 
         if (backupFile != "none") {
             string bf = backupFile + ".def";

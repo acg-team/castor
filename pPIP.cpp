@@ -71,7 +71,7 @@ pPIP::pPIP(tshlib::Utree *utree,
            bpp::DiscreteDistribution *rDist) {
 
     utree_ = utree;
-    _setTree(tree);
+    setTree(tree);
     substModel_ = smodel;
     treemap_ = inTreeMap;
     sequences_ = sequences;
@@ -112,10 +112,12 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     }
 
 }
-void pPIP::_setTree(const Tree *tree) {
+
+void pPIP::setTree(const Tree *tree) {
     tree_ = new TreeTemplate<Node>(*tree);
 }
-void pPIP::_setSubstModel(bpp::SubstitutionModel *smodel) {
+
+void pPIP::setSubstModel(bpp::SubstitutionModel *smodel) {
     substModel_ = smodel;
 }
 std::vector< std::string > pPIP::getMSA(bpp::Node *node){

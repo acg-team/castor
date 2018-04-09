@@ -77,13 +77,21 @@ namespace bpp {
 
         void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local);
 
-
         std::vector< std::string > getMSA(bpp::Node *node);
+
         double getScore(bpp::Node *node);
+
         std::vector< std::string > getSeqnames(bpp::Node *node);
+
         bpp::Node *getRootNode();
 
         const Alphabet *getAlphabet() const;
+
+        void setSubstModel(bpp::SubstitutionModel *smodel);
+
+        void setTree(const Tree *tree);
+
+
 
     protected:
 
@@ -128,19 +136,15 @@ namespace bpp {
 
         void _setNu();
 
-        void _setSubstModel(bpp::SubstitutionModel *smodel);
+        double _setTauRecursive(tshlib::VirtualNode *vnode);
 
-        void _setTree(const Tree *tree);
+        void _setTau(tshlib::VirtualNode *vnode);
 
         void _setLambda(double lambda);
 
         void _setMu(double mu);
 
         void _setPi(const Vdouble &pi);
-
-        double _setTauRecursive(tshlib::VirtualNode *vnode);
-
-        void _setTau(tshlib::VirtualNode *vnode);
 
         //void _setAllIotas(std::vector<tshlib::VirtualNode *> &listNodes);
 

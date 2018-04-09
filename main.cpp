@@ -149,6 +149,7 @@ int main(int argc, char *argv[]) {
         int PAR_execution_numthreads = ApplicationTools::getIntParameter("exec_numthreads", jatiapp.getParams(), OMP_max_avail_threads, "", true, 0);
 
         bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", jatiapp.getParams(), false);
+        bool PAR_align_optim = ApplicationTools::getBooleanParameter("optimisation.alignment", jatiapp.getParams(), false);
         double PAR_proportion = ApplicationTools::getDoubleParameter("alignment.proportion", jatiapp.getParams(), .1);
         std::string PAR_model_substitution = ApplicationTools::getStringParameter("model", jatiapp.getParams(), "JC69", "", true, true);
         std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", jatiapp.getParams(), false, false, "", true, "", 1);
@@ -567,7 +568,7 @@ int main(int argc, char *argv[]) {
 
         /////////////////////////
         // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
-
+        pPIP *progressivePIP = nullptr;
         if (PAR_alignment) {
             ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
             ApplicationTools::displayResult("\nProportion gappy sites", TextTools::toString(PAR_proportion, 4));
@@ -575,7 +576,7 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
-            auto progressivePIP = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist);
+            progressivePIP = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist);
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
@@ -746,7 +747,18 @@ int main(int argc, char *argv[]) {
                                                          true,
                                                          true,
                                                          0);
-        ntl = dynamic_cast<TSHHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(ntl, ntl->getParameters(), jatiapp.getParams(), "", true, true, 0));
+
+        ntl = dynamic_cast<TSHHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(ntl,
+                                                                                            progressivePIP,
+                                                                                            ntl->getParameters(),
+                                                                                            jatiapp.getParams(),
+                                                                                            "",
+                                                                                            true,
+                                                                                            true,
+                                                                                            0));
+
+        if (PAR_align_optim) sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
+
 
         /////////////////////////
         // OUTPUT
