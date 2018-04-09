@@ -154,7 +154,7 @@ set(SOURCES
         pPIP.cpp
         pPIP.hpp
         Optimizators.cpp
-        Optimizators.hpp)
+        Optimizators.hpp UnifiedTSHomogeneousTreeLikelihood.cpp UnifiedTSHomogeneousTreeLikelihood.hpp)
 
 
 if (STATIC GREATER 0)

@@ -72,12 +72,9 @@ namespace bpp {
         AbstractHomogeneousTreeLikelihood *likelihoodFunc_;
         const UtreeBppUtils::treemap &treemap_;
         mutable tshlib::Utree *utree_;
-        mutable std::vector<Node *> likelihoodNodes_;
         mutable DRASRTreeLikelihoodData *likelihoodData_;
-        mutable DRASRTreeLikelihoodData *likelihoodDataRearrangement_;
         std::string optMethodModel_;
 
-        VVVdouble *pxy_;
 
     public:
 
