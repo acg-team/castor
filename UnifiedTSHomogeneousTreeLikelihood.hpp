@@ -49,14 +49,55 @@
 #include "TSHSearchable.hpp"
 
 namespace bpp {
-    class UnifiedTSHomogeneousTreeLikelihood : public RHomogeneousTreeLikelihood, public virtual TSHSearchable {
+
+
+    class UnifiedTSHResources : public Clonable {
+
 
     public:
-        UnifiedTSHomogeneousTreeLikelihood(const Tree &tree, const SiteContainer &data, TransitionModel *model, DiscreteDistribution *rDist, bool checkRooted, bool verbose, bool usePatterns);
 
-        UnifiedTSHomogeneousTreeLikelihood(const Tree &tree, TransitionModel *model, DiscreteDistribution *rDist, bool checkRooted, bool verbose, bool usePatterns);
+        UnifiedTSHResources(tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_);
 
-        UnifiedTSHomogeneousTreeLikelihood(const RHomogeneousTreeLikelihood &lik);
+        virtual ~UnifiedTSHResources();
+
+        UnifiedTSHResources *clone() const override { return new UnifiedTSHResources(*this); }
+
+    protected:
+
+        AbstractOptimizer *optimiser_;
+        UtreeBppUtils::treemap *treemap_;
+        mutable tshlib::Utree *utree_;
+        mutable DRASRTreeLikelihoodData *likelihoodData_;
+        std::string optMethodModel_;
+
+
+    };
+
+
+    class UnifiedTSHomogeneousTreeLikelihood : public RHomogeneousTreeLikelihood, public virtual TSHSearchable, public UnifiedTSHResources {
+
+    public:
+        UnifiedTSHomogeneousTreeLikelihood(const Tree &tree,
+                                           TransitionModel *model,
+                                           DiscreteDistribution *rDist,
+                                           tshlib::Utree *utree_,
+                                           UtreeBppUtils::treemap *treemap_,
+                                           bool checkRooted,
+                                           bool verbose,
+                                           bool usePatterns);
+
+
+        UnifiedTSHomogeneousTreeLikelihood(const Tree &tree,
+                                           const SiteContainer &data,
+                                           TransitionModel *model,
+                                           DiscreteDistribution *rDist,
+                                           tshlib::Utree *utree_,
+                                           UtreeBppUtils::treemap *treemap_,
+                                           bool checkRooted,
+                                           bool verbose,
+                                           bool usePatterns);
+
+        UnifiedTSHomogeneousTreeLikelihood(const RHomogeneousTreeLikelihood &lik, tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_);
 
         ~UnifiedTSHomogeneousTreeLikelihood() override;
 
@@ -66,22 +107,36 @@ namespace bpp {
 
         double getTopologyValue() const throw(Exception) override { return getValue(); }
 
-        void topologyChangeTested(const TopologyChangeEvent &event) override {}
+        void topologyChangeTested(const TopologyChangeEvent &event) override;
 
-        void topologyChangeSuccessful(const TopologyChangeEvent &event) override {}
+        void topologyChangeSuccessful(const TopologyChangeEvent &event) override;
 
 
     };
 
-    class UnifiedTSHomogeneousTreeLikelihood_PIP : public RHomogeneousTreeLikelihood_PIP, public virtual TSHSearchable {
+    class UnifiedTSHomogeneousTreeLikelihood_PIP : public RHomogeneousTreeLikelihood_PIP, public virtual TSHSearchable, public UnifiedTSHResources {
 
     public:
-        UnifiedTSHomogeneousTreeLikelihood_PIP(const Tree &tree, TransitionModel *model, DiscreteDistribution *rDist, UtreeBppUtils::treemap *tm, bool checkRooted, bool verbose, bool usePatterns);
 
-        UnifiedTSHomogeneousTreeLikelihood_PIP(const Tree &tree, const SiteContainer &data, TransitionModel *model, DiscreteDistribution *rDist, UtreeBppUtils::treemap *tm, bool checkRooted,
-                                               bool verbose, bool usePatterns);
+        UnifiedTSHomogeneousTreeLikelihood_PIP(const Tree &tree,
+                                               TransitionModel *model,
+                                               DiscreteDistribution *rDist,
+                                               tshlib::Utree *utree_,
+                                               UtreeBppUtils::treemap *treemap_,
+                                               bool checkRooted,
+                                               bool verbose,
+                                               bool usePatterns);
 
-        UnifiedTSHomogeneousTreeLikelihood_PIP(const RHomogeneousTreeLikelihood_PIP &lik);
+        UnifiedTSHomogeneousTreeLikelihood_PIP(const Tree &tree,
+                                               const SiteContainer &data,
+                                               TransitionModel *model,
+                                               DiscreteDistribution *rDist,
+                                               tshlib::Utree *utree_,
+                                               UtreeBppUtils::treemap *treemap_,
+                                               bool checkRooted, bool verbose,
+                                               bool usePatterns);
+
+        UnifiedTSHomogeneousTreeLikelihood_PIP(const RHomogeneousTreeLikelihood_PIP &lik, tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_);
 
         ~UnifiedTSHomogeneousTreeLikelihood_PIP() override;
 
@@ -91,9 +146,9 @@ namespace bpp {
 
         double getTopologyValue() const throw(Exception) override { return getValue(); }
 
-        void topologyChangeTested(const TopologyChangeEvent &event) override {}
+        void topologyChangeTested(const TopologyChangeEvent &event) override;
 
-        void topologyChangeSuccessful(const TopologyChangeEvent &event) override {}
+        void topologyChangeSuccessful(const TopologyChangeEvent &event) override;
 
     };
 }

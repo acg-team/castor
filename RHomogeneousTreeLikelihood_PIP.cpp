@@ -459,6 +459,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
 }
 
+
 void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() const {
     //LOG(INFO) << "RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood()";
     for (auto &nodeID:likelihoodNodes_) {
@@ -491,7 +492,6 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() const {
     }
 
 }
-
 
 
 void RHomogeneousTreeLikelihood_PIP::displayLikelihood(const Node *node) {
@@ -739,6 +739,7 @@ std::vector<int> RHomogeneousTreeLikelihood_PIP::getNodeListPostOrder(int startN
     getNodeListPostOrder_(newList, startNodeID);
     return newList;
 }
+
 
 void RHomogeneousTreeLikelihood_PIP::getNodeListPostOrder_(std::vector<int> &nodeList, int startNodeID) const {
     Node *node = tree_->getNode(startNodeID);
@@ -1133,7 +1134,6 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
 
 
 /********************************************************************************************************************************************/
-
 
 double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
 

@@ -47,68 +47,96 @@
  * Implementation for the interface  likelihood under tree search engines (all canonical models)
  */
 
+
 UnifiedTSHomogeneousTreeLikelihood::UnifiedTSHomogeneousTreeLikelihood(const Tree &tree,
                                                                        const SiteContainer &data,
                                                                        TransitionModel *model,
                                                                        DiscreteDistribution *rDist,
+                                                                       tshlib::Utree *utree_,
+                                                                       UtreeBppUtils::treemap *treemap_,
                                                                        bool checkRooted,
                                                                        bool verbose,
                                                                        bool usePatterns) :
-        RHomogeneousTreeLikelihood(tree, data, model, rDist, checkRooted, verbose, usePatterns) {
-
-
-}
+        RHomogeneousTreeLikelihood(tree, data, model, rDist, checkRooted, verbose, usePatterns),
+        UnifiedTSHResources(utree_, treemap_) {}
 
 UnifiedTSHomogeneousTreeLikelihood::UnifiedTSHomogeneousTreeLikelihood(const Tree &tree,
                                                                        TransitionModel *model,
                                                                        DiscreteDistribution *rDist,
+                                                                       tshlib::Utree *utree_,
+                                                                       UtreeBppUtils::treemap *treemap_,
                                                                        bool checkRooted,
                                                                        bool verbose,
-                                                                       bool usePatterns)
-        : RHomogeneousTreeLikelihood(tree, model, rDist, checkRooted, verbose, usePatterns) {
+                                                                       bool usePatterns) :
+        RHomogeneousTreeLikelihood(tree, model, rDist, checkRooted, verbose, usePatterns),
+        UnifiedTSHResources(utree_, treemap_) {}
 
+
+UnifiedTSHomogeneousTreeLikelihood::UnifiedTSHomogeneousTreeLikelihood(const RHomogeneousTreeLikelihood &lik, tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_) :
+        RHomogeneousTreeLikelihood(lik),
+        UnifiedTSHResources(utree_, treemap_) {}
+
+
+UnifiedTSHomogeneousTreeLikelihood::~UnifiedTSHomogeneousTreeLikelihood() {}
+
+void UnifiedTSHomogeneousTreeLikelihood::topologyChangeTested(const TopologyChangeEvent &event) {
 
 }
 
-UnifiedTSHomogeneousTreeLikelihood::UnifiedTSHomogeneousTreeLikelihood(const RHomogeneousTreeLikelihood &lik) : RHomogeneousTreeLikelihood(lik) {}
-
-UnifiedTSHomogeneousTreeLikelihood::~UnifiedTSHomogeneousTreeLikelihood() {
+void UnifiedTSHomogeneousTreeLikelihood::topologyChangeSuccessful(const TopologyChangeEvent &event) {
 
 }
+
+
 
 
 /*
  * Implementation for the interface  likelihood under tree search engines (all mixed models)
  */
 
-
-UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(const Tree &tree,
-                                                                               TransitionModel *model,
-                                                                               DiscreteDistribution *rDist,
-                                                                               UtreeBppUtils::treemap *tm,
-                                                                               bool checkRooted,
-                                                                               bool verbose,
-                                                                               bool usePatterns) :
-        RHomogeneousTreeLikelihood_PIP(tree, model, rDist, tm, checkRooted, verbose, usePatterns) {
-
-
-}
-
 UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(const Tree &tree,
                                                                                const SiteContainer &data,
                                                                                TransitionModel *model,
                                                                                DiscreteDistribution *rDist,
-                                                                               UtreeBppUtils::treemap *tm,
+                                                                               tshlib::Utree *utree_,
+                                                                               UtreeBppUtils::treemap *treemap_,
                                                                                bool checkRooted,
                                                                                bool verbose,
                                                                                bool usePatterns) :
-        RHomogeneousTreeLikelihood_PIP(tree, data, model, rDist, tm, checkRooted, verbose, usePatterns) {
+        RHomogeneousTreeLikelihood_PIP(tree, data, model, rDist, treemap_, checkRooted, verbose, usePatterns),
+        UnifiedTSHResources(utree_, treemap_) {}
+
+UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(const Tree &tree,
+                                                                               TransitionModel *model,
+                                                                               DiscreteDistribution *rDist,
+                                                                               tshlib::Utree *utree_,
+                                                                               UtreeBppUtils::treemap *treemap_,
+                                                                               bool checkRooted,
+                                                                               bool verbose,
+                                                                               bool usePatterns) :
+        RHomogeneousTreeLikelihood_PIP(tree, model, rDist, treemap_, checkRooted, verbose, usePatterns),
+        UnifiedTSHResources(utree_, treemap_) {}
 
 
-}
+UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(const RHomogeneousTreeLikelihood_PIP &lik, tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_) :
+        RHomogeneousTreeLikelihood_PIP(lik),
+        UnifiedTSHResources(utree_, treemap_) {}
 
-UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(const RHomogeneousTreeLikelihood_PIP &lik) : RHomogeneousTreeLikelihood_PIP(lik) {
 
-}
 
 UnifiedTSHomogeneousTreeLikelihood_PIP::~UnifiedTSHomogeneousTreeLikelihood_PIP() {}
+
+
+void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeTested(const TopologyChangeEvent &event) {
+
+}
+
+void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(const TopologyChangeEvent &event) {
+
+}
+
+UnifiedTSHResources::UnifiedTSHResources(tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_) : utree_(utree_), treemap_(treemap_) {}
+
+UnifiedTSHResources::~UnifiedTSHResources() {}
+
+
