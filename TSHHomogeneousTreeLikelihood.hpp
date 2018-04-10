@@ -197,13 +197,13 @@ namespace bpp {
         }
 
 
-        std::vector<Node *> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const {
+        std::vector<int> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const {
 
-            std::vector<Node *> newList;
+            std::vector<int> newList;
 
             for (auto &vnode:inputList) {
 
-                newList.push_back(tree_->getNode(treemap_.right.at(vnode)));
+                newList.push_back(tree_->getNode(treemap_.right.at(vnode))->getId());
             }
 
             return newList;

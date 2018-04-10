@@ -58,18 +58,23 @@ using namespace bpp;
 namespace bpp {
 
     class RHomogeneousTreeLikelihood_PIP : public AbstractHomogeneousTreeLikelihood {
-    private:
+    protected:
 
         mutable DRASRTreeLikelihoodData *likelihoodData_;
         mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;
 
-        mutable std::vector<Node *> likelihoodNodes_;                       //TODO: Change into node-getId()
+        //mutable std::vector<Node *> likelihoodNodes_;
+        mutable std::vector<int> likelihoodNodes_;                            //The node is represented via its <int> ID
+
 
         mutable std::vector<tshlib::VirtualNode *> treesearchNodes_;
 
 
-        mutable std::map<int, std::pair<std::vector<int>, bpp::Node *>> descCountData_;     //TODO: Change into node-getId()
-        mutable std::map<int, std::pair<std::vector<bool>, bpp::Node *>> setAData_;         //TODO: Change into node-getId()
+        //mutable std::map<int, std::pair<std::vector<int>, bpp::Node *>> descCountData_;     //TODO: Change into node-getId()
+        //mutable std::map<int, std::pair<std::vector<bool>, bpp::Node *>> setAData_;         //TODO: Change into node-getId()
+
+        mutable std::map<int, std::pair<std::vector<int>, int>> descCountData_;     //TODO: Change into node-getId()
+        mutable std::map<int, std::pair<std::vector<bool>, int>> setAData_;         //TODO: Change into node-getId()
         mutable std::map<int, double> iotasData_;
         mutable std::map<int, double> betasData_;
         mutable std::map<int, std::vector<std::vector<double>>> indicatorFun_;
@@ -150,7 +155,7 @@ namespace bpp {
         RHomogeneousTreeLikelihood_PIP *clone() const { return new RHomogeneousTreeLikelihood_PIP(*this); }
 
 
-    private:
+    protected:
 
         /**
          * @brief Method called by constructors.
@@ -322,7 +327,7 @@ namespace bpp {
          * @brief This method computes the likelihood of the tree for a list of nodes computed using a postorder-traversal
          * @param nodeList
          */
-        void computeTreeLikelihood(std::vector<Node *> nodeList);
+        void computeTreeLikelihood(std::vector<int> nodeList);
 
         /** @} */
 
@@ -350,7 +355,7 @@ namespace bpp {
          * @brief This method computes the likelihood after a tree rearrangment
          * @return The likelihood value using the intermediate partial values
          */
-        void fireTopologyChange(std::vector<Node *> nodeList);
+        void fireTopologyChange(std::vector<int> nodeList);
 
         double getLogLikelihoodOnTopologyChange() const;
 
@@ -358,11 +363,11 @@ namespace bpp {
          * @brief This method computes a list of nodes traversing the tree in postorder
          *
          */
-        std::vector<Node *> getNodeListPostOrder(Node *startNode) const;
+        std::vector<int> getNodeListPostOrder(int startNodeID) const;
 
-        void getNodeListPostOrder_(std::vector<Node *> &nodeList, Node *startNode) const;
+        void getNodeListPostOrder_(std::vector<int> &nodeList, int startNodeID) const;
 
-        void setLikelihoodNodes(std::vector<Node *> &nodeList) const;
+        void setLikelihoodNodes(std::vector<int> &nodeList) const;
 
     protected:
 
@@ -434,14 +439,18 @@ namespace bpp {
 
         void _printPrMatrix(Node *node, VVdouble *pr);
 
-        std::vector<Node *> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const;
+        std::vector<int> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const;
 
-        void _extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<Node *> &listNodes, unsigned long site) const;
+        //void _extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<Node *> &listNodes, unsigned long site) const;
 
-        void _extendNodeListOnSetA(Node *qnode, std::vector<Node *> &listNodes, unsigned long site) const;
+        //void _extendNodeListOnSetA(Node *qnode, std::vector<Node *> &listNodes, unsigned long site) const;
+
+        void _extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<int> &listNodes, unsigned long site) const;
+
+        void _extendNodeListOnSetA(int qnodeID, std::vector<int> &listNodes, unsigned long site) const;
 
 
-        double computeLikelihoodForASite(std::vector<Node *> &likelihoodNodes, size_t i) const;
+        double computeLikelihoodForASite(std::vector<int> &likelihoodNodes, size_t i) const;
 
         double computeLikelihoodWholeAlignmentEmptyColumn() const;
 

@@ -202,10 +202,10 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     //setIndicatorFunction(sites);
 
     // Set indicator function on leafs
-    setIndicatorFunction(*data_);                                           //TODO: indicator function must be computed on: topology changes
+    setIndicatorFunction(*data_);                                                 //TODO: indicator function must be computed on: topology changes
 
     // Set the likelihoodNodeList to the postorder one
-    std::vector<Node *> ponl = getNodeListPostOrder(tree_->getRootNode());  //TODO: post-order list must be computed on: topology changes
+    std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());  //TODO: post-order list must be computed on: topology changes
     setLikelihoodNodes(ponl);
 
     // Set initial Insertion Histories
@@ -356,29 +356,6 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFv(Node *node) const {
         }
     }
 
-    //alternative: first sites and then classes
-    /*
-    double val;
-    for (size_t i = 0; i < nbSites_; i++) {
-        for (size_t c = 0; c < nbClasses_; c++) {
-
-            VVdouble *pxy__node_c = &(*pxy__node)[c];
-
-            std::vector<double> tmp = (*_likelihoods_node)[i][c];
-
-            for (size_t x = 0; x < nbStates_; x++) {
-
-                val=0.0;
-                for (size_t y = 0; y < nbStates_; y++) {
-                    //val += (*pxy__node_c)[x][y] * (*_likelihoods_node)[i][c][y];
-                    val += (*pxy__node_c)[x][y] * tmp[y];
-                }
-                (*_likelihoods_node)[i][c][x]=val;
-            }
-        }
-    }
-    */
-
 }
 
 
@@ -443,66 +420,16 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicatorEmpty(Node *node) c
             (*_likelihoods_empty_node)[0][c][x] = (*pxy__node_c)[x][nbStates_ - 1];
         }
 
-        /*
-        for (size_t row = 0; row < nbStates_; row++) {
-            if ((*_likelihoods_empty_node)[0][c][row] == 1) {
-                for (size_t col = 0; col < nbStates_; col++) {
-                    (*_likelihoods_empty_node)[0][c][col] = (*pxy__node_c)[col][nbStates_ - 1];
-                }
-                break;
-            }
-        }
-        */
     }
 
 
 }
 
-/*
-void RHomogeneousTreeLikelihood_PIP::recombineFvAfterMove() const{
-
-    for (auto &node:likelihoodNodes_) {
-        //std::cout << "[RecombineFV]" << vnode->printNeighbours() << std::endl;
-        recombineFvAtNode(node);
-        //vnode->recombineFv();
-        //vnode->_printFV();
-    }
-}
-
-
-void RHomogeneousTreeLikelihood_PIP::recombineFvAtNode(Node *node) const{
-
-    if (!node->isLeaf()) {
-        // Internal node
-        _hadamardMultFvSons(node);
-        _hadamardMultFvEmptySons(node);
-
-        if (node->hasFather()) {
-            // Root --> special case for internal node
-            _computePrTimesFv(node);
-            _computePrTimesFvEmpty(node);
-        }
-
-    } else {
-        // Leaf node
-        _computePrTimesIndicator(node);
-        _computePrTimesIndicatorEmpty(node);
-    }
-    //--------------------------------------------------------------------------------------------
-    // Debug ** array fetching + printing **
-    //VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
-    //VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
-    //_printFV(node, _likelihoods_node);
-    //_printFV(node, _likelihoods_empty_node);
-    //--------------------------------------------------------------------------------------------
-
-}
-*/
 
 void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
     //LOG(INFO) << "RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood()";
-    for(auto &node:likelihoodNodes_) {
-
+    for (auto &nodeID:likelihoodNodes_) {
+        Node *node = tree_->getNode(nodeID);
         if (!node->isLeaf()) {
             // Internal node
             _hadamardMultFvSons(node);
@@ -534,8 +461,8 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
 void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() const {
     //LOG(INFO) << "RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood()";
-    for (auto &node:likelihoodNodes_) {
-
+    for (auto &nodeID:likelihoodNodes_) {
+        Node *node = tree_->getNode(nodeID);
         if (!node->isLeaf()) {
             // Internal node
             _hadamardMultFvSons(node);
@@ -645,8 +572,8 @@ void RHomogeneousTreeLikelihood_PIP::initialiseInsertionHistories() const {
             setA_.resize(nbDistinctSites_);
             indicatorFun_[node->getId()].at(i).resize(nbStates_);
 
-            descCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node)));
-            setAData_.insert(std::make_pair(node->getId(), std::make_pair(setA_, node)));
+            descCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
+            setAData_.insert(std::make_pair(node->getId(), std::make_pair(setA_, node->getId())));
         }
     }
 }
@@ -657,37 +584,37 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
     for (int i = 0; i < nbDistinctSites_; i++) {
         size_t indexRealSite = static_cast<size_t>(rootPatternLinksInverse_.at(i));
         // Compute the total number of characters (exc. gap) for the current site
-        int nonGaps_ = countNonGapCharacterInSite(sites, indexRealSite);
+        int nonGaps_ = countNonGapCharacterInSite(sites, (int) indexRealSite);
 
-        for (auto &node:likelihoodNodes_) {
-
+        for (auto &nodeID:likelihoodNodes_) {
+            Node *node = tree_->getNode(nodeID);
             // Computing descCount
             if (node->isLeaf()){
-                descCountData_[node->getId()].first.at(i) = (sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode() ? 0 : 1);
+                descCountData_[nodeID].first.at(i) = (sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode() ? 0 : 1);
 
             }else{
 
                 std::vector<int> sonsIDs;
-                tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-                tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+                tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
+                tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
 
                 sonsIDs.push_back(treemap_.right.at(vnode_left));
                 sonsIDs.push_back(treemap_.right.at(vnode_right));
                 size_t nbNodes = sonsIDs.size();
 
                 // Reset value stored at the internal node
-                descCountData_[node->getId()].first.at(i) = 0;
+                descCountData_[nodeID].first.at(i) = 0;
 
                 // Recompute it
                 for (size_t l = 0; l < nbNodes; l++) {
-                    descCountData_[node->getId()].first.at(i) += getNodeDescCountForASite(tree_->getNode(sonsIDs.at(l)), i);
+                    descCountData_[nodeID].first.at(i) += getNodeDescCountForASite(tree_->getNode(sonsIDs.at(l)), i);
                 }
 
             }
 
             // Activate or deactivate set A
-            setAData_[node->getId()].first.at(i) = (getNodeDescCountForASite(node,i) == nonGaps_);
-            DVLOG(3) << "setInsertionHistories [BPP] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << setAData_[node->getId()].first.at(i);
+            setAData_[nodeID].first.at(i) = (getNodeDescCountForASite(node, i) == nonGaps_);
+            DVLOG(3) << "setInsertionHistories [BPP] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << setAData_[nodeID].first.at(i);
 
 
         }
@@ -807,20 +734,21 @@ void RHomogeneousTreeLikelihood_PIP::computeNu() {
 }
 
 
-std::vector<Node *> RHomogeneousTreeLikelihood_PIP::getNodeListPostOrder(Node *startNode) const {
-    std::vector<Node *> newList;
-    getNodeListPostOrder_(newList, startNode);
+std::vector<int> RHomogeneousTreeLikelihood_PIP::getNodeListPostOrder(int startNodeID) const {
+    std::vector<int> newList;
+    getNodeListPostOrder_(newList, startNodeID);
     return newList;
 }
 
-void RHomogeneousTreeLikelihood_PIP::getNodeListPostOrder_(std::vector<Node *> &nodeList, Node *startNode) const {
-    if (!startNode->isLeaf()) {
-        for(auto &son:startNode->getSons()){
-            getNodeListPostOrder_(nodeList, son);
+void RHomogeneousTreeLikelihood_PIP::getNodeListPostOrder_(std::vector<int> &nodeList, int startNodeID) const {
+    Node *node = tree_->getNode(startNodeID);
+    if (!node->isLeaf()) {
+        for (auto &son:node->getSons()) {
+            getNodeListPostOrder_(nodeList, son->getId());
         }
-        nodeList.push_back(startNode);
+        nodeList.push_back(startNodeID);
     } else {
-        nodeList.push_back(startNode);
+        nodeList.push_back(startNodeID);
     }
 }
 
@@ -887,12 +815,12 @@ void RHomogeneousTreeLikelihood_PIP::_printPrMatrix(Node *node, VVdouble *pr) {
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::_extendNodeListOnSetA(Node *qnode, std::vector<Node *> &listNodes, unsigned long site) const {
+void RHomogeneousTreeLikelihood_PIP::_extendNodeListOnSetA(int qnodeID, std::vector<int> &listNodes, unsigned long site) const {
 
-    listNodes.push_back(qnode);
+    listNodes.push_back(qnodeID);
 
     // Get corresponding tshlib::virtualnode
-    tshlib::VirtualNode *temp = treemap_.left.at(qnode->getId());
+    tshlib::VirtualNode *temp = treemap_.left.at(qnodeID);
 
     do {
 
@@ -913,18 +841,19 @@ void RHomogeneousTreeLikelihood_PIP::_extendNodeListOnSetA(Node *qnode, std::vec
             break;
         }
 
-        listNodes.push_back(tree_->getNode(treemap_.right.at(temp)));
+        listNodes.push_back(tree_->getNode(treemap_.right.at(temp))->getId());
 
     } while (setAData_[treemap_.right.at(temp)].first.at(site));
 
 }
 
-void RHomogeneousTreeLikelihood_PIP::_extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<Node *> &listNodes, unsigned long site) const {
+
+void RHomogeneousTreeLikelihood_PIP::_extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<int> &listNodes, unsigned long site) const {
 
     tshlib::VirtualNode *temp = qnode;
     // Get the corresponding node on the BPP tree
     Node *node = tree_->getNode(treemap_.right.at(temp));
-    listNodes.push_back(node);
+    listNodes.push_back(node->getId());
 
 
     do {
@@ -946,7 +875,7 @@ void RHomogeneousTreeLikelihood_PIP::_extendNodeListOnSetA(tshlib::VirtualNode *
             break;
         }
 
-        listNodes.push_back(tree_->getNode(treemap_.right.at(temp)));
+        listNodes.push_back(tree_->getNode(treemap_.right.at(temp))->getId());
 
 
     } while (setAData_[treemap_.right.at(temp)].first.at(site));
@@ -954,13 +883,13 @@ void RHomogeneousTreeLikelihood_PIP::_extendNodeListOnSetA(tshlib::VirtualNode *
 }
 
 
-std::vector<Node *> RHomogeneousTreeLikelihood_PIP::remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const {
+std::vector<int> RHomogeneousTreeLikelihood_PIP::remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const {
 
-    std::vector<Node *> newList;
+    std::vector<int> newList;
 
     for (auto &vnode:inputList) {
 
-        newList.push_back(tree_->getNode(treemap_.right.at(vnode)));
+        newList.push_back(tree_->getNode(treemap_.right.at(vnode))->getId());
     }
 
     return newList;
@@ -1028,7 +957,7 @@ void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood() {
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood(std::vector<Node *> nodeList) {
+void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood(std::vector<int> nodeList) {
     //LOG(INFO) << "RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood(std::vector<Node *> nodeList)";
     likelihoodNodes_ = nodeList;
 
@@ -1040,7 +969,7 @@ void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood(std::vector<Node *> n
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::fireTopologyChange(std::vector<Node *> nodeList) {
+void RHomogeneousTreeLikelihood_PIP::fireTopologyChange(std::vector<int> nodeList) {
     // Store the nodes where the likelihood should be recomputed in post-order
     setLikelihoodNodes(nodeList);
     // Recompute the value of the FV 3D arrays
@@ -1084,7 +1013,8 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTopologyChange() const 
 
         //VLOG(1) << "Thread: " << omp_get_thread_num() << " on site " << i;
 
-        std::vector<Node *> tempExtendedNodeList;
+        //std::vector<Node *> tempExtendedNodeList;
+        std::vector<int> tempExtendedNodeList;
 
         // Extend it
         _extendNodeListOnSetA(likelihoodNodes_.back(), tempExtendedNodeList, i);
@@ -1115,14 +1045,14 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTopologyChange() const 
 
 double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColumn() const {
     // Compute the likelihood on the postorder node list
-    std::vector<Node *> postOrderNodeList = getNodeListPostOrder(tree_->getRootNode());
+    std::vector<int> postOrderNodeList = getNodeListPostOrder(tree_->getRootNode()->getId());
     //setLikelihoodNodes(ponl);
 
     // Add iota and beta quantities on nodes with actived SetA for empty column
     double lk_site_empty = 0;
 
-    for (auto &node:postOrderNodeList) {
-
+    for (auto &nodeID:postOrderNodeList) {
+        Node *node = tree_->getNode(nodeID);
         double fv_site = 0;
 
         for (size_t c = 0; c < nbClasses_; c++) {
@@ -1135,14 +1065,14 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
                 double partialLK = MatrixBppUtils::dotProd(fv_sons, &rootFreqs_);
 
                 if (node->hasFather()) {
-                    fv_site += iotasData_[node->getId()] * (1 - betasData_[node->getId()] + betasData_[node->getId()] * partialLK);
+                    fv_site += iotasData_[nodeID] * (1 - betasData_[nodeID] + betasData_[nodeID] * partialLK);
                 } else {
-                    fv_site += iotasData_[node->getId()] * betasData_[node->getId()] * partialLK;
+                    fv_site += iotasData_[nodeID] * betasData_[nodeID] * partialLK;
                 }
                 delete fv_sons;
 
             } else {
-                fv_site += iotasData_[node->getId()] * (1 - betasData_[node->getId()]);
+                fv_site += iotasData_[nodeID] * (1 - betasData_[nodeID]);
             }
 
 
@@ -1162,16 +1092,17 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
 }
 
 
-double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<Node *> &likelihoodNodes, size_t i) const {
+double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int> &likelihoodNodes, size_t i) const {
     double lk_site = 0;
 
-    for (auto &node:likelihoodNodes) {
+    for (auto &nodeID:likelihoodNodes) {
+        Node *node = tree_->getNode(nodeID);
 
         double fv_site = 0;
 
         for (size_t c = 0; c < nbClasses_; c++) {
             //setAData_[treemap_.left.at(node->getId())].first.at(site)
-            if (setAData_[node->getId()].first.at(i)) {
+            if (setAData_[nodeID].first.at(i)) {
                 DVLOG(3) << "[BPP] Likelhood for setA (" << i << ") @node " << node->getName();
                 if (!node->isLeaf()) {
 
@@ -1179,14 +1110,14 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<Nod
                     _SingleRateCategoryHadamardMultFvSons(node, i, c, fv_sons);
 
                     double partialLK = MatrixBppUtils::dotProd(fv_sons, &rootFreqs_);
-                    fv_site += iotasData_[node->getId()] * betasData_[node->getId()] * partialLK;
+                    fv_site += iotasData_[nodeID] * betasData_[nodeID] * partialLK;
 
                     delete fv_sons;
 
                 } else {
-                    std::vector<double> *indFun = &indicatorFun_[node->getId()][i];
+                    std::vector<double> *indFun = &indicatorFun_[nodeID][i];
                     double partialLK = MatrixBppUtils::dotProd(indFun, &rootFreqs_);
-                    fv_site += (iotasData_[node->getId()] * betasData_[node->getId()]) * partialLK;
+                    fv_site += (iotasData_[nodeID] * betasData_[nodeID]) * partialLK;
                 }
 
             }
@@ -1208,7 +1139,7 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
 
     //likelihoodNodes_.clear();
     // Set the likelihoodNodeList to the postorder one
-    std::vector<Node *> ponl = getNodeListPostOrder(tree_->getRootNode());
+    std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
     setLikelihoodNodes(ponl);
 
     // compute likelihood empty column
@@ -1220,7 +1151,7 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
     // Initialise vector of likelihood per each site
     std::vector<double> lk_sites(nbDistinctSites_);
 
-    std::vector<Node *> listNodes = likelihoodNodes_;
+    std::vector<int> listNodes = likelihoodNodes_;
 
     const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
 
@@ -1750,7 +1681,7 @@ double RHomogeneousTreeLikelihood_PIP::getSecondOrderDerivative(const std::strin
 
 /********************************************************************************************************************************************/
 
-void RHomogeneousTreeLikelihood_PIP::setLikelihoodNodes(std::vector<Node *> &nodeList) const {
+void RHomogeneousTreeLikelihood_PIP::setLikelihoodNodes(std::vector<int> &nodeList) const {
 
     // Reset list containing the nodes on which computing the likelihood
     likelihoodNodes_.clear();
