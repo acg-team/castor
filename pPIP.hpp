@@ -275,7 +275,7 @@ namespace bpp {
 
         double compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
-        double computeLK_M_local(double log_phi_gamma,
+        double computeLK_M_local(double NU,
                                  double valM,
                                  double valX,
                                  double valY,
@@ -285,7 +285,7 @@ namespace bpp {
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkM);
 
-        double computeLK_X_local(double log_phi_gamma,
+        double computeLK_X_local(double NU,
                                  double valM,
                                  double valX,
                                  double valY,
@@ -295,7 +295,7 @@ namespace bpp {
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkX);
 
-        double computeLK_Y_local(double log_phi_gamma,
+        double computeLK_Y_local(double NU,
                                  double valM,
                                  double valX,
                                  double valY,

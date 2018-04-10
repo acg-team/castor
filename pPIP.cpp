@@ -1114,7 +1114,7 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t
     return pc0;
 }
 
-double pPIP::computeLK_M_local(double log_phi_gamma,
+double pPIP::computeLK_M_local(double NU,
                                double valM,
                                double valX,
                                double valY,
@@ -1198,10 +1198,10 @@ double pPIP::computeLK_M_local(double log_phi_gamma,
         log_pr=it->second;
     }
 
-    return  log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
-
+    //return  log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return  log(NU)-log((double)m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 }
-double pPIP::computeLK_X_local(double log_phi_gamma,
+double pPIP::computeLK_X_local(double NU,
                                double valM,
                                double valX,
                                double valY,
@@ -1286,10 +1286,10 @@ double pPIP::computeLK_X_local(double log_phi_gamma,
         log_pr=it->second;
     }
 
-    return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
-
+    //return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return  log(NU)-log((double)m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 }
-double pPIP::computeLK_Y_local(double log_phi_gamma,
+double pPIP::computeLK_Y_local(double NU,
                                double valM,
                                double valX,
                                double valY,
@@ -1375,8 +1375,8 @@ double pPIP::computeLK_Y_local(double log_phi_gamma,
         log_pr=it->second;
     }
 
-    return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
-
+    //return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return  log(NU)-log((double)m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 }
 
 void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
@@ -1492,21 +1492,29 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     double log_phi_gamma;
     double prev_log_phi_gamma; // to store old value
 
-    auto** PHI = new double *[d];
+    //auto** PHI = new double *[d];
+    double PC0 = 0.0;
+    double NU = 0.0;
 
-    for(int i=0;i<d;i++){
-        PHI[i] = new double[num_gamma_categories];
-    }
+//    for(int i=0;i<d;i++){
+//        PHI[i] = new double[num_gamma_categories];
+//    }
     for (int catg = 0; catg < num_gamma_categories; catg++) {
         // log( P_gamma(r) * phi(0,pc0(r),r) ): marginal lk for all empty columns of an alignment of size 0
-        PHI[0][catg] = log(rDist_->getProbability((size_t)catg)) + \
-                     (nu_.at(catg) * (pc0.at(catg) - 1.0));
+//        PHI[0][catg] = log(rDist_->getProbability((size_t)catg)) + \
+//                     (nu_.at(catg) * (pc0.at(catg) - 1.0));
+        PC0 += rDist_->getProbability((size_t)catg)) * pc0.at(catg);
+        NU += rDist_->getProbability((size_t)catg)) *nu_.at(catg);
     }
+
+
+
     // computes the marginal phi marginalized over all the gamma categories
-    log_phi_gamma = PHI[0][0];
-    for (int catg = 1; catg < num_gamma_categories; catg++) {
-        log_phi_gamma=pPIPUtils::add_lns(log_phi_gamma,PHI[0][catg]);
-    }
+    log_phi_gamma = NU * (PC0-1);
+    //log_phi_gamma = PHI[0][0];
+    //for (int catg = 1; catg < num_gamma_categories; catg++) {
+    //    log_phi_gamma=pPIPUtils::add_lns(log_phi_gamma,PHI[0][catg]);
+    //}
     //============================================================
 
     LogM[0][0] = log_phi_gamma;
@@ -1665,10 +1673,11 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
                     if (local) {
                         // compute MATCH lk
-                        valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
-                        valX -= prev_log_phi_gamma;
-                        valY -= prev_log_phi_gamma;
-                        val = computeLK_M_local(log_phi_gamma,
+                        //valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
+                        //valX -= prev_log_phi_gamma;
+                        //valY -= prev_log_phi_gamma;
+                        //val = computeLK_M_local(log_phi_gamma,
+                        val = computeLK_M_local(NU,
                                                 valM,
                                                 valX,
                                                 valY,
@@ -1792,10 +1801,11 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
                     if(local){
                         // compute GAPX lk
-                        valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
-                        valX -= prev_log_phi_gamma;
-                        valY -= prev_log_phi_gamma;
-                        val= computeLK_X_local(log_phi_gamma,
+                        //valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
+                        //valX -= prev_log_phi_gamma;
+                        //valY -= prev_log_phi_gamma;
+                        //val= computeLK_X_local(log_phi_gamma,
+                        val= computeLK_X_local(NU,
                                                valM,
                                                valX,
                                                valY,
@@ -1918,10 +1928,11 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
                     if(local){
                         // compute GAPY lk
-                        valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
-                        valX -= prev_log_phi_gamma;
-                        valY -= prev_log_phi_gamma;
-                        val= computeLK_Y_local(log_phi_gamma,
+                        //valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
+                        //valX -= prev_log_phi_gamma;
+                        //valY -= prev_log_phi_gamma;
+                        //val= computeLK_Y_local(log_phi_gamma,
+                        val= computeLK_Y_local(NU,
                                                valM,
                                                valX,
                                                valY,
@@ -2150,10 +2161,10 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     for(int i=last_d;i>=0;i--){
         free(TR[i]);
-        free(PHI[i]);
+        //free(PHI[i]);
     }
     free(TR);
-    free(PHI);
+    //free(PHI);
     //==========================================================================================
 }
 
