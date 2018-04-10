@@ -13,7 +13,5 @@ pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
-          - export SharedLibraryPath=/opt/dependencies;
-          - export SharedIncludePath=${SharedLibraryPath}/include;
-          - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${SharedIncludePath} -DCMAKE_PREFIX_PATH=${SharedLibraryPath} CMakeLists.txt
+          - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/opt/dependencies -DCMAKE_PREFIX_PATH=/opt/dependencies/include CMakeLists.txt
           - make
