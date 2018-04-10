@@ -3,15 +3,12 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image:
-  name: lorenzogatti89/minijati:latest
-  username: $DOCKER_HUB_USERNAME
-  password: $DOCKER_HUB_PASSWORD
-  email: $DOCKER_HUB_EMAIL
 
 pipelines:
   default:
-    - step:
+   - step:
         script: # Modify the commands below to build your repository.
-          - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/opt/dependencies -DCMAKE_PREFIX_PATH=/opt/dependencies/include CMakeLists.txt
-          - make
+        - echo $DOCKER_HUB_USERNAME
+        - echo $DOCKER_HUB_EMAIL
+        #- cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/opt/dependencies -DCMAKE_PREFIX_PATH=/opt/dependencies/include CMakeLists.txt
+        #- make
