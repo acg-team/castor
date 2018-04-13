@@ -53,6 +53,16 @@ namespace bpp {
 
     class UnifiedTSHResources : public Clonable {
 
+    protected:
+
+        AbstractOptimizer *optimiser_;
+        UtreeBppUtils::treemap *treemap_;
+        mutable tshlib::Utree *utree_;
+
+        mutable DRASRTreeLikelihoodData *likelihoodDataTest_;
+        mutable DRASRTreeLikelihoodData *likelihoodEmptyDataTest_;
+
+        std::string optMethodModel_;
 
     public:
 
@@ -62,19 +72,36 @@ namespace bpp {
 
         UnifiedTSHResources *clone() const override { return new UnifiedTSHResources(*this); }
 
-    protected:
 
-        AbstractOptimizer *optimiser_;
-        UtreeBppUtils::treemap *treemap_;
-        mutable tshlib::Utree *utree_;
-        mutable DRASRTreeLikelihoodData *likelihoodData_;
-        std::string optMethodModel_;
+    };
+
+    class UnifiedTSHSearchable : public virtual Clonable {
+    public:
+
+        UnifiedTSHSearchable() {}
+
+        virtual ~UnifiedTSHSearchable() {}
+
+        virtual UnifiedTSHSearchable *clone() const = 0;
+
+        void topologyChangeTested() {}
+
+        void topologyChangeSuccessful() {}
+
+        void fixTopologyChanges() {}
+
+        void optimiseBranches() {}
 
 
     };
 
 
     class UnifiedTSHomogeneousTreeLikelihood : public RHomogeneousTreeLikelihood, public virtual TSHSearchable, public UnifiedTSHResources {
+
+    private:
+
+        mutable DRASRTreeLikelihoodData *likelihoodData_;
+        mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;
 
     public:
         UnifiedTSHomogeneousTreeLikelihood(const Tree &tree,
@@ -111,6 +138,7 @@ namespace bpp {
 
         void topologyChangeSuccessful(const TopologyChangeEvent &event) override;
 
+        void init_(bool usePatterns);
 
     };
 
@@ -149,6 +177,8 @@ namespace bpp {
         void topologyChangeTested(const TopologyChangeEvent &event) override;
 
         void topologyChangeSuccessful(const TopologyChangeEvent &event) override;
+
+        void init_(bool usePatterns);
 
     };
 }

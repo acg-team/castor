@@ -63,18 +63,15 @@ namespace bpp {
         mutable DRASRTreeLikelihoodData *likelihoodData_;
         mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;
 
-        //mutable std::vector<Node *> likelihoodNodes_;
         mutable std::vector<int> likelihoodNodes_;                            //The node is represented via its <int> ID
 
+        //mutable std::vector<Node *> likelihoodNodes_;
+        //mutable std::vector<tshlib::VirtualNode *> treesearchNodes_;
+        //mutable std::map<int, std::pair<std::vector<int>, bpp::Node *>> descCountData_;
+        //mutable std::map<int, std::pair<std::vector<bool>, bpp::Node *>> setAData_;
 
-        mutable std::vector<tshlib::VirtualNode *> treesearchNodes_;
-
-
-        //mutable std::map<int, std::pair<std::vector<int>, bpp::Node *>> descCountData_;     //TODO: Change into node-getId()
-        //mutable std::map<int, std::pair<std::vector<bool>, bpp::Node *>> setAData_;         //TODO: Change into node-getId()
-
-        mutable std::map<int, std::pair<std::vector<int>, int>> descCountData_;     //TODO: Change into node-getId()
-        mutable std::map<int, std::pair<std::vector<bool>, int>> setAData_;         //TODO: Change into node-getId()
+        mutable std::map<int, std::pair<std::vector<int>, int>> descCountData_;
+        mutable std::map<int, std::pair<std::vector<bool>, int>> setAData_;
         mutable std::map<int, double> iotasData_;
         mutable std::map<int, double> betasData_;
         mutable std::map<int, std::vector<std::vector<double>>> indicatorFun_;
@@ -84,7 +81,6 @@ namespace bpp {
         mutable double tau_;
 
         mutable UtreeBppUtils::treemap treemap_;
-
 
 
     protected:
@@ -162,10 +158,6 @@ namespace bpp {
          */
         void init_(bool usePatterns) throw(Exception);
 
-        //void initializeLikelihoodMatrix_(VVVdouble *_likelihoods_node);
-
-        //void initializeLikelihoodEmptyMatrix_(VVVdouble *_likelihoods_empty_node);
-
         void _hadamardMultFvSons(Node *node) const;
 
         void _hadamardMultFvEmptySons(Node *node) const;
@@ -206,9 +198,8 @@ namespace bpp {
 
         double getLogLikelihood() const;
 
+
         //double getLogLikelihood(std::vector<tshlib::VirtualNode *> &listNodes) const;
-
-
         //double getLogLikelihoodSubtree(const Node *node) const;
         //double getLogLikelihoodSubtreeForASite(size_t site) const;
         //double getLogLikelihoodSubtreeForASiteForARateClass(size_t site, size_t rateClass) const;
@@ -250,7 +241,7 @@ namespace bpp {
 
         double getLogLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const {
             std::cerr << "getLogLikelihoodForASiteForARateClassForAState()"
-                    "" << std::endl;
+                         "" << std::endl;
             return 0;
         };
 
@@ -441,24 +432,15 @@ namespace bpp {
 
         std::vector<int> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const;
 
-        //void _extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<Node *> &listNodes, unsigned long site) const;
-
-        //void _extendNodeListOnSetA(Node *qnode, std::vector<Node *> &listNodes, unsigned long site) const;
-
         void _extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<int> &listNodes, unsigned long site) const;
 
         void _extendNodeListOnSetA(int qnodeID, std::vector<int> &listNodes, unsigned long site) const;
-
 
         double computeLikelihoodForASite(std::vector<int> &likelihoodNodes, size_t i) const;
 
         double computeLikelihoodWholeAlignmentEmptyColumn() const;
 
-        //double computeLikelihoodWholeSites() const;
-        //double computeLikelihoodWholeAlignment()const;
-
         int countNonGapCharacterInSite(const SiteContainer &sites, int siteID) const;
-
 
         //friend class RHomogeneousMixedTreeLikelihood;
 

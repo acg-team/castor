@@ -87,8 +87,12 @@ void UnifiedTSHomogeneousTreeLikelihood::topologyChangeSuccessful(const Topology
 
 }
 
+void UnifiedTSHomogeneousTreeLikelihood::init_(bool usePatterns) {
 
+    likelihoodData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);
+    likelihoodDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV
 
+}
 
 /*
  * Implementation for the interface  likelihood under tree search engines (all mixed models)
@@ -104,7 +108,9 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
                                                                                bool verbose,
                                                                                bool usePatterns) :
         RHomogeneousTreeLikelihood_PIP(tree, data, model, rDist, treemap_, checkRooted, verbose, usePatterns),
-        UnifiedTSHResources(utree_, treemap_) {}
+        UnifiedTSHResources(utree_, treemap_) {
+
+}
 
 UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(const Tree &tree,
                                                                                TransitionModel *model,
@@ -132,6 +138,16 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeTested(const Topology
 }
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(const TopologyChangeEvent &event) {
+
+}
+
+void UnifiedTSHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) {
+
+    likelihoodData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);
+    likelihoodEmptyData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);
+    likelihoodEmptyDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV
+    likelihoodDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV_empty
+
 
 }
 
