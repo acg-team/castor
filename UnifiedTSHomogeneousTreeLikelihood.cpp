@@ -43,9 +43,143 @@
  */
 #include "UnifiedTSHomogeneousTreeLikelihood.hpp"
 
+
+std::string UnifiedTSHSearchable::OPTIMIZATION_NEWTON = "newton";
+std::string UnifiedTSHSearchable::OPTIMIZATION_GRADIENT = "gradient";
+std::string UnifiedTSHSearchable::OPTIMIZATION_BRENT = "Brent";
+std::string UnifiedTSHSearchable::OPTIMIZATION_BFGS = "BFGS";
+
+
+void UnifiedTSHSearchable::setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
+                                        bool optNumericalDerivatives,
+                                        std::map<std::string, std::string> &params,
+                                        const string &suffix,
+                                        bool suffixIsOptional,
+                                        bool verbose,
+                                        int warn) {
+
+    // -------------------------------------------------------------------------
+    // Optimisation algorithm
+    std::string optBrLenMethod = ApplicationTools::getStringParameter("optimization.topology.brlen_optimization", params, "Brent", suffix, suffixIsOptional, warn);
+    optMethodModel_ = optBrLenMethod;
+
+    // -------------------------------------------------------------------------
+    // Message handler
+    std::string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", params, false, false, suffix, suffixIsOptional, "none", warn + 1);
+    auto *messageHandler = static_cast<OutputStream *>((mhPath == "none") ? 0 : (mhPath == "std") ? ApplicationTools::message : new StlOutputStream(
+            new std::ofstream(mhPath.c_str(), std::ios::app)));
+
+    // -------------------------------------------------------------------------
+    // Profiler
+    std::string prPath = ApplicationTools::getAFilePath("optimization.profiler", params, false, false, suffix, suffixIsOptional, "none", warn + 1);
+    auto *profiler = static_cast<OutputStream *>((prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message : new StlOutputStream(
+            new std::ofstream(prPath.c_str(), std::ios::app)));
+    if (profiler) profiler->setPrecision(20);
+
+
+    auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", params, 1000000, suffix, suffixIsOptional, warn + 1);
+
+    if (optNumericalDerivatives) {
+
+        AbstractNumericalDerivative *dn_3points = new ThreePointsNumericalDerivative(lk);
+        AbstractNumericalDerivative *dn_5points = new FivePointsNumericalDerivative(lk);
+
+        // Initialise branch optimiser
+        if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_BRENT) {
+            optimiser_ = new SimpleMultiDimensions(dn_5points);
+        } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_BFGS) {
+            optimiser_ = new BfgsMultiDimensions(dn_5points);
+        } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_NEWTON) {
+            optimiser_ = new PseudoNewtonOptimizer(dn_3points);
+        } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_GRADIENT) {
+            optimiser_ = new ConjugateGradientMultiDimensions(dn_5points);
+        }
+    } else {
+        // Initialise branch optimiser
+        if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_BRENT) {
+            optimiser_ = new SimpleMultiDimensions(lk);
+        } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_BFGS) {
+            optimiser_ = new BfgsMultiDimensions(lk);
+        } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_NEWTON) {
+            optimiser_ = new PseudoNewtonOptimizer(lk);
+        } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_GRADIENT) {
+            optimiser_ = new ConjugateGradientMultiDimensions(lk);
+        }
+    }
+    optimiser_->setConstraintPolicy(AutoParameter::CONSTRAINTS_AUTO);
+    optimiser_->setProfiler(profiler);
+    optimiser_->setMessageHandler(messageHandler);
+    optimiser_->setMaximumNumberOfEvaluations(nbEvalMax);
+    optimiser_->setVerbose(1);
+
+}
+
+void UnifiedTSHSearchable::fireBranchOptimisation(AbstractHomogeneousTreeLikelihood *lk, std::vector<bpp::Node *> extractionNodes) {
+
+    ParameterList parameters;
+    // For each node involved in the move, get the corrisponding branch parameter (no root)
+    for (auto &bnode:extractionNodes) {
+        if (bnode->hasFather()) {
+            Parameter brLen = lk->getParameter("BrLen" + TextTools::toString(bnode->getId()));
+            brLen.setName("BrLen" + TextTools::toString(bnode->getId()));
+            parameters.addParameter(brLen);
+        }
+    }
+
+    // set parameters on the likelihood function (inherited)
+    lk->setParameters(parameters);
+
+    // Re-estimate branch length:
+    if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_BRENT) {
+        auto optimiserInstance = dynamic_cast<SimpleMultiDimensions *>(optimiser_);
+        optimiserInstance->init(parameters);
+        optimiserInstance->doInit(parameters);
+        optimiserInstance->getStopCondition()->setTolerance(0.001);
+        optimiserInstance->optimize();
+
+        // set parameters on the likelihood function (inherited)
+        lk->setParameters(optimiserInstance->getParameters());
+
+    } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_BFGS) {
+        auto optimiserInstance = dynamic_cast<BfgsMultiDimensions *>(optimiser_);
+        optimiserInstance->init(parameters);
+        optimiserInstance->doInit(parameters);
+        optimiserInstance->getStopCondition()->setTolerance(0.001);
+        optimiserInstance->optimize();
+
+        // set parameters on the likelihood function (inherited)
+        lk->setParameters(optimiserInstance->getParameters());
+
+    } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_NEWTON) {
+        auto optimiserInstance = dynamic_cast<PseudoNewtonOptimizer *>(optimiser_);
+        optimiserInstance->init(parameters);
+        optimiserInstance->doInit(parameters);
+        optimiserInstance->getStopCondition()->setTolerance(0.001);
+        optimiserInstance->optimize();
+
+        // set parameters on the likelihood function (inherited)
+        lk->setParameters(optimiserInstance->getParameters());
+
+    } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_GRADIENT) {
+        auto optimiserInstance = dynamic_cast<ConjugateGradientMultiDimensions *>(optimiser_);
+        optimiserInstance->init(parameters);
+        optimiserInstance->doInit(parameters);
+        optimiserInstance->getStopCondition()->setTolerance(0.001);
+        optimiserInstance->optimize();
+
+        // set parameters on the likelihood function (inherited)
+        lk->setParameters(optimiserInstance->getParameters());
+    }
+
+
+}
+
+
 /*
  * Implementation for the interface  likelihood under tree search engines (all canonical models)
  */
+
+
 
 
 UnifiedTSHomogeneousTreeLikelihood::UnifiedTSHomogeneousTreeLikelihood(const Tree &tree,
@@ -54,38 +188,36 @@ UnifiedTSHomogeneousTreeLikelihood::UnifiedTSHomogeneousTreeLikelihood(const Tre
                                                                        DiscreteDistribution *rDist,
                                                                        tshlib::Utree *utree_,
                                                                        UtreeBppUtils::treemap *treemap_,
+                                                                       bool optNumericalDerivatives,
+                                                                       std::map<std::string, std::string> &params,
+                                                                       const std::string &suffix,
                                                                        bool checkRooted,
                                                                        bool verbose,
                                                                        bool usePatterns) :
         RHomogeneousTreeLikelihood(tree, data, model, rDist, checkRooted, verbose, usePatterns),
-        UnifiedTSHResources(utree_, treemap_) {}
+        UnifiedTSHSearchable(optNumericalDerivatives, params, suffix, false, verbose, 0) {
+
+}
 
 UnifiedTSHomogeneousTreeLikelihood::UnifiedTSHomogeneousTreeLikelihood(const Tree &tree,
                                                                        TransitionModel *model,
                                                                        DiscreteDistribution *rDist,
                                                                        tshlib::Utree *utree_,
                                                                        UtreeBppUtils::treemap *treemap_,
+                                                                       bool optNumericalDerivatives,
+                                                                       std::map<std::string, std::string> &params,
+                                                                       const std::string &suffix,
                                                                        bool checkRooted,
                                                                        bool verbose,
                                                                        bool usePatterns) :
         RHomogeneousTreeLikelihood(tree, model, rDist, checkRooted, verbose, usePatterns),
-        UnifiedTSHResources(utree_, treemap_) {}
+        UnifiedTSHSearchable(optNumericalDerivatives, params, suffix, false, verbose, 0) {
 
-
-UnifiedTSHomogeneousTreeLikelihood::UnifiedTSHomogeneousTreeLikelihood(const RHomogeneousTreeLikelihood &lik, tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_) :
-        RHomogeneousTreeLikelihood(lik),
-        UnifiedTSHResources(utree_, treemap_) {}
+}
 
 
 UnifiedTSHomogeneousTreeLikelihood::~UnifiedTSHomogeneousTreeLikelihood() {}
 
-void UnifiedTSHomogeneousTreeLikelihood::topologyChangeTested(const TopologyChangeEvent &event) {
-
-}
-
-void UnifiedTSHomogeneousTreeLikelihood::topologyChangeSuccessful(const TopologyChangeEvent &event) {
-
-}
 
 void UnifiedTSHomogeneousTreeLikelihood::init_(bool usePatterns) {
 
@@ -104,11 +236,14 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
                                                                                DiscreteDistribution *rDist,
                                                                                tshlib::Utree *utree_,
                                                                                UtreeBppUtils::treemap *treemap_,
+                                                                               bool optNumericalDerivatives,
+                                                                               std::map<std::string, std::string> &params,
+                                                                               const std::string &suffix,
                                                                                bool checkRooted,
                                                                                bool verbose,
                                                                                bool usePatterns) :
         RHomogeneousTreeLikelihood_PIP(tree, data, model, rDist, treemap_, checkRooted, verbose, usePatterns),
-        UnifiedTSHResources(utree_, treemap_) {
+        UnifiedTSHSearchable(optNumericalDerivatives, params, suffix, false, verbose, 0) {
 
 }
 
@@ -117,42 +252,29 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
                                                                                DiscreteDistribution *rDist,
                                                                                tshlib::Utree *utree_,
                                                                                UtreeBppUtils::treemap *treemap_,
+                                                                               bool optNumericalDerivatives,
+                                                                               std::map<std::string, std::string> &params,
+                                                                               const std::string &suffix,
                                                                                bool checkRooted,
                                                                                bool verbose,
                                                                                bool usePatterns) :
         RHomogeneousTreeLikelihood_PIP(tree, model, rDist, treemap_, checkRooted, verbose, usePatterns),
-        UnifiedTSHResources(utree_, treemap_) {}
-
-
-UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(const RHomogeneousTreeLikelihood_PIP &lik, tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_) :
-        RHomogeneousTreeLikelihood_PIP(lik),
-        UnifiedTSHResources(utree_, treemap_) {}
-
-
-
-UnifiedTSHomogeneousTreeLikelihood_PIP::~UnifiedTSHomogeneousTreeLikelihood_PIP() {}
-
-
-void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeTested(const TopologyChangeEvent &event) {
+        UnifiedTSHSearchable(optNumericalDerivatives, params, suffix, false, verbose, 0) {
 
 }
 
-void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(const TopologyChangeEvent &event) {
+
+UnifiedTSHomogeneousTreeLikelihood_PIP::~UnifiedTSHomogeneousTreeLikelihood_PIP() {
 
 }
+
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) {
 
-    likelihoodData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);
-    likelihoodEmptyData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);
-    likelihoodEmptyDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV
-    likelihoodDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV_empty
+    likelihoodData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);        // FV
+    likelihoodDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV test
 
+    likelihoodEmptyData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);         // FV empty
+    likelihoodEmptyDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV empty test
 
 }
-
-UnifiedTSHResources::UnifiedTSHResources(tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_) : utree_(utree_), treemap_(treemap_) {}
-
-UnifiedTSHResources::~UnifiedTSHResources() {}
-
-

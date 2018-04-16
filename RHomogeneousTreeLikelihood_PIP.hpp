@@ -225,8 +225,7 @@ namespace bpp {
 
         double getLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const {
             std::cerr << "getLikelihoodForASiteForARateClassForAState()" << std::endl;
-            return
-                    0;
+            return 0;
         };
 
         double getLogLikelihoodForASite(size_t site) const {
@@ -240,8 +239,7 @@ namespace bpp {
         };
 
         double getLogLikelihoodForASiteForARateClassForAState(size_t site, size_t rateClass, int state) const {
-            std::cerr << "getLogLikelihoodForASiteForARateClassForAState()"
-                         "" << std::endl;
+            std::cerr << "getLogLikelihoodForASiteForARateClassForAState()" << std::endl;
             return 0;
         };
 

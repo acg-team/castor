@@ -177,10 +177,13 @@ TSHHomogeneousTreeLikelihood &TSHHomogeneousTreeLikelihood::operator=(const TSHH
 TSHHomogeneousTreeLikelihood::~TSHHomogeneousTreeLikelihood() {
 
     delete optimiser_;
+
 }
 
 AbstractHomogeneousTreeLikelihood *TSHHomogeneousTreeLikelihood::getLikelihoodFunction() const {
+
     return likelihoodFunc_;
+
 }
 
 void TSHHomogeneousTreeLikelihood::fixTopologyChanges(tshlib::Utree *inUTree) {

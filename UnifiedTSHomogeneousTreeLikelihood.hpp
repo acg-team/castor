@@ -45,63 +45,101 @@
 #define MINIJATI_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP
 
 #include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
+#include <Bpp/Numeric/Function/AbstractNumericalDerivative.h>
+#include <Bpp/Numeric/Function/ConjugateGradientMultiDimensions.h>
+#include <Bpp/Numeric/Function/BfgsMultiDimensions.h>
+#include <Bpp/Numeric/Function/ThreePointsNumericalDerivative.h>
+#include <Bpp/Numeric/Function/FivePointsNumericalDerivative.h>
 #include "RHomogeneousTreeLikelihood_PIP.hpp"
 #include "TSHSearchable.hpp"
 
 namespace bpp {
 
 
-    class UnifiedTSHResources : public Clonable {
+    class UnifiedTSHSearchable : public virtual Clonable {
 
     protected:
 
-        AbstractOptimizer *optimiser_;
-        UtreeBppUtils::treemap *treemap_;
-        mutable tshlib::Utree *utree_;
-
-        mutable DRASRTreeLikelihoodData *likelihoodDataTest_;
-        mutable DRASRTreeLikelihoodData *likelihoodEmptyDataTest_;
-
+        mutable std::vector<Parameter> testBrLens_;
+        mutable AbstractOptimizer *optimiser_;
         std::string optMethodModel_;
+        bool optNumericalDerivatives_;
+
 
     public:
-
-        UnifiedTSHResources(tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_);
-
-        virtual ~UnifiedTSHResources();
-
-        UnifiedTSHResources *clone() const override { return new UnifiedTSHResources(*this); }
+        static std::string OPTIMIZATION_GRADIENT;
+        static std::string OPTIMIZATION_NEWTON;
+        static std::string OPTIMIZATION_BRENT;
+        static std::string OPTIMIZATION_BFGS;
 
 
-    };
+        UnifiedTSHSearchable(bool optNumericalDerivatives,
+                             std::map<std::string, std::string> &params,
+                             const std::string &suffix,
+                             bool suffixIsOptional,
+                             bool verbose,
+                             int warn) {}
 
-    class UnifiedTSHSearchable : public virtual Clonable {
-    public:
 
-        UnifiedTSHSearchable() {}
+        virtual ~UnifiedTSHSearchable() = default;
 
-        virtual ~UnifiedTSHSearchable() {}
 
         virtual UnifiedTSHSearchable *clone() const = 0;
 
-        void topologyChangeTested() {}
 
-        void topologyChangeSuccessful() {}
+        void setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
+                          bool optNumericalDerivatives,
+                          std::map<std::string, std::string> &params,
+                          const std::string &suffix,
+                          bool suffixIsOptional,
+                          bool verbose,
+                          int warn);
 
-        void fixTopologyChanges() {}
 
-        void optimiseBranches() {}
+        void fireBranchOptimisation(AbstractHomogeneousTreeLikelihood *lk, std::vector<bpp::Node *> extractionNodes);
+
+
+        void commitChangesOnTopology(tshlib::Utree *inUTree) {}
+
+
+        void topologyChangeTested() {
+
+
+        }
+
+
+        void topologyChangeSuccessful(const std::vector<tshlib::VirtualNode *> listNodes, tshlib::Utree *inUTree) {
+
+            // Update BPP tree using the structure in Utree
+            //fixTopologyChanges(inUTree);
+
+            // Add virtual root to compute the likelihood
+            //inUTree->addVirtualRootNode();
+
+            // remap the virtual nodes to the bpp nodes
+            //std::vector<Node *> extractionNodes = UtreeBppUtils::remapNodeLists(listNodes, tree_, getTreeMap());
+
+            // Optimise branches involved in the tree rearrangement
+            //fireBranchOptimisation(listNodes);
+
+            // Remove the virtual root to allow for further tree topology improvements
+            //inUTree->removeVirtualRootNode();
+
+        }
 
 
     };
 
 
-    class UnifiedTSHomogeneousTreeLikelihood : public RHomogeneousTreeLikelihood, public virtual TSHSearchable, public UnifiedTSHResources {
+    class UnifiedTSHomogeneousTreeLikelihood : public RHomogeneousTreeLikelihood, public virtual UnifiedTSHSearchable {
 
     private:
-
+        //AbstractOptimizer *optimiser_;
+        //std::string optMethodModel_;
+        UtreeBppUtils::treemap *treemap_;
+        mutable tshlib::Utree *utree_;
         mutable DRASRTreeLikelihoodData *likelihoodData_;
-        mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;
+        mutable DRASRTreeLikelihoodData *likelihoodDataTest_;
 
     public:
         UnifiedTSHomogeneousTreeLikelihood(const Tree &tree,
@@ -109,6 +147,9 @@ namespace bpp {
                                            DiscreteDistribution *rDist,
                                            tshlib::Utree *utree_,
                                            UtreeBppUtils::treemap *treemap_,
+                                           bool optNumericalDerivatives,
+                                           std::map<std::string, std::string> &params,
+                                           const std::string &suffix,
                                            bool checkRooted,
                                            bool verbose,
                                            bool usePatterns);
@@ -120,29 +161,39 @@ namespace bpp {
                                            DiscreteDistribution *rDist,
                                            tshlib::Utree *utree_,
                                            UtreeBppUtils::treemap *treemap_,
+                                           bool optNumericalDerivatives,
+                                           std::map<std::string, std::string> &params,
+                                           const std::string &suffix,
                                            bool checkRooted,
                                            bool verbose,
                                            bool usePatterns);
-
-        UnifiedTSHomogeneousTreeLikelihood(const RHomogeneousTreeLikelihood &lik, tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_);
 
         ~UnifiedTSHomogeneousTreeLikelihood() override;
 
         UnifiedTSHomogeneousTreeLikelihood *clone() const override { return new UnifiedTSHomogeneousTreeLikelihood(*this); }
 
-        const Tree &getTopology() const override { return getTree(); }
+        const Tree &getTopology() const { return getTree(); }
 
-        double getTopologyValue() const throw(Exception) override { return getValue(); }
+        double getTopologyValue() const throw(Exception) { return getValue(); }
 
-        void topologyChangeTested(const TopologyChangeEvent &event) override;
-
-        void topologyChangeSuccessful(const TopologyChangeEvent &event) override;
 
         void init_(bool usePatterns);
 
     };
 
-    class UnifiedTSHomogeneousTreeLikelihood_PIP : public RHomogeneousTreeLikelihood_PIP, public virtual TSHSearchable, public UnifiedTSHResources {
+    class UnifiedTSHomogeneousTreeLikelihood_PIP : public RHomogeneousTreeLikelihood_PIP, public virtual UnifiedTSHSearchable {
+
+    private:
+
+        //AbstractOptimizer *optimiser_;
+        //std::string optMethodModel_;
+        UtreeBppUtils::treemap *treemap_;
+        mutable tshlib::Utree *utree_;
+        mutable DRASRTreeLikelihoodData *likelihoodData_;
+        mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;
+        mutable DRASRTreeLikelihoodData *likelihoodDataTest_;
+        mutable DRASRTreeLikelihoodData *likelihoodEmptyDataTest_;
+
 
     public:
 
@@ -151,6 +202,9 @@ namespace bpp {
                                                DiscreteDistribution *rDist,
                                                tshlib::Utree *utree_,
                                                UtreeBppUtils::treemap *treemap_,
+                                               bool optNumericalDerivatives,
+                                               std::map<std::string, std::string> &params,
+                                               const std::string &suffix,
                                                bool checkRooted,
                                                bool verbose,
                                                bool usePatterns);
@@ -161,22 +215,20 @@ namespace bpp {
                                                DiscreteDistribution *rDist,
                                                tshlib::Utree *utree_,
                                                UtreeBppUtils::treemap *treemap_,
-                                               bool checkRooted, bool verbose,
+                                               bool optNumericalDerivatives,
+                                               std::map<std::string, std::string> &params,
+                                               const std::string &suffix,
+                                               bool checkRooted,
+                                               bool verbose,
                                                bool usePatterns);
-
-        UnifiedTSHomogeneousTreeLikelihood_PIP(const RHomogeneousTreeLikelihood_PIP &lik, tshlib::Utree *utree_, UtreeBppUtils::treemap *treemap_);
 
         ~UnifiedTSHomogeneousTreeLikelihood_PIP() override;
 
         UnifiedTSHomogeneousTreeLikelihood_PIP *clone() const override { return new UnifiedTSHomogeneousTreeLikelihood_PIP(*this); }
 
-        const Tree &getTopology() const override { return getTree(); }
+        const Tree &getTopology() const { return getTree(); }
 
-        double getTopologyValue() const throw(Exception) override { return getValue(); }
-
-        void topologyChangeTested(const TopologyChangeEvent &event) override;
-
-        void topologyChangeSuccessful(const TopologyChangeEvent &event) override;
+        double getTopologyValue() const throw(Exception) { return getValue(); }
 
         void init_(bool usePatterns);
 
