@@ -275,6 +275,8 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         updatedNodesWithinPath.push_back(inputTree->rootnode);
 
         moveLogLK = likelihoodFunc->updateLikelihood(updatedNodesWithinPath);
+        moveLogLK = likelihoodFunc_test->updateLikelihoodOnTreeRearrangement(updatedNodesWithinPath);
+
 
         if (std::isinf(moveLogLK)) {
             std::ostringstream nodepath;
@@ -300,6 +302,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         // ------------------------------------
         if (scoringMethod.find("bothways") != std::string::npos) {
             moveLogLK = likelihoodFunc->updateLikelihood(listNodesWithinPath);
+            moveLogLK = likelihoodFunc_test->updateLikelihoodOnTreeRearrangement(updatedNodesWithinPath);
         }
 
         //candidateMoves->displayRearrangmentStatus(i, true);

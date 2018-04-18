@@ -52,6 +52,7 @@
 #include "TSHSearchable.hpp"
 #include "Utilities.hpp"
 #include "TSHHomogeneousTreeLikelihood.hpp"
+#include "UnifiedTSHomogeneousTreeLikelihood.hpp"
 
 namespace bpp {
 
@@ -163,6 +164,7 @@ namespace tshlib {
 
     private:
         bpp::TSHHomogeneousTreeLikelihood *likelihoodFunc;
+        bpp::UnifiedTSHomogeneousTreeLikelihood *likelihoodFunc_test;
         double initialLikelihoodValue;
         TreeSearchHeuristics tshStrategy;
         TreeRearrangmentOperations tshOperations;
@@ -192,6 +194,10 @@ namespace tshlib {
 
         void setLikelihoodFunc(bpp::TSHHomogeneousTreeLikelihood *in_likelihoodFunc) {
             likelihoodFunc = in_likelihoodFunc;
+        }
+
+        void setLikelihoodFunc_test(bpp::UnifiedTSHomogeneousTreeLikelihood *in_likelihoodFunc){
+            likelihoodFunc_test = in_likelihoodFunc;
         }
 
         void setInitialLikelihoodValue(double in_initialLikelihoodValue) {

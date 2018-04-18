@@ -154,7 +154,12 @@ set(SOURCES
         pPIP.cpp
         pPIP.hpp
         Optimizators.cpp
-        Optimizators.hpp UnifiedTSHomogeneousTreeLikelihood.cpp UnifiedTSHomogeneousTreeLikelihood.hpp)
+        Optimizators.hpp
+        UnifiedTSHomogeneousTreeLikelihood.cpp
+        UnifiedTSHomogeneousTreeLikelihood.hpp
+        UnifiedTSHomogeneousTreeLikelihood_PIP.cpp
+        UnifiedTSHomogeneousTreeLikelihood_PIP.hpp
+        UnifiedTSHSearchable.cpp UnifiedTSHSearchable.hpp)
 
 
 if (STATIC GREATER 0)
