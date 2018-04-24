@@ -3,15 +3,10 @@ cmake_minimum_required(VERSION 3.5)
 set(MINIJATI_SOFTWARENAME "miniJATI")
 set(MINIJATI_DESCRIPTION "Joint Alignment Tree Inference")
 
-set(MINIJATI_MAJOR_VERSION 0)
-set(MINIJATI_MINOR_VERSION 1)
-set(MINIJATI_PATCH_VERSION 1)
-set(MINIJATI_VERSION ${MINIJATI_MAJOR_VERSION}.${MINIJATI_MINOR_VERSION}.${MINIJATI_PATCH_VERSION})
-
 project(${MINIJATI_SOFTWARENAME}
-        VERSION ${MINIJATI_VERSION}
         DESCRIPTION ${MINIJATI_DESCRIPTION}
         LANGUAGES "CXX")
+
 
 ## Store the git hash of the current head
 if(EXISTS "${PROJECT_SOURCE_DIR}/.git/HEAD")
@@ -43,6 +38,10 @@ if(WIN32)
             OUTPUT_VARIABLE TIME)
     string(REGEX REPLACE "[^0-9]*(..:..:..).*" "\\1"
             PROJECT_BUILD_TIME "${TIME}")
+    execute_process(COMMAND git describe --abbrev=0 --tags
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            OUTPUT_VARIABLE GIT_TAG_VERSION)
+    string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED ${GIT_TAG_VERSION})
 else()
     execute_process(COMMAND "date" "+%d %b %Y/%H:%M:%S"
             OUTPUT_VARIABLE DATE_TIME)
@@ -50,10 +49,17 @@ else()
             PROJECT_BUILD_DATE "${DATE_TIME}")
     string(REGEX REPLACE "[^/]*/([0-9:]*).*" "\\1"
             PROJECT_BUILD_TIME "${DATE_TIME}")
+    execute_process(COMMAND git describe --abbrev=0 --tags
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            OUTPUT_VARIABLE GIT_TAG_VERSION)
+    string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED ${GIT_TAG_VERSION})
 endif()
 
-set(MINIJATI_RELDATE ${PROJECT_BUILD_DATE})
 set(MINIJATI_RELTIME ${PROJECT_BUILD_TIME})
+set(MINIJATI_RELDATE ${PROJECT_BUILD_DATE})
+set(MINIJATI_VERSION ${GIT_TAG_VERSION_STRIPPED})
+
+project(${MINIJATI_SOFTWARENAME} VERSION ${GIT_TAG_VERSION_STRIPPED})
 
 
 add_definitions(-DPRJ_GITBRANCH=\"${PROJECT_GIT_REF}\"
@@ -80,7 +86,8 @@ string(FIND "${CMAKE_BUILD_TYPE}" "static" STATIC)
 message("-- Compilation will be performed with the following release of the software:
 \tbranch   ${PROJECT_GIT_REF}
 \tref      ${PROJECT_SOURCE_VERSION}
-\ttime     ${MINIJATI_RELDATE} ${MINIJATI_RELTIME}")
+\ttime     ${MINIJATI_RELDATE} ${MINIJATI_RELTIME}
+\tcurrent  ${MINIJATI_VERSION} (latest version)")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(WINDOWS TRUE)
