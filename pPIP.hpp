@@ -47,7 +47,8 @@
 #include <Bpp/Numeric/VectorTools.h>
 #include <Bpp/Phyl/Node.h>
 #include <random>
-#include "Utree.hpp"
+#include <Utree.hpp>
+
 #include "Utilities.hpp"
 
 #define SMALL_DOUBLE 1e-8
