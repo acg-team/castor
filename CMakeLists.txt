@@ -144,17 +144,25 @@ set(SOURCES
         RHomogeneousTreeLikelihood_PIP.hpp
         ExtendedAlphabet.cpp
         ExtendedAlphabet.hpp
-        TSHHomogeneousTreeLikelihood.cpp
-        TSHHomogeneousTreeLikelihood.hpp
-        TSHSearchable.hpp
-        TSHTopologySearch.cpp
-        TSHTopologySearch.hpp
+        #TSHHomogeneousTreeLikelihood.cpp
+        #TSHHomogeneousTreeLikelihood.hpp
+        #TSHSearchable.hpp
+        UnifiedTSHTopologySearch.cpp
+        UnifiedTSHTopologySearch.hpp
         JATIApplication.cpp
         JATIApplication.hpp
         pPIP.cpp
         pPIP.hpp
         Optimizators.cpp
-        Optimizators.hpp)
+        Optimizators.hpp
+        UnifiedTSHomogeneousTreeLikelihood_Generic.cpp
+        UnifiedTSHomogeneousTreeLikelihood_Generic.hpp
+        UnifiedTSHomogeneousTreeLikelihood_PIP.cpp
+        UnifiedTSHomogeneousTreeLikelihood_PIP.hpp
+        UnifiedTSHSearchable.cpp
+        UnifiedTSHSearchable.hpp
+        RHomogeneousTreeLikelihood_Generic.cpp
+        RHomogeneousTreeLikelihood_Generic.hpp)
 
 
 if (STATIC GREATER 0)
@@ -162,13 +170,13 @@ if (STATIC GREATER 0)
     add_executable(miniJATI ${SOURCES})
     set_target_properties(miniJATI PROPERTIES LINK_FLAGS "-static")
     target_link_libraries(miniJATI tshlib-static)
-    target_link_libraries(miniJATI glog)
+    target_link_libraries(miniJATI glog::glog)
     target_link_libraries(miniJATI ${BPP_LIBS_STATIC})
     target_link_libraries(miniJATI ${Boost_LIBRARIES})
 else ()
     add_executable(miniJATI ${SOURCES})
     target_link_libraries(miniJATI tshlib)
-    target_link_libraries(miniJATI glog)
+    target_link_libraries(miniJATI glog::glog)
     target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
     target_link_libraries(miniJATI ${Boost_LIBRARIES})
 endif ()

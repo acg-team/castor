@@ -51,6 +51,8 @@
 namespace bpp {
 
     class TSHSearchable : public TopologyListener, public virtual Clonable {
+
+
     public:
         TSHSearchable() {}
 

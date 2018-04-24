@@ -51,6 +51,9 @@
 #include <Bpp/Io/OutputStream.h>
 #include <Bpp/App/BppApplication.h>
 #include <Bpp/App/ApplicationTools.h>
+#include <Bpp/Numeric/Prob/ConstantDistribution.h>
+#include <Bpp/Text/KeyvalTools.h>
+
 
 /*
 * From SeqLib:
@@ -59,7 +62,8 @@
 #include <Bpp/Seq/Io/Fasta.h>
 #include <Bpp/Seq/Container/SiteContainerTools.h>
 #include <Bpp/Seq/Alphabet/AlphabetTools.h>
-#include <Bpp/Numeric/Prob/ConstantDistribution.h>
+#include <Bpp/Seq/App/SequenceApplicationTools.h>
+
 /*
 * From PhylLib:
 */
@@ -70,11 +74,10 @@
 #include <Bpp/Phyl/Distance/DistanceMethod.h>
 #include <Bpp/Phyl/Distance/DistanceEstimation.h>
 #include <Bpp/Phyl/Model/RateDistribution/ConstantRateDistribution.h>
-#include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
 #include <Bpp/Phyl/Distance/BioNJ.h>
 #include <Bpp/Phyl/Io/Newick.h>
-#include <Bpp/Seq/App/SequenceApplicationTools.h>
-#include <Bpp/Text/KeyvalTools.h>
+#include <Bpp/Phyl/Distance/PGMA.h>
+#include <Bpp/Phyl/OptimizationTools.h>
 
 /*
 * From Eigen:
@@ -92,10 +95,8 @@
 * From TSHLib:
 */
 #include <Alignment.hpp>
-//#include <Likelihood.hpp>
 #include <TreeRearrangment.hpp>
-#include <Bpp/Phyl/Distance/PGMA.h>
-#include <Bpp/Phyl/OptimizationTools.h>
+
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/classification.hpp>
@@ -110,12 +111,13 @@ using namespace tshlib;
 #include "PIP.hpp"
 #include "ExtendedAlphabet.hpp"
 #include "RHomogeneousTreeLikelihood_PIP.hpp"
-#include "TSHHomogeneousTreeLikelihood.hpp"
-//#include "progressivePIP.hpp"
+#include "RHomogeneousTreeLikelihood_Generic.hpp"
 #include "JATIApplication.hpp"
-#include "TSHTopologySearch.hpp"
+#include "UnifiedTSHTopologySearch.hpp"
 #include "pPIP.hpp"
 #include "Optimizators.hpp"
+#include "UnifiedTSHomogeneousTreeLikelihood_Generic.hpp"
+#include "UnifiedTSHomogeneousTreeLikelihood_PIP.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -550,6 +552,9 @@ int main(int argc, char *argv[]) {
         DLOG(INFO) << "[Substitution model] Number of states: " << (int) smodel->getNumberOfStates();
 
         ApplicationTools::displayResult("Substitution model", smodel->getName());
+
+        if (PAR_model_indels) ApplicationTools::displayResult("Indel parameter initial value", (estimatePIPparameters) ? "estimated" : "fixed");
+
         ParameterList parameters = smodel->getParameters();
         for (size_t i = 0; i < parameters.size(); i++) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
@@ -642,9 +647,12 @@ int main(int argc, char *argv[]) {
 
         // Initialise likelihood functions
         if (!PAR_model_indels) {
-            tl = new bpp::RHomogeneousTreeLikelihood(*tree, *sites, model, rDist, false, false, false);
+            //tl = new bpp::RHomogeneousTreeLikelihood_Generic(*tree, *sites, model, rDist, false, false, false);
+            tl = new bpp::UnifiedTSHomogeneousTreeLikelihood(*tree, *sites, model, rDist, utree, &tm, true, jatiapp.getParams(), "", false, false, false);
+
         } else {
-            tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, &tm, false, false, false);
+            //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, &tm, false, false, false);
+            tl = new bpp::UnifiedTSHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, utree, &tm, true, jatiapp.getParams(), "", false, false, false);
         }
         ApplicationTools::displayResult("Tree likelihood model", std::string("Homogeneous"));
 
@@ -739,7 +747,7 @@ int main(int argc, char *argv[]) {
         // Optimise parameters automatically following standard pipeline
 
         ApplicationTools::displayMessage("\n[Executing numerical parameters and topology optimization]");
-
+        /*
         auto ntl = new bpp::TSHHomogeneousTreeLikelihood(tl,
                                                          (*tl->getData()),
                                                          (tl->getModel()),
@@ -752,10 +760,10 @@ int main(int argc, char *argv[]) {
                                                          true,
                                                          true,
                                                          0);
-
-        ntl = dynamic_cast<TSHHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(ntl,
+        */
+        tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl,
                                                                                             progressivePIP,
-                                                                                            ntl->getParameters(),
+                                                                                            tl->getParameters(),
                                                                                             jatiapp.getParams(),
                                                                                             "",
                                                                                             true,
@@ -768,7 +776,7 @@ int main(int argc, char *argv[]) {
             sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
             logL = progressivePIP->getScore(progressivePIP->getRootNode());
 
-            const Tree &tmpTree = ntl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
+            const Tree &tmpTree = tl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
 
             auto nntl = new bpp::RHomogeneousTreeLikelihood_PIP(tmpTree, *sites, model, rDist, &tm, false, false, false);
             nntl->initialize();
@@ -777,7 +785,7 @@ int main(int argc, char *argv[]) {
             //ntl->getLikelihoodFunction()->setData()   // this should be the only call here
 
         } else {
-            logL = ntl->getLikelihoodFunction()->getLogLikelihood();
+            logL = tl->getLogLikelihood();
         }
 
 
@@ -794,23 +802,23 @@ int main(int argc, char *argv[]) {
 
         delete sequences;
 
-        tree = new TreeTemplate<Node>(ntl->getLikelihoodFunction()->getTree());
+        tree = new TreeTemplate<Node>(tl->getTree());
         PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
 
         // Write parameters to screen:
         ApplicationTools::displayResult("Final Log likelihood", TextTools::toString(logL, 15));
 
-        parameters = ntl->getLikelihoodFunction()->getSubstitutionModelParameters();
+        parameters = tl->getSubstitutionModelParameters();
         for (size_t i = 0; i < parameters.size(); i++) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
         }
-        parameters = ntl->getLikelihoodFunction()->getRateDistributionParameters();
+        parameters = tl->getRateDistributionParameters();
         for (size_t i = 0; i < parameters.size(); i++) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
         }
 
         // Checking convergence:
-        PhylogeneticsApplicationTools::checkEstimatedParameters(ntl->getLikelihoodFunction()->getParameters());
+        PhylogeneticsApplicationTools::checkEstimatedParameters(tl->getParameters());
 
         // Write parameters to file:
         string parametersFile = ApplicationTools::getAFilePath("output.estimates", jatiapp.getParams(), false, false, "none", 1);
@@ -836,13 +844,13 @@ int main(int argc, char *argv[]) {
             out << "# Substitution model parameters:";
             out.endLine();
 
-            smodel->matchParametersValues(ntl->getLikelihoodFunction()->getParameters());
+            smodel->matchParametersValues(tl->getParameters());
             numParametersModel += smodel->getNumberOfParameters();
             PhylogeneticsApplicationTools::printParameters(smodel, out, 1, withAlias);
 
             out.endLine();
             (out << "# Rate distribution parameters:").endLine();
-            rDist->matchParametersValues(ntl->getLikelihoodFunction()->getParameters());
+            rDist->matchParametersValues(tl->getParameters());
             numParametersModel += rDist->getNumberOfParameters();
             PhylogeneticsApplicationTools::printParameters(rDist, out, withAlias);
             out.endLine();

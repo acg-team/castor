@@ -41,45 +41,18 @@
  *
  * @see For more information visit: 
  */
-#include <glog/logging.h>
-#include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
 #include <random>
+#include <glog/logging.h>
+
+#include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
 #include <Bpp/Phyl/Io/Newick.h>
-#include "TSHTopologySearch.hpp"
-#include "Utilities.hpp"
-#include "RHomogeneousTreeLikelihood_PIP.hpp"
+
+#include "UnifiedTSHTopologySearch.hpp"
 
 
 using namespace bpp;
 
-
-void TSHTopologySearch::notifyAllPerformed(const TopologyChangeEvent &event) {
-    searchableTree_->topologyChangePerformed(event);
-    for (size_t i = 0; i < topoListeners_.size(); i++) {
-        topoListeners_[i]->topologyChangePerformed(event);
-    }
-}
-
-void TSHTopologySearch::notifyAllTested(const TopologyChangeEvent &event) {
-    searchableTree_->topologyChangeTested(event);
-    for (size_t i = 0; i < topoListeners_.size(); i++) {
-        topoListeners_[i]->topologyChangeTested(event);
-    }
-}
-
-void TSHTopologySearch::notifyAllSuccessful(const TopologyChangeEvent &event) {
-    searchableTree_->topologyChangeSuccessful(event);
-    for (size_t i = 0; i < topoListeners_.size(); i++) {
-        topoListeners_[i]->topologyChangeSuccessful(event);
-    }
-}
-
-void TSHTopologySearch::search() throw(Exception) {
-
-}
-
-
-tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves(tshlib::Utree *inputTree) {
+tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves() {
 
     int min_radius;
     int max_radius;
@@ -94,24 +67,24 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves(tshlib::Utree
 
         case tshlib::TreeRearrangmentOperations::classic_SPR:
             min_radius = 4;
-            max_radius = inputTree->getMaxNodeDistance() / 2;
+            max_radius = utree_->getMaxNodeDistance() / 2;
             break;
 
         case tshlib::TreeRearrangmentOperations::classic_TBR:
             min_radius = 5;
-            max_radius = inputTree->getMaxNodeDistance() / 2;
+            max_radius = utree_->getMaxNodeDistance() / 2;
             break;
 
         case tshlib::TreeRearrangmentOperations::classic_Mixed:
             min_radius = 3;  // Minimum radius for an NNI move is 3 nodes
-            max_radius = inputTree->getMaxNodeDistance(); // Full tree traversing from any node of the tree
+            max_radius = utree_->getMaxNodeDistance(); // Full tree traversing from any node of the tree
             break;
 
     }
 
     // Initialise a new rearrangement list
     auto candidateMoveSet = new tshlib::TreeRearrangment;
-    candidateMoveSet->setTreeTopology(inputTree);
+    candidateMoveSet->setTreeTopology(utree_);
     candidateMoveSet->setMinRadius(min_radius);
     candidateMoveSet->setMaxRadius(max_radius);
 
@@ -119,7 +92,7 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves(tshlib::Utree
     switch (tshStrategy) {
         case tshlib::TreeSearchHeuristics::greedy:
             // Generate candidate list of possible moves given the tree topology and the rearrangement operation type
-            for (auto &node:inputTree->listVNodes) {
+            for (auto &node:utree_->listVNodes) {
                 // Print node description with neighbors
                 //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
@@ -135,7 +108,7 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves(tshlib::Utree
         case tshlib::TreeSearchHeuristics::hillclimbing:
 
             // fill array with [min value, max_value] number of nodes in the tree
-            std::vector<int> node_ids(inputTree->listVNodes.size());
+            std::vector<int> node_ids(utree_->listVNodes.size());
             std::iota(node_ids.begin(), node_ids.end(), 0);
 
             // shuffle the array
@@ -146,7 +119,7 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves(tshlib::Utree
             // Generate candidate list of possible moves given the node topology and the rearrangement operation type
             for (int i = 0; i < search_startingnodes; i++) {
 
-                VirtualNode *node = inputTree->listVNodes.at(node_ids.at(i));
+                VirtualNode *node = utree_->listVNodes.at(node_ids.at(i));
 
                 // Print node description with neighbors
                 //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
@@ -169,9 +142,9 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves(tshlib::Utree
 }
 
 
-double tshlib::TreeSearch::performTreeSearch(tshlib::Utree *inputTree) {
+double tshlib::TreeSearch::performTreeSearch() {
     double newScore = 0;
-
+    utree_->removeVirtualRootNode();
     std::string stopcondition;
     switch (stopConditionMethod) {
         case tshlib::TreeSearchStopCondition::convergence:
@@ -202,7 +175,9 @@ double tshlib::TreeSearch::performTreeSearch(tshlib::Utree *inputTree) {
 
     }
 
-    LOG(INFO) << "[TSH Optimisation] Initial topology: " << inputTree->printTreeNewick(true);
+    LOG(INFO) << "[TSH Optimisation] Initial topology: " << utree_->printTreeNewick(true);
+
+
 
     // define the high-level strategy to evaluate the tree rearrangement operations
     std::string strategy;
@@ -210,19 +185,19 @@ double tshlib::TreeSearch::performTreeSearch(tshlib::Utree *inputTree) {
         case tshlib::TreeSearchHeuristics::greedy:
             strategy = "Greedy";
             LOG(INFO) << "[TSH Optimisation] algorithm: " << strategy << ", moves: " << operations << ", " << startingnodes << ", stop condition: " << stopcondition;
-            newScore = greedy(inputTree);
+            newScore = greedy();
             break;
 
         case tshlib::TreeSearchHeuristics::hillclimbing:
             strategy = "Hillclimbing";
             LOG(INFO) << "[TSH Optimisation] algorithm: " << strategy << ", moves: " << operations << ", " << startingnodes << ", stop condition: " << stopcondition;
-            newScore = hillclimbing(inputTree);
+            newScore = hillclimbing();
             break;
 
         case tshlib::TreeSearchHeuristics::particle_swarm:
             strategy = "Particle Swarm";
             LOG(INFO) << "[TSH Optimisation] algorithm: " << strategy << ", moves: " << operations << ", " << startingnodes << ", stop condition: " << stopcondition;
-            newScore = particleswarming(inputTree);
+            newScore = particleswarming();
             break;
 
         case tshlib::TreeSearchHeuristics::nosearch:
@@ -232,12 +207,12 @@ double tshlib::TreeSearch::performTreeSearch(tshlib::Utree *inputTree) {
             LOG(FATAL) << "Tree-search heuristic non implemented. Execution aborted!";
             break;
     }
-
+    utree_->addVirtualRootNode();
     return newScore;
 }
 
 
-void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateMoves, tshlib::Utree *inputTree) {
+void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateMoves) {
 
 
     for (unsigned long i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
@@ -250,7 +225,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         // Prepare the list of nodes involved in the move (Required here!)
         //std::vector<tshlib::VirtualNode *> listNodesWithinPath = candidateMoves->getNodesInMovePath(i);
         //listNodesWithinPath = inputTree->computePathBetweenNodes(pnode, qnode);
-        listNodesWithinPath = inputTree->computePathBetweenNodes(candidateMoves->getMove(i)->getSourceNode(), candidateMoves->getMove(i)->getTargetNode());
+        listNodesWithinPath = utree_->computePathBetweenNodes(candidateMoves->getMove(i)->getSourceNode(), candidateMoves->getMove(i)->getTargetNode());
         updatedNodesWithinPath = candidateMoves->updatePathBetweenNodes(i, listNodesWithinPath);
 
         //listNodesWithinPath = candidateMoves->getNodesInMovePath(i);
@@ -263,7 +238,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         // ------------------------------------
         // Apply the move
         candidateMoves->applyMove(i);
-        VLOG(1) << "[TSH Cycle - Topology] [A] MOVE#" << candidateMoves->getMove(i)->move_id << " | " << inputTree->printTreeNewick(true);
+        VLOG(1) << "[TSH Cycle - Topology] [A] MOVE#" << candidateMoves->getMove(i)->move_id << " | " << utree_->printTreeNewick(true);
 
         // ------------------------------------
         // Print root reachability from every node (includes rotations)
@@ -272,9 +247,15 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         // ------------------------------------
         // Print tree on file
         //inputTree->saveTreeOnFile("../data/test.txt");
-        updatedNodesWithinPath.push_back(inputTree->rootnode);
+        updatedNodesWithinPath.push_back(utree_->rootnode);
 
-        moveLogLK = likelihoodFunc->updateLikelihood(updatedNodesWithinPath);
+        //moveLogLK = likelihoodFunc->updateLikelihood(updatedNodesWithinPath);
+
+        if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)){
+            moveLogLK = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP*>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(updatedNodesWithinPath);
+        }else{
+            moveLogLK = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood*>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(updatedNodesWithinPath);
+        }
 
         if (std::isinf(moveLogLK)) {
             std::ostringstream nodepath;
@@ -293,13 +274,19 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         // ------------------------------------
         // Revert the move, and return to the original tree
         candidateMoves->revertMove(i);
-        VLOG(1) << "[TSH Cycle - Topology] [R] MOVE#" << candidateMoves->getMove(i)->move_id << " | " << inputTree->printTreeNewick(true);
+        VLOG(1) << "[TSH Cycle - Topology] [R] MOVE#" << candidateMoves->getMove(i)->move_id << " | " << utree_->printTreeNewick(true);
 
         //listNodesWithinPath = candidateMoves->getNodesInMovePath(i);
 
         // ------------------------------------
         if (scoringMethod.find("bothways") != std::string::npos) {
-            moveLogLK = likelihoodFunc->updateLikelihood(listNodesWithinPath);
+            //moveLogLK = likelihoodFunc->updateLikelihood(updatedNodesWithinPath);
+
+            if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)){
+                moveLogLK = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP*>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(updatedNodesWithinPath);
+            }else{
+                moveLogLK = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood*>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(updatedNodesWithinPath);
+            }
         }
 
         //candidateMoves->displayRearrangmentStatus(i, true);
@@ -316,11 +303,10 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
 }
 
 
-double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
+double tshlib::TreeSearch::greedy() {
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
     double currentBestLk = initialLikelihoodValue;
-    Utree *utree = inputTree;
 
     // Condition handler
     double cycle_no = 0;
@@ -337,14 +323,14 @@ double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
     while (c < stopConditionValue) {
 
         // Define moves according to tree-search criteria
-        tshlib::TreeRearrangment *candidateMoves = defineCandidateMoves(utree);
+        tshlib::TreeRearrangment *candidateMoves = defineCandidateMoves();
         std::ostringstream taskDescription;
         taskDescription << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << cycle_no + 1
                         << " | Testing " << candidateMoves->getNumberOfMoves() << " tree rearrangements.";
         ApplicationTools::displayMessage(taskDescription.str());
 
         // Test and record likelihood of each and every candidate move
-        testCandidateMoves(candidateMoves, utree);
+        testCandidateMoves(candidateMoves);
 
         // Select the best move in the list and store it
         Move *bestMove = candidateMoves->selectBestMove(currentBestLk);
@@ -367,20 +353,28 @@ double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
 
 
             std::vector<tshlib::VirtualNode *> listNodesWithinPath, updatedNodesWithinPath;
-            listNodesWithinPath = utree->computePathBetweenNodes(bestMove->getSourceNode(), bestMove->getTargetNode());
+            listNodesWithinPath = utree_->computePathBetweenNodes(bestMove->getSourceNode(), bestMove->getTargetNode());
             updatedNodesWithinPath = candidateMoves->updatePathBetweenNodes(bestMove->move_id, listNodesWithinPath);
-            updatedNodesWithinPath.push_back(utree->rootnode);
+            updatedNodesWithinPath.push_back(utree_->rootnode);
 
             // Commit final move on the topology
             candidateMoves->commitMove(bestMove->move_id);
-            DVLOG(1) << "utree after commit " << utree->printTreeNewick(true);
+            DVLOG(1) << "utree after commit " << utree_->printTreeNewick(true);
 
             ApplicationTools::displayTask("Optimising " + TextTools::toString(updatedNodesWithinPath.size()) + " branches");
-            likelihoodFunc->topologyChange(updatedNodesWithinPath, utree);
+            //likelihoodFunc->topologyChange(updatedNodesWithinPath, utree);
+
+            if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)){
+                dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP*>(likelihoodFunc)->topologyChangeSuccessful(updatedNodesWithinPath);
+            }else{
+                dynamic_cast<UnifiedTSHomogeneousTreeLikelihood*>(likelihoodFunc)->topologyChangeSuccessful(updatedNodesWithinPath);
+            }
+
             ApplicationTools::displayTaskDone();
 
             bpp::Newick treeWriter;
-            bpp::TreeTemplate<Node> ttree(likelihoodFunc->getLikelihoodFunction()->getTree());
+            //bpp::TreeTemplate<Node> ttree(likelihoodFunc->getLikelihoodFunction()->getTree());
+            bpp::TreeTemplate<Node> ttree(likelihoodFunc->getTree());
             std::ostringstream oss;
             treeWriter.write(ttree, oss);
 
@@ -432,10 +426,10 @@ double tshlib::TreeSearch::greedy(tshlib::Utree *inputTree) {
 }
 
 
-double tshlib::TreeSearch::hillclimbing(tshlib::Utree *inputTree) {
-    return greedy(inputTree);
+double tshlib::TreeSearch::hillclimbing() {
+    return greedy();
 }
 
-double tshlib::TreeSearch::particleswarming(tshlib::Utree *inputTree) {
+double tshlib::TreeSearch::particleswarming() {
     return 0;
 }

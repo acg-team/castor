@@ -177,10 +177,13 @@ TSHHomogeneousTreeLikelihood &TSHHomogeneousTreeLikelihood::operator=(const TSHH
 TSHHomogeneousTreeLikelihood::~TSHHomogeneousTreeLikelihood() {
 
     delete optimiser_;
+
 }
 
 AbstractHomogeneousTreeLikelihood *TSHHomogeneousTreeLikelihood::getLikelihoodFunction() const {
+
     return likelihoodFunc_;
+
 }
 
 void TSHHomogeneousTreeLikelihood::fixTopologyChanges(tshlib::Utree *inUTree) {
@@ -332,7 +335,7 @@ double TSHHomogeneousTreeLikelihood::updateLikelihood(std::vector<tshlib::Virtua
     utree_->addVirtualRootNode();
 
     // 0. convert the list of tshlib::VirtualNodes into bpp::Node
-    std::vector<Node *> rearrangedNodes = remapVirtualNodeLists(nodeList);
+    std::vector<int> rearrangedNodes = remapVirtualNodeLists(nodeList);
 
     // 1. Recombine FV arrays after move
     if (indelModel) {
@@ -340,7 +343,10 @@ double TSHHomogeneousTreeLikelihood::updateLikelihood(std::vector<tshlib::Virtua
     } else {
         flk = dynamic_cast<bpp::RHomogeneousTreeLikelihood *>(getLikelihoodFunction());
         likelihoodData_ = flk->getLikelihoodData();
-        for (auto &node:rearrangedNodes) {
+
+        for (auto &nodeID:rearrangedNodes) {
+
+            Node *node = tree_->getNode(nodeID);
             updateLikelihoodArrays(node);
         }
     }
