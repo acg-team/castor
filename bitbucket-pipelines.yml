@@ -1,4 +1,4 @@
-# This is a sample build configuration for C++ – Make.
+# This is a sample build configuration for C++ ï¿½ Make.
 # Check our guides at https://confluence.atlassian.com/x/5Q4SMw for more examples.
 # Only use spaces to indent your .yml configuration.
 # -----
@@ -15,4 +15,27 @@ pipelines:
         script: # Modify the commands below to build your repository.
         - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
         - make
+        artifacts:
+        - minijati
+  branches:
+      master:
+          - step:
+              script: # Modify the commands below to build your repository.
+              - cmake minijati --version=true
+      develop:
+          - step:
+              script: # Modify the commands below to build your repository.
+              - cmake minijati --version=true
+      feature/*:
+          - step:
+              script: # Modify the commands below to build your repository.
+              - cmake minijati --version=true
+      release/*:
+          - step:
+              script: # Modify the commands below to build your repository.
+              - cmake minijati --version=true
+      hotfix/*:
+          - step:
+              script: # Modify the commands below to build your repository.
+              - cmake minijati --version=true
 
