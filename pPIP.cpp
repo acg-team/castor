@@ -1492,19 +1492,19 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     double log_phi_gamma;
     double prev_log_phi_gamma; // to store old value
 
-    //auto** PHI = new double *[d];
+    auto** PHI = new double *[d];
     double PC0 = 0.0;
     double NU = 0.0;
 
-//    for(int i=0;i<d;i++){
-//        PHI[i] = new double[num_gamma_categories];
-//    }
+    for(int i=0;i<d;i++){
+        PHI[i] = new double[num_gamma_categories];
+    }
+
     for (int catg = 0; catg < num_gamma_categories; catg++) {
         // log( P_gamma(r) * phi(0,pc0(r),r) ): marginal lk for all empty columns of an alignment of size 0
-//        PHI[0][catg] = log(rDist_->getProbability((size_t)catg)) + \
-//                     (nu_.at(catg) * (pc0.at(catg) - 1.0));
-        PC0 += rDist_->getProbability((size_t)catg)) * pc0.at(catg);
-        NU += rDist_->getProbability((size_t)catg)) *nu_.at(catg);
+        // PHI[0][catg] = log(rDist_->getProbability((size_t)catg)) + (nu_.at(catg) * (pc0.at(catg) - 1.0));
+        PC0 += rDist_->getProbability((size_t)catg) * pc0.at(catg);
+        NU += rDist_->getProbability((size_t)catg) *nu_.at(catg);
     }
 
 
