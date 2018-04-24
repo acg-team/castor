@@ -42,6 +42,7 @@
  * @see For more information visit: 
  */
 #include "JATIApplication.hpp"
+#include <ctime>
 #include <iostream>
 #include <Bpp/Utils/AttributesTools.h>
 #include <glog/logging.h>
@@ -58,11 +59,18 @@ JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name
     bpp::ApplicationTools::warningLevel = bpp::ApplicationTools::getIntParameter("--warning", params_, 0, "", true, 3);
     bool noint = bpp::ApplicationTools::getBooleanParameter("--noninteractive", params_, false, "", true, 3);
     bpp::ApplicationTools::interactive = !noint;
-    long seed = bpp::ApplicationTools::getParameter<long>("--seed", params_, -1, "", true, 3);
-    if (seed >= 0) {
-        bpp::RandomTools::setSeed(seed);
-        bpp::ApplicationTools::displayResult("Random seed set to", seed);
+
+    seed_ = bpp::ApplicationTools::getParameter<long>("--seed", params_, -1, "", true, 3);
+    if (seed_ >= 0) {
+        bpp::RandomTools::setSeed(seed_);
+
+    }else{
+        std::srand(std::time(nullptr));
+        seed_ = std::rand();
+        bpp::RandomTools::setSeed(seed_);
     }
+
+
     if (showversion) {
         this->version();
         exit(0);

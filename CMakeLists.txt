@@ -118,9 +118,14 @@ if (${CMAKE_PREFIX_PATH})
     message(STATUS "Looking for headers in the following directory: ${CMAKE_PREFIX_PATH}/include")
 endif ()
 
-find_package(Boost REQUIRED)
+set(Boost_USE_STATIC_LIBS        OFF) # only find static libs
+set(Boost_USE_MULTITHREADED      ON)
+set(Boost_USE_STATIC_RUNTIME    OFF)
+find_package(Boost REQUIRED COMPONENTS system)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
+    message(STATUS "  static lib:  ${Boost_LIBRARY_DIRS}" )
+    message(STATUS "  include dir: ${Boost_INCLUDE_DIRS}" )
 endif()
 
 find_package(Eigen3 REQUIRED)

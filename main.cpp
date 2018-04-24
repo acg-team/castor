@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
             LOG(INFO) << "Execution started!";
         };
 
-
+        bpp::ApplicationTools::displayResult("Random seed set to", jatiapp.getSeed());
         ApplicationTools::displayResult("Log files location", std::string("current execution path"));
 
         //////////////////////////////////////////////
