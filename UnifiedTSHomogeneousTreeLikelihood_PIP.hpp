@@ -45,7 +45,6 @@
 #define MINIJATI_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_PIP_HPP
 
 #include "RHomogeneousTreeLikelihood_PIP.hpp"
-#include "TSHSearchable.hpp"
 #include "Utilities.hpp"
 #include "UnifiedTSHSearchable.hpp"
 
@@ -65,7 +64,7 @@ namespace bpp {
                                                TransitionModel *model,
                                                DiscreteDistribution *rDist,
                                                tshlib::Utree *utree_,
-                                               UtreeBppUtils::treemap *treemap_,
+                                               UtreeBppUtils::treemap *tm,
                                                bool optNumericalDerivatives,
                                                std::map<std::string, std::string> &params,
                                                const std::string &suffix,
@@ -79,7 +78,7 @@ namespace bpp {
                                                TransitionModel *model,
                                                DiscreteDistribution *rDist,
                                                tshlib::Utree *utree_,
-                                               UtreeBppUtils::treemap *treemap_,
+                                               UtreeBppUtils::treemap *tm,
                                                bool optNumericalDerivatives,
                                                std::map<std::string, std::string> &params,
                                                const std::string &suffix,
@@ -95,6 +94,8 @@ namespace bpp {
         const Tree &getTopology() const { return getTree(); }
 
         double getTopologyValue() const throw(Exception) { return getValue(); }
+
+        tshlib::Utree *getUtreeTopology() {return utree_;}
 
         void init_(bool usePatterns);
 

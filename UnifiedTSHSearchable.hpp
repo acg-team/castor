@@ -53,13 +53,17 @@
 #include <Bpp/Phyl/Likelihood/AbstractHomogeneousTreeLikelihood.h>
 
 namespace bpp {
+
     class UnifiedTSHSearchable {
 
     protected:
+
+        mutable AbstractHomogeneousTreeLikelihood *lk_;
         mutable std::vector<Parameter> testBrLens_;
         mutable AbstractOptimizer *optimiser_;
         std::string optMethodModel_;
         bool optNumericalDerivatives_;
+
 
     public:
 
@@ -68,7 +72,7 @@ namespace bpp {
         std::string OPTIMIZATION_BRENT = "Brent";
         std::string OPTIMIZATION_BFGS = "BFGS";
 
-        UnifiedTSHSearchable() : optimiser_(nullptr) {};
+        UnifiedTSHSearchable() : lk_(nullptr), optimiser_(nullptr), optMethodModel_(""), optNumericalDerivatives_(false) {}
 
         virtual ~UnifiedTSHSearchable() = default;
 
@@ -80,8 +84,7 @@ namespace bpp {
                                         bool verbose,
                                         int warn);
 
-        void fireBranchOptimisation(AbstractHomogeneousTreeLikelihood *lk,
-                                    std::vector<bpp::Node *> extractionNodes);
+        void fireBranchOptimisation(std::vector<bpp::Node *> extractionNodes);
 
 
     };

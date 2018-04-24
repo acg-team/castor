@@ -59,17 +59,18 @@
 
 
 // From bpp-seq:
+#include <Bpp/Seq/Io/Fasta.h>
 #include <Bpp/Phyl/Likelihood/TreeLikelihood.h>
 #include <Bpp/Phyl/OptimizationTools.h>
 
 
 #include <TreeRearrangment.hpp>
-#include <Bpp/Seq/Io/Fasta.h>
+
 #include "Optimizators.hpp"
 #include "Utilities.hpp"
-#include "TSHHomogeneousTreeLikelihood.hpp"
-#include "TSHTopologySearch.hpp"
+#include "UnifiedTSHTopologySearch.hpp"
 #include "pPIP.hpp"
+#include "UnifiedTSHomogeneousTreeLikelihood_PIP.hpp"
 
 using namespace bpp;
 
@@ -81,7 +82,7 @@ namespace bpp {
     std::string Optimizators::OPTIMIZATION_BFGS = "BFGS";
 
     TreeLikelihood *Optimizators::optimizeParameters(
-            TreeLikelihood *inTL,
+            bpp::AbstractHomogeneousTreeLikelihood *inTL,
             pPIP *pAlignment,
             const ParameterList &parameters,
             std::map<std::string, std::string> &params,
@@ -91,15 +92,8 @@ namespace bpp {
             int warn)
     throw(Exception) {
 
-        // extract likelihood function
-        bpp::TreeLikelihood *tl;
-        bpp::TSHHomogeneousTreeLikelihood *flk;
-        if (dynamic_cast<bpp::TSHHomogeneousTreeLikelihood *>( inTL )) {
-            flk = dynamic_cast<bpp::TSHHomogeneousTreeLikelihood *>(inTL);
-            tl = flk->getLikelihoodFunction();
-        } else {
-            tl = inTL;
-        }
+
+        bpp::AbstractHomogeneousTreeLikelihood *tl = inTL;
 
         // -------------------------------------------------------------------------
         //  Entry point for optimization routines (both numerical and topology)
@@ -458,7 +452,7 @@ namespace bpp {
                 */
 
                 // Remove the root to perform tree search
-                flk->getUtree()->removeVirtualRootNode();
+                //removeVirtualRootNode();
 
                 tshlib::TreeRearrangmentOperations treesearch_operations;
 
@@ -489,19 +483,22 @@ namespace bpp {
 
                     auto treesearch = new tshlib::TreeSearch;
 
+                    if (verbose) ApplicationTools::displayResult("Topology optimization | Initial lk ", TextTools::toString(-tl->getValue(), 15));
+
                     treesearch->setTreeSearchStrategy(treesearch_heuristics, treesearch_operations);
                     treesearch->setInitialLikelihoodValue(-tl->getValue());
                     treesearch->setScoringMethod(PAR_lkmove);
                     treesearch->setStartingNodes(PAR_optim_topology_hillclimbing_startnodes);
-                    treesearch->setTreemap(flk->getTreeMap());
                     treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
-                    treesearch->setLikelihoodFunc(flk);
-                    treesearch->performTreeSearch(flk->getUtree());
+                    treesearch->setLikelihoodFunc(tl);
+                    treesearch->performTreeSearch();
+                    //treesearch->performTreeSearch();
 
                     // Root the tree
-                    flk->getUtree()->addVirtualRootNode();
+                    //flk->getUtree()->addVirtualRootNode();
+
                     // Get the likelihood function
-                    tl = treesearch->getLikelihoodFunc()->getLikelihoodFunction();
+                    //tl = treesearch->getLikelihoodFunc()->getLikelihoodFunction();
 
                     LOG(INFO) << "[TSH Cycle] Likelihood after tree-search lk=" << std::setprecision(18) << tl->getLogLikelihood();
 
@@ -536,14 +533,14 @@ namespace bpp {
         Optimizer *finalOptimizer = nullptr;
         if (finalMethod == "none") {}
         else if (finalMethod == "simplex") {
-            finalOptimizer = new DownhillSimplexMethod(flk->getLikelihoodFunction());
+            finalOptimizer = new DownhillSimplexMethod(tl);
         } else if (finalMethod == "powell") {
-            finalOptimizer = new PowellMultiDimensions(flk->getLikelihoodFunction());
+            finalOptimizer = new PowellMultiDimensions(tl);
         } else if (finalMethod == "bfgs") {
-            parametersToEstimate.matchParametersValues(flk->getLikelihoodFunction()->getParameters());
+            parametersToEstimate.matchParametersValues(tl->getParameters());
 
             n = OptimizationTools::optimizeNumericalParameters(
-                    dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(flk->getLikelihoodFunction()),
+                    dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl),
                     parametersToEstimate,
                     backupListener.get(),
                     100,
@@ -576,7 +573,7 @@ namespace bpp {
 
         if (verbose) ApplicationTools::displayResult("\nPerformed", TextTools::toString(n) + " function evaluations.");
 
-        if (verbose) ApplicationTools::displayResult("Log likelihood after num/top optimisation", TextTools::toString(-flk->getLikelihoodFunction()->getValue(), 15));
+        if (verbose) ApplicationTools::displayResult("Log likelihood after num/top optimisation", TextTools::toString(-tl->getValue(), 15));
 
 
         ///////////////////////////
@@ -602,14 +599,21 @@ namespace bpp {
                       ")";
 
             // Execute alignment on post-order node list
-            std::vector<tshlib::VirtualNode *> ftn = flk->getUtree()->getPostOrderNodeList();//getPostOrderNodeList();
+            tshlib::Utree *utree_;
+
+            if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(tl)) {
+                utree_ = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(tl)->getUtreeTopology();
+            } else {
+                utree_ = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood *>(tl)->getUtreeTopology();
+            }
+            std::vector<tshlib::VirtualNode *> ftn = utree_->getPostOrderNodeList();//getPostOrderNodeList();
 
 
             // getting rid of const
-            auto tu_subModel = const_cast<SubstitutionModel *>(flk->getSubstitutionModel());
+            auto tu_subModel = const_cast<SubstitutionModel *>(tl->getSubstitutionModel());
 
             pAlignment->setSubstModel(tu_subModel);
-            pAlignment->setTree(&flk->getTree());
+            pAlignment->setTree(&tl->getTree());
             pAlignment->PIPAligner(ftn, true);
 
             double score = pAlignment->getScore(pAlignment->getRootNode());
@@ -622,7 +626,7 @@ namespace bpp {
             string bf = backupFile + ".def";
             rename(backupFile.c_str(), bf.c_str());
         }
-        return flk;
+        return tl;
     }
 
     std::string Optimizators::DISTANCEMETHOD_INIT = "init";

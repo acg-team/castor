@@ -54,30 +54,39 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
                                                                                const SiteContainer &data,
                                                                                TransitionModel *model,
                                                                                DiscreteDistribution *rDist,
-                                                                               tshlib::Utree *utree_,
-                                                                               UtreeBppUtils::treemap *treemap_,
+                                                                               tshlib::Utree *utree,
+                                                                               UtreeBppUtils::treemap *tm,
                                                                                bool optNumericalDerivatives,
                                                                                std::map<std::string, std::string> &params,
                                                                                const std::string &suffix,
                                                                                bool checkRooted,
                                                                                bool verbose,
                                                                                bool usePatterns) :
-        RHomogeneousTreeLikelihood_PIP(tree, data, model, rDist, treemap_, checkRooted, verbose, usePatterns) {
+        RHomogeneousTreeLikelihood_PIP(tree, data, model, rDist, tm, checkRooted, verbose, usePatterns), utree_(utree) {
+
+
+    setOptimiser(static_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(this), optNumericalDerivatives, params, suffix, true, verbose, 0);
 
 }
 
 UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(const Tree &tree,
                                                                                TransitionModel *model,
                                                                                DiscreteDistribution *rDist,
-                                                                               tshlib::Utree *utree_,
-                                                                               UtreeBppUtils::treemap *treemap_,
+                                                                               tshlib::Utree *utree,
+                                                                               UtreeBppUtils::treemap *tm,
                                                                                bool optNumericalDerivatives,
                                                                                std::map<std::string, std::string> &params,
                                                                                const std::string &suffix,
                                                                                bool checkRooted,
                                                                                bool verbose,
                                                                                bool usePatterns) :
-        RHomogeneousTreeLikelihood_PIP(tree, model, rDist, treemap_, checkRooted, verbose, usePatterns) {
+        RHomogeneousTreeLikelihood_PIP(tree, model, rDist, tm, checkRooted, verbose, usePatterns), utree_(utree) {
+
+
+
+    setOptimiser(static_cast<UnifiedTSHomogeneousTreeLikelihood_PIP*>(this), optNumericalDerivatives, params, suffix, true, verbose, 0);
+
+
 
 }
 
@@ -89,10 +98,10 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::~UnifiedTSHomogeneousTreeLikelihood_PIP(
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) {
 
-    likelihoodData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);        // FV
-    likelihoodDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV test
+    //likelihoodData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);        // FV
+    //likelihoodEmptyData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);         // FV empty
 
-    likelihoodEmptyData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);         // FV empty
+    likelihoodDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV test
     likelihoodEmptyDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV empty test
 
 }
@@ -178,7 +187,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(std::vecto
     std::vector<Node *> extractionNodes = UtreeBppUtils::remapNodeLists(listNodes, tree_, treemap_);
 
     // Optimise branches involved in the tree rearrangement
-    fireBranchOptimisation(this, extractionNodes);
+    fireBranchOptimisation(extractionNodes);
 
     // Remove the virtual root to allow for further tree topology improvements
     utree_->removeVirtualRootNode();
@@ -193,15 +202,20 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyCommitTree() {
     nodelist = utree_->listVNodes;
 
     std::map<int, bpp::Node *> tempMap;
+    std::map<int, double> tempDistanceToFather;
     // reset inBtree
     for (auto &bnode:tree_->getNodes()) {
 
         tempMap.insert(std::pair<int, bpp::Node *>(bnode->getId(), bnode));
         // Empty array of sons on the node
         bnode->removeSons();
-        // Empty father connection
-        bnode->removeFather();
 
+        if (bnode->hasFather()){
+
+            tempDistanceToFather.insert(std::pair<int, double>(bnode->getId(), bnode->getDistanceToFather()));
+            // Empty father connection
+            bnode->removeFather();
+        }
     }
 
     for (auto &vnode:nodelist) {
@@ -219,12 +233,17 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyCommitTree() {
             leftBNode->setFather(pNode);
             rightBNode->setFather(pNode);
 
-            leftBNode->setDistanceToFather(tree_->getDistanceToFather(leftBNode->getId()));
-            rightBNode->setDistanceToFather(tree_->getDistanceToFather(rightBNode->getId()));
+            //leftBNode->setDistanceToFather(tree_->getDistanceToFather(leftBNode->getId()));
+            //rightBNode->setDistanceToFather(tree_->getDistanceToFather(rightBNode->getId()));
+
+            leftBNode->setDistanceToFather(tempDistanceToFather[leftBNode->getId()]);
+            rightBNode->setDistanceToFather(tempDistanceToFather[rightBNode->getId()]);
+
             //Add new sons
             pNode->setSon(0, leftBNode);
             pNode->setSon(1, rightBNode);
-            pNode->setDistanceToFather(tree_->getDistanceToFather(pNode->getId()));
+            //pNode->setDistanceToFather(tree_->getDistanceToFather(pNode->getId()));
+            pNode->setDistanceToFather(tempDistanceToFather[pNode->getId()]);
             //std::cerr << "\t internal";
 
         } else {
@@ -243,8 +262,12 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyCommitTree() {
 
             leftBNode->setFather(tree_->getRootNode());
             rightBNode->setFather(tree_->getRootNode());
-            leftBNode->setDistanceToFather(tree_->getDistanceToFather(leftBNode->getId()));
-            rightBNode->setDistanceToFather(tree_->getDistanceToFather(rightBNode->getId()));
+
+            //leftBNode->setDistanceToFather(tree_->getDistanceToFather(leftBNode->getId()));
+            //rightBNode->setDistanceToFather(tree_->getDistanceToFather(rightBNode->getId()));
+
+            leftBNode->setDistanceToFather(tempDistanceToFather[leftBNode->getId()]);
+            rightBNode->setDistanceToFather(tempDistanceToFather[rightBNode->getId()]);
 
             tree_->getRootNode()->setSon(0, leftBNode);
             tree_->getRootNode()->setSon(1, rightBNode);

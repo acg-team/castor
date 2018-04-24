@@ -55,10 +55,13 @@ void UnifiedTSHSearchable::setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
                                                       bool suffixIsOptional,
                                                       bool verbose,
                                                       int warn) {
+
+    // Set likelihood function
+    lk_ = lk;
+
     // -------------------------------------------------------------------------
     // Optimisation algorithm
-    std::string optBrLenMethod = ApplicationTools::getStringParameter("optimization.topology.brlen_optimization", params, "Brent", suffix, suffixIsOptional, warn);
-    optMethodModel_ = optBrLenMethod;
+    optMethodModel_ = ApplicationTools::getStringParameter("optimization.topology.brlen_optimization", params, "Brent", suffix, suffixIsOptional, warn);
 
     // -------------------------------------------------------------------------
     // Message handler
@@ -112,20 +115,20 @@ void UnifiedTSHSearchable::setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
 }
 
 
-void UnifiedTSHSearchable::fireBranchOptimisation(AbstractHomogeneousTreeLikelihood *lk, std::vector<bpp::Node *> extractionNodes) {
+void UnifiedTSHSearchable::fireBranchOptimisation(std::vector<bpp::Node *> extractionNodes) {
 
     ParameterList parameters;
     // For each node involved in the move, get the corrisponding branch parameter (no root)
     for (auto &bnode:extractionNodes) {
         if (bnode->hasFather()) {
-            Parameter brLen = lk->getParameter("BrLen" + TextTools::toString(bnode->getId()));
+            Parameter brLen = lk_->getParameter("BrLen" + TextTools::toString(bnode->getId()));
             brLen.setName("BrLen" + TextTools::toString(bnode->getId()));
             parameters.addParameter(brLen);
         }
     }
 
     // set parameters on the likelihood function (inherited)
-    lk->setParameters(parameters);
+    lk_->setParameters(parameters);
 
     // Re-estimate branch length:
     if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_BRENT) {
@@ -136,7 +139,7 @@ void UnifiedTSHSearchable::fireBranchOptimisation(AbstractHomogeneousTreeLikelih
         optimiserInstance->optimize();
 
         // set parameters on the likelihood function (inherited)
-        lk->setParameters(optimiserInstance->getParameters());
+        lk_->setParameters(optimiserInstance->getParameters());
 
     } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_BFGS) {
         auto optimiserInstance = dynamic_cast<BfgsMultiDimensions *>(optimiser_);
@@ -146,7 +149,7 @@ void UnifiedTSHSearchable::fireBranchOptimisation(AbstractHomogeneousTreeLikelih
         optimiserInstance->optimize();
 
         // set parameters on the likelihood function (inherited)
-        lk->setParameters(optimiserInstance->getParameters());
+        lk_->setParameters(optimiserInstance->getParameters());
 
     } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_NEWTON) {
         auto optimiserInstance = dynamic_cast<PseudoNewtonOptimizer *>(optimiser_);
@@ -156,7 +159,7 @@ void UnifiedTSHSearchable::fireBranchOptimisation(AbstractHomogeneousTreeLikelih
         optimiserInstance->optimize();
 
         // set parameters on the likelihood function (inherited)
-        lk->setParameters(optimiserInstance->getParameters());
+        lk_->setParameters(optimiserInstance->getParameters());
 
     } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_GRADIENT) {
         auto optimiserInstance = dynamic_cast<ConjugateGradientMultiDimensions *>(optimiser_);
@@ -166,7 +169,7 @@ void UnifiedTSHSearchable::fireBranchOptimisation(AbstractHomogeneousTreeLikelih
         optimiserInstance->optimize();
 
         // set parameters on the likelihood function (inherited)
-        lk->setParameters(optimiserInstance->getParameters());
+        lk_->setParameters(optimiserInstance->getParameters());
     }
 
 

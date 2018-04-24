@@ -42,7 +42,7 @@
  * @see For more information visit: 
  */
 #include <glog/logging.h>
-#include "UnifiedTSHomogeneousTreeLikelihood.hpp"
+#include "UnifiedTSHomogeneousTreeLikelihood_Generic.hpp"
 
 using namespace bpp;
 

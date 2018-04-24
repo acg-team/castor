@@ -503,6 +503,7 @@ void RHomogeneousTreeLikelihood_PIP::displayLikelihood(const Node *node) {
 
 void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &params) {
 
+    // Detect if the fireParameterChanged call was invoked during the branch-length optimisation requested during the tree-search
     bool onTopologyChange = false;
     if (params.size() != getParameters().size()) {
         onTopologyChange = true;
@@ -543,13 +544,13 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
 
     if (onTopologyChange) {
         // Set the likelihoodNodeList to the postorder one
-        //std::vector<Node *> ponl = getNodeListPostOrder(tree_->getRootNode());
-        //setLikelihoodNodes(ponl);
+        std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
+        setLikelihoodNodes(ponl);
 
         //setIndicatorFunction(*data_);
 
         // Set ancestral histories
-        //setInsertionHistories(*data_);
+        setInsertionHistories(*data_);
 
     }
 

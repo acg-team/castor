@@ -44,10 +44,8 @@
 #ifndef MINIJATI_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP
 #define MINIJATI_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP
 
-#include "TSHSearchable.hpp"
 #include "UnifiedTSHSearchable.hpp"
 #include "Utilities.hpp"
-#include "AbstractUnifiedTSHomogeneousTreeLikelihood.hpp"
 #include "RHomogeneousTreeLikelihood_Generic.hpp"
 
 

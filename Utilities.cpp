@@ -56,11 +56,10 @@
 #include <boost/algorithm/string/classification.hpp>
 
 #include "Utilities.hpp"
-#include "TSHHomogeneousTreeLikelihood.hpp"
 #include "Optimizators.hpp"
+#include "UnifiedTSHomogeneousTreeLikelihood_Generic.hpp"
 
 using namespace bpp;
-#include "pPIP.hpp"
 
 /*
 void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source, treemap &tm) {
@@ -664,18 +663,11 @@ void OutputUtils::printParametersLikelihood(bpp::AbstractHomogeneousTreeLikeliho
     bpp::ParameterList parModel;
     std::ostringstream oss;
 
-    bpp::AbstractHomogeneousTreeLikelihood *ttl;
-    if (dynamic_cast<bpp::TSHHomogeneousTreeLikelihood *>( tl )) {
-        bpp::TSHHomogeneousTreeLikelihood *flk = dynamic_cast<bpp::TSHHomogeneousTreeLikelihood *>(tl);
-        ttl = flk->getLikelihoodFunction();
-    } else {
-        ttl = tl;
-    }
 
 
-    parModel = ttl->getSubstitutionModelParameters();
+    parModel = tl->getSubstitutionModelParameters();
     if (parModel.size() > 0) {
-        oss << "model=" << ttl->getModel()->getName() << "(";
+        oss << "model=" << tl->getModel()->getName() << "(";
         for (auto &parameterName:parModel.getParameterNames()) {
             oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";
         }
@@ -686,9 +678,9 @@ void OutputUtils::printParametersLikelihood(bpp::AbstractHomogeneousTreeLikeliho
     oss.str("");
 
 
-    parModel = ttl->getRateDistributionParameters();
+    parModel = tl->getRateDistributionParameters();
     if (parModel.size() > 0) {
-        oss << "rates=" << ttl->getRateDistribution()->getName() << "(";
+        oss << "rates=" << tl->getRateDistribution()->getName() << "(";
         for (auto &parameterName:parModel.getParameterNames()) {
             oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";
         }
@@ -698,9 +690,9 @@ void OutputUtils::printParametersLikelihood(bpp::AbstractHomogeneousTreeLikeliho
     oss.clear();
     oss.str("");
 
-    parModel = ttl->getBranchLengthsParameters();
+    parModel = tl->getBranchLengthsParameters();
     if (parModel.size() > 0) {
-        oss << "branches=" << ttl->getBranchLengthsParameters().size() << "(";
+        oss << "branches=" << tl->getBranchLengthsParameters().size() << "(";
         for (auto &parameterName:parModel.getParameterNames()) {
             oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";;
         }

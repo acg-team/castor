@@ -65,11 +65,6 @@ namespace bpp {
 
         mutable std::vector<int> likelihoodNodes_;                            //The node is represented via its <int> ID
 
-        //mutable std::vector<Node *> likelihoodNodes_;
-        //mutable std::vector<tshlib::VirtualNode *> treesearchNodes_;
-        //mutable std::map<int, std::pair<std::vector<int>, bpp::Node *>> descCountData_;
-        //mutable std::map<int, std::pair<std::vector<bool>, bpp::Node *>> setAData_;
-
         mutable std::map<int, std::pair<std::vector<int>, int>> descCountData_;
         mutable std::map<int, std::pair<std::vector<bool>, int>> setAData_;
         mutable std::map<int, double> iotasData_;
