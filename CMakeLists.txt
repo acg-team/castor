@@ -159,7 +159,7 @@ set(SOURCES
         UnifiedTSHomogeneousTreeLikelihood.hpp
         UnifiedTSHomogeneousTreeLikelihood_PIP.cpp
         UnifiedTSHomogeneousTreeLikelihood_PIP.hpp
-        UnifiedTSHSearchable.cpp UnifiedTSHSearchable.hpp)
+        UnifiedTSHSearchable.cpp UnifiedTSHSearchable.hpp AbstractUnifiedTSHomogeneousTreeLikelihood.cpp AbstractUnifiedTSHomogeneousTreeLikelihood.hpp RHomogeneousTreeLikelihood_Generic.cpp RHomogeneousTreeLikelihood_Generic.hpp)
 
 
 if (STATIC GREATER 0)

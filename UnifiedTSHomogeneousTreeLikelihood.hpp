@@ -44,20 +44,25 @@
 #ifndef MINIJATI_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP
 #define MINIJATI_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP
 
-#include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
 #include "TSHSearchable.hpp"
 #include "UnifiedTSHSearchable.hpp"
 #include "Utilities.hpp"
+#include "AbstractUnifiedTSHomogeneousTreeLikelihood.hpp"
+#include "RHomogeneousTreeLikelihood_Generic.hpp"
+
 
 namespace bpp {
 
-    class UnifiedTSHomogeneousTreeLikelihood : public RHomogeneousTreeLikelihood, public UnifiedTSHSearchable {
+    class UnifiedTSHomogeneousTreeLikelihood : public RHomogeneousTreeLikelihood_Generic, public UnifiedTSHSearchable {
 
     protected:
-
+        //mutable DRASRTreeLikelihoodData *likelihoodData;
         mutable DRASRTreeLikelihoodData *likelihoodDataTest_;
+        const SiteContainer* data_;
         mutable tshlib::Utree *utree_;
         mutable UtreeBppUtils::treemap treemap_;
+
+        bool usePatterns_;
 
 
     public:
@@ -95,6 +100,8 @@ namespace bpp {
 
         double getTopologyValue() const throw(Exception) { return getValue(); }
 
+        tshlib::Utree *getUtreeTopology() {return utree_;}
+
         void init_(bool usePatterns);
 
         void fireTopologyChange(std::vector<int> nodeList);
@@ -106,6 +113,12 @@ namespace bpp {
         void topologyChangeSuccessful(std::vector<tshlib::VirtualNode *> listNodes);
 
         void topologyCommitTree();
+
+        std::vector<int> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const;
+
+        void updateLikelihoodArrays(Node *node);
+
+        void resetLikelihoodsOnTopologyChangeSuccessful();
 
     };
 
