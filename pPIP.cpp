@@ -2742,11 +2742,11 @@ double pPIPUtils::add_lns(double a_ln,double b_ln){
 
     double R;
 
-    if(isinf(a_ln) && isinf(b_ln)){
+    if(std::isinf(a_ln) && std::isinf(b_ln)){
         R=-std::numeric_limits<double>::infinity();
-    }else if(isinf(a_ln)){
+    }else if(std::isinf(a_ln)){
         R=b_ln;
-    }else if(isinf(b_ln)){
+    }else if(std::isinf(b_ln)){
         R=a_ln;
     }else if((abs(a_ln - b_ln) >= 36.043653389117155)){
         //TODO:check this
