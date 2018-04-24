@@ -51,6 +51,8 @@
 #include <iostream>
 #include <Bpp/App/ApplicationTools.h>
 
+#include <boost/asio/ip/host_name.hpp>
+
 
 namespace bpp {
     class JATIApplication {
@@ -60,6 +62,7 @@ namespace bpp {
         std::string appVersion_;
         mutable std::map<std::string, std::string> params_;
         bool timerStarted_;
+        long seed_;
 
     public:
         JATIApplication(int argc, char *argv[], const std::string &name, const std::string &strVersion, const std::string &build_date);
@@ -78,6 +81,7 @@ namespace bpp {
 
         std::string &getParam(const std::string &name) { return params_[name]; }
 
+        long getSeed() {return seed_;}
 
         void help() {
             std::cout << appName_ << std::endl << std::endl;
@@ -384,12 +388,13 @@ namespace bpp {
 
         void banner() {
 
+            auto host_name = boost::asio::ip::host_name();
 
             bpp::ApplicationTools::displayMessage("*****************************************************************************************************************************************");
             bpp::ApplicationTools::displayMessage("* " + appName_ + " by Lorenzo Gatti & Massimo Maiolo                                                                                      *");
             bpp::ApplicationTools::displayMessage("* Build on commit: " + appVersion_ + " on date: " + appBuild_ + "                           *");
             bpp::ApplicationTools::displayMessage("*****************************************************************************************************************************************");
-            bpp::ApplicationTools::displayMessage("Execution started on:");
+            bpp::ApplicationTools::displayResult("Execution started on:", host_name);
 
 
 

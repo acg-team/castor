@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
             LOG(INFO) << "Execution started!";
         };
 
-
+        bpp::ApplicationTools::displayResult("Random seed set to", jatiapp.getSeed());
         ApplicationTools::displayResult("Log files location", std::string("current execution path"));
 
         //////////////////////////////////////////////
@@ -263,7 +263,6 @@ int main(int argc, char *argv[]) {
         } else if (initTreeOpt == "distance") {
 
             bpp::DistanceMatrix *distances;
-            bpp::DistanceEstimation *distEst;
 
             if (!PAR_alignment) {
 
@@ -290,18 +289,12 @@ int main(int argc, char *argv[]) {
                 // Compute bioNJ tree using the GTR model
                 map<std::string, std::string> parmap;
                 parmap["model"] = "JC69";
-                //bpp::Fasta seqReader;
-                //bpp::SequenceContainer *sequences_bioNJ = seqReader.readAlignment(PAR_input_sequences, alphabet);
-                //seqReader.readSequences(PAR_input_sequences, alphabet);
-                //bpp::SiteContainer *sites_bioNJ = new bpp::VectorSiteContainer(*sequences_bioNJ);
 
                 VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet, jatiapp.getParams());
                 VectorSiteContainer *sites_bioNJ = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams());
                 delete allSites;
 
                 //Initialize model to compute the distance tree
-                //bpp::SubstitutionModel *dmodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites_bioNJ, parmap, "", true, false, 0);
-
                 TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabet, gCode.get(), sites_bioNJ, parmap);
 
                 // Add a ASRV distribution
@@ -312,14 +305,10 @@ int main(int argc, char *argv[]) {
                 } else {
                     rDist = PhylogeneticsApplicationTools::getRateDistribution(jatiapp.getParams());
                 }
+                // Remove gap characters since we are roughly estimating the initial topology
 
                 bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites_bioNJ);
                 DistanceEstimation distEstimation(dmodel, rDist, sites_bioNJ, 1, false);
-                //distEstimation.computeMatrix();
-                //distances = distEstimation.getMatrix();
-                //distMethod->setDistanceMatrix(*distances);
-                //distMethod->computeTree();
-                //tree = distMethod->getTree();
 
                 std::string PAR_optim_distance = ApplicationTools::getStringParameter("init.distance.optimization.method", jatiapp.getParams(), "init");
                 ApplicationTools::displayResult("Initial tree model parameters estimation method", PAR_optim_distance);
@@ -379,26 +368,21 @@ int main(int argc, char *argv[]) {
                 //Here it is:
                 tree = OptimizationTools::buildDistanceTree(distEstimation, *distMethod, parametersToIgnore, !ignoreBrLen, PAR_optim_distance, tolerance, nbEvalMax, profiler, messenger, optVerbose);
 
+                // If the tree has multifurcation, then resolve it with midpoint rooting
                 auto ttree_ = new TreeTemplate<Node>(*tree);
-
                 if (ttree_->getRootNode()->getNumberOfSons() > 2) {
                     TreeTemplateTools::midRoot(*(ttree_), TreeTemplateTools::MIDROOT_VARIANCE, false);
                     tree = ttree_;
                 }
 
-                //bpp::SubstitutionModel *submodel_bioNJ = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites_bioNJ, parmap, "", true, false, 0);
-                //bpp::DiscreteDistribution *rDist = new bpp::ConstantRateDistribution();
-                //bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites_bioNJ);
-                //bpp::DistanceEstimation distanceMethod(submodel_bioNJ, rDist, sites_bioNJ);
-                //distances = distanceMethod.getMatrix();
                 delete sites_bioNJ;
                 delete distMethod;
 
-                //distEst = DistanceUtils::computeDistanceMethod(PAR_input_sequences, alphabet, gCode.get(), jatiapp.getParams());
-                //ApplicationTools::displayMessage("[BioNJ Pairwise distance matrix] The pairwise distance matrix is computed using JC69");
-
 
             } else {
+
+                // Use a distance matrix provided by the user
+
                 ApplicationTools::displayResult("Initial tree method", std::string("LZ compression"));
                 std::string PAR_distance_matrix;
                 try {
@@ -414,6 +398,7 @@ int main(int argc, char *argv[]) {
             }
 
         } else throw Exception("Unknown init tree method.");
+
 
         // Rename internal nodes with standard Vxx * where xx is a progressive number
         tree->setNodeName(tree->getRootId(), "root");
@@ -489,14 +474,16 @@ int main(int argc, char *argv[]) {
         bpp::SubstitutionModel *smodel = nullptr;
         bpp::TransitionModel *model = nullptr;
 
-        Eigen::MatrixXd Q;
-        Eigen::VectorXd pi;
+        //Eigen::MatrixXd Q;
+        //Eigen::VectorXd pi;
         double lambda;
         double mu;
         bool estimatePIPparameters;
         // Extend the substitution model with PIP
         if (PAR_model_indels) {
 
+
+            //smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, modelMap, "", true, false, 0);
             smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, modelMap, "", true, false, 0);
 
             estimatePIPparameters = (modelMap.find("estimated") == modelMap.end()) ? false : true;
@@ -529,8 +516,8 @@ int main(int argc, char *argv[]) {
                 LOG(FATAL) << "Pip model is not implemented for Codon alphabets! :(";
             }
             // Fill Q matrix
-            Q = MatrixBppUtils::Matrix2Eigen(smodel->getGenerator());
-            pi = MatrixBppUtils::Vector2Eigen(smodel->getFrequencies());
+            //Q = MatrixBppUtils::Matrix2Eigen(smodel->getGenerator());
+            //pi = MatrixBppUtils::Vector2Eigen(smodel->getFrequencies());
 
         } else {
             // if the alphabet is not extended, then the gap character is not supported
@@ -737,20 +724,7 @@ int main(int argc, char *argv[]) {
         // Optimise parameters automatically following standard pipeline
 
         ApplicationTools::displayMessage("\n[Executing numerical parameters and topology optimization]");
-        /*
-        auto ntl = new bpp::TSHHomogeneousTreeLikelihood(tl,
-                                                         (*tl->getData()),
-                                                         (tl->getModel()),
-                                                         (tl->getRateDistribution()),
-                                                         utree,
-                                                         tm,
-                                                         PAR_model_indels,
-                                                         jatiapp.getParams(),
-                                                         "",
-                                                         true,
-                                                         true,
-                                                         0);
-        */
+
         tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl,
                                                                                             progressivePIP,
                                                                                             tl->getParameters(),

@@ -411,6 +411,9 @@ int pPIP::index_of_max(double m,
 
     double random_number;
 
+    if(std::isinf(m) & std::isinf(x) & std::isinf(y))
+        LOG(FATAL) << "\nSomething went wrong during the comparison of m,x,y variables in function pPIP::index_of_max. Check call stack below. ";
+
     if(not(std::isinf(m)) & not(std::isinf(x)) & (fabs((m-x))<epsilon)){
         x=m;
     }
@@ -438,8 +441,8 @@ int pPIP::index_of_max(double m,
                     return int(GAP_Y_STATE);
                 }
             }else{
-                perror("ERROR in index_of_max\n");
-                exit(EXIT_FAILURE);
+                LOG(FATAL) << "\nSomething went wrong during the comparison in function pPIP::index_of_max. Check call stack below.";
+
             }
         }
     }else if (x>m){
@@ -457,8 +460,7 @@ int pPIP::index_of_max(double m,
                     return int(GAP_Y_STATE);
                 }
             }else{
-                perror("ERROR in index_of_max_3\n");
-                exit(EXIT_FAILURE);
+                LOG(FATAL) << "\nSomething went wrong during the comparison in function pPIP::index_of_max. Check call stack below.";
             }
         }
     }else{
@@ -486,8 +488,7 @@ int pPIP::index_of_max(double m,
                     return int(GAP_Y_STATE);
                 }
             }else{
-                perror("ERROR in index_of_max_3\n");
-                exit(EXIT_FAILURE);
+                LOG(FATAL) << "\nSomething went wrong during the comparison in function pPIP::index_of_max. Check call stack below.";
             }
         }
     }
@@ -506,8 +507,7 @@ double pPIP::max_of_three(double a, double b, double c,double epsilon){
     }
 
     if(std::isinf(a) && std::isinf(b) && std::isinf(c)){
-        perror("max_of_three: all inf\n");
-        exit(EXIT_FAILURE);
+        LOG(FATAL) << "\nSomething went wrong during the comparison in function pPIP::max_of_three. Check call stack below.";
     }
 
     if(a>b){
@@ -587,7 +587,7 @@ void pPIP::build_MSA(bpp::Node *node, TracebackPath_t traceback_path){
             idx_j++;
 
         }else{
-            perror("ERROR");
+            LOG(FATAL) << "\nSomething went wrong during the traceback in function pPIP::build_MSA. Check call stack below.";
         }
     }
 
@@ -1668,7 +1668,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     }
 
                     if (std::isinf(valM) && std::isinf(valX) && std::isinf(valY)) {
-                        exit(EXIT_FAILURE);
+                        LOG(FATAL) << "\nSomething went wrong during the comparison of valM, valX, valY in function pPIP::DP3D_PIP. Check call stack below.";
                     }
 
                     if (local) {
@@ -1702,11 +1702,11 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     }
 
                     if (std::isinf(val)) {
-                        exit(EXIT_FAILURE);
+                        LOG(FATAL) << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
                     }
 
                     if (std::isnan(val)) {
-                        exit(EXIT_FAILURE);
+                        LOG(FATAL) << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
                     }
 
                     idx = get_indices_M(coordTriangle_this_i,
@@ -1796,7 +1796,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     }
 
                     if(std::isinf(valM) && std::isinf(valX) && std::isinf(valY)){
-                        exit(EXIT_FAILURE);
+                        LOG(FATAL) << "\nSomething went wrong during the comparison of valM, valX, valY in function pPIP::DP3D_PIP. Check call stack below.";
                     }
 
                     if(local){
@@ -1829,14 +1829,14 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                         */
                     }
 
-                    if(std::isinf(val)){
-                        exit(EXIT_FAILURE);
+                    if (std::isinf(val)) {
+                        LOG(FATAL) << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
+
                     }
 
-                    if(std::isnan(val)){
-                        exit(EXIT_FAILURE);
+                    if (std::isnan(val)) {
+                        LOG(FATAL) << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
                     }
-
                     idx=get_indices_X(coordTriangle_this_i,
                                       coordTriangle_this_j,
                                       up_corner_i,
@@ -1923,7 +1923,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     }
 
                     if(std::isinf(valM) && std::isinf(valX) && std::isinf(valY)){
-                        exit(EXIT_FAILURE);
+                        LOG(FATAL) << "\nSomething went wrong during the comparison of valM, valX, valY in function pPIP::DP3D_PIP. Check call stack below.";
                     }
 
                     if(local){
@@ -1956,13 +1956,13 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                          */
                     }
 
-                    if(std::isinf(val)){
-                        exit(EXIT_FAILURE);
+                    if (std::isinf(val)) {
+                        LOG(FATAL) << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
                     }
 
+                    if (std::isnan(val)) {
+                        LOG(FATAL) << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
 
-                    if(std::isnan(val)){
-                        exit(EXIT_FAILURE);
                     }
 
                     idx=get_indices_Y(coordTriangle_this_i,
@@ -2063,7 +2063,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                       m,h,w);
 
                     if(TR[m][idx]!=0){
-                        exit(EXIT_FAILURE);
+                        LOG(FATAL) << "\nSomething went wrong in accessing TR at indices:[" << m << "]["<< idx <<"] in function pPIP::DP3D_PIP. Check call stack below.";
                     }
 
                     TR[m][idx]=ttrr;
@@ -2131,8 +2131,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                 traceback_path[lev-1]=GAP_Y_CHAR;
                 break;
             default:
-                perror("ERROR in alignment_reconstruction !!!");
-                exit(EXIT_FAILURE);
+                LOG(FATAL) << "\nSomething went wrong during the alignment reconstruction in function pPIP::DP3D_PIP. Check call stack below.";
         }
     }
 
@@ -2743,11 +2742,11 @@ double pPIPUtils::add_lns(double a_ln,double b_ln){
 
     double R;
 
-    if(isinf(a_ln) && isinf(b_ln)){
+    if(std::isinf(a_ln) && std::isinf(b_ln)){
         R=-std::numeric_limits<double>::infinity();
-    }else if(isinf(a_ln)){
+    }else if(std::isinf(a_ln)){
         R=b_ln;
-    }else if(isinf(b_ln)){
+    }else if(std::isinf(b_ln)){
         R=a_ln;
     }else if((abs(a_ln - b_ln) >= 36.043653389117155)){
         //TODO:check this
