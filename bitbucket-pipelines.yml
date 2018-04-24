@@ -24,43 +24,48 @@ pipelines:
               - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
-              - minijati
+              - miniJATI
           - step:
-              - minijati --version=true
+              script:
+              - ./miniJATI version=true
       develop:
           - step:
               script: # Modify the commands below to build your repository.
               - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
-              - minijati
+              - miniJATI
           - step:
-              - minijati --version=true
+              script:
+              - ./miniJATI version=true
       feature/*:
           - step:
               script: # Modify the commands below to build your repository.
               - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
-              - minijati
+              - miniJATI
           - step:
-              - minijati --version=true
+              script:
+              - ./miniJATI version=true
       release/*:
           - step:
               script: # Modify the commands below to build your repository.
               - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
-              - minijati
+              - miniJATI
           - step:
-              - minijati --version=true
+              script:
+              - ./miniJATI version=true
       hotfix/*:
           - step:
               script: # Modify the commands below to build your repository.
               - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
-              - minijati
+              - miniJATI
           - step:
-              - minijati --version=true
+              script:
+              - ./miniJATI version=true
 
