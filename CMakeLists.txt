@@ -144,17 +144,25 @@ set(SOURCES
         RHomogeneousTreeLikelihood_PIP.hpp
         ExtendedAlphabet.cpp
         ExtendedAlphabet.hpp
-        TSHHomogeneousTreeLikelihood.cpp
-        TSHHomogeneousTreeLikelihood.hpp
-        TSHSearchable.hpp
-        TSHTopologySearch.cpp
-        TSHTopologySearch.hpp
+        #TSHHomogeneousTreeLikelihood.cpp
+        #TSHHomogeneousTreeLikelihood.hpp
+        #TSHSearchable.hpp
+        UnifiedTSHTopologySearch.cpp
+        UnifiedTSHTopologySearch.hpp
         JATIApplication.cpp
         JATIApplication.hpp
         pPIP.cpp
         pPIP.hpp
         Optimizators.cpp
-        Optimizators.hpp)
+        Optimizators.hpp
+        UnifiedTSHomogeneousTreeLikelihood_Generic.cpp
+        UnifiedTSHomogeneousTreeLikelihood_Generic.hpp
+        UnifiedTSHomogeneousTreeLikelihood_PIP.cpp
+        UnifiedTSHomogeneousTreeLikelihood_PIP.hpp
+        UnifiedTSHSearchable.cpp
+        UnifiedTSHSearchable.hpp
+        RHomogeneousTreeLikelihood_Generic.cpp
+        RHomogeneousTreeLikelihood_Generic.hpp)
 
 
 if (STATIC GREATER 0)
