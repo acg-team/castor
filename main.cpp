@@ -645,11 +645,11 @@ int main(int argc, char *argv[]) {
 
         // Initialise likelihood functions
         if (!PAR_model_indels) {
-            tl = new bpp::RHomogeneousTreeLikelihood_Generic(*tree, *sites, model, rDist, false, false, false);
+            //tl = new bpp::RHomogeneousTreeLikelihood_Generic(*tree, *sites, model, rDist, false, false, false);
             tl = new bpp::UnifiedTSHomogeneousTreeLikelihood(*tree, *sites, model, rDist, utree, &tm, true, jatiapp.getParams(), "", false, false, false);
 
         } else {
-            tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, &tm, false, false, false);
+            //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, &tm, false, false, false);
             tl = new bpp::UnifiedTSHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, utree, &tm, true, jatiapp.getParams(), "", false, false, false);
         }
         ApplicationTools::displayResult("Tree likelihood model", std::string("Homogeneous"));
