@@ -27,7 +27,7 @@ pipelines:
               - miniJATI
           - step:
               script:
-              - miniJATI --version=true
+              - ./miniJATI version=true
       develop:
           - step:
               script: # Modify the commands below to build your repository.
@@ -37,7 +37,7 @@ pipelines:
               - miniJATI
           - step:
               script:
-              - miniJATI --version=true
+              - ./miniJATI version=true
       feature/*:
           - step:
               script: # Modify the commands below to build your repository.
@@ -47,7 +47,7 @@ pipelines:
               - miniJATI
           - step:
               script:
-              - miniJATI --version=true
+              - ./miniJATI version=true
       release/*:
           - step:
               script: # Modify the commands below to build your repository.
@@ -57,7 +57,7 @@ pipelines:
               - miniJATI
           - step:
               script:
-              - miniJATI --version=true
+              - ./miniJATI version=true
       hotfix/*:
           - step:
               script: # Modify the commands below to build your repository.
@@ -67,5 +67,5 @@ pipelines:
               - miniJATI
           - step:
               script:
-              - miniJATI --version=true
+              - ./miniJATI version=true
 
