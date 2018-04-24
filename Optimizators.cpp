@@ -408,6 +408,9 @@ namespace bpp {
         //LOG(INFO) << "[Parameter optimization]\tMolecular clock: " << clock;
         if (verbose) ApplicationTools::displayResult("Molecular clock", clock);
 
+        // Optimisation precision
+        auto nstep = ApplicationTools::getParameter<unsigned int>("nstep", optArgs, 1, "", true, warn + 1);
+        if (verbose && nstep > 1) ApplicationTools::displayResult("# of precision steps", TextTools::toString(nstep));
 
         unsigned int n = 0;
         if ((optName == "D-Brent") || (optName == "D-BFGS") || (optName == "ND-Brent") || (optName == "ND-BFGS")) {
@@ -417,10 +420,6 @@ namespace bpp {
                 optMethodModel = OptimizationTools::OPTIMIZATION_BRENT;
             else
                 optMethodModel = OptimizationTools::OPTIMIZATION_BFGS;
-
-            auto nstep = ApplicationTools::getParameter<unsigned int>("nstep", optArgs, 1, "", true, warn + 1);
-
-            if (verbose && nstep > 1) ApplicationTools::displayResult("# of precision steps", TextTools::toString(nstep));
 
             parametersToEstimate.matchParametersValues(tl->getParameters());
 
@@ -543,8 +542,8 @@ namespace bpp {
                     dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl),
                     parametersToEstimate,
                     backupListener.get(),
-                    100,
-                    tolerance * 10,
+                    nstep,
+                    tolerance / 10,
                     nbEvalMax,
                     messageHandler,
                     profiler,
