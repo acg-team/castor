@@ -44,7 +44,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <chrono>
 /*
 * From Core:
 */
@@ -53,7 +52,6 @@
 #include <Bpp/App/ApplicationTools.h>
 #include <Bpp/Numeric/Prob/ConstantDistribution.h>
 #include <Bpp/Text/KeyvalTools.h>
-
 
 /*
 * From SeqLib:
@@ -80,13 +78,6 @@
 #include <Bpp/Phyl/OptimizationTools.h>
 
 /*
-* From Eigen:
-*/
-#include <Eigen/Core>
-#include <Eigen/Dense>
-#include <unsupported/Eigen/MatrixFunctions>
-
-/*
 * From GLOG:
 */
 #include <glog/logging.h>
@@ -97,9 +88,10 @@
 #include <Alignment.hpp>
 #include <TreeRearrangment.hpp>
 
+/*
+* From Boost:
+*/
 #include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/classification.hpp>
 
 using namespace tshlib;
 
@@ -116,8 +108,6 @@ using namespace tshlib;
 #include "UnifiedTSHTopologySearch.hpp"
 #include "pPIP.hpp"
 #include "Optimizators.hpp"
-#include "UnifiedTSHomogeneousTreeLikelihood_Generic.hpp"
-#include "UnifiedTSHomogeneousTreeLikelihood_PIP.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -588,6 +578,8 @@ int main(int argc, char *argv[]) {
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
+
+            // Align sequences using the progressive 3D Dynamic Programming under PIP
             progressivePIP->PIPAligner(ftn, true);
 
             LOG(INFO) << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";

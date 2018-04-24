@@ -71,7 +71,7 @@ pPIP::pPIP(tshlib::Utree *utree,
            bpp::DiscreteDistribution *rDist) {
 
     utree_ = utree;
-    setTree(tree);
+    _setTree(tree);
     substModel_ = smodel;
     treemap_ = inTreeMap;
     sequences_ = sequences;
@@ -88,38 +88,51 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     int numNodes = nodeList.size();
     int numCatg=rDist_->getNumberOfCategories();
 
+    // lk score at each node
     score_.resize(numNodes);
     score_.assign(numNodes, -std::numeric_limits<double>::infinity());
 
+    // traceback path at each node
     traceback_path_.resize(numNodes);
 
+    // sequence names in the MSA at each node
     seqNames_.resize(numNodes);
 
+    // MSA at each node
     MSA_.resize(numNodes);
 
+    // insertion rate with rate variation (gamma)
     lambda_.resize(numCatg);
 
+    // deletion rate with rate variation (gamma)
     mu_.resize(numCatg);
 
+    // normalizing constant with rate variation (gamma)
     nu_.resize(numCatg);
 
     // Initialise iotas and betas maps
     for (auto &vnode:nodeList) {
+
+        // get node ID
         int nodeID = treemap_.right.at(vnode);
+
+        // insertion probabilities at the given node with rate variation (gamma)
         iotasNode_[nodeID].resize(numCatg);
+
+        // survival probabilities at the given node with rate variation (gamma)
         betasNode_[nodeID].resize(numCatg);
+
+        // substitution/deletion probability matrices at the given node with rate variation (gamma)
         prNode_[nodeID].resize(numCatg);
     }
 
 }
-
-void pPIP::setTree(const Tree *tree) {
+void pPIP::_setTree(const Tree *tree) {
     tree_ = new TreeTemplate<Node>(*tree);
 }
-
-void pPIP::setSubstModel(bpp::SubstitutionModel *smodel) {
-    substModel_ = smodel;
-}
+//void pPIP::_setSubstModel(bpp::SubstitutionModel *smodel) {
+//    substModel_ = smodel;
+//}
 std::vector< std::string > pPIP::getMSA(bpp::Node *node){
     return MSA_.at(node->getId());
 }
@@ -147,8 +160,13 @@ bool pPIP::is_inside(unsigned long x0,unsigned long y0,unsigned long xf,unsigned
 
     return true;
 }
-void pPIP::set_indeces_M(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
-                       unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w){
+void pPIP::set_indeces_M(unsigned long &up_corner_i,
+                         unsigned long &up_corner_j,
+                         unsigned long &bot_corner_i,
+                         unsigned long &bot_corner_j,
+                         unsigned long level,
+                         unsigned long h,
+                         unsigned long w){
 
     if(level==0){
         up_corner_i=0;
@@ -163,8 +181,13 @@ void pPIP::set_indeces_M(unsigned long &up_corner_i,unsigned long &up_corner_j,u
     }
 
 }
-void pPIP::set_indeces_X(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
-                   unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w){
+void pPIP::set_indeces_X(unsigned long &up_corner_i,
+                         unsigned long &up_corner_j,
+                         unsigned long &bot_corner_i,
+                         unsigned long &bot_corner_j,
+                         unsigned long level,
+                         unsigned long h,
+                         unsigned long w){
 
     if(level==0){
         up_corner_i=0;
@@ -179,8 +202,13 @@ void pPIP::set_indeces_X(unsigned long &up_corner_i,unsigned long &up_corner_j,u
     }
 
 }
-void pPIP::set_indeces_Y(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
-                   unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w){
+void pPIP::set_indeces_Y(unsigned long &up_corner_i,
+                         unsigned long &up_corner_j,
+                         unsigned long &bot_corner_i,
+                         unsigned long &bot_corner_j,
+                         unsigned long level,
+                         unsigned long h,
+                         unsigned long w){
 
     if(level==0){
         up_corner_i=0;
@@ -195,8 +223,15 @@ void pPIP::set_indeces_Y(unsigned long &up_corner_i,unsigned long &up_corner_j,u
     }
 
 }
-signed long pPIP::get_indices_M(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
-                            unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w){
+signed long pPIP::get_indices_M(unsigned long nx,
+                                unsigned long ny,
+                                unsigned long up_corner_i,
+                                unsigned long up_corner_j,
+                                unsigned long bot_corner_i,
+                                unsigned long bot_corner_j,
+                                unsigned long m,
+                                unsigned long h,
+                                unsigned long w){
 
     signed long idx;
 
@@ -218,8 +253,15 @@ signed long pPIP::get_indices_M(unsigned long nx,unsigned long ny,unsigned long 
     return idx;
 
 }
-signed long pPIP::get_indices_X(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
-                            unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w){
+signed long pPIP::get_indices_X(unsigned long nx,
+                                unsigned long ny,
+                                unsigned long up_corner_i,
+                                unsigned long up_corner_j,
+                                unsigned long bot_corner_i,
+                                unsigned long bot_corner_j,
+                                unsigned long m,
+                                unsigned long h,
+                                unsigned long w){
 
     signed long idx;
 
@@ -241,8 +283,15 @@ signed long pPIP::get_indices_X(unsigned long nx,unsigned long ny,unsigned long 
     return idx;
 
 }
-signed long pPIP::get_indices_Y(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
-                            unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w){
+signed long pPIP::get_indices_Y(unsigned long nx,
+                                unsigned long ny,
+                                unsigned long up_corner_i,
+                                unsigned long up_corner_j,
+                                unsigned long bot_corner_i,
+                                unsigned long bot_corner_j,
+                                unsigned long m,
+                                unsigned long h,
+                                unsigned long w){
 
     signed long idx;
 
@@ -264,8 +313,13 @@ signed long pPIP::get_indices_Y(unsigned long nx,unsigned long ny,unsigned long 
     return idx;
 
 }
-void pPIP::set_indeces_T(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
-                   unsigned long &bot_corner_j,unsigned long level,unsigned long h,unsigned long w){
+void pPIP::set_indeces_T(unsigned long &up_corner_i,
+                         unsigned long &up_corner_j,
+                         unsigned long &bot_corner_i,
+                         unsigned long &bot_corner_j,
+                         unsigned long level,
+                         unsigned long h,
+                         unsigned long w){
 
     unsigned long up_corner_i_x;
     unsigned long up_corner_i_y;
@@ -301,8 +355,13 @@ void pPIP::set_indeces_T(unsigned long &up_corner_i,unsigned long &up_corner_j,u
     }
 
 }
-void pPIP::reset_corner(unsigned long &up_corner_i,unsigned long &up_corner_j,unsigned long &bot_corner_i,
-                  unsigned long &bot_corner_j,unsigned long h,unsigned long w){
+void pPIP::reset_corner(unsigned long &up_corner_i,
+                        unsigned long &up_corner_j,
+                        unsigned long &bot_corner_i,
+                        unsigned long &bot_corner_j,
+                        unsigned long h,
+                        unsigned long w){
+
     unsigned long delta;
 
     if(up_corner_j>=w){
@@ -317,8 +376,15 @@ void pPIP::reset_corner(unsigned long &up_corner_i,unsigned long &up_corner_j,un
     }
 
 }
-unsigned long pPIP::get_indices_T(unsigned long nx,unsigned long ny,unsigned long up_corner_i,unsigned long up_corner_j,
-                            unsigned long bot_corner_i,unsigned long bot_corner_j,unsigned long m,unsigned long h,unsigned long w){
+unsigned long pPIP::get_indices_T(unsigned long nx,
+                                  unsigned long ny,
+                                  unsigned long up_corner_i,
+                                  unsigned long up_corner_j,
+                                  unsigned long bot_corner_i,
+                                  unsigned long bot_corner_j,
+                                  unsigned long m,
+                                  unsigned long h,
+                                  unsigned long w){
 
     set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
 
@@ -336,9 +402,12 @@ unsigned long pPIP::get_indices_T(unsigned long nx,unsigned long ny,unsigned lon
     return idx;
 
 }
-int pPIP::index_of_max(double m, double x, double y,double epsilon,
-                 std::default_random_engine &generator,
-                 std::uniform_real_distribution<double> &distribution){
+int pPIP::index_of_max(double m,
+                       double x,
+                       double y,
+                       double epsilon,
+                       std::default_random_engine &generator,
+                       std::uniform_real_distribution<double> &distribution){
 
     double random_number;
 
@@ -454,8 +523,12 @@ double pPIP::max_of_three(double a, double b, double c,double epsilon){
     }
 
 }
-bool pPIP::checkboundary(unsigned long up_corner_i,unsigned long up_corner_j,unsigned long bot_corner_i,
-                   unsigned long bot_corner_j,unsigned long h,unsigned long w){
+bool pPIP::checkboundary(unsigned long up_corner_i,
+                         unsigned long up_corner_j,
+                         unsigned long bot_corner_i,
+                         unsigned long bot_corner_j,
+                         unsigned long h,
+                         unsigned long w){
 
     if( (up_corner_i  >=0) & (up_corner_i  <h) &\
 	   (up_corner_j  >=0) & (up_corner_j  <w) &\
@@ -468,24 +541,20 @@ bool pPIP::checkboundary(unsigned long up_corner_i,unsigned long up_corner_j,uns
 }
 std::string pPIP::createGapCol(unsigned long len){
 
+    // create an MSA column full of gaps
     std::string colMSA (len,'-');
 
     return colMSA;
 }
 void pPIP::build_MSA(bpp::Node *node, TracebackPath_t traceback_path){
 
+    // convert traceback path into an MSA
+
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
 
     int sonLeftID = treemap_.right.at(vnode_left);
     int sonRightID = treemap_.right.at(vnode_right);
-
-
-    //auto sons = node->getSons();
-    //auto s1 = sons.at(0);
-    //auto s2 = sons.at(1);
-    //unsigned long s1ID = (unsigned long)s1->getId();
-    //unsigned long s2ID = (unsigned long)s2->getId();
 
     MSA_t *MSA_L = &(MSA_.at(sonLeftID));
     MSA_t *MSA_R = &(MSA_.at(sonRightID));
@@ -518,7 +587,7 @@ void pPIP::build_MSA(bpp::Node *node, TracebackPath_t traceback_path){
             idx_j++;
 
         }else{
-            std::cerr << "ERROR";
+            perror("ERROR");
         }
     }
 
@@ -531,10 +600,6 @@ void pPIP::setMSAsequenceNames(bpp::Node *node){
 
     int sonLeftID = treemap_.right.at(vnode_left);
     int sonRightID = treemap_.right.at(vnode_right);
-
-    //auto sons = node->getSons();
-    //int s1ID = sons.at(LEFT)->getId();
-    //int s2ID = sons.at(RIGHT)->getId();
 
     std::vector<std::string> seqNames;
 
@@ -576,16 +641,20 @@ void pPIP::setMSAleaves(bpp::Node *node,const std::string &sequence){
 void pPIP::_setNu() {
 
     for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
+        // computes the normalizing constant with discrete rate variation (gamma distribution)
+        // nu(r) = lambda * r * (tau + 1/(mu *r))
         nu_.at(i) = lambda_.at(i) * (tau_ + 1 / mu_.at(i));
     }
 
 }
 void pPIP::_setLambda(double lambda){
 
+    // original lambda w/o rate variation
     lambda0 = lambda;
 
-    // insertion rate with rate variation among site
+    // insertion rate with rate variation among site r
     for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
+        // lambda(r) = lambda * r
         lambda_.at(i) = lambda * rDist_->getCategories().at(i);
     }
 
@@ -594,13 +663,15 @@ void pPIP::_setMu(double mu){
 
     // checks division by 0 or very small value
     if (fabs(mu) < SMALL_DOUBLE) {
-        std::cerr << "ERROR: mu is too small";
+        PLOG(FATAL) << "ERROR: mu is too small";
     }
 
+    // original mu w/o rate variation
     mu0 = mu;
 
-    // deletion rate with rate variation among site
+    // deletion rate with rate variation among site r
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        // mu(r) = mu *r
         mu_.at(i) = mu * rDist_->getCategories().at(i);
     }
 
@@ -608,10 +679,12 @@ void pPIP::_setMu(double mu){
 void pPIP::_setPi(const Vdouble &pi){
 
     // copy pi (steady state frequency distribution)
+    // pi is a colMatrix (column array) to simplify the matrix multiplication
     pi_.resize(pi.size(), 1);
     for(int i=0;i<pi.size();i++){
         pi_(i, 0) = pi.at(i);
     }
+
 }
 double pPIP::_setTauRecursive(tshlib::VirtualNode *vnode){
 
@@ -636,41 +709,7 @@ void pPIP::_setTau(tshlib::VirtualNode *vnode) {
     // computes the total tree length of the subtree rooted at vnode
     tau_=_setTauRecursive(vnode->getNodeLeft()) + _setTauRecursive(vnode->getNodeRight());
 
-    /*
-    std::vector<tshlib::VirtualNode *> ponl = utree_->getPostOrderNodeList(vnode);
-    std::vector<bpp::Node *> bpp_ponl = UtreeBppUtils::remapNodeLists(ponl, tree_, treemap_);
-
-    tau_ = 0;
-    for (auto &node:bpp_ponl) {
-        if (node->hasFather()) {
-            tau_ += node->getDistanceToFather();
-        }
-    }
-    */
 }
-
-/*
-void pPIP::_setAllIotas(std::vector<tshlib::VirtualNode *> &listNodes) {
-    double T;
-
-    T = tau_ + 1/mu_;
-
-    if (fabs(T) < SMALL_DOUBLE) {
-        perror("ERROR in set_iota: T too small");
-    }
-
-    for (auto &vnode:listNodes) {
-
-        auto node = tree_->getNode(treemap_->right.at(vnode),false);
-
-        if (!node->hasFather()) {
-            iotaNode_.at(node->getId())=(1/mu_)/T;
-        } else {
-            iotaNode_.at(node->getId())=node->getDistanceToFather()/T;
-        }
-    }
-}
- */
 void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
     double T;
 
@@ -679,29 +718,38 @@ void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
 
     if (local_root) {
 
-        for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
-            T = tau_ + 1 / mu_.at(i);
+        for (int catg = 0; catg < rDist_->getNumberOfCategories(); catg++) {
+
+            // T(r) = tau + 1/ (mu * r)
+            T = tau_ + 1 / mu_.at(catg);
 
             // checks division by 0 or too small number
             if (fabs(T) < SMALL_DOUBLE) {
                 PLOG(WARNING) << "ERROR in set_iota: T too small";
             }
 
-            iotasNode_[node->getId()][i] = (1 / mu_.at(i)) / T;
+            // iota(root,r) = (lambda * r)/ (mu * r) / (lambda * r * (tau + 1/ (mu * r) ) )
+            //           = 1 / (mu * r) / (tau + 1/ (mu *r) )
+            iotasNode_[node->getId()][catg] = (1 / mu_.at(catg)) / T;
 
         }
 
     }else{
 
-        for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
-            T = tau_ + 1 / mu_.at(i);
+        for (int catg = 0; catg < rDist_->getNumberOfCategories(); catg++) {
+
+            // T(r) = tau + 1/(mu * r)
+            T = tau_ + 1 / mu_.at(catg);
 
             // checks division by 0 or too small number
             if (fabs(T) < SMALL_DOUBLE) {
                 PLOG(WARNING) << "ERROR in set_iota: T too small";
             }
 
-            iotasNode_[node->getId()][i] = node->getDistanceToFather() * rDist_->getCategory(i) / T;
+            //iotasNode_[node->getId()][catg] = (node->getDistanceToFather() * rDist_->getCategory(catg) ) / T;
+            // iota(v,r) = ( lambda * r * b(v) ) / (lambda * r * (tau + 1/ (mu *r) ) )
+            //           = b(v) / (tau + 1/ (mu *r) )
+            iotasNode_[node->getId()][catg] = node->getDistanceToFather() / T;
         }
 
     }
@@ -716,8 +764,8 @@ void pPIP::_setAllIotas(bpp::Node *node,bool local_root) {
         int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-        _setAllIotas(sonLeft, false);
-        _setAllIotas(sonRight, false);
+        _setAllIotas(sonLeft, false);  // false: only at the first call local_root=true (first node is the actual root)
+        _setAllIotas(sonRight, false); // false: only at the first call local_root=true (first node is the actual root)
 
     }
 
@@ -729,22 +777,25 @@ void pPIP::_setAllBetas(bpp::Node *node,bool local_root) {
 
     if(local_root){
 
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
-            betasNode_[node->getId()][i] = 1.0;
+        for (int catg = 0; catg < rDist_->getNumberOfCategories(); catg++) {
+            // by definition at the root (ev. local root) the survival probabiloty is 1
+            betasNode_[node->getId()][catg] = 1.0;
         }
 
     }else{
 
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
+        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
 
-            double muT = mu_.at(i) * node->getDistanceToFather() * rDist_->getCategory(i);
+            // muT(r) = r * mu * b(v)
+            double muT = rDist_->getCategory(catg) * mu_.at(catg) * node->getDistanceToFather();
 
             // checks division by 0 or too small value
             if (fabs(muT) < SMALL_DOUBLE) {
-                std::cerr << "ERROR mu * T is too small";
+                perror("ERROR mu * T is too small");
             }
-
-            betasNode_[node->getId()][i] = (1.0 - exp(-mu_.at(i) * node->getDistanceToFather() * rDist_->getCategory(i) )) / muT;
+            // survival probability on node v (different from (local)-root)
+            // beta(v,r) = (1 - exp( -mu * r * b(v) )) / (mu * r * b(v))
+            betasNode_[node->getId()][catg] = (1.0 - exp(-muT)) / muT;
         }
     }
 
@@ -760,38 +811,12 @@ void pPIP::_setAllBetas(bpp::Node *node,bool local_root) {
         int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-        //auto sons = node->getSons();
-
-        _setAllBetas(sonLeft, false);
-        _setAllBetas(sonRight, false);
+        _setAllBetas(sonLeft, false); // false: only at the first call local_root=true (first node is the actual root)
+        _setAllBetas(sonRight, false); // false: only at the first call local_root=true (first node is the actual root)
 
     }
 
 }
-
-/*
-void pPIP::_setAllBetas(std::vector<tshlib::VirtualNode *> &listNodes) {
-
-    for (auto &vnode:listNodes) {
-
-        auto node = tree_->getNode(treemap_->right.at(vnode),false);
-
-        if (!node->hasFather()) {
-            betaNode_.at(node->getId())=1.0;
-        } else {
-
-            double muT = mu_ * node->getDistanceToFather();
-            if (fabs(muT) < SMALL_DOUBLE) {
-                perror("ERROR mu * T is too small");
-            }
-
-            betaNode_.at(node->getId())= (1.0 - exp(-mu_ * node->getDistanceToFather())) / muT;
-        }
-
-    }
-
-}
- */
 void pPIP::_getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNodes) {
 
     for (auto &vnode:listNodes) {
@@ -802,16 +827,22 @@ void pPIP::_getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNod
             // root node doesn't have Pr
         } else {
             for(int i=0;i<rDist_->getNumberOfCategories();i++) {
-                // exp(branchLength * rateVariation * Q)
-                prNode_[node->getId()].at(i)=substModel_->getPij_t(node->getDistanceToFather() * rDist_->getCategory(i));
+                // substitution/deletion probabilities with rate variation (gamma)
+                // Pr = exp( branchLength * rateVariation * Q )
+                prNode_[node->getId()].at(i)=substModel_->getPij_t( node->getDistanceToFather() * rDist_->getCategory(i) );
             }
         }
 
     }
 
 }
-
 bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn_t &s, unsigned long &idx){
+
+    // TODO: indicator functions in the initialization, here only retrieval of values
+
+    // fills the indicator function (array) I
+    // I is an array of zeros and a 1 only at the position of the observed char
+
     bpp::ColMatrix<double> fv;
     int ii;
     char ch=s[idx];
@@ -827,13 +858,9 @@ bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn_t &s, unsigned long &idx){
 
     return fv;
 }
-bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx,int catg){
-    bpp::ColMatrix<double> fv;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    bpp::ColMatrix<double> PrfvL;
-    bpp::ColMatrix<double> PrfvR;
+bpp::ColMatrix<double> pPIP::computeFVrec(bpp::Node *node, MSAcolumn_t &s, unsigned long &idx, int catg){
 
+    bpp::ColMatrix<double> fv;
 
     if(node->isLeaf()){
 
@@ -850,11 +877,21 @@ bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned lo
         int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-        fvL = go_down(sonLeft, s, idx, catg);
-        fvR = go_down(sonRight, s, idx, catg);
+        // computes the recursive Felsenstein's peeling weight on the left subtree
+        bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, s, idx, catg);
 
+        // computes the recursive Felsenstein's peeling weight on the right subtree
+        bpp::ColMatrix<double> fvR = computeFVrec(sonRight, s, idx, catg);
+
+        // PrfvL = Pr_L * fv_L
+        bpp::ColMatrix<double> PrfvL;
         bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+
+        // PrfvR = Pr_R * fv_R
+        bpp::ColMatrix<double> PrfvR;
         bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+
+        // fv = PrfvL * PrfvR
         bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
     }
@@ -862,6 +899,8 @@ bpp::ColMatrix<double> pPIP::go_down(bpp::Node *node,MSAcolumn_t &s, unsigned lo
     return fv;
 }
 void pPIP::allgaps(bpp::Node *node,std::string &s, unsigned long &idx,bool &flag){
+
+    // flag is true if all the leaves of the subtree rooted in node contain a gap
 
     if(node->isLeaf()){
         char ch=s[idx];
@@ -883,158 +922,34 @@ void pPIP::allgaps(bpp::Node *node,std::string &s, unsigned long &idx,bool &flag
         int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-        //auto sons = node->getSons();
         allgaps(sonLeft, s, idx, flag);
         allgaps(sonRight, s, idx, flag);
     }
 
 }
-double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s){
+double pPIP::compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s,int catg){
 
-    double pr=0;
-    double pL=0;
-    double pR=0;
     unsigned long idx;
-    bpp::ColMatrix<double> fv;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    double fv0;
 
     int nodeID = node->getId();
 
     if(node->isLeaf()){
-        pr=0;
-        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
-            idx=0;
-            fv=go_down(node,s,idx,catg);
 
-            fv0 = MatrixBppUtils::dotProd(fv, pi_);
+        idx=0;
+        bpp::ColMatrix<double> fv= computeFVrec(node, s, idx, catg);
 
-            pr += iotasNode_[nodeID][catg] - iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] + iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+        // fv0 = pi * fv
+        double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        }
+        // lk of non survival till the leaves
+        // lk = iota(v,r) - iota(v,r)*beta(v,r) + iota(v,r)*beta(v,r)*fv
+        double pr = iotasNode_[nodeID][catg] - \
+             iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] + \
+             iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
         return pr;
 
-    }else{
-
-        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
-
-        int sonLeftID = treemap_.right.at(vnode_left);
-        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
-
-        int sonRightID = treemap_.right.at(vnode_right);
-        bpp::Node *sonRight = tree_->getNode(sonRightID);
-
-        pr=0;
-        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
-            idx=0;
-            fv=go_down(node,s,idx,catg);
-
-            fv0 = MatrixBppUtils::dotProd(fv, pi_);
-
-            pr += iotasNode_[nodeID][catg] - iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] + iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
-        }
-
-        bool flagL=true;
-        bool flagR=true;
-        idx=0;
-        allgaps(sonLeft, s, idx, flagL);
-        unsigned long ixx=idx;
-        allgaps(sonRight, s, idx, flagR);
-        unsigned long len;
-
-        MSAcolumn_t sL;
-        len=ixx;
-        sL=s.substr(0,len);
-        pL = compute_lk_gap_down(sonLeft, sL);
-
-        MSAcolumn_t sR;
-        sR=s.substr(ixx);
-        pR = compute_lk_gap_down(sonRight, sR);
     }
-
-    return pr+pL+pR;
-}
-double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s){
-
-    double pr;
-    unsigned long idx;
-    bpp::ColMatrix<double> fv;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    double fv0;
-
-    //auto sons = node->getSons();
-
-    int nodeID = node->getId();
-
-    if(node->isLeaf()){
-        pr = 0;
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
-            idx=0;
-            fv=go_down(node,s,idx,i);
-            fv0 = MatrixBppUtils::dotProd(fv, pi_);
-
-            pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
-        }
-        return pr;
-
-    }else{
-
-        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
-
-        int sonLeftID = treemap_.right.at(vnode_left);
-        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
-
-        int sonRightID = treemap_.right.at(vnode_right);
-        bpp::Node *sonRight = tree_->getNode(sonRightID);
-
-        pr = 0;
-        for (int i = 0; i < rDist_->getCategories().size(); i++) {
-            idx=0;
-            fv=go_down(node,s,idx,i);
-            fv0 = MatrixBppUtils::dotProd(fv, pi_);
-
-            pr += iotasNode_[nodeID][i] * betasNode_[nodeID][i] * fv0;
-        }
-
-        bool flagL=true;
-        bool flagR=true;
-        idx=0;
-        allgaps(sonLeft, s, idx, flagL);
-        unsigned long ixx=idx;
-        allgaps(sonRight, s, idx, flagR);
-
-        unsigned long len;
-        if(flagR){
-            std::string sL;
-            len=ixx;
-            sL=s.substr(0,len);
-            return pr + compute_lk_down(sonLeft, sL);
-        }
-
-        if(flagL){
-            std::string sR;
-            sR=s.substr(ixx);
-            return pr + compute_lk_down(sonRight, sR);
-        }
-
-    }
-
-    return pr;
-}
-double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR){
-    double fv0;
-    double pr;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    bpp::ColMatrix<double> PrfvL;
-    bpp::ColMatrix<double> PrfvR;
-    bpp::ColMatrix<double> fv;
-    unsigned long idx;
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -1045,34 +960,162 @@ double pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolu
     int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    pr = 0;
-    for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
-        idx=0;
-        fvL = go_down(sonLeft, sL, idx, catg);
+    idx=0;
+    bpp::ColMatrix<double> fv= computeFVrec(node, s, idx, catg);
+
+    // fv0 = pi * fv
+    double fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
+    // lk of non survival till the leaves
+    // lk = iota(v,r) - iota(v,r)*beta(v,r) + iota(v,r)*beta(v,r)*fv
+    double pr = iotasNode_[nodeID][catg] - \
+         iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] + \
+         iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+
+
+    bool flagL=true;
+    bool flagR=true;
+    idx=0;
+    allgaps(sonLeft, s, idx, flagL);
+
+    unsigned long ixx=idx;
+    allgaps(sonRight, s, idx, flagR);
+
+    unsigned long len;
+
+    MSAcolumn_t sL;
+    len=ixx;
+    sL=s.substr(0,len);
+    double pL = compute_lk_gap_down(sonLeft, sL, catg);
+
+    MSAcolumn_t sR;
+    sR=s.substr(ixx);
+    double pR = compute_lk_gap_down(sonRight, sR,catg);
+
+    return pr+pL+pR;
+}
+double pPIP::compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg){
+
+    unsigned long idx;
+    //bpp::ColMatrix<double> fvL;
+    //bpp::ColMatrix<double> fvR;
+
+    int nodeID = node->getId();
+
+    if(node->isLeaf()){
 
         idx=0;
-        fvR = go_down(sonRight, sR, idx, catg);
+        bpp::ColMatrix<double> fv= computeFVrec(node, s, idx, catg);
 
-        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
-        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
-        bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
+        // fv0 = pi * fv
+        double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        fv0 = MatrixBppUtils::dotProd(fv, pi_);
+        double pr = iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
 
-        double pL,pR;
-        double partialLK;
+        return pr;
 
-        partialLK = iotasNode_[node->getId()][catg] * fv0 * rDist_->getCategories().at(catg);
-        pL = compute_lk_gap_down(sonLeft, sL);
-        pR = compute_lk_gap_down(sonRight, sR);
+    }
 
-        pr += partialLK + pL + pR;
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+    int sonLeftID = treemap_.right.at(vnode_left);
+    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+    int sonRightID = treemap_.right.at(vnode_right);
+    bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+    idx=0;
+    bpp::ColMatrix<double> fv= computeFVrec(node, s, idx, catg);
+
+    // fv0 = pi * fv
+    double fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
+    double pr = iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+
+    bool flagL=true;
+    bool flagR=true;
+    idx=0;
+    allgaps(sonLeft, s, idx, flagL);
+    unsigned long ixx=idx;
+    allgaps(sonRight, s, idx, flagR);
+
+    unsigned long len;
+    if(flagR){
+        std::string sL;
+        len=ixx;
+        sL=s.substr(0,len);
+        return pr + compute_lk_down(sonLeft, sL, catg);
+    }
+
+    if(flagL){
+        std::string sR;
+        sR=s.substr(ixx);
+        return pr + compute_lk_down(sonRight, sR, catg);
     }
 
     return pr;
 }
+std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR){
 
-double pPIP::computeLK_M_local(double valM,
+    // number of discrete gamma categories
+    int num_gamma_categories = rDist_->getNumberOfCategories();
+
+    // array of lk (for each gamma rate) of a single column full of gaps
+    std::vector<double> pc0;
+    pc0.resize(num_gamma_categories);
+
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+    int sonLeftID = treemap_.right.at(vnode_left);
+    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+    int sonRightID = treemap_.right.at(vnode_right);
+    bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+    for (int catg = 0; catg < num_gamma_categories; catg++) {
+
+        unsigned long idx;
+
+        // computes the recursive Felsenstein's peeling weight on the left subtree
+        idx=0;
+        bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
+
+        // computes the recursive Felsenstein's peeling weight on the right subtree
+        idx=0;
+        bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
+
+        // PrfvL = Pr_L * fv_L
+        bpp::ColMatrix<double> PrfvL;
+        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+
+        // PrfvR = Pr_R * fv_R
+        bpp::ColMatrix<double> PrfvR;
+        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+
+        // fv = PrfvL * PrfvR
+        bpp::ColMatrix<double> fv;
+        bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
+
+        // fv0 = pi * fv
+        double fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
+        // lk at the actual node (considered as root node => beta = 1.0)
+        double p0 = iotasNode_[node->getId()][catg] * fv0;
+
+        double pL = compute_lk_gap_down(sonLeft, sL, catg);
+
+        double pR = compute_lk_gap_down(sonRight, sR, catg);
+
+        pc0.at(catg) = p0 + pL + pR;
+    }
+
+    return pc0;
+}
+
+double pPIP::computeLK_M_local(double NU,
+                               double valM,
                                double valX,
                                double valY,
                                bpp::Node *node,
@@ -1081,17 +1124,7 @@ double pPIP::computeLK_M_local(double valM,
                                unsigned long m,
                                std::map<MSAcolumn_t, double> &lkM){
 
-    double pr;
-    double val;
-
-    MSAcolumn_t s;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    bpp::ColMatrix<double> PrfvL;
-    bpp::ColMatrix<double> PrfvR;
-    bpp::ColMatrix<double> fv;
-    double fv0;
-    unsigned long idx;
+    double log_pr;
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -1105,47 +1138,71 @@ double pPIP::computeLK_M_local(double valM,
     int nodeID = node->getId();
 
     // create left + right column
+    MSAcolumn_t s;
     s.append(sL);
     s.append(sR);
 
     auto it=lkM.find(s);
     if(it == lkM.end()){
-        pr = 0;
-        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
-            idx=0;
-            fvL = go_down(sonLeft, sL, idx, catg);
+        // is the first time that it computes the lk of this column
 
-            idx=0;
-            fvR = go_down(sonRight, sR, idx, catg);
+        unsigned long idx;
 
+        // number of discrete gamma categories
+        int num_gamma_categories = rDist_->getNumberOfCategories();
+
+        double pr = 0.0;
+        for (int catg = 0; catg < num_gamma_categories; catg++) {
+
+            // computes the recursive Felsenstein's peeling weight on the left subtree
+            idx=0;
+            bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
+
+            // computes the recursive Felsenstein's peeling weight on the right subtree
+            idx=0;
+            bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
+
+            // PrfvL = Pr_L * fv_L
+            bpp::ColMatrix<double> PrfvL;
             bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+
+            // PrfvR = Pr_R * fv_R
+            bpp::ColMatrix<double> PrfvR;
             bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+
+            // fv = PrfvL * PrfvR
+            bpp::ColMatrix<double> fv;
             bpp::MatrixTools::hadamardMult(PrfvL,PrfvR,fv);
 
-            fv0 = MatrixBppUtils::dotProd(fv, pi_);
+            // fv0 = pi * fv
+            double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            pr += iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+            // match probability with gamma
+            double p = rDist_->getProbability((size_t)catg) * \
+                       iotasNode_[nodeID][catg] * \
+                       betasNode_[nodeID][catg] * \
+                       fv0;
 
+            // marginal lk, marginalized over N gamma discrete classes
+            pr += p;
         }
 
-        pr = log((long double)pr);
+        log_pr = log((long double)pr);
 
-        lkM[s]=pr;
+        lkM[s]=log_pr;
 
     }else{
-        pr=it->second;
+        // the lk of a column like this has been already computed,
+        // the lk value can be retrieved from the map
+
+        log_pr=it->second;
     }
 
-    val=0.0;
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        double logPrCat = log(rDist_->getProbability((size_t)i));
-        logPrCat=0;
-        val += (logPrCat -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
-    }
-
-    return val;
+    //return  log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return  log(NU)-log((double)m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 }
-double pPIP::computeLK_X_local(double valM,
+double pPIP::computeLK_X_local(double NU,
+                               double valM,
                                double valX,
                                double valY,
                                bpp::Node *node,
@@ -1154,19 +1211,7 @@ double pPIP::computeLK_X_local(double valM,
                                unsigned long m,
                                std::map<MSAcolumn_t, double> &lkX){
 
-
-    double pr;
-    double val;
-
-    MSAcolumn_t s;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    bpp::ColMatrix<double> PrfvL;
-    bpp::ColMatrix<double> PrfvR;
-    bpp::ColMatrix<double> fv;
-    unsigned long idx;
-    double fv0;
-
+    double log_pr;
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -1180,54 +1225,72 @@ double pPIP::computeLK_X_local(double valM,
     int nodeID = node->getId();
 
     // create left + right column
+    MSAcolumn_t s;
     s.append(sL);
     s.append(col_gap_R);
 
     auto it=lkX.find(s);
     if(it == lkX.end()){
-        pr = 0;
-        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
-            idx = 0;
-            fvL = go_down(sonLeft, sL, idx, catg);
+        // is the first time that it computes the lk of this column
 
-            idx = 0;
-            fvR = go_down(sonRight, col_gap_R, idx, catg);
+        unsigned long idx;
 
+        // number of discrete gamma categories
+        int num_gamma_categories = rDist_->getNumberOfCategories();
+
+        double pr = 0.0;
+        for (int catg = 0; catg < num_gamma_categories; catg++) {
+
+            // computes the recursive Felsenstein's peeling weight on the left subtree
+            idx = 0;
+            bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
+
+            // computes the recursive Felsenstein's peeling weight on the right subtree
+            idx = 0;
+            bpp::ColMatrix<double> fvR = computeFVrec(sonRight, col_gap_R, idx, catg);
+
+            // PrfvL = Pr_L * fv_L
+            bpp::ColMatrix<double> PrfvL;
             bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+
+            // PrfvR = Pr_R * fv_R
+            bpp::ColMatrix<double> PrfvR;
             bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+
+            // fv = PrfvL * PrfvR
+            bpp::ColMatrix<double> fv;
             bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
-            fv0 = MatrixBppUtils::dotProd(fv, pi_);
+            // fv0 = pi * fv
+            double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            pr += iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+            // gapX probability with gamma
+            double p0 = rDist_->getProbability((size_t)catg) * \
+                        iotasNode_[nodeID][catg] * \
+                        betasNode_[nodeID][catg] * \
+                        fv0;
 
-            double pL;
+            double pL = compute_lk_down(sonLeft, sL, catg);
 
-            pL = compute_lk_down(sonLeft, sL);
-
-            pr += pL;
-
+            pr += p0 + pL;
         }
 
-        pr = log((long double) pr);
+        log_pr = log((long double) pr);
 
-        lkX[s] = pr;
+        lkX[s] = log_pr;
 
     }else{
-        pr=it->second;
+        // the lk of a column like this has been already computed,
+        // the lk value can be retrieved from the map
+
+        log_pr=it->second;
     }
 
-    val=0.0;
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        double logPrCat = log(rDist_->getProbability((size_t)i));
-        logPrCat=0;
-        val += (logPrCat -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
-    }
-
-
-    return val;
+    //return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return  log(NU)-log((double)m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 }
-double pPIP::computeLK_Y_local(double valM,
+double pPIP::computeLK_Y_local(double NU,
+                               double valM,
                                double valX,
                                double valY,
                                bpp::Node *node,
@@ -1236,18 +1299,7 @@ double pPIP::computeLK_Y_local(double valM,
                                unsigned long m,
                                std::map<MSAcolumn_t, double> &lkY){
 
-
-    double pr;
-    double val;
-
-    MSAcolumn_t s;
-    bpp::ColMatrix<double> fvL;
-    bpp::ColMatrix<double> fvR;
-    bpp::ColMatrix<double> PrfvL;
-    bpp::ColMatrix<double> PrfvR;
-    bpp::ColMatrix<double> fv;
-    unsigned long idx;
-    double fv0;
+    double log_pr;
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -1260,63 +1312,94 @@ double pPIP::computeLK_Y_local(double valM,
 
     int nodeID = node->getId();
 
+    // create left + right column
+    MSAcolumn_t s;
     s.append(col_gap_L);
     s.append(sR);
 
     auto it=lkY.find(s);
     if(it == lkY.end()){
-        pr = 0;
-        for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
-            idx = 0;
-            fvL = go_down(sonLeft, col_gap_L, idx, catg);
+        // is the first time that it computes the lk of this column
 
-            idx = 0;
-            fvR = go_down(sonRight, sR, idx, catg);
+        // number of discrete gamma categories
+        int num_gamma_categories = rDist_->getNumberOfCategories();
 
+        unsigned long idx;
+
+        double pr = 0.0;
+        for (int catg = 0; catg < num_gamma_categories; catg++) {
+
+            // computes the recursive Felsenstein's peeling weight on the left subtree
+            idx = 0;
+            bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, col_gap_L, idx, catg);
+
+            // computes the recursive Felsenstein's peeling weight on the right subtree
+            idx = 0;
+            bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
+
+            // PrfvL = Pr_L * fv_L
+            bpp::ColMatrix<double> PrfvL;
             bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+
+            // PrfvR = Pr_R * fv_R
+            bpp::ColMatrix<double> PrfvR;
             bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+
+            // fv = PrfvL * PrfvR
+            bpp::ColMatrix<double> fv;
             bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
-            fv0 = MatrixBppUtils::dotProd(fv, pi_);
+            // fv0 = pi * fv
+            double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-            pr += iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0;
+            // gapY probability with gamma
+            double p0 = rDist_->getProbability((size_t)catg) * \
+                        iotasNode_[nodeID][catg] * \
+                        betasNode_[nodeID][catg] * \
+                        fv0;
 
-            double pR;
+            double pR = compute_lk_down(sonRight, sR, catg);
 
-            pR = compute_lk_down(sonRight, sR);
-
-            pr += pR;
+            pr += p0 + pR;
 
         }
 
-        pr = log((long double) pr);
+        log_pr = log((long double) pr);
 
-        lkY[s] = pr;
+        lkY[s] = log_pr;
 
     }else{
-        pr=it->second;
+        // the lk of a column like this has been already computed,
+        // the lk value can be retrieved from the map
+
+        log_pr=it->second;
     }
 
-    val=0.0;
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        double logPrCat = log(rDist_->getProbability((size_t)i));
-        logPrCat=0;
-        val += (logPrCat -log((long double) m) + log((long double) nu_.at(i)) + pr + max_of_three(valM, valX, valY, DBL_EPSILON));
-    }
-
-    return val;
+    //return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return  log(NU)-log((double)m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 }
 
 void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
-    //TODO: place as argument
-    bool randomSeed = true; // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
+    // TODO: place as argument
+    // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
+    bool randomSeed = true;
+
+    // number of discrete gamma categories
+    int num_gamma_categories = rDist_->getNumberOfCategories();
 
     if(local){
-        _setTau(treemap_.left.at(node->getId()));  // recompute local tau, total tree length of a tree root at the given node
-        _setNu(); // recompute the normalizing factor nu for the local tree
-        _setAllIotas(node,true); // recompute lambdas with the new normalizing factor (local tree), flag true = tree rooted here
-        _setAllBetas(node,true); // recompute betas with the new normalizing factor (local tree), flag true = tree rooted here
+        // recompute local tau, total tree length of a tree root at the given node
+        _setTau(treemap_.left.at(node->getId()));
+
+        // recompute the normalizing factor nu for the local tree
+        _setNu();
+
+        // recompute lambdas with the new normalizing factor (local tree), flag true = tree rooted here
+        _setAllIotas(node,true);
+
+        // recompute betas with the new normalizing factor (local tree), flag true = tree rooted here
+        _setAllBetas(node,true);
     }
 
     unsigned long up_corner_i;
@@ -1339,12 +1422,14 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     unsigned long d=(h-1)+(w-1)+1; // third dimension of the DP matrix
 
-    double pc0;  // lk of empty column (full of gaps)
+    // lk of a single empty column (full of gaps) with rate variation (gamma distribution)
+    std::vector<double> pc0;
 
-    MSAcolumn_t sLs;
-    MSAcolumn_t sRs;
-    MSAcolumn_t col_gap_Ls;
-    MSAcolumn_t col_gap_Rs;
+    // MSA columns
+    MSAcolumn_t sLs; // left column
+    MSAcolumn_t sRs; // right column
+    MSAcolumn_t col_gap_Ls; // left column full of gaps
+    MSAcolumn_t col_gap_Rs; //right column full of gaps
 
     unsigned long numLeavesLeft = seqNames_.at(s1ID).size(); // number of leaves in the left sub-tree
     unsigned long numLeavesRight = seqNames_.at(s2ID).size(); // number of leaves in the right sub-tree
@@ -1356,7 +1441,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     if(randomSeed){
         seed = std::chrono::system_clock::now().time_since_epoch().count(); // "random" seed
     }else{
-        seed = 0;
+        seed = 0; // fixed seed
     }
 
     std::default_random_engine generator(seed);
@@ -1367,7 +1452,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     //***************************************************************************************
     //***************************************************************************************
     if(local){
-        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs); // compute the lk of a column full of gaps
+        // compute the lk of a column full of gaps
+        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs);
     }else{
         /*
         pc0 = compute_pr_gap_all_edges_s(node,
@@ -1387,22 +1473,53 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     auto** TR = new int*[d]; // 3D traceback matrix
 
-    LogM[0] = new double[int((w*(h+1))/2)];
-    LogX[0] = new double[int((w*(h+1))/2)];
-    LogY[0] = new double[int((w*(h+1))/2)];
-    LogM[1] = new double[int((w*(h+1))/2)];
-    LogX[1] = new double[int((w*(h+1))/2)];
-    LogY[1] = new double[int((w*(h+1))/2)];
+    // max num of cells occupied in a layer
+    int numcells = int((w * (h + 1)) / 2);
 
-    LogM[0][0] = 0;
-    LogX[0][0] = 0;
-    LogY[0][0] = 0;
+    // allocate memory for the 2 layers
+    LogM[0] = new double[numcells];
+    LogX[0] = new double[numcells];
+    LogY[0] = new double[numcells];
+    LogM[1] = new double[numcells];
+    LogX[1] = new double[numcells];
+    LogY[1] = new double[numcells];
 
-    for (int i = 0; i < rDist_->getCategories().size(); i++) {
-        LogM[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
-        LogX[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
-        LogY[0][0] += nu_.at(i) * (pc0 - 1.0); // log( exp( ||nu|| (pc0-1) ) )
+    //============================================================
+    // marginal likelihood for all empty columns with rate variation (gamma distribution)
+    // phi(m,pc0,r) depends on the MSA length m
+
+    // marginal phi marginalized over gamma categories
+    double log_phi_gamma;
+    double prev_log_phi_gamma; // to store old value
+
+    auto** PHI = new double *[d];
+    double PC0 = 0.0;
+    double NU = 0.0;
+
+    for(int i=0;i<d;i++){
+        PHI[i] = new double[num_gamma_categories];
     }
+
+    for (int catg = 0; catg < num_gamma_categories; catg++) {
+        // log( P_gamma(r) * phi(0,pc0(r),r) ): marginal lk for all empty columns of an alignment of size 0
+        // PHI[0][catg] = log(rDist_->getProbability((size_t)catg)) + (nu_.at(catg) * (pc0.at(catg) - 1.0));
+        PC0 += rDist_->getProbability((size_t)catg) * pc0.at(catg);
+        NU += rDist_->getProbability((size_t)catg) *nu_.at(catg);
+    }
+
+
+
+    // computes the marginal phi marginalized over all the gamma categories
+    log_phi_gamma = NU * (PC0-1);
+    //log_phi_gamma = PHI[0][0];
+    //for (int catg = 1; catg < num_gamma_categories; catg++) {
+    //    log_phi_gamma=pPIPUtils::add_lns(log_phi_gamma,PHI[0][catg]);
+    //}
+    //============================================================
+
+    LogM[0][0] = log_phi_gamma;
+    LogX[0][0] = log_phi_gamma;
+    LogY[0][0] = log_phi_gamma;
 
     TR[0] = new int[1]();
     TR[0][0]=STOP_STATE;
@@ -1431,13 +1548,19 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     int start_depth;
     unsigned long depth;
 
-    bool flag_exit=false;
     unsigned long last_d=d-1;
     unsigned long size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
     std::map<MSAcolumn_t,double> lkM;
     std::map<MSAcolumn_t,double> lkX;
     std::map<MSAcolumn_t,double> lkY;
 
+    //============================================================
+    // early stop condition flag
+    bool flag_exit=false;
+    int counter_to_early_stop;
+    int max_decrease_before_stop = 10;
+    double prev_lk = std::numeric_limits<double>::infinity();
+    //============================================================
     for(unsigned long m=1;m<d;m++){
 
         if(flag_exit){
@@ -1447,11 +1570,41 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
         // alternate the two layers
         m_binary_this=m%2;
         m_binary_prev=(m+1)%2;
-        //***************************************************************************************
-        //***************************************************************************************
-        set_indeces_M(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
 
-        if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)) {
+        //***************************************************************************************
+        //***************************************************************************************
+        for (int catg = 0; catg < num_gamma_categories; catg++) {
+            // computes the marginal phi(m,pc0(r),r) with gamma by multiplying the starting value
+            // phi(0,pco(r),r) = log( P_gamma(r) * exp( nu(r) * (pc0(r)-1) ) ) with
+            // 1/m * nu(r) at each new layer
+            PHI[m][catg] = PHI[m-1][catg] - log((long double) m) + log((long double) nu_.at(catg));
+        }
+
+        // store old value
+        prev_log_phi_gamma = log_phi_gamma;
+
+        // computes the marginal phi marginalized over all the gamma categories
+        log_phi_gamma = PHI[m][0];
+        for (int catg = 1; catg < num_gamma_categories; catg++) {
+            log_phi_gamma=pPIPUtils::add_lns(log_phi_gamma,PHI[m][catg]);
+        }
+        //***************************************************************************************
+        //***************************************************************************************
+
+        //***************************************************************************************
+        //***************************************************************************************
+        // COMPUTES MATCH LK
+        set_indeces_M(up_corner_i,
+                      up_corner_j,
+                      bot_corner_i,
+                      bot_corner_j,
+                      m,h,w);
+
+        if(checkboundary(up_corner_i,
+                         up_corner_j,
+                         bot_corner_i,
+                         bot_corner_j,
+                         h,w)) {
 
             lw = 0;
             for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
@@ -1472,27 +1625,45 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     // get right MSA column
                     sRs = (MSA_.at(s2ID).at(coordSeq_2));
 
-                    idx = get_indices_M(coordTriangle_prev_i, coordTriangle_prev_j, up_corner_i, up_corner_j,
-                                        bot_corner_i, bot_corner_j, m - 1, h, w);
+                    idx = get_indices_M(coordTriangle_prev_i,
+                                        coordTriangle_prev_j,
+                                        up_corner_i,
+                                        up_corner_j,
+                                        bot_corner_i,
+                                        bot_corner_j,
+                                        m - 1, h, w);
                     if (idx >= 0) {
                         valM = LogM[m_binary_prev][idx];
                     } else {
+                        // unreachable region of the 3D matrix
                         valM = -std::numeric_limits<double>::infinity();
                     }
 
-                    idx = get_indices_X(coordTriangle_prev_i, coordTriangle_prev_j, up_corner_i, up_corner_j,
-                                        bot_corner_i, bot_corner_j, m - 1, h, w);
+                    idx = get_indices_X(coordTriangle_prev_i,
+                                        coordTriangle_prev_j,
+                                        up_corner_i,
+                                        up_corner_j,
+                                        bot_corner_i,
+                                        bot_corner_j,
+                                        m - 1, h, w);
                     if (idx >= 0) {
                         valX = LogX[m_binary_prev][idx];
                     } else {
+                        // unreachable region of the 3D matrix
                         valX = -std::numeric_limits<double>::infinity();
                     }
 
-                    idx = get_indices_Y(coordTriangle_prev_i, coordTriangle_prev_j, up_corner_i, up_corner_j,
-                                        bot_corner_i, bot_corner_j, m - 1, h, w);
+                    idx = get_indices_Y(coordTriangle_prev_i,
+                                        coordTriangle_prev_j,
+                                        up_corner_i,
+                                        up_corner_j,
+                                        bot_corner_i,
+                                        bot_corner_j,
+                                        m - 1, h, w);
                     if (idx >= 0) {
                         valY = LogY[m_binary_prev][idx];
                     } else {
+                        // unreachable region of the 3D matrix
                         valY = -std::numeric_limits<double>::infinity();
                     }
 
@@ -1502,7 +1673,12 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
                     if (local) {
                         // compute MATCH lk
-                        val = computeLK_M_local(valM,
+                        //valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
+                        //valX -= prev_log_phi_gamma;
+                        //valY -= prev_log_phi_gamma;
+                        //val = computeLK_M_local(log_phi_gamma,
+                        val = computeLK_M_local(NU,
+                                                valM,
                                                 valX,
                                                 valY,
                                                 node,
@@ -1533,8 +1709,13 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                         exit(EXIT_FAILURE);
                     }
 
-                    idx = get_indices_M(coordTriangle_this_i, coordTriangle_this_j, up_corner_i,
-                                        up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
+                    idx = get_indices_M(coordTriangle_this_i,
+                                        coordTriangle_this_j,
+                                        up_corner_i,
+                                        up_corner_j,
+                                        bot_corner_i,
+                                        bot_corner_j,
+                                        m, h, w);
 
                     LogM[m_binary_this][idx] = val;
                 }
@@ -1543,10 +1724,19 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
         }
         //***************************************************************************************
         //***************************************************************************************
-        set_indeces_X(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+        // COMPUTES GAPX LK
+        set_indeces_X(up_corner_i,
+                      up_corner_j,
+                      bot_corner_i,
+                      bot_corner_j,
+                      m,h,w);
         tr_down_i=bot_corner_i;
         tr_down_j=bot_corner_j;
-        if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)){
+        if(checkboundary(up_corner_i,
+                         up_corner_j,
+                         bot_corner_i,
+                         bot_corner_j,
+                         h,w)){
 
             lw=0;
             for(unsigned long i=up_corner_i;i<=bot_corner_i;i++){
@@ -1563,27 +1753,45 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     coordTriangle_this_j=up_corner_j-j;
                     coordTriangle_prev_j=coordTriangle_this_j;
 
-                    idx=get_indices_M(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
+                    idx=get_indices_M(coordTriangle_prev_i,
+                                      coordTriangle_prev_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m-1,h,w);
                     if(idx>=0){
                         valM=LogM[m_binary_prev][idx];
                     }else{
+                        // unreachable region of the 3D matrix
                         valM=-std::numeric_limits<double>::infinity();
                     }
 
-                    idx=get_indices_X(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
+                    idx=get_indices_X(coordTriangle_prev_i,
+                                      coordTriangle_prev_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m-1,h,w);
                     if(idx>=0){
                         valX=LogX[m_binary_prev][idx];
                     }else{
+                        // unreachable region of the 3D matrix
                         valX=-std::numeric_limits<double>::infinity();
                     }
 
-                    idx=get_indices_Y(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
+                    idx=get_indices_Y(coordTriangle_prev_i,
+                                      coordTriangle_prev_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m-1,h,w);
                     if(idx>=0){
                         valY=LogY[m_binary_prev][idx];
                     }else{
+                        // unreachable region of the 3D matrix
                         valY=-std::numeric_limits<double>::infinity();
                     }
 
@@ -1593,11 +1801,17 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
                     if(local){
                         // compute GAPX lk
-                        val= computeLK_X_local(valM,
+                        //valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
+                        //valX -= prev_log_phi_gamma;
+                        //valY -= prev_log_phi_gamma;
+                        //val= computeLK_X_local(log_phi_gamma,
+                        val= computeLK_X_local(NU,
+                                               valM,
                                                valX,
                                                valY,
                                                node,
-                                               sLs, col_gap_Rs,
+                                               sLs,
+                                               col_gap_Rs,
                                                m,
                                                lkX);
                     }else{
@@ -1623,8 +1837,13 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                         exit(EXIT_FAILURE);
                     }
 
-                    idx=get_indices_X(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+                    idx=get_indices_X(coordTriangle_this_i,
+                                      coordTriangle_this_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m,h,w);
 
                     LogX[m_binary_this][idx]=val;
                 }
@@ -1634,10 +1853,19 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
         }
         //***************************************************************************************
         //***************************************************************************************
-        set_indeces_Y(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+        // COMPUTES GAPY LK
+        set_indeces_Y(up_corner_i,
+                      up_corner_j,
+                      bot_corner_i,
+                      bot_corner_j,
+                      m,h,w);
         tr_up_i=up_corner_i;
         tr_up_j=up_corner_j;
-        if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)){
+        if(checkboundary(up_corner_i,
+                         up_corner_j,
+                         bot_corner_i,
+                         bot_corner_j,
+                         h,w)){
 
             lw=0;
             for(unsigned long i=up_corner_i;i<=bot_corner_i;i++){
@@ -1652,27 +1880,45 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     // get right MSA column
                     sRs = (MSA_.at(s2ID).at(coordSeq_2));
 
-                    idx=get_indices_M(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
+                    idx=get_indices_M(coordTriangle_prev_i,
+                                      coordTriangle_prev_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m-1,h,w);
                     if(idx>=0){
                         valM=LogM[m_binary_prev][idx];
                     }else{
+                        // unreachable region of the 3D matrix
                         valM=-std::numeric_limits<double>::infinity();
                     }
 
-                    idx=get_indices_X(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
+                    idx=get_indices_X(coordTriangle_prev_i,
+                                      coordTriangle_prev_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m-1,h,w);
                     if(idx>=0){
                         valX=LogX[m_binary_prev][idx];
                     }else{
+                        // unreachable region of the 3D matrix
                         valX=-std::numeric_limits<double>::infinity();
                     }
 
-                    idx=get_indices_Y(coordTriangle_prev_i,coordTriangle_prev_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m-1,h,w);
+                    idx=get_indices_Y(coordTriangle_prev_i,
+                                      coordTriangle_prev_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m-1,h,w);
                     if(idx>=0){
                         valY=LogY[m_binary_prev][idx];
                     }else{
+                        // unreachable region of the 3D matrix
                         valY=-std::numeric_limits<double>::infinity();
                     }
 
@@ -1682,11 +1928,17 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
                     if(local){
                         // compute GAPY lk
-                        val= computeLK_Y_local(valM,
+                        //valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
+                        //valX -= prev_log_phi_gamma;
+                        //valY -= prev_log_phi_gamma;
+                        //val= computeLK_Y_local(log_phi_gamma,
+                        val= computeLK_Y_local(NU,
+                                               valM,
                                                valX,
                                                valY,
                                                node,
-                                               col_gap_Ls, sRs,
+                                               col_gap_Ls,
+                                               sRs,
                                                m,
                                                lkY);
                     }else{
@@ -1713,8 +1965,13 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                         exit(EXIT_FAILURE);
                     }
 
-                    idx=get_indices_Y(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+                    idx=get_indices_Y(coordTriangle_this_i,
+                                      coordTriangle_this_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m,h,w);
 
                     LogY[m_binary_this][idx]=val;
                 }
@@ -1728,9 +1985,17 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
         /*TODO: optimize size TR*/
         TR[m] = new int[size_tr]();
         memset(TR[m],0,size_tr*sizeof(TR[m][0]));
-        set_indeces_T(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+        set_indeces_T(up_corner_i,
+                      up_corner_j,
+                      bot_corner_i,
+                      bot_corner_j,
+                      m,h,w);
 
-        if(checkboundary(up_corner_i,up_corner_j,bot_corner_i,bot_corner_j,h,w)){
+        if(checkboundary(up_corner_i,
+                         up_corner_j,
+                         bot_corner_i,
+                         bot_corner_j,
+                         h,w)){
 
             lw=0;
             for(unsigned long i=up_corner_i;i<=bot_corner_i;i++){
@@ -1742,24 +2007,39 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     double xval;
                     double yval;
 
-                    idx=get_indices_M(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+                    idx=get_indices_M(coordTriangle_this_i,
+                                      coordTriangle_this_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m,h,w);
                     if(idx>=0){
                         mval=LogM[m_binary_this][idx];
                     }else{
                         mval=-std::numeric_limits<double>::infinity();
                     }
 
-                    idx=get_indices_X(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+                    idx=get_indices_X(coordTriangle_this_i,
+                                      coordTriangle_this_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m,h,w);
                     if(idx>=0){
                         xval=LogX[m_binary_this][idx];
                     }else{
                         xval=-std::numeric_limits<double>::infinity();
                     }
 
-                    idx=get_indices_Y(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+                    idx=get_indices_Y(coordTriangle_this_i,
+                                      coordTriangle_this_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m,h,w);
                     if(idx>=0){
                         yval=LogY[m_binary_this][idx];
                     }else{
@@ -1774,8 +2054,13 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
                     ttrr=index_of_max(mval,xval,yval,epsilon,generator,distribution);
 
-                    idx=get_indices_T(coordTriangle_this_i,coordTriangle_this_j,up_corner_i,
-                                      up_corner_j,bot_corner_i,bot_corner_j,m,h,w);
+                    idx=get_indices_T(coordTriangle_this_i,
+                                      coordTriangle_this_j,
+                                      up_corner_i,
+                                      up_corner_j,
+                                      bot_corner_i,
+                                      bot_corner_j,
+                                      m,h,w);
 
                     if(TR[m][idx]!=0){
                         exit(EXIT_FAILURE);
@@ -1784,6 +2069,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     TR[m][idx]=ttrr;
 
                     if( (coordTriangle_this_i==(h-1)) & (coordTriangle_this_j==(w-1)) ){
+                        // the algorithm is filling the last column of 3D DP matrix where
+                        // all the characters are in the MSA
 
                         max_of_3=max_of_three(mval,xval,yval,epsilon);
 
@@ -1791,6 +2078,21 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                             score=max_of_3;
                             level_max_lk=m;
                         }
+
+                        //=====================================================================
+                        // early stop condition
+                        if(score<prev_lk){
+                            prev_lk = score;
+                            counter_to_early_stop++;
+                            if(counter_to_early_stop>max_decrease_before_stop){
+                                // if for max_decrease_before_stop consecutive times
+                                // the lk decrease then exit, the maximum lk has been reached
+                                flag_exit = true;
+                            }
+                        }else{
+                            counter_to_early_stop = 0;
+                        }
+                        //=====================================================================
 
                     }
 
@@ -1805,6 +2107,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     score_.at(nodeID) = score;
 
+    //==========================================================================================
     // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
     TracebackPath_t traceback_path (depth, ' ');
     int id1=h-1;
@@ -1828,17 +2131,22 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                 traceback_path[lev-1]=GAP_Y_CHAR;
                 break;
             default:
-                std::cerr << "ERROR in alignment_reconstruction !!!";
+                perror("ERROR in alignment_reconstruction !!!");
                 exit(EXIT_FAILURE);
         }
     }
 
     traceback_path_.at(nodeID) = traceback_path;
 
+    // converts traceback path into an MSA
     build_MSA(node,traceback_path);
 
+    // assigns the sequence names of the new alligned sequences to the current MSA
     setMSAsequenceNames(node);
-    
+    //==========================================================================================
+
+    //==========================================================================================
+    // memory freeing
     free(LogM[1]);
     free(LogM[0]);
     free(LogM);
@@ -1853,8 +2161,11 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 
     for(int i=last_d;i>=0;i--){
         free(TR[i]);
+        //free(PHI[i]);
     }
     free(TR);
+    //free(PHI);
+    //==========================================================================================
 }
 
 
@@ -2333,16 +2644,32 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
 //
 //}
 
+void pPIP::setSubstModel(bpp::SubstitutionModel *smodel) {
+    substModel_ = smodel;
+}
 
+void pPIP::setTree(const Tree *tree) {
+    tree_ = new TreeTemplate<Node>(*tree);
+}
 
 
 void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local) {
+    // progressive PIP aligner
+    // local: local subtree, rooted at the current node
 
+    // resize vectors and maps
     _reserve(list_vnode_to_root);
 
+    // set lambdas with rate variation (gamma distribution)
     _setLambda(substModel_->getParameter("lambda").getValue());
+
+    // set mus with rate variation (gamma distribution)
     _setMu(substModel_->getParameter("mu").getValue());
+
+    // copy pi
     _setPi(substModel_->getFrequencies());
+
+    // set substitution/deletion probabilities with rate variation (gamma distribution)
     _getPrFromSubstutionModel(list_vnode_to_root);
 
     /*
@@ -2356,15 +2683,17 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
     }
      */
 
-
     size_t i = 1;
 
     for (auto &vnode:list_vnode_to_root) {
+        // traverses the list of nodes and aligns the MSAs on the left and right side
+        // if node is a leaf the resulting MSA is the sequence itself
 
         ApplicationTools::displayGauge(i, list_vnode_to_root.size());
         i++;
 
         auto node = tree_->getNode(treemap_.right.at(vnode), false);
+
         VLOG(1) << "[pPIP] Processing node " << node->getId();
 
         if(node->isLeaf()){
@@ -2379,7 +2708,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
 
         }else{
 
-            // align using 3D DP PIP
+            // align using progressive 3D DP PIP
             DP3D_PIP(node, local); // local: tree rooted at the given node
 
         }
@@ -2387,7 +2716,6 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
 
 
 }
-
 bpp::SiteContainer * pPIPUtils::pPIPmsa2Sites(bpp::pPIP *progressivePIP){
     auto MSA = progressivePIP->getMSA(progressivePIP->getRootNode());
 
@@ -2415,11 +2743,11 @@ double pPIPUtils::add_lns(double a_ln,double b_ln){
 
     double R;
 
-    if(std::isinf(a_ln) && std::isinf(b_ln)){
+    if(isinf(a_ln) && isinf(b_ln)){
         R=-std::numeric_limits<double>::infinity();
-    }else if(std::isinf(a_ln)){
+    }else if(isinf(a_ln)){
         R=b_ln;
-    }else if(std::isinf(b_ln)){
+    }else if(isinf(b_ln)){
         R=a_ln;
     }else if((abs(a_ln - b_ln) >= 36.043653389117155)){
         //TODO:check this
