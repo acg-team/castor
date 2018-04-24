@@ -4,14 +4,15 @@
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
 image:
-  name: lorenzogatti89/minijati:8u66
-  username: lorenzogatti89
-  password: Unica_9010
-  email: lorenzo.gatti.89@gmail.com
+  name: lorenzogatti89/minijati:latest
+  username: $DOCKER_HUB_USERNAME
+  password: $DOCKER_HUB_PASSWORD
+  email: $DOCKER_HUB_EMAIL
 
 pipelines:
   default:
-    - step:
+   - step:
         script: # Modify the commands below to build your repository.
-          - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
-          - make
+        - cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+        - make
+
