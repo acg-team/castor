@@ -47,7 +47,7 @@
 #include <Bpp/Seq/Container/SequenceContainerTools.h>
 #include <Bpp/Phyl/PatternTools.h>
 #include <boost/algorithm/string.hpp>
-
+#include <Bpp/Phyl/Model/Nucleotide/K80.h>
 
 
 PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, SubstitutionModel *basemodel) :
@@ -183,53 +183,7 @@ void PIP_Nuc::updateMatrices() {
     //freq_[alphabet_->getGapCharacterCode()] = 0;
 
 }
-/*
-double PIP_Nuc::Pij_t(size_t i, size_t j, double d) const {
 
-    return getPij_t(d)(i, j);
-
-}
-
-double PIP_Nuc::dPij_dt(size_t i, size_t j, double d) const {
-
-    std::cout << "PIP_Nuc::dPij_dt has been called";
-    return 0;
-}
-
-double PIP_Nuc::d2Pij_dt2(size_t i, size_t j, double d) const {
-
-    std::cout << "PIP_Nuc::d2Pij_dt2 has been called";
-    return 0;
-
-}
-
-
-const bpp::Matrix<double> &PIP_Nuc::getPij_t(double d) const {
-
-    MatrixTools::getId(size_, pijt_);
-
-    MatrixTools::copy(generator_, pijt_);
-    MatrixTools::scale(pijt_, d);
-    MatrixTools::exp(pijt_, pijt_);
-
-    return pijt_;
-
-
-}
-*/
-//const bpp::Matrix<double> &PIP_Nuc::getdPij_dt(double d) const {
-
-//std::cerr << "PIP_Nuc::getdPij_dt has been called";
-
-
-//}
-
-//const bpp::Matrix<double> &PIP_Nuc::getd2Pij_dt2(double d) const {
-
-//std::cerr << "PIP_Nuc::getd2dPij_dt2 has been called";
-
-
-//}
 
 void PIP_Nuc::setFreq(std::map<int, double> &freqs) {
     std::vector<double> values;
@@ -414,7 +368,6 @@ void PIP_AA::updateMatrices() {
 
 }
 
-
 void PIP_AA::setFreqFromData(const SequenceContainer &data, double pseudoCount) {
     std::map<int, int> counts;
     SequenceContainerTools::getCounts(data, counts);
@@ -423,10 +376,64 @@ void PIP_AA::setFreqFromData(const SequenceContainer &data, double pseudoCount) 
         t += (counts[i] + pseudoCount);
     }
     for (size_t i = 0; i < size_; ++i) freq_[i] = (static_cast<double>(counts[static_cast<int>(i)]) + pseudoCount) / t;
+
+    freq_[data.getAlphabet()->getGapCharacterCode()] = 0;
+
     freqSet_->setFrequencies(freq_);
     //Update parameters and re-compute generator and eigen values:
     matchParametersValues(freqSet_->getParameters());
+
 }
+
+
+PIP_Codon::PIP_Codon(const GeneticCode *gc, double lambda, double mu, SubstitutionModel *basemodel) :
+        AbstractBiblioSubstitutionModel("PIP_Codon."),
+        pmodel_(new CodonDistanceFrequenciesSubstitutionModel(gc,
+                                                              new K80(dynamic_cast<const CodonAlphabet *>(gc->getSourceAlphabet())->getNucleicAlphabet()),
+                                                              const_cast<FrequenciesSet *>(basemodel->getFrequenciesSet()))) {
+
+    computeFrequencies(false);
+
+
+    // Setting basemodel to PIP
+    submodel_ = basemodel;
+
+    // Inheriting basemodel parameters
+    ParameterList parlist = submodel_->getParameters();
+
+    for (int i = 0; i < parlist.size(); i++) {
+        addParameter_(new Parameter("PIP." + parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
+    }
+
+    // Update model name
+    name_ = submodel_->getName() + "+PIP";
+    modelname_ = "PIP." + submodel_->getName();
+
+    // Add PIP parameters to the list of parameters inherited from the basemodel
+    addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS));
+    addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS));
+
+
+    // update matrice
+
+    updateMatrices();
+
+}
+
+PIP_Codon::PIP_Codon(const PIP_Codon &pip_codon) :
+        AbstractBiblioSubstitutionModel(pip_codon),
+        pmodel_(new CodonDistanceFrequenciesSubstitutionModel(*pip_codon.pmodel_)) {}
+
+
+PIP_Codon &PIP_Codon::operator=(const PIP_Codon &pip_codon) {
+    AbstractBiblioSubstitutionModel::operator=(pip_codon);
+    pmodel_.reset(new CodonDistanceFrequenciesSubstitutionModel(*pip_codon.pmodel_));
+    return *this;
+}
+
+PIP_Codon::~PIP_Codon() {}
+
+
 
 
 double bpp::estimateLambdaFromData(Tree *tree, SequenceContainer *sequences, double proportion) {

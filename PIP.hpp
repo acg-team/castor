@@ -50,6 +50,12 @@
 #include <Bpp/Phyl/Model/Protein/ProteinSubstitutionModel.h>
 #include <Bpp/Phyl/Model/FrequenciesSet/ProteinFrequenciesSet.h>
 #include <Bpp/Phyl/TreeTemplate.h>
+#include <Bpp/Phyl/Model/AbstractBiblioSubstitutionModel.h>
+#include <Bpp/Phyl/Model/Codon/CodonDistanceFrequenciesSubstitutionModel.h>
+
+#include <Bpp/Seq/GeneticCode/GeneticCode.h>
+#include <Bpp/Seq/AlphabetIndex/GranthamAAChemicalDistance.h>
+
 
 using namespace bpp;
 namespace bpp {
@@ -181,6 +187,59 @@ namespace bpp {
         void updateMatrices();
 
     };
+
+
+    class PIP_Codon : public AbstractBiblioSubstitutionModel, public virtual CodonReversibleSubstitutionModel {
+    private:
+
+        double lambda_, mu_;
+        std::string name_;
+        std::string modelname_;
+        mutable SubstitutionModel *submodel_;
+
+        /*
+         * @brief optional FrequenciesSet if model is defined through a
+         * FrequenciesSet.
+         *
+         */
+
+        const FrequenciesSet *freqSet_;
+        std::unique_ptr<CodonDistanceFrequenciesSubstitutionModel> pmodel_;
+
+
+    public:
+
+        PIP_Codon(const GeneticCode *gc, double lambda, double mu, SubstitutionModel *basemodel);
+
+        ~PIP_Codon();
+
+        PIP_Codon(const PIP_Codon &pip_codon);
+
+        PIP_Codon &operator=(const PIP_Codon &pip_codon);
+
+        PIP_Codon *clone() const { return new PIP_Codon(*this); }
+
+
+    public:
+
+
+        std::string getName() const { return "PIP_Codon"; }
+
+        const SubstitutionModel &getSubstitutionModel() const { return *pmodel_.get(); }
+
+        const GeneticCode *getGeneticCode() const { return pmodel_->getGeneticCode(); }
+
+        double getCodonsMulRate(size_t i, size_t j) const { return pmodel_->getCodonsMulRate(i, j); }
+
+        const FrequenciesSet *getFrequenciesSet() const { return pmodel_->getFrequenciesSet(); }
+
+    protected:
+        SubstitutionModel &getSubstitutionModel() { return *pmodel_.get(); }
+
+    };
+
+
+
 
     // If the user requires to estimate the model parameters (lambda/mu) from the data, then invoke the right method
 

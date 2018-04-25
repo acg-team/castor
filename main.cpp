@@ -172,32 +172,56 @@ int main(int argc, char *argv[]) {
         // The alphabet object contains the not-extended alphabet as requested by the user,
         // while alpha contains the extended version of the same alphabet.
         std::string PAR_Alphabet = ApplicationTools::getStringParameter("alphabet", jatiapp.getParams(), "DNA", "", true, true);
-        bpp::Alphabet *alpha;
 
+        // Alphabet without gaps
+        bpp::Alphabet *alphabetNoGaps = bpp::SequenceApplicationTools::getAlphabet(jatiapp.getParams(), "", false, false);
+        // Genetic code
+        unique_ptr<GeneticCode> gCode;
+        // Codon alphabet ?
+        bool codonAlphabet = false;
+
+        // Alphabet used for all the computational steps (it can allows for gap extension)
+        bpp::Alphabet *alphabet;
         if (PAR_model_indels) {
-            if (PAR_Alphabet.find("DNA") != std::string::npos) {
-                alpha = new bpp::DNA_EXTENDED();
+            if (PAR_Alphabet.find("DNA") != std::string::npos || PAR_Alphabet.find("Codon") != std::string::npos) {
+                alphabet = new bpp::DNA_EXTENDED();
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
-                alpha = new bpp::ProteicAlphabet_Extended();
+                alphabet = new bpp::ProteicAlphabet_Extended();
             }
+
+            // This is additional to the alphabet instance
+            if (PAR_Alphabet.find("Codon") != std::string::npos) {
+                alphabet = new CodonAlphabet_Extended(dynamic_cast<bpp::NucleicAlphabet *>(alphabet));
+                codonAlphabet = true;
+            }
+
         } else {
-            if (PAR_Alphabet.find("DNA") != std::string::npos) {
-                alpha = new bpp::DNA();
+            if (PAR_Alphabet.find("DNA") != std::string::npos || PAR_Alphabet.find("Codon") != std::string::npos) {
+                alphabet = new bpp::DNA();
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
-                alpha = new bpp::ProteicAlphabet();
+                alphabet = new bpp::ProteicAlphabet();
+            } else {}
+
+            // This is additional to the alphabet instance
+            if (PAR_Alphabet.find("Codon") != std::string::npos) {
+                alphabet = new CodonAlphabet(dynamic_cast<bpp::NucleicAlphabet *>(alphabet));
+                codonAlphabet = true;
             }
         }
 
-        bpp::Alphabet *alphabet = bpp::SequenceApplicationTools::getAlphabet(jatiapp.getParams(), "", false, false);
-        unique_ptr<GeneticCode> gCode;
-        auto *codonAlphabet = dynamic_cast<bpp::CodonAlphabet *>(alphabet);
+        // Alphabet used for codon models
+        //CodonAlphabet *codonAlphabet = dynamic_cast<bpp::CodonAlphabet *>(alphabet);
         if (codonAlphabet) {
             std::string codeDesc = ApplicationTools::getStringParameter("genetic_code", jatiapp.getParams(), "Standard", "", true, true);
-            //ApplicationTools::displayResult("Genetic Code", codeDesc);
-            gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(codonAlphabet->getNucleicAlphabet(), codeDesc));
+            ApplicationTools::displayResult("Genetic Code", codeDesc);
+            if (PAR_model_indels) {
+                gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet_Extended *>(alphabet)->getNucleicAlphabet(), codeDesc));
+            } else {
+                gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet *>(alphabet)->getNucleicAlphabet(), codeDesc));
+            }
         }
 
-        ApplicationTools::displayResult("Alphabet", TextTools::toString(alphabet->getAlphabetType()));
+        ApplicationTools::displayResult("Alphabet", TextTools::toString(alphabetNoGaps->getAlphabetType()));
         ApplicationTools::displayBooleanResult("Allow gaps as extra character", PAR_model_indels);
         LOG(INFO) << "alphabet:  " << PAR_Alphabet << " | gap-extention " << (int) PAR_model_indels;
 
@@ -218,13 +242,13 @@ int main(int argc, char *argv[]) {
 
                 // If the user requires the computation of an alignment, then the input file is made of unaligned sequences
                 bpp::Fasta seqReader;
-                sequences = seqReader.readSequences(PAR_input_sequences, alpha);
+                sequences = seqReader.readSequences(PAR_input_sequences, alphabet);
                 //LOG(INFO) << "[Input data parser] Number of not-aligned sequences: " << sequences->getNumberOfSequences();
                 ApplicationTools::displayResult("Number of sequences", TextTools::toString(sequences->getNumberOfSequences()));
 
             } else {
 
-                VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alpha, jatiapp.getParams());
+                VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet, jatiapp.getParams());
                 sites = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams(), "", true, !PAR_model_indels, true, 1);
                 delete allSites;
 
@@ -290,12 +314,12 @@ int main(int argc, char *argv[]) {
                 map<std::string, std::string> parmap;
                 parmap["model"] = "JC69";
 
-                VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet, jatiapp.getParams());
+                VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabetNoGaps, jatiapp.getParams());
                 VectorSiteContainer *sites_bioNJ = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams());
                 delete allSites;
 
                 //Initialize model to compute the distance tree
-                TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabet, gCode.get(), sites_bioNJ, parmap);
+                TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetNoGaps, gCode.get(), sites_bioNJ, parmap);
 
                 // Add a ASRV distribution
                 DiscreteDistribution *rDist = 0;
@@ -484,7 +508,7 @@ int main(int argc, char *argv[]) {
 
 
             //smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, modelMap, "", true, false, 0);
-            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, modelMap, "", true, false, 0);
+            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, modelMap, "", true, false, 0);
 
             estimatePIPparameters = (modelMap.find("estimated") == modelMap.end()) ? false : true;
 
@@ -509,11 +533,13 @@ int main(int argc, char *argv[]) {
 
             // Instatiate the corrisponding PIP model given the alphabet
             if (PAR_Alphabet.find("DNA") != std::string::npos) {
-                smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alpha), lambda, mu, smodel);
+                smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), lambda, mu, smodel);
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
-                smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alpha), lambda, mu, smodel);
+                smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), lambda, mu, smodel);
             } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
-                LOG(FATAL) << "Pip model is not implemented for Codon alphabets! :(";
+                smodel = new PIP_Codon(gCode.get(), lambda, mu, smodel);
+                ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
+                LOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
             }
             // Fill Q matrix
             //Q = MatrixBppUtils::Matrix2Eigen(smodel->getGenerator());
@@ -522,7 +548,7 @@ int main(int argc, char *argv[]) {
         } else {
             // if the alphabet is not extended, then the gap character is not supported
             if (!PAR_alignment) bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
-            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
+            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
         }
         //if (!PAR_alignment) { bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites); }
 
@@ -615,7 +641,7 @@ int main(int argc, char *argv[]) {
 
         // Get transition model from substitution model
         if (!PAR_model_indels) {
-            model = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
+            model = bpp::PhylogeneticsApplicationTools::getTransitionModel(alphabet, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
         } else {
             unique_ptr<TransitionModel> test;
             test.reset(smodel);
