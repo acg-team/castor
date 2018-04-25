@@ -131,9 +131,6 @@ void pPIP::_setTree(const Tree *tree) {
     tree_ = new TreeTemplate<Node>(*tree);
 }
 
-//void pPIP::_setSubstModel(bpp::SubstitutionModel *smodel) {
-//    substModel_ = smodel;
-//}
 std::vector<std::string> pPIP::getMSA(bpp::Node *node) {
     return MSA_.at(node->getId());
 }
@@ -1426,7 +1423,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     bool randomSeed = true;
 
     // number of discrete gamma categories
-    int num_gamma_categories = rDist_->getNumberOfCategories();
+    size_t num_gamma_categories = rDist_->getNumberOfCategories();
 
     if (local) {
         // recompute local tau, total tree length of a tree root at the given node
@@ -1449,16 +1446,17 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     unsigned long lw;
     unsigned long h, w;
 
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight(); // bpp::Node to tshlib::VirtualNode
-
-    int s1ID = treemap_.right.at(vnode_left);
-    int s2ID = treemap_.right.at(vnode_right);
-
+    // Get the IDs of the sons nodes given the current node
     int nodeID = node->getId();
 
-    h = MSA_.at(s1ID).size() + 1; // dimension of the alignment on the left side
-    w = MSA_.at(s2ID).size() + 1; // dimension of the alignment on the riht side
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
+    int sequenceID_1 = treemap_.right.at(vnode_left);
+    int sequenceID_2 = treemap_.right.at(vnode_right);
+
+    // Compute dimensions of the 3D block at current internal node.
+    h = MSA_.at(sequenceID_1).size() + 1; // dimension of the alignment on the left side
+    w = MSA_.at(sequenceID_2).size() + 1; // dimension of the alignment on the riht side
 
     unsigned long d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
 
@@ -1471,8 +1469,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     MSAcolumn_t col_gap_Ls; // left column full of gaps
     MSAcolumn_t col_gap_Rs; //right column full of gaps
 
-    unsigned long numLeavesLeft = seqNames_.at(s1ID).size(); // number of leaves in the left sub-tree
-    unsigned long numLeavesRight = seqNames_.at(s2ID).size(); // number of leaves in the right sub-tree
+    unsigned long numLeavesLeft = seqNames_.at(sequenceID_1).size(); // number of leaves in the left sub-tree
+    unsigned long numLeavesRight = seqNames_.at(sequenceID_2).size(); // number of leaves in the right sub-tree
 
     col_gap_Ls = createGapCol(numLeavesLeft); // create column of gaps for the left sub-tree
     col_gap_Rs = createGapCol(numLeavesRight); // create column of gaps for the right sub-tree
@@ -1585,7 +1583,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     unsigned long coordTriangle_prev_j;
 
     double score = -std::numeric_limits<double>::infinity();
-    int start_depth;
+
     unsigned long depth;
 
     unsigned long last_d = d - 1;
@@ -1600,7 +1598,10 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
     int counter_to_early_stop;
     int max_decrease_before_stop = 10;
     double prev_lk = std::numeric_limits<double>::infinity();
-    //============================================================
+
+    // ============================================================
+    // For each slice of the 3D cube, compute the values of each cell
+
     for (unsigned long m = 1; m < d; m++) {
 
         if (flag_exit) {
@@ -1654,7 +1655,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                 coordTriangle_prev_i = coordTriangle_this_i - 1;
 
                 // get left MSA column
-                sLs = (MSA_.at(s1ID).at(coordSeq_1));
+                sLs = (MSA_.at(sequenceID_1).at(coordSeq_1));
 
                 for (int j = 0; j <= lw; j++) {
 
@@ -1663,7 +1664,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     coordTriangle_prev_j = coordTriangle_this_j - 1;
 
                     // get right MSA column
-                    sRs = (MSA_.at(s2ID).at(coordSeq_2));
+                    sRs = (MSA_.at(sequenceID_2).at(coordSeq_2));
 
                     idx = get_indices_M(coordTriangle_prev_i,
                                         coordTriangle_prev_j,
@@ -1786,7 +1787,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                 coordSeq_1 = coordTriangle_this_i - 1;
 
                 // get left MSA column
-                sLs = (MSA_.at(s1ID).at(coordSeq_1));
+                sLs = (MSA_.at(sequenceID_1).at(coordSeq_1));
 
                 for (int j = 0; j <= lw; j++) {
 
@@ -1918,7 +1919,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                     coordSeq_2 = coordTriangle_this_j - 1;
 
                     // get right MSA column
-                    sRs = (MSA_.at(s2ID).at(coordSeq_2));
+                    sRs = (MSA_.at(sequenceID_2).at(coordSeq_2));
 
                     idx = get_indices_M(coordTriangle_prev_i,
                                         coordTriangle_prev_j,
