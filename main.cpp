@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
             }
 
 
-        } catch (bpp::Exception e) {
+        } catch (bpp::Exception &e) {
             LOG(FATAL) << "Error when reading sequence file due to: " << e.message();
         }
 
@@ -293,19 +293,19 @@ int main(int argc, char *argv[]) {
                 std::string PAR_distance_method = ApplicationTools::getStringParameter("init.distance.method", jatiapp.getParams(), "nj");
                 ApplicationTools::displayResult("Initial tree reconstruction method", PAR_distance_method);
 
-                AgglomerativeDistanceMethod *distMethod = 0;
+                AgglomerativeDistanceMethod *distMethod = nullptr;
                 if (PAR_distance_method == "wpgma") {
-                    PGMA *wpgma = new PGMA(true);
+                    auto *wpgma = new PGMA(true);
                     distMethod = wpgma;
                 } else if (PAR_distance_method == "upgma") {
-                    PGMA *upgma = new PGMA(false);
+                    auto *upgma = new PGMA(false);
                     distMethod = upgma;
                 } else if (PAR_distance_method == "nj") {
-                    NeighborJoining *nj = new NeighborJoining();
+                    auto *nj = new NeighborJoining();
                     nj->outputPositiveLengths(true);
                     distMethod = nj;
                 } else if (PAR_distance_method == "bionj") {
-                    BioNJ *bionj = new BioNJ();
+                    auto *bionj = new BioNJ();
                     bionj->outputPositiveLengths(true);
                     distMethod = bionj;
                 } else throw Exception("Unknown tree reconstruction method.");
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
                 TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetNoGaps, gCode.get(), sites_bioNJ, parmap);
 
                 // Add a ASRV distribution
-                DiscreteDistribution *rDist = 0;
+                DiscreteDistribution *rDist = nullptr;
                 if (dmodel->getNumberOfStates() > dmodel->getAlphabet()->getSize()) {
                     //Markov-modulated Markov model!
                     rDist = new ConstantRateDistribution();
@@ -342,17 +342,16 @@ int main(int argc, char *argv[]) {
                 else throw Exception("Unknown parameter estimation procedure '" + PAR_optim_distance + "'.");
 
                 // Optimisation method verbosity
-                unsigned int optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose", jatiapp.getParams(), 2);
+                auto optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose", jatiapp.getParams(), 2);
                 string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", jatiapp.getParams(), false, false);
-                OutputStream *messenger = static_cast<OutputStream *>((mhPath == "none") ? 0 :
+                auto *messenger = static_cast<OutputStream *>((mhPath == "none") ? 0 :
                                                                       (mhPath == "std") ?
                                                                       ApplicationTools::message : new StlOutputStream(new ofstream(mhPath.c_str(), ios::out)));
                 ApplicationTools::displayResult("Initial tree optimization handler", mhPath);
 
                 // Optimisation method profiler
                 string prPath = ApplicationTools::getAFilePath("optimization.profiler", jatiapp.getParams(), false, false);
-                OutputStream *profiler =
-                        static_cast<OutputStream *>((prPath == "none") ? 0 :
+                auto *profiler = static_cast<OutputStream *>((prPath == "none") ? 0 :
                                                     (prPath == "std") ? ApplicationTools::message :
                                                     new StlOutputStream(new ofstream(prPath.c_str(), ios::out)));
                 if (profiler) profiler->setPrecision(20);
@@ -383,7 +382,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                unsigned int nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", jatiapp.getParams(), 1000000);
+                auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", jatiapp.getParams(), 1000000);
                 ApplicationTools::displayResult("Initial tree optimization | max # ML evaluations", TextTools::toString(nbEvalMax));
 
                 double tolerance = ApplicationTools::getDoubleParameter("optimization.tolerance", jatiapp.getParams(), .000001);
@@ -411,7 +410,7 @@ int main(int argc, char *argv[]) {
                 std::string PAR_distance_matrix;
                 try {
                     PAR_distance_matrix = ApplicationTools::getAFilePath("init.distance.matrix.file", jatiapp.getParams(), true, true, "", false, "", 0);
-                } catch (bpp::Exception e) {
+                } catch (bpp::Exception &e) {
                     LOG(FATAL) << "Error when reading distance matrix file: " << e.message();
                 }
 
@@ -811,7 +810,7 @@ int main(int argc, char *argv[]) {
         PhylogeneticsApplicationTools::checkEstimatedParameters(tl->getParameters());
 
         // Write parameters to file:
-        string parametersFile = ApplicationTools::getAFilePath("output.estimates", jatiapp.getParams(), false, false, "none", 1);
+        string parametersFile = ApplicationTools::getAFilePath("output.estimates", jatiapp.getParams(), false, false, "none", true);
         bool withAlias = ApplicationTools::getBooleanParameter("output.estimates.alias", jatiapp.getParams(), true, "", true, 0);
 
         ApplicationTools::displayResult("Output estimates to file", parametersFile);
