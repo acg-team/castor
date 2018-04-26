@@ -461,7 +461,9 @@ double bpp::estimateMuFromData(Tree *tree, double proportion) {
 }
 
 double bpp::estimateLambdaFromData(Tree *tree, SiteContainer *alignment) {
-    double N, M, t, lambda = 0;
+    double N = 0;
+    double M = 0;
+    double lambda = 0;
 
     // Alignment length with gaps
     M = alignment->getNumberOfSites();
@@ -484,7 +486,9 @@ double bpp::estimateLambdaFromData(Tree *tree, SiteContainer *alignment) {
 }
 
 double bpp::estimateMuFromData(Tree *tree, SiteContainer *alignment) {
-    double N, M, t, mu = 0;
+    double N = 0;
+    double M = 0;
+    double mu = 0;
 
     // Alignment length with gaps
     M = alignment->getNumberOfSites();
@@ -500,7 +504,7 @@ double bpp::estimateMuFromData(Tree *tree, SiteContainer *alignment) {
     N = N / alignment->getNumberOfSequences();
 
 
-    mu = (M - N) / tree->getTotalLength() * N;
+    mu = (M - N) / (tree->getTotalLength() * N);
 
 
     return mu;
