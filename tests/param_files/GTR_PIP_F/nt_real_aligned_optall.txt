@@ -4,7 +4,7 @@ input.sequence.file=./tests/datasets/minimal_aligned_real_shh300_nt.fa
 input.sequence.sites_to_use=all
 init.tree=distance
 init.distance.method=bionj
-model=PIP(model=HKY85(initFreqs=observed),estimated=true)
+model=PIP(model=GTR(initFreqs=observed),estimated=true)
 rate_distribution=Constant
 optimization=ND-BFGS(derivatives=BFGS)
 optimization.message_handler=./opt_mh.log
