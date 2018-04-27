@@ -192,3 +192,7 @@ else ()
     target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
     target_link_libraries(miniJATI ${Boost_LIBRARIES})
 endif ()
+
+# Test target
+enable_testing()
+add_subdirectory (tests)
