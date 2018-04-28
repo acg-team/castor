@@ -448,7 +448,7 @@ void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib:
 void UtreeBppUtils::updateTree_u2b(bpp::Tree *inBTree, tshlib::Utree *inUTree, UtreeBppUtils::treemap &tm) {
 
 }
-
+/*
 Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix) {
 
     size_t rows, cols;
@@ -505,7 +505,7 @@ Eigen::VectorXd MatrixBppUtils::Vector2Eigen(const std::vector<double> &inVector
     return vector;
 }
 
-/*
+
 bpp::Matrix<double> MatrixBppUtils::Eigen2Matrix(Eigen::MatrixXd &inMatrix) {
 
     bpp::Matrix<double> outMatrix;
