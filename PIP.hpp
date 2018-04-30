@@ -73,7 +73,7 @@ namespace bpp {
 
     public:
 
-        explicit PIP_Nuc(const NucleicAlphabet *alpha, double lambda = 0.1, double mu = 0.1, SubstitutionModel *basemodel = nullptr);
+        explicit PIP_Nuc(const NucleicAlphabet *alpha, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData);
 
         virtual ~PIP_Nuc() = default;
 
@@ -112,7 +112,7 @@ namespace bpp {
         double lambda_, mu_, tau_, nu_;
         std::string name_;
         std::string modelname_;
-        ProteinFrequenciesSet *freqSet_;
+        FrequenciesSet *freqSet_;
         mutable SubstitutionModel *submodel_;
 
     public:

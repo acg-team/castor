@@ -505,9 +505,41 @@ int main(int argc, char *argv[]) {
         // Extend the substitution model with PIP
         if (PAR_model_indels) {
 
+            bool computeFrequenciesFromData = false;
+
+            // If frequencies are estimated from the data, but there is no alignment, then flag it.
+            if(PAR_alignment){
+                std::string baseModel;
+
+                std::map<std::string, std::string> basemodelMap;
+                KeyvalTools::parseProcedure(modelMap["model"], baseModel, basemodelMap);
+
+                std::vector<std::string> keys;
+                for(std::map<std::string,std::string>::iterator it = basemodelMap.begin(); it != basemodelMap.end(); ++it) keys.push_back(it->first);
+
+                if(keys.size()>0) {
+                    baseModel += "(";
+                    for (auto &key:keys) {
+                        if (key != "initFreqs") {
+                            baseModel += key + "=" + basemodelMap[key];
+                        } else {
+                            if (basemodelMap[key] == "observed") {
+                                computeFrequenciesFromData = true;
+                            }
+                        }
+                        baseModel += ",";
+                    }
+                    baseModel.pop_back();
+                    baseModel += ")";
+                    modelMap["model"] = baseModel;
+                }
+
+
+            }
+
+            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, modelMap, "", true, false, 0);
 
             //smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, modelMap, "", true, false, 0);
-            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, modelMap, "", true, false, 0);
 
             estimatePIPparameters = (modelMap.find("estimated") == modelMap.end()) ? false : true;
 
@@ -532,7 +564,7 @@ int main(int argc, char *argv[]) {
 
             // Instatiate the corrisponding PIP model given the alphabet
             if (PAR_Alphabet.find("DNA") != std::string::npos) {
-                smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), lambda, mu, smodel);
+                smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
                 smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), lambda, mu, smodel);
             } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
