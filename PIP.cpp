@@ -48,6 +48,7 @@
 #include <Bpp/Phyl/PatternTools.h>
 #include <boost/algorithm/string.hpp>
 #include <Bpp/Phyl/Model/Nucleotide/K80.h>
+#include <glog/logging.h>
 
 
 PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData) :
@@ -82,8 +83,11 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, SubstitutionModel *basemodel, con
         // Add frequency for gap character
         freq_ = submodel_->getFrequencies();
         freq_[alphabet_->getGapCharacterCode()] = 0; // hack for updateMatrices()
+
     }
 
+
+    LOG_IF(WARNING, bpp::VectorTools::sum(freq_)!= 1) << "The state frequencies do not sum up to 1. Please review your model definition.";
 
     // Inherit frequencies from submodel and expand it with gap freq = 0
     //for(int i=0; i<submodel_->getFrequencies().size()-1;i++){
