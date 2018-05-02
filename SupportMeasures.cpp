@@ -47,8 +47,10 @@
 #include <Bpp/Phyl/Io/Newick.h>
 #include <Bpp/Seq/Container/SiteContainerTools.h>
 #include <Bpp/Phyl/App/PhylogeneticsApplicationTools.h>
-#include "SupportMeasures.hpp"
 #include "UnifiedTSHomogeneousTreeLikelihood_PIP.hpp"
+#include "SupportMeasures.hpp"
+#include "Optimizators.hpp"
+#include "UnifiedTSHomogeneousTreeLikelihood_Generic.hpp"
 
 using namespace bpp;
 
@@ -57,19 +59,34 @@ Boostrap::Boostrap(AbstractHomogeneousTreeLikelihood *tl,
                    DiscreteDistribution *rDist,
                    tshlib::Utree *utree,
                    UtreeBppUtils::treemap *tm,
-                   std::map<std::string, std::string>& params) {
+                   std::map<std::string, std::string> &params,
+                   const std::string& suffix,
+                   bool suffixIsOptional,
+                   int warn) {
 
-    unsigned int nbBS = ApplicationTools::getParameter<unsigned int>("bootstrap.number", params, 0, "", true, 1);
+    unsigned int nbBS = ApplicationTools::getParameter<unsigned int>("support.bootstrap.repeats", params, 0, suffix, true, 1);
+
+    auto bestTree = new TreeTemplate<Node>(tl->getTree());
+    Tree *tree = bestTree;
+
+    bool indelModels = false;
+    if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(tl)) {
+        indelModels = true;
+    }
+
+    AbstractHomogeneousTreeLikelihood *tlRep = nullptr;
 
     if (nbBS > 0) {
         ApplicationTools::displayResult("Number of bootstrap samples", TextTools::toString(nbBS));
-        bool approx = ApplicationTools::getBooleanParameter("bootstrap.approximate", params, true, "", true, 2);
+        bool approx = ApplicationTools::getBooleanParameter("bootstrap.approximate", params, true, suffix, true, 2);
         ApplicationTools::displayBooleanResult("Use approximate bootstrap", approx);
-        bool bootstrapVerbose = ApplicationTools::getBooleanParameter("bootstrap.verbose", params, false, "", true, 2);
+        bool bootstrapVerbose = ApplicationTools::getBooleanParameter("bootstrap.verbose", params, false, suffix, true, 2);
 
         const Tree *initTree = &tl->getTree();
+        TransitionModel *model = tl->getModel();
+        SiteContainer *sites = const_cast<SiteContainer *>(tl->getData());
 
-        std::string bsTreesPath = ApplicationTools::getAFilePath("bootstrap.output.file", params, false, false);
+        std::string bsTreesPath = ApplicationTools::getAFilePath("bootstrap.output.file", params, false, false, suffix);
         std::ofstream *out = nullptr;
 
         if (bsTreesPath != "none") {
@@ -85,13 +102,18 @@ Boostrap::Boostrap(AbstractHomogeneousTreeLikelihood *tl,
         std::vector<Tree *> bsTrees(nbBS);
         for (unsigned int i = 0; i < nbBS; i++) {
             ApplicationTools::displayGauge(i, nbBS - 1, '=');
-            VectorSiteContainer *sample = SiteContainerTools::bootstrapSites(*tl->getData());
+            VectorSiteContainer *sample = SiteContainerTools::bootstrapSites(*sites);
             if (!approx) {
                 tl->getModel()->setFreqFromData(*sample);
             }
 
-            AbstractHomogeneousTreeLikelihood *tlRep;
-            //auto *tlRep = new UnifiedTSHomogeneousTreeLikelihood_PIP(initTree, sample, nullptr, nullptr, utree, &tm, true, params, "", false, false, false);
+
+
+            if (indelModels) {
+                tlRep = new UnifiedTSHomogeneousTreeLikelihood_PIP(*initTree, *sample, model, rDist, utree, tm, true, params, "", false, false, false);
+            } else {
+                tlRep = new UnifiedTSHomogeneousTreeLikelihood(*initTree, *sample, model, rDist, utree, tm, true, params, "", false, false, false);
+            }
 
 
             tlRep->initialize();
@@ -100,7 +122,7 @@ Boostrap::Boostrap(AbstractHomogeneousTreeLikelihood *tl,
                 parametersRep.deleteParameters(paramsToIgnore.getParameterNames());
             }
 
-            //tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizer::optimizeParameters(tlRep, nullptr, tlRep->getParameters(), params, "", true, true, 0));
+            tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tlRep, nullptr, parametersRep, params, "", true, false, 0));
 
             bsTrees[i] = new TreeTemplate<Node>(tlRep->getTree());
             if (out && i == 0) newick.write(*bsTrees[i], bsTreesPath, true);
@@ -114,13 +136,13 @@ Boostrap::Boostrap(AbstractHomogeneousTreeLikelihood *tl,
 
 
         ApplicationTools::displayTask("Compute bootstrap values");
-        //TreeTools::computeBootstrapValues(tl->getTree(), bsTrees);
+        TreeTools::computeBootstrapValues(*tree, bsTrees);
         ApplicationTools::displayTaskDone();
         for (unsigned int i = 0; i < nbBS; i++) {
             delete bsTrees[i];
         }
 
-    // Write resulting tree:
+        // Write resulting tree:
         PhylogeneticsApplicationTools::writeTree(*bestTree, params);
     }
 

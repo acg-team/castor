@@ -57,7 +57,10 @@ namespace bpp {
                  DiscreteDistribution *rDist,
                  tshlib::Utree *utree_,
                  UtreeBppUtils::treemap *tm,
-                 std::map<std::string, std::string>& params);
+                 std::map<std::string, std::string>& params,
+                 const std::string& suffix = "",
+                 bool suffixIsOptional = true,
+                 int warn = 0);
 
         virtual ~Boostrap() = default;
 

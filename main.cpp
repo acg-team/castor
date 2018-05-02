@@ -108,6 +108,7 @@ using namespace tshlib;
 #include "UnifiedTSHTopologySearch.hpp"
 #include "pPIP.hpp"
 #include "Optimizators.hpp"
+#include "SupportMeasures.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -880,7 +881,21 @@ int main(int argc, char *argv[]) {
         }
 
         // Compute support measures
+        std::string PAR_support = ApplicationTools::getStringParameter("support", jatiapp.getParams(), "", "", true, true);
+        if(PAR_support == "bootstrap") {
+            ApplicationTools::displayMessage("\n[Tree support measures]");
 
+            bpp::Boostrap(tl, *sites, rDist, utree, &tm, jatiapp.getParams(), "support.");
+        }
+
+        // Delete objects and free memory
+        delete alphabet;
+        delete alphabetNoGaps;
+        delete sites;
+        if (model) delete model;
+        delete rDist;
+        delete tl;
+        delete tree;
 
         jatiapp.done();
         google::ShutdownGoogleLogging();
