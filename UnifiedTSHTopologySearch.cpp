@@ -306,7 +306,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         }
 
         //candidateMoves->displayRearrangmentStatus(i, true);
-        LOG_IF(ERROR, moveLogLK_return != tshinitScore) << "Error in evaluating likelihood during TS @move " << candidateMoves->getMove(i)->move_id <<
+        LOG_IF(ERROR, !ComparisonUtils::areLogicallyEqual(moveLogLK_return, tshinitScore)) << "Error in evaluating likelihood during TS @move " << candidateMoves->getMove(i)->move_id <<
                                                         "\tllk[Initial]=" << TextTools::toString(tshinitScore, 15) <<
                                                         "\tllk[Return]=" << TextTools::toString(moveLogLK_return, 15) <<
                                                         "\tllk[Move]=" << TextTools::toString(moveLogLK, 15);

@@ -151,6 +151,12 @@ namespace AlignmentUtils{
 
 }
 
+
+namespace ComparisonUtils{
+
+    bool areLogicallyEqual(double a, double b);
+}
+
 class DistanceMethodsUtils {
 
 private:
