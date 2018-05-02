@@ -145,6 +145,12 @@ namespace DistanceUtils {
 }
 
 
+namespace AlignmentUtils{
+
+    void CheckAlignmentConsistency(bpp::SiteContainer &sites);
+
+}
+
 class DistanceMethodsUtils {
 
 private:
@@ -182,6 +188,7 @@ public:
 
 
 };
+
 
 
 #endif //MINIJATI_UTILS_HPP

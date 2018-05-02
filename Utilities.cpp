@@ -1031,3 +1031,30 @@ std::string TextUtils::appendToFilePath(std::string inputFilePath, std::string s
 
     return fullInitialMSAFilePath;
 }
+
+void AlignmentUtils::CheckAlignmentConsistency(bpp::SiteContainer &sites) {
+
+    int gapCode = sites.getAlphabet()->getGapCharacterCode();
+    int unresolvedCode = sites.getAlphabet()->getUnknownCharacterCode();
+    bool nonGapSeen = false;
+    bool nonUnkownSeen = false;
+    int currentChar;
+
+    for (unsigned long i=0;i<sites.getNumberOfSites();i++){
+
+        nonGapSeen = false;
+        nonUnkownSeen = false;
+
+        for(unsigned long s=0;s<sites.getNumberOfSequences();s++) {
+
+            currentChar = sites.getSite(i).getValue(s);
+
+            if(currentChar != gapCode) nonGapSeen=true;
+            if(currentChar != unresolvedCode) nonUnkownSeen=true;
+
+        }
+
+        LOG_IF(FATAL, !nonGapSeen || !nonUnkownSeen) << "Column #"<<  i+1 << " of the alignment contains only gaps. Please remove it and try again!";
+
+    }
+}
