@@ -177,7 +177,7 @@ set(SOURCES
         UnifiedTSHSearchable.cpp
         UnifiedTSHSearchable.hpp
         RHomogeneousTreeLikelihood_Generic.cpp
-        RHomogeneousTreeLikelihood_Generic.hpp)
+        RHomogeneousTreeLikelihood_Generic.hpp SupportMeasures.cpp SupportMeasures.hpp)
 
 
 if (STATIC GREATER 0)
