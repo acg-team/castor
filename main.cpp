@@ -598,7 +598,7 @@ int main(int argc, char *argv[]) {
 
         /////////////////////////
         // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
-        pPIP *progressivePIP = nullptr;
+        pPIP *alignment = nullptr;
         if (PAR_alignment) {
             ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
             ApplicationTools::displayResult("\nProportion gappy sites", TextTools::toString(PAR_proportion, 4));
@@ -606,18 +606,18 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
-            progressivePIP = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist);
+            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist);
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
-            progressivePIP->PIPAligner(ftn, true);
+            alignment->PIPAligner(ftn, true);
 
             LOG(INFO) << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
 
             // Convert PIP Aligner into bpp::sites
-            sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
+            sites = pPIPUtils::pPIPmsa2Sites(alignment);
 
             // Export alignment to file
             if (PAR_output_file_msa.find("none") == std::string::npos) {
@@ -628,7 +628,7 @@ int main(int argc, char *argv[]) {
 
             // Get profiling statistics TODO: export this stats on XML file
             double score;
-            score=progressivePIP->getScore(progressivePIP->getRootNode());
+            score=alignment->getScore(alignment->getRootNode());
 
             std::ofstream lkFile;
             lkFile << std::setprecision(18);
@@ -771,7 +771,7 @@ int main(int argc, char *argv[]) {
         ApplicationTools::displayMessage("\n[Executing numerical parameters and topology optimization]");
 
         tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl,
-                                                                                            progressivePIP,
+                                                                                            alignment,
                                                                                             tl->getParameters(),
                                                                                             jatiapp.getParams(),
                                                                                             "",
@@ -782,8 +782,8 @@ int main(int argc, char *argv[]) {
 
         // Overwrite the initial alignment with the optimised one  | TODO: the likelihood function should not be reimplemented here.
         if (PAR_alignment && PAR_align_optim) {
-            sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
-            logL = progressivePIP->getScore(progressivePIP->getRootNode());
+            sites = pPIPUtils::pPIPmsa2Sites(alignment);
+            logL = alignment->getScore(alignment->getRootNode());
 
             const Tree &tmpTree = tl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
 
