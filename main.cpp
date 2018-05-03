@@ -108,6 +108,7 @@ using namespace tshlib;
 #include "UnifiedTSHTopologySearch.hpp"
 #include "pPIP.hpp"
 #include "Optimizators.hpp"
+#include "SupportMeasures.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -172,32 +173,56 @@ int main(int argc, char *argv[]) {
         // The alphabet object contains the not-extended alphabet as requested by the user,
         // while alpha contains the extended version of the same alphabet.
         std::string PAR_Alphabet = ApplicationTools::getStringParameter("alphabet", jatiapp.getParams(), "DNA", "", true, true);
-        bpp::Alphabet *alpha;
 
+        // Alphabet without gaps
+        bpp::Alphabet *alphabetNoGaps = bpp::SequenceApplicationTools::getAlphabet(jatiapp.getParams(), "", false, false);
+        // Genetic code
+        unique_ptr<GeneticCode> gCode;
+        // Codon alphabet ?
+        bool codonAlphabet = false;
+
+        // Alphabet used for all the computational steps (it can allows for gap extension)
+        bpp::Alphabet *alphabet;
         if (PAR_model_indels) {
-            if (PAR_Alphabet.find("DNA") != std::string::npos) {
-                alpha = new bpp::DNA_EXTENDED();
+            if (PAR_Alphabet.find("DNA") != std::string::npos || PAR_Alphabet.find("Codon") != std::string::npos) {
+                alphabet = new bpp::DNA_EXTENDED();
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
-                alpha = new bpp::ProteicAlphabet_Extended();
+                alphabet = new bpp::ProteicAlphabet_Extended();
             }
+
+            // This is additional to the alphabet instance
+            if (PAR_Alphabet.find("Codon") != std::string::npos) {
+                alphabet = new CodonAlphabet_Extended(dynamic_cast<bpp::NucleicAlphabet *>(alphabet));
+                codonAlphabet = true;
+            }
+
         } else {
-            if (PAR_Alphabet.find("DNA") != std::string::npos) {
-                alpha = new bpp::DNA();
+            if (PAR_Alphabet.find("DNA") != std::string::npos || PAR_Alphabet.find("Codon") != std::string::npos) {
+                alphabet = new bpp::DNA();
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
-                alpha = new bpp::ProteicAlphabet();
+                alphabet = new bpp::ProteicAlphabet();
+            } else {}
+
+            // This is additional to the alphabet instance
+            if (PAR_Alphabet.find("Codon") != std::string::npos) {
+                alphabet = new CodonAlphabet(dynamic_cast<bpp::NucleicAlphabet *>(alphabet));
+                codonAlphabet = true;
             }
         }
 
-        bpp::Alphabet *alphabet = bpp::SequenceApplicationTools::getAlphabet(jatiapp.getParams(), "", false, false);
-        unique_ptr<GeneticCode> gCode;
-        auto *codonAlphabet = dynamic_cast<bpp::CodonAlphabet *>(alphabet);
+        // Alphabet used for codon models
+        //CodonAlphabet *codonAlphabet = dynamic_cast<bpp::CodonAlphabet *>(alphabet);
         if (codonAlphabet) {
             std::string codeDesc = ApplicationTools::getStringParameter("genetic_code", jatiapp.getParams(), "Standard", "", true, true);
-            //ApplicationTools::displayResult("Genetic Code", codeDesc);
-            gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(codonAlphabet->getNucleicAlphabet(), codeDesc));
+            ApplicationTools::displayResult("Genetic Code", codeDesc);
+            if (PAR_model_indels) {
+                gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet_Extended *>(alphabet)->getNucleicAlphabet(), codeDesc));
+            } else {
+                gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet *>(alphabet)->getNucleicAlphabet(), codeDesc));
+            }
         }
 
-        ApplicationTools::displayResult("Alphabet", TextTools::toString(alphabet->getAlphabetType()));
+        ApplicationTools::displayResult("Alphabet", TextTools::toString(alphabetNoGaps->getAlphabetType()));
         ApplicationTools::displayBooleanResult("Allow gaps as extra character", PAR_model_indels);
         LOG(INFO) << "alphabet:  " << PAR_Alphabet << " | gap-extention " << (int) PAR_model_indels;
 
@@ -218,31 +243,28 @@ int main(int argc, char *argv[]) {
 
                 // If the user requires the computation of an alignment, then the input file is made of unaligned sequences
                 bpp::Fasta seqReader;
-                sequences = seqReader.readSequences(PAR_input_sequences, alpha);
-                //LOG(INFO) << "[Input data parser] Number of not-aligned sequences: " << sequences->getNumberOfSequences();
+                sequences = seqReader.readSequences(PAR_input_sequences, alphabet);
                 ApplicationTools::displayResult("Number of sequences", TextTools::toString(sequences->getNumberOfSequences()));
 
             } else {
 
-                VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alpha, jatiapp.getParams());
+                VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet, jatiapp.getParams());
                 sites = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams(), "", true, !PAR_model_indels, true, 1);
                 delete allSites;
-
-                //LOG(INFO) << "[Input data parser] Number of aligned-sequences: " << sites->getNumberOfSequences();
-                //LOG(INFO) << "[Input data parser] Number of sites: " << sites->getNumberOfSites();
+                AlignmentUtils::CheckAlignmentConsistency(*sites);
                 ApplicationTools::displayResult("Number of sequences", TextTools::toString(sites->getNumberOfSequences()));
                 ApplicationTools::displayResult("Number of sites", TextTools::toString(sites->getNumberOfSites()));
 
             }
 
 
-        } catch (bpp::Exception e) {
+        } catch (bpp::Exception &e) {
             LOG(FATAL) << "Error when reading sequence file due to: " << e.message();
         }
 
 
         /////////////////////////////////////////
-        // TREE
+        // INITIAL TREE
         ApplicationTools::displayMessage("\n[Preparing initial tree]");
 
         bpp::Tree *tree = nullptr;
@@ -269,19 +291,19 @@ int main(int argc, char *argv[]) {
                 std::string PAR_distance_method = ApplicationTools::getStringParameter("init.distance.method", jatiapp.getParams(), "nj");
                 ApplicationTools::displayResult("Initial tree reconstruction method", PAR_distance_method);
 
-                AgglomerativeDistanceMethod *distMethod = 0;
+                AgglomerativeDistanceMethod *distMethod = nullptr;
                 if (PAR_distance_method == "wpgma") {
-                    PGMA *wpgma = new PGMA(true);
+                    auto *wpgma = new PGMA(true);
                     distMethod = wpgma;
                 } else if (PAR_distance_method == "upgma") {
-                    PGMA *upgma = new PGMA(false);
+                    auto *upgma = new PGMA(false);
                     distMethod = upgma;
                 } else if (PAR_distance_method == "nj") {
-                    NeighborJoining *nj = new NeighborJoining();
+                    auto *nj = new NeighborJoining();
                     nj->outputPositiveLengths(true);
                     distMethod = nj;
                 } else if (PAR_distance_method == "bionj") {
-                    BioNJ *bionj = new BioNJ();
+                    auto *bionj = new BioNJ();
                     bionj->outputPositiveLengths(true);
                     distMethod = bionj;
                 } else throw Exception("Unknown tree reconstruction method.");
@@ -290,15 +312,15 @@ int main(int argc, char *argv[]) {
                 map<std::string, std::string> parmap;
                 parmap["model"] = "JC69";
 
-                VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet, jatiapp.getParams());
+                VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabetNoGaps, jatiapp.getParams());
                 VectorSiteContainer *sites_bioNJ = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams());
                 delete allSites;
 
                 //Initialize model to compute the distance tree
-                TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabet, gCode.get(), sites_bioNJ, parmap);
+                TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetNoGaps, gCode.get(), sites_bioNJ, parmap);
 
                 // Add a ASRV distribution
-                DiscreteDistribution *rDist = 0;
+                DiscreteDistribution *rDist = nullptr;
                 if (dmodel->getNumberOfStates() > dmodel->getAlphabet()->getSize()) {
                     //Markov-modulated Markov model!
                     rDist = new ConstantRateDistribution();
@@ -318,19 +340,14 @@ int main(int argc, char *argv[]) {
                 else throw Exception("Unknown parameter estimation procedure '" + PAR_optim_distance + "'.");
 
                 // Optimisation method verbosity
-                unsigned int optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose", jatiapp.getParams(), 2);
+                auto optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose", jatiapp.getParams(), 2);
                 string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", jatiapp.getParams(), false, false);
-                OutputStream *messenger = static_cast<OutputStream *>((mhPath == "none") ? 0 :
-                                                                      (mhPath == "std") ?
-                                                                      ApplicationTools::message : new StlOutputStream(new ofstream(mhPath.c_str(), ios::out)));
+                auto *messenger = (mhPath == "none") ? nullptr : (mhPath == "std") ? ApplicationTools::message : new StlOutputStream(new ofstream(mhPath.c_str(), ios::out));
                 ApplicationTools::displayResult("Initial tree optimization handler", mhPath);
 
                 // Optimisation method profiler
                 string prPath = ApplicationTools::getAFilePath("optimization.profiler", jatiapp.getParams(), false, false);
-                OutputStream *profiler =
-                        static_cast<OutputStream *>((prPath == "none") ? 0 :
-                                                    (prPath == "std") ? ApplicationTools::message :
-                                                    new StlOutputStream(new ofstream(prPath.c_str(), ios::out)));
+                auto *profiler = (prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message : new StlOutputStream(new ofstream(prPath.c_str(), ios::out));
                 if (profiler) profiler->setPrecision(20);
                 ApplicationTools::displayResult("Initial tree optimization profiler", prPath);
 
@@ -359,7 +376,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                unsigned int nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", jatiapp.getParams(), 1000000);
+                auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", jatiapp.getParams(), 1000000);
                 ApplicationTools::displayResult("Initial tree optimization | max # ML evaluations", TextTools::toString(nbEvalMax));
 
                 double tolerance = ApplicationTools::getDoubleParameter("optimization.tolerance", jatiapp.getParams(), .000001);
@@ -387,7 +404,7 @@ int main(int argc, char *argv[]) {
                 std::string PAR_distance_matrix;
                 try {
                     PAR_distance_matrix = ApplicationTools::getAFilePath("init.distance.matrix.file", jatiapp.getParams(), true, true, "", false, "", 0);
-                } catch (bpp::Exception e) {
+                } catch (bpp::Exception &e) {
                     LOG(FATAL) << "Error when reading distance matrix file: " << e.message();
                 }
 
@@ -467,26 +484,60 @@ int main(int argc, char *argv[]) {
 
 
         /////////////////////////
-        // MODEL  & LIKELIHOOD
-        ApplicationTools::displayMessage("\n[Setting up substitution model]");
+        // SUBSTITUTION MODEL
 
+        ApplicationTools::displayMessage("\n[Setting up substitution model]");
 
         bpp::SubstitutionModel *smodel = nullptr;
         bpp::TransitionModel *model = nullptr;
 
-        //Eigen::MatrixXd Q;
-        //Eigen::VectorXd pi;
         double lambda;
         double mu;
         bool estimatePIPparameters;
-        // Extend the substitution model with PIP
+
+        // Instantiate a substitution model and extend it with PIP
         if (PAR_model_indels) {
 
+            bool computeFrequenciesFromData = false;
 
-            //smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, modelMap, "", true, false, 0);
-            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, modelMap, "", true, false, 0);
+            // If frequencies are estimated from the data, but there is no alignment, then flag it.
+            if(PAR_alignment){
+                std::string baseModel;
 
-            estimatePIPparameters = (modelMap.find("estimated") == modelMap.end()) ? false : true;
+                std::map<std::string, std::string> basemodelMap;
+                KeyvalTools::parseProcedure(modelMap["model"], baseModel, basemodelMap);
+
+                std::vector<std::string> keys;
+                for(auto it = basemodelMap.begin(); it != basemodelMap.end(); ++it) keys.push_back(it->first);
+
+                if(!keys.empty()) {
+                    baseModel += "(";
+                    for (auto &key:keys) {
+                        if (key != "initFreqs") {
+                            baseModel += key + "=" + basemodelMap[key];
+                        } else {
+                            if (basemodelMap[key] == "observed") {
+                                computeFrequenciesFromData = true;
+                            }
+                        }
+                        baseModel += ",";
+                    }
+                    baseModel.pop_back();
+                    baseModel += ")";
+                    modelMap["model"] = baseModel;
+                }
+
+            }
+
+            // Instantiation of the canonical substitution model
+            if(PAR_Alphabet.find("Protein") != std::string::npos){
+                smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(), sites, modelMap, "", true, false, 0);
+            }else{
+                smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, modelMap, "", true, false, 0);
+            }
+
+            // If PIP, then check if lambda/mu initial values are estimated from the data
+            estimatePIPparameters = !(modelMap.find("estimated") == modelMap.end());
 
             if (estimatePIPparameters) {
 
@@ -505,31 +556,26 @@ int main(int argc, char *argv[]) {
                 mu = (modelMap.find("mu") == modelMap.end()) ? 0.2 : std::stod(modelMap["mu"]);
             }
 
-
-
             // Instatiate the corrisponding PIP model given the alphabet
             if (PAR_Alphabet.find("DNA") != std::string::npos) {
-                smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alpha), lambda, mu, smodel);
+                smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
-                smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alpha), lambda, mu, smodel);
+                smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
             } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
-                LOG(FATAL) << "Pip model is not implemented for Codon alphabets! :(";
+                smodel = new PIP_Codon(gCode.get(), lambda, mu, smodel);
+                ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
+                LOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
             }
-            // Fill Q matrix
-            //Q = MatrixBppUtils::Matrix2Eigen(smodel->getGenerator());
-            //pi = MatrixBppUtils::Vector2Eigen(smodel->getFrequencies());
 
         } else {
             // if the alphabet is not extended, then the gap character is not supported
             if (!PAR_alignment) bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
-            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alpha, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
+            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
         }
-        //if (!PAR_alignment) { bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites); }
 
         DLOG(INFO) << "[Substitution model] Number of states: " << (int) smodel->getNumberOfStates();
 
         ApplicationTools::displayResult("Substitution model", smodel->getName());
-
         if (PAR_model_indels) ApplicationTools::displayResult("Indel parameter initial value", (estimatePIPparameters) ? "estimated" : "fixed");
 
         ParameterList parameters = smodel->getParameters();
@@ -540,6 +586,9 @@ int main(int argc, char *argv[]) {
         bpp::StdStr s1;
         bpp::PhylogeneticsApplicationTools::printParameters(smodel, s1, 1, true);
         LOG(INFO) << s1.str();
+
+        /////////////////////////
+        // AMONG-SITE-RATE-VARIATION
 
         bpp::DiscreteDistribution *rDist = nullptr;
 
@@ -553,7 +602,7 @@ int main(int argc, char *argv[]) {
 
         /////////////////////////
         // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
-        pPIP *progressivePIP = nullptr;
+        pPIP *alignment = nullptr;
         if (PAR_alignment) {
             ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
             ApplicationTools::displayResult("\nProportion gappy sites", TextTools::toString(PAR_proportion, 4));
@@ -561,18 +610,18 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
-            progressivePIP = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist);
+            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist);
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
-            progressivePIP->PIPAligner(ftn, true);
+            alignment->PIPAligner(ftn, true);
 
             LOG(INFO) << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
 
             // Convert PIP Aligner into bpp::sites
-            sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
+            sites = pPIPUtils::pPIPmsa2Sites(alignment);
 
             // Export alignment to file
             if (PAR_output_file_msa.find("none") == std::string::npos) {
@@ -583,7 +632,7 @@ int main(int argc, char *argv[]) {
 
             // Get profiling statistics TODO: export this stats on XML file
             double score;
-            score=progressivePIP->getScore(progressivePIP->getRootNode());
+            score=alignment->getScore(alignment->getRootNode());
 
             std::ofstream lkFile;
             lkFile << std::setprecision(18);
@@ -615,7 +664,7 @@ int main(int argc, char *argv[]) {
 
         // Get transition model from substitution model
         if (!PAR_model_indels) {
-            model = bpp::PhylogeneticsApplicationTools::getTransitionModel(alpha, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
+            model = bpp::PhylogeneticsApplicationTools::getTransitionModel(alphabet, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
         } else {
             unique_ptr<TransitionModel> test;
             test.reset(smodel);
@@ -726,7 +775,7 @@ int main(int argc, char *argv[]) {
         ApplicationTools::displayMessage("\n[Executing numerical parameters and topology optimization]");
 
         tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl,
-                                                                                            progressivePIP,
+                                                                                            alignment,
                                                                                             tl->getParameters(),
                                                                                             jatiapp.getParams(),
                                                                                             "",
@@ -737,8 +786,8 @@ int main(int argc, char *argv[]) {
 
         // Overwrite the initial alignment with the optimised one  | TODO: the likelihood function should not be reimplemented here.
         if (PAR_alignment && PAR_align_optim) {
-            sites = pPIPUtils::pPIPmsa2Sites(progressivePIP);
-            logL = progressivePIP->getScore(progressivePIP->getRootNode());
+            sites = pPIPUtils::pPIPmsa2Sites(alignment);
+            logL = alignment->getScore(alignment->getRootNode());
 
             const Tree &tmpTree = tl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
 
@@ -785,7 +834,7 @@ int main(int argc, char *argv[]) {
         PhylogeneticsApplicationTools::checkEstimatedParameters(tl->getParameters());
 
         // Write parameters to file:
-        string parametersFile = ApplicationTools::getAFilePath("output.estimates", jatiapp.getParams(), false, false, "none", 1);
+        string parametersFile = ApplicationTools::getAFilePath("output.estimates", jatiapp.getParams(), false, false, "none", true);
         bool withAlias = ApplicationTools::getBooleanParameter("output.estimates.alias", jatiapp.getParams(), true, "", true, 0);
 
         ApplicationTools::displayResult("Output estimates to file", parametersFile);
@@ -823,7 +872,20 @@ int main(int argc, char *argv[]) {
         }
 
         // Compute support measures
+        std::string PAR_support = ApplicationTools::getStringParameter("support", jatiapp.getParams(), "", "", true, true);
+        if(PAR_support == "bootstrap") {
+            ApplicationTools::displayMessage("\n[Tree support measures]");
 
+            bpp::Bootstrap(tl, *sites, rDist, utree, &tm, jatiapp.getParams(), "support.");
+        }
+
+        // Delete objects and free memory
+        delete alphabet;
+        delete alphabetNoGaps;
+        delete sites;
+        delete rDist;
+        delete tl;
+        delete tree;
 
         jatiapp.done();
         google::ShutdownGoogleLogging();

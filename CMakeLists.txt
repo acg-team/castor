@@ -72,14 +72,17 @@ add_definitions(-DPRJ_GITBRANCH=\"${PROJECT_GIT_REF}\"
 
 set(CMAKE_CXX_STANDARD 14)
 
-SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wshadow -Weffc++ -O0 -g -DNDEBUG=1")
-SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g -DNDEBUG=1")
+SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wshadow -Weffc++ -O0 -g")
+SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g")
 
-SET(CMAKE_CXX_FLAGS_RELEASE "-O3  -g0 -DNDEBUG=0")
-SET(CMAKE_C_FLAGS_RELEASE "-O3  -g0 -DNDEBUG=0")
+SET(CMAKE_CXX_FLAGS_DEBUGINTEL "-O0 -g")
+SET(CMAKE_C_FLAGS_DEBUGINTEL "-Wall -Wshadow -O0 -g")
 
-SET(CMAKE_CXX_FLAGS_INTEL "-O3  -g0 -DNDEBUG=0")
-SET(CMAKE_C_FLAGS_INTEL "-O3  -g0 -DNDEBUG=0")
+SET(CMAKE_CXX_FLAGS_RELEASE "-O3  -g0 -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELEASE "-O3  -g0 -DNDEBUG")
+
+SET(CMAKE_CXX_FLAGS_INTEL "-O3  -g0 -DNDEBUG")
+SET(CMAKE_C_FLAGS_INTEL "-O3  -g0 -DNDEBUG")
 
 string(FIND "${CMAKE_BUILD_TYPE}" "static" STATIC)
 
@@ -128,11 +131,11 @@ if(Boost_FOUND)
     message(STATUS "  include dir: ${Boost_INCLUDE_DIRS}" )
 endif()
 
-find_package(Eigen3 REQUIRED)
-if (EIGEN3_FOUND)
-    message("-- Found Eigen3 in: ${EIGEN3_INCLUDE_DIR}")
-    include_directories(${EIGEN3_INCLUDE_DIR})
-endif ()
+#find_package(Eigen3 REQUIRED)
+#if (EIGEN3_FOUND)
+#    message("-- Found Eigen3 in: ${EIGEN3_INCLUDE_DIR}")
+#    include_directories(${EIGEN3_INCLUDE_DIR})
+#endif ()
 
 find_package(TshLib REQUIRED)
 if (TSHLIB_FOUND)
@@ -174,7 +177,7 @@ set(SOURCES
         UnifiedTSHSearchable.cpp
         UnifiedTSHSearchable.hpp
         RHomogeneousTreeLikelihood_Generic.cpp
-        RHomogeneousTreeLikelihood_Generic.hpp)
+        RHomogeneousTreeLikelihood_Generic.hpp SupportMeasures.cpp SupportMeasures.hpp)
 
 
 if (STATIC GREATER 0)
@@ -192,3 +195,7 @@ else ()
     target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
     target_link_libraries(miniJATI ${Boost_LIBRARIES})
 endif ()
+
+# Test target
+enable_testing()
+add_subdirectory (tests)

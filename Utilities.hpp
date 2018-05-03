@@ -94,12 +94,12 @@ namespace UtreeBppUtils {
 namespace MatrixBppUtils {
 
 
-    Eigen::MatrixXd Matrix2Eigen(const bpp::Matrix<double> &inMatrix);
+    //Eigen::MatrixXd Matrix2Eigen(const bpp::Matrix<double> &inMatrix);
     //bpp::Matrix<double> Eigen2Matrix(Eigen::MatrixXd &inMatrix);
 
-    bpp::RowMatrix<double> Eigen2Matrix(const Eigen::MatrixXd &M);
+    //bpp::RowMatrix<double> Eigen2Matrix(const Eigen::MatrixXd &M);
 
-    Eigen::VectorXd Vector2Eigen(const std::vector<double> &inVector);
+    //Eigen::VectorXd Vector2Eigen(const std::vector<double> &inVector);
 
     double dotProd(const std::vector<double> *x, const std::vector<double> *y);
 
@@ -145,6 +145,18 @@ namespace DistanceUtils {
 }
 
 
+namespace AlignmentUtils{
+
+    void CheckAlignmentConsistency(bpp::SiteContainer &sites);
+
+}
+
+
+namespace ComparisonUtils{
+
+    bool areLogicallyEqual(double a, double b);
+}
+
 class DistanceMethodsUtils {
 
 private:
@@ -182,6 +194,7 @@ public:
 
 
 };
+
 
 
 #endif //MINIJATI_UTILS_HPP

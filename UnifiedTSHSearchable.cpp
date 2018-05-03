@@ -43,6 +43,7 @@
  */
 #include <Bpp/Numeric/Function/SimpleMultiDimensions.h>
 #include <Bpp/Phyl/Likelihood/PseudoNewtonOptimizer.h>
+#include <glog/logging.h>
 #include "UnifiedTSHSearchable.hpp"
 
 
@@ -93,6 +94,8 @@ void UnifiedTSHSearchable::setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
             optimiser_ = new PseudoNewtonOptimizer(dn_3points);
         } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_GRADIENT) {
             optimiser_ = new ConjugateGradientMultiDimensions(dn_5points);
+        }else{
+            LOG(FATAL) << "The branch optimisation method specified is unknown: " << optMethodModel_;
         }
     } else {
         // Initialise branch optimiser
@@ -104,6 +107,8 @@ void UnifiedTSHSearchable::setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
             optimiser_ = new PseudoNewtonOptimizer(lk);
         } else if (optMethodModel_ == UnifiedTSHSearchable::OPTIMIZATION_GRADIENT) {
             optimiser_ = new ConjugateGradientMultiDimensions(lk);
+        }else{
+            LOG(FATAL) << "The branch optimisation method specified is unknown: " << optMethodModel_;
         }
     }
     optimiser_->setConstraintPolicy(AutoParameter::CONSTRAINTS_AUTO);

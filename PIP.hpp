@@ -50,6 +50,12 @@
 #include <Bpp/Phyl/Model/Protein/ProteinSubstitutionModel.h>
 #include <Bpp/Phyl/Model/FrequenciesSet/ProteinFrequenciesSet.h>
 #include <Bpp/Phyl/TreeTemplate.h>
+#include <Bpp/Phyl/Model/AbstractBiblioSubstitutionModel.h>
+#include <Bpp/Phyl/Model/Codon/CodonDistanceFrequenciesSubstitutionModel.h>
+
+#include <Bpp/Seq/GeneticCode/GeneticCode.h>
+#include <Bpp/Seq/AlphabetIndex/GranthamAAChemicalDistance.h>
+
 
 using namespace bpp;
 namespace bpp {
@@ -67,7 +73,7 @@ namespace bpp {
 
     public:
 
-        explicit PIP_Nuc(const NucleicAlphabet *alpha, double lambda = 0.1, double mu = 0.1, SubstitutionModel *basemodel = nullptr);
+        explicit PIP_Nuc(const NucleicAlphabet *alpha, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData);
 
         virtual ~PIP_Nuc() = default;
 
@@ -106,7 +112,7 @@ namespace bpp {
         double lambda_, mu_, tau_, nu_;
         std::string name_;
         std::string modelname_;
-        ProteinFrequenciesSet *freqSet_;
+        FrequenciesSet *freqSet_;
         mutable SubstitutionModel *submodel_;
 
     public:
@@ -115,7 +121,7 @@ namespace bpp {
          *
          * @param alpha A proteic alphabet.
          */
-        PIP_AA(const ProteicAlphabet *alpha, double lambda = 0.1, double mu = 0.1, SubstitutionModel *basemodel = nullptr);
+        PIP_AA(const ProteicAlphabet *alpha, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData);
 
         /**
          * @brief Build a PIP_AA model with special equilibrium frequencies.
@@ -181,6 +187,59 @@ namespace bpp {
         void updateMatrices();
 
     };
+
+
+    class PIP_Codon : public AbstractBiblioSubstitutionModel, public virtual CodonReversibleSubstitutionModel {
+    private:
+
+        double lambda_, mu_;
+        std::string name_;
+        std::string modelname_;
+        mutable SubstitutionModel *submodel_;
+
+        /*
+         * @brief optional FrequenciesSet if model is defined through a
+         * FrequenciesSet.
+         *
+         */
+
+        const FrequenciesSet *freqSet_;
+        std::unique_ptr<CodonDistanceFrequenciesSubstitutionModel> pmodel_;
+
+
+    public:
+
+        PIP_Codon(const GeneticCode *gc, double lambda, double mu, SubstitutionModel *basemodel);
+
+        ~PIP_Codon();
+
+        PIP_Codon(const PIP_Codon &pip_codon);
+
+        PIP_Codon &operator=(const PIP_Codon &pip_codon);
+
+        PIP_Codon *clone() const { return new PIP_Codon(*this); }
+
+
+    public:
+
+
+        std::string getName() const { return "PIP_Codon"; }
+
+        const SubstitutionModel &getSubstitutionModel() const { return *pmodel_.get(); }
+
+        const GeneticCode *getGeneticCode() const { return pmodel_->getGeneticCode(); }
+
+        double getCodonsMulRate(size_t i, size_t j) const { return pmodel_->getCodonsMulRate(i, j); }
+
+        const FrequenciesSet *getFrequenciesSet() const { return pmodel_->getFrequenciesSet(); }
+
+    protected:
+        SubstitutionModel &getSubstitutionModel() { return *pmodel_.get(); }
+
+    };
+
+
+
 
     // If the user requires to estimate the model parameters (lambda/mu) from the data, then invoke the right method
 

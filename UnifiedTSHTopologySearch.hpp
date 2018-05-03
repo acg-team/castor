@@ -60,7 +60,8 @@ namespace tshlib {
 
     private:
         bpp::AbstractHomogeneousTreeLikelihood *likelihoodFunc;
-        double initialLikelihoodValue;
+        double tshinitScore;
+        double tshcycleScore;
         TreeSearchHeuristics tshStrategy;
         TreeRearrangmentOperations tshOperations;
         TreeSearchStopCondition stopConditionMethod;
@@ -76,7 +77,8 @@ namespace tshlib {
 
         TreeSearch() {
             likelihoodFunc = nullptr;
-            initialLikelihoodValue = -std::numeric_limits<double>::infinity();
+            tshinitScore = -std::numeric_limits<double>::infinity();
+            tshcycleScore = -std::numeric_limits<double>::infinity();
             tshStrategy = TreeSearchHeuristics::nosearch;
             tshOperations = TreeRearrangmentOperations::classic_Mixed;
             stopConditionMethod = TreeSearchStopCondition::convergence;
@@ -105,7 +107,7 @@ namespace tshlib {
         }
 
         void setInitialLikelihoodValue(double in_initialLikelihoodValue) {
-            initialLikelihoodValue = in_initialLikelihoodValue;
+            tshinitScore = in_initialLikelihoodValue;
         }
 
         void setTreeSearchStrategy(TreeSearchHeuristics in_tshStrategy, TreeRearrangmentOperations in_tshOperations) {
@@ -123,7 +125,7 @@ namespace tshlib {
         }
 
         double getInitialLikelihoodValue() const {
-            return initialLikelihoodValue;
+            return tshinitScore;
         }
 
         TreeSearchHeuristics getTshStrategy() const {
