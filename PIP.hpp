@@ -121,7 +121,7 @@ namespace bpp {
          *
          * @param alpha A proteic alphabet.
          */
-        PIP_AA(const ProteicAlphabet *alpha, double lambda = 0.1, double mu = 0.1, SubstitutionModel *basemodel = nullptr);
+        PIP_AA(const ProteicAlphabet *alpha, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData);
 
         /**
          * @brief Build a PIP_AA model with special equilibrium frequencies.

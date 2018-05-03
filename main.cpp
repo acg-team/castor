@@ -530,7 +530,11 @@ int main(int argc, char *argv[]) {
             }
 
             // Instantiation of the canonical substitution model
-            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, modelMap, "", true, false, 0);
+            if(PAR_Alphabet.find("Protein") != std::string::npos){
+                smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(), sites, modelMap, "", true, false, 0);
+            }else{
+                smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, modelMap, "", true, false, 0);
+            }
 
             // If PIP, then check if lambda/mu initial values are estimated from the data
             estimatePIPparameters = !(modelMap.find("estimated") == modelMap.end());
@@ -556,7 +560,7 @@ int main(int argc, char *argv[]) {
             if (PAR_Alphabet.find("DNA") != std::string::npos) {
                 smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
-                smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), lambda, mu, smodel);
+                smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
             } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
                 smodel = new PIP_Codon(gCode.get(), lambda, mu, smodel);
                 ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
