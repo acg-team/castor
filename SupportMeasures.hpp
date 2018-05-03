@@ -48,11 +48,11 @@
 #include "pPIP.hpp"
 
 namespace bpp {
-    class Boostrap {
+    class Bootstrap {
 
     public:
 
-        Boostrap(AbstractHomogeneousTreeLikelihood *tl,
+        Bootstrap(AbstractHomogeneousTreeLikelihood *tl,
                  const SiteContainer &data,
                  DiscreteDistribution *rDist,
                  tshlib::Utree *utree_,
@@ -62,10 +62,11 @@ namespace bpp {
                  bool suffixIsOptional = true,
                  int warn = 0);
 
-        virtual ~Boostrap() = default;
+        virtual ~Bootstrap() = default;
 
 
     };
+
 }
 
 

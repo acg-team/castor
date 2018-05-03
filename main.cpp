@@ -872,7 +872,7 @@ int main(int argc, char *argv[]) {
         if(PAR_support == "bootstrap") {
             ApplicationTools::displayMessage("\n[Tree support measures]");
 
-            bpp::Boostrap(tl, *sites, rDist, utree, &tm, jatiapp.getParams(), "support.");
+            bpp::Bootstrap(tl, *sites, rDist, utree, &tm, jatiapp.getParams(), "support.");
         }
 
         // Delete objects and free memory
