@@ -129,7 +129,8 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangeme
     fireTopologyChange(rearrangedNodes);
 
     // 2. Compute loglikelihood
-    double logLk = getLogLikelihoodOnTopologyChange();
+    //double logLk = getLogLikelihoodOnTopologyChange();
+    double logLk = getLogLikelihoodOnTreeRearrangement();
 
     // Remove root node from the utree structure
     utree_->removeVirtualRootNode();
@@ -159,16 +160,19 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangeme
 
         // call to function which retrieves the lk value for each site
         lk_sites[i] = log(computeLikelihoodForASite(tempExtendedNodeList, i)) * rootWeights->at(i);
-
+        DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
     }
 
     // Sum all the values stored in the lk vector
     logLK = MatrixBppUtils::sumVector(&lk_sites);
-    DVLOG(3) << "LK Sites [BPP] " << logLK;
+    DVLOG(2) << "LK Sites [BPP] " << std::setprecision(18) << logLK;
 
     // compute PHi
     double log_phi_value = computePhi(lk_site_empty);
+    DVLOG(2) << "PHI [BPP] " << std::setprecision(18) << log_phi_value;
+
     logLK += log_phi_value;
+
 
 
     return logLK;

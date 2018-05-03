@@ -448,7 +448,7 @@ void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib:
 void UtreeBppUtils::updateTree_u2b(bpp::Tree *inBTree, tshlib::Utree *inUTree, UtreeBppUtils::treemap &tm) {
 
 }
-
+/*
 Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix) {
 
     size_t rows, cols;
@@ -505,7 +505,7 @@ Eigen::VectorXd MatrixBppUtils::Vector2Eigen(const std::vector<double> &inVector
     return vector;
 }
 
-/*
+
 bpp::Matrix<double> MatrixBppUtils::Eigen2Matrix(Eigen::MatrixXd &inMatrix) {
 
     bpp::Matrix<double> outMatrix;
@@ -1030,4 +1030,35 @@ std::string TextUtils::appendToFilePath(std::string inputFilePath, std::string s
     std::string fullInitialMSAFilePath = joinedFullPath + "/" + joinedString;
 
     return fullInitialMSAFilePath;
+}
+
+void AlignmentUtils::CheckAlignmentConsistency(bpp::SiteContainer &sites) {
+
+    int gapCode = sites.getAlphabet()->getGapCharacterCode();
+    int unresolvedCode = sites.getAlphabet()->getUnknownCharacterCode();
+    bool nonGapSeen = false;
+    bool nonUnkownSeen = false;
+    int currentChar;
+
+    for (unsigned long i=0;i<sites.getNumberOfSites();i++){
+
+        nonGapSeen = false;
+        nonUnkownSeen = false;
+
+        for(unsigned long s=0;s<sites.getNumberOfSequences();s++) {
+
+            currentChar = sites.getSite(i).getValue(s);
+
+            if(currentChar != gapCode) nonGapSeen=true;
+            if(currentChar != unresolvedCode) nonUnkownSeen=true;
+
+        }
+
+        LOG_IF(FATAL, !nonGapSeen || !nonUnkownSeen) << "Column #"<<  i+1 << " of the alignment contains only gaps. Please remove it and try again!";
+
+    }
+}
+
+bool ComparisonUtils::areLogicallyEqual(double a, double b) {
+    return a==b || std::abs(a-b)<std::abs(std::min(a,b))*std::numeric_limits<double>::epsilon();
 }

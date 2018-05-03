@@ -43,7 +43,7 @@
  */
 #ifndef MINIJATI_OPTIMIZATORS_HPP
 #define MINIJATI_OPTIMIZATORS_HPP
-
+#include <Bpp/Phyl/Distance/DistanceMethod.h>
 #include "pPIP.hpp"
 
 namespace bpp {

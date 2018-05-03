@@ -50,7 +50,7 @@
 #include <glog/logging.h>
 
 #define ERR_STATE (-999)
-
+#define DBL_EPSILON 2.2204460492503131e-16
 #define MATCH_STATE 1
 #define GAP_X_STATE 2
 #define GAP_Y_STATE 3

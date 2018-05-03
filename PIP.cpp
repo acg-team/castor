@@ -48,9 +48,10 @@
 #include <Bpp/Phyl/PatternTools.h>
 #include <boost/algorithm/string.hpp>
 #include <Bpp/Phyl/Model/Nucleotide/K80.h>
+#include <glog/logging.h>
 
 
-PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, SubstitutionModel *basemodel) :
+PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData) :
         AbstractParameterAliasable("PIP."),
         AbstractReversibleNucleotideSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP."),
         lambda_(lambda), mu_(mu), r_(), l_(), k_(), exp1_(), exp2_(), p_(size_, size_) {
@@ -64,22 +65,28 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, double lambda, double mu, Substit
 
     for (int i = 0; i < parlist.size(); i++) {
         addParameter_(new Parameter("PIP." + parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
-        //addParameter_(new Parameter(parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
     }
 
     name_ = submodel_->getName() + "+PIP";
     modelname_ = "PIP." + submodel_->getName();
-    //¨generator_.resize(alpha->getSize(), alpha->getSize());
-    //size_ = alpha->getSize();
-    //freq_.resize(alpha->getSize());
-
 
 
     addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS));
     addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS));
-    //addParameter_(new Parameter("PIP.lambda", lambda, &FrequenciesSet::FREQUENCE_CONSTRAINT_SMALL));
-    //addParameter_(new Parameter("PIP.mu", mu, &FrequenciesSet::FREQUENCE_CONSTRAINT_SMALL));
 
+    // Compute frequencies from data
+    if(initFreqFromData){
+
+        setFreqFromData(data, 0);
+
+    }else{
+        // Add frequency for gap character
+        freq_ = submodel_->getFrequencies();
+        freq_[alphabet_->getGapCharacterCode()] = 0; // hack for updateMatrices()
+
+    }
+
+    LOG_IF(WARNING, bpp::VectorTools::sum(freq_)!= 1) << "The state frequencies do not sum up to 1. Please review your model definition.";
 
 
     updateMatrices();
@@ -100,15 +107,6 @@ void PIP_Nuc::updateMatrices() {
             submodel_->setParameterValue(parName, getParameters()[i].getValue());
         }
     }
-
-    //submodel_->setAllParametersValues(test);
-
-    //AbstractReversibleSubstitutionModel::updateMatrices();
-
-    // Add frequency for gap character
-    freq_ = submodel_->getFrequencies();
-    freq_[alphabet_->getGapCharacterCode()] = 0; // hack for updateMatrices()
-
 
     // Copy the generator from substitution model + extend it
     const bpp::Matrix<double> &qmatrix = submodel_->getGenerator();
@@ -228,71 +226,79 @@ void PIP_Nuc::setFreqFromData(const SequenceContainer &data, double pseudoCount)
 }
 
 
-PIP_AA::PIP_AA(const ProteicAlphabet *alpha, double lambda, double mu, SubstitutionModel *basemodel) :
+PIP_AA::PIP_AA(const ProteicAlphabet *alpha, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData) :
         AbstractParameterAliasable("PIP."),
         AbstractReversibleProteinSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP."),
         lambda_(lambda), mu_(mu), freqSet_(0) {
-//#include "__PIP_AAExchangeabilityCode"
-//#include "__PIP_AAFrequenciesCode"
-    // Setting basemodel to PIP
+
+    // Setting basemodel to PIP and inherit freq set
     submodel_ = basemodel;
 
-    freqSet_ = new FixedProteinFrequenciesSet(alpha, freq_);
-    name_ = basemodel->getName() + "+PIP";
-    modelname_ = "PIP." + submodel_->getName();
+    // Inherit frequency set from basemodel and the associated parameters
+    freqSet_  = const_cast<FrequenciesSet *>(submodel_->getFrequenciesSet());
+
+    // Extending namespace
+    std::string namespaceModel = submodel_->getName()+"+PIP." + freqSet_->getName();
 
 
-    // Inheriting basemodel parameters
+    std::vector<double> subModelFreqs;
+    // Compute frequencies from data
+    if(initFreqFromData){
+        setFreqFromData(data, 0);
+    }else{
+        // Add fixed frequency for gap character
+        freq_ = freqSet_->getFrequencies();
+    }
+
+
+    freqSet_->setNamespace(namespaceModel);
+
+    // Set model name and prefix
+    name_ = namespaceModel;
+    modelname_ = "PIP." + submodel_->getName() + "." + freqSet_->getName();
+
+    // Inheriting basemodel parameters (excluded frequency parameters)
     ParameterList parlist = basemodel->getParameters();
 
     for (int i = 0; i < parlist.size(); i++) {
-        addParameter_(new Parameter("PIP." + parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
+            addParameter_(new Parameter("PIP." + parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
     }
 
-    //name_ = basemodel->getName() + "+PIP";
-
+    // Add PIP parameters
     addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
     addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
 
+
+
+    //Update parameters and re-compute generator and eigen values:
     updateMatrices();
 }
 
-/*
-PIP_AA::PIP_AA(const ProteicAlphabet *alpha, ProteinFrequenciesSet *freqSet, bool initFreqs) :
-        AbstractParameterAliasable("PIP_AA+F."),
-        AbstractReversibleProteinSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP_AA+F."),
-        freqSet_(freqSet) {
-//#include "__PIP_AAExchangeabilityCode"
-//#include "__PIP_AAFrequenciesCode"
-    freqSet_->setNamespace("PIP_AA+F." + freqSet_->getNamespace());
-    if (initFreqs) freqSet_->setFrequencies(freq_);
-    else freq_ = freqSet_->getFrequencies();
-    addParameters_(freqSet_->getParameters());
-    updateMatrices();
-}
-*/
+
 void PIP_AA::updateMatrices() {
+
     lambda_ = getParameterValue("lambda");
     mu_ = getParameterValue("mu");
 
+    // Reset frequency for gap character
+    freq_ = freqSet_->getFrequencies();
+    freq_.resize(getNumberOfStates());
+    // Reset frequency for gap character
+    LOG_IF(WARNING, bpp::VectorTools::sum(freq_)!= 1) << "The state frequencies do not sum up to 1. Please review your model definition.";
 
-    unsigned long eraseCharNum = name_.size();
+
+
+    unsigned long eraseCharNum = 4; // substring="PIP."
 
     for (int i = 0; i < getParameters().size(); i++) {
         //test[i].getName();
         std::string parName = getParameters()[i].getName();
         if (parName.find(modelname_) != std::string::npos) {
-            parName.erase(parName.begin(), parName.begin() + eraseCharNum + 1);
+            parName.erase(parName.begin(), parName.begin() + eraseCharNum + submodel_->getName().size() + 1 );
             submodel_->setParameterValue(parName, getParameters()[i].getValue());
         }
     }
 
-    //AbstractReversibleSubstitutionModel::updateMatrices();
-
-    // Add frequency for gap character
-
-    freq_ = submodel_->getFrequencies();
-    freq_[alphabet_->getGapCharacterCode()] = 0; // hack for updateMatrices()
 
 
     // Copy the generator from substitution model + extend it
@@ -304,19 +310,14 @@ void PIP_AA::updateMatrices() {
 
     for (int i = 0; i < rows - 1; i++) {
         for (int j = 0; j < cols; j++) {
-
             if (i == j) {
                 generator_(i, j) = qmatrix(i, j) - mu_;
             } else {
-
                 generator_(i, j) = qmatrix(i, j);
             }
-
         }
         generator_(i, cols - 1) = mu_;
     }
-
-
 
     // Copy the exchangeability from substitution model + extend it
     const bpp::Matrix<double> &exMatrix = submodel_->getExchangeabilityMatrix();
@@ -324,15 +325,12 @@ void PIP_AA::updateMatrices() {
     // Exchangeability
     for (int i = 0; i < rows - 1; i++) {
         for (int j = 0; j < cols - 1; j++) {
-
             if (i == j) {
                 exchangeability_(i, j) = exMatrix(i, j) - mu_;
             } else {
                 exchangeability_(i, j) = exMatrix(i, j);
             }
-
         }
-
         exchangeability_(i, cols - 1) = mu_;
     }
 
@@ -371,19 +369,31 @@ void PIP_AA::updateMatrices() {
 void PIP_AA::setFreqFromData(const SequenceContainer &data, double pseudoCount) {
     std::map<int, int> counts;
     SequenceContainerTools::getCounts(data, counts);
+    std::vector<double> frequencies(getNumberOfStates()-1);
     double t = 0;
-    for (int i = 0; i < static_cast<int>(size_); i++) {
+    for (int i = 0; i < static_cast<int>(size_)-1; i++) {
+
         t += (counts[i] + pseudoCount);
     }
-    for (size_t i = 0; i < size_; ++i) freq_[i] = (static_cast<double>(counts[static_cast<int>(i)]) + pseudoCount) / t;
+    for (size_t i = 0; i < size_-1; ++i) frequencies[i] = (static_cast<double>(counts[static_cast<int>(i)]) + pseudoCount) / t;
 
-    freq_[data.getAlphabet()->getGapCharacterCode()] = 0;
-
-    freqSet_->setFrequencies(freq_);
-    //Update parameters and re-compute generator and eigen values:
+    freqSet_->setFrequencies(frequencies);
     matchParametersValues(freqSet_->getParameters());
 
+    freq_ = freqSet_->getFrequencies();
+    // Reset frequency for gap character
+
+    freq_.resize(getNumberOfStates());
+    freq_[data.getAlphabet()->getGapCharacterCode()] = 0;
+
+    LOG_IF(WARNING, bpp::VectorTools::sum(freq_)!= 1) << "The state frequencies do not sum up to 1. Please review your model definition.";
+
 }
+
+
+
+
+
 
 
 PIP_Codon::PIP_Codon(const GeneticCode *gc, double lambda, double mu, SubstitutionModel *basemodel) :

@@ -847,6 +847,8 @@ void RHomogeneousTreeLikelihood_PIP::_extendNodeListOnSetA(int qnodeID, std::vec
 
     } while (setAData_[treemap_.right.at(temp)].first.at(site));
 
+    std::reverse(listNodes.begin(),listNodes.end());
+
 }
 
 
@@ -1026,14 +1028,14 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTopologyChange() const 
 
         // call to function which retrives the lk value for each site
         lk_sites[i] = log(computeLikelihoodForASite(tempExtendedNodeList, i)) * rootWeights->at(i);
-
+        DVLOG(3) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
     }
 #pragma omp barrier
 #pragma omp master
 
     // Sum all the values stored in the lk vector
     logLK = MatrixBppUtils::sumVector(&lk_sites);
-    DVLOG(3) << "LK Sites [BPP] " << logLK;
+    DVLOG(2) << "LK Sites [BPP] " << std::setprecision(18) <<  logLK;
 
 
     // compute PHi
@@ -1078,7 +1080,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
             }
 
 
-            VLOG(3) << "lk empty at node[" << node->getName() << "] -> " << fv_site << std::endl;
+            DVLOG(3) << "lk empty at node[" << node->getName() << "] -> " << fv_site << std::endl;
 
 
             double li = fv_site * rateDistribution_->getProbability(c);
@@ -1089,7 +1091,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
 
 
     // Empty column
-    DVLOG(3) << "LK Empty [BPP] " << lk_site_empty;
+    DVLOG(2) << "LK Empty [BPP] " << std::setprecision(18) << lk_site_empty;
     return lk_site_empty;
 }
 
@@ -1105,7 +1107,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
         for (size_t c = 0; c < nbClasses_; c++) {
             //setAData_[treemap_.left.at(node->getId())].first.at(site)
             if (setAData_[nodeID].first.at(i)) {
-                DVLOG(3) << "[BPP] Likelhood for setA (" << i << ") @node " << node->getName();
+                DVLOG(3) << "[BPP] Likelihood for setA (" << i << ") @node " << node->getName();
                 if (!node->isLeaf()) {
 
                     auto fv_sons = new Vdouble(nbStates_);
@@ -1157,8 +1159,7 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
     const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
 
     size_t i;
-//#pragma omp barrier
-//#pragma omp parallel for if (OMPENABLED) private(i)
+
     for (i = 0; i < nbDistinctSites_; i++) {
         // For each site in the alignment
         //int tid = omp_get_thread_num();
@@ -1166,21 +1167,20 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
         double lk_site = computeLikelihoodForASite(listNodes, i);
 
         lk_sites[i] = log(lk_site) * rootWeights->at(i);
-        DVLOG(3) << "log_lk[" << i << "]=" << lk_sites[i] << std::endl;
+        DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
     }
-//#pragma omp barrier
+
     // Sum all the values stored in the lk vector
     logLK= MatrixBppUtils::sumVector(&lk_sites);
-    DVLOG(3) << "LK Sites [BPP] " << logLK;
-
-
-    //double lk_site_empty = computeLikelihoodWholeAlignmentEmptyColumn();
+    DVLOG(2) << "LK Sites [BPP] " << std::setprecision(18) <<  logLK;
 
     // compute PHi
     double log_phi_value = computePhi(lk_site_empty);
+    DVLOG(2) << "PHI [BPP] " << std::setprecision(18) << log_phi_value;
+
+    // Add phi to site likelihood
     logLK += log_phi_value;
 
-    //VLOG(1) << "computed loglikelihood " <<  logLK;
     return logLK;
 
 

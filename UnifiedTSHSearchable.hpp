@@ -70,7 +70,7 @@ namespace bpp {
         std::string OPTIMIZATION_NEWTON = "newton";
         std::string OPTIMIZATION_GRADIENT = "gradient";
         std::string OPTIMIZATION_BRENT = "Brent";
-        std::string OPTIMIZATION_BFGS = "BFGS";
+        std::string OPTIMIZATION_BFGS = "bfgs";
 
         UnifiedTSHSearchable() : lk_(nullptr), optimiser_(nullptr), optMethodModel_(""), optNumericalDerivatives_(false) {}
 
