@@ -189,7 +189,7 @@ namespace bpp {
     };
 
 
-    class PIP_Codon : public AbstractBiblioSubstitutionModel, public virtual CodonReversibleSubstitutionModel {
+    class PIP_Codon : public virtual AbstractReversibleSubstitutionModel {
     private:
 
         double lambda_, mu_;
@@ -203,13 +203,13 @@ namespace bpp {
          *
          */
 
-        const FrequenciesSet *freqSet_;
-        std::unique_ptr<CodonDistanceFrequenciesSubstitutionModel> pmodel_;
+        FrequenciesSet *freqSet_;
 
 
     public:
+        size_t getNumberOfStates() const override { return 65; };
 
-        PIP_Codon(const GeneticCode *gc, double lambda, double mu, SubstitutionModel *basemodel);
+        PIP_Codon(const CodonAlphabet *alpha, const GeneticCode *gc, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData);
 
         ~PIP_Codon();
 
@@ -225,16 +225,19 @@ namespace bpp {
 
         std::string getName() const { return "PIP_Codon"; }
 
-        const SubstitutionModel &getSubstitutionModel() const { return *pmodel_.get(); }
+        //const SubstitutionModel &getSubstitutionModel() const { return *pmodel_.get(); }
 
-        const GeneticCode *getGeneticCode() const { return pmodel_->getGeneticCode(); }
+        //const GeneticCode *getGeneticCode() const { return pmodel_->getGeneticCode(); }
 
-        double getCodonsMulRate(size_t i, size_t j) const { return pmodel_->getCodonsMulRate(i, j); }
+        //double getCodonsMulRate(size_t i, size_t j) const { return pmodel_->getCodonsMulRate(i, j); }
 
-        const FrequenciesSet *getFrequenciesSet() const { return pmodel_->getFrequenciesSet(); }
+        //const FrequenciesSet *getFrequenciesSet() const { return pmodel_->getFrequenciesSet(); }
 
     protected:
-        SubstitutionModel &getSubstitutionModel() { return *pmodel_.get(); }
+        void updateMatrices() override;
+
+    protected:
+        //SubstitutionModel &getSubstitutionModel() { return *pmodel_.get(); }
 
     };
 

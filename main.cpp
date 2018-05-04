@@ -562,7 +562,7 @@ int main(int argc, char *argv[]) {
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
                 smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
             } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
-                smodel = new PIP_Codon(gCode.get(), lambda, mu, smodel);
+                smodel = new PIP_Codon(nullptr, gCode.get(), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
                 ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
                 LOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
             }

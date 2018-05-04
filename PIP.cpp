@@ -394,17 +394,59 @@ void PIP_AA::setFreqFromData(const SequenceContainer &data, double pseudoCount) 
 
 
 
-
-
-PIP_Codon::PIP_Codon(const GeneticCode *gc, double lambda, double mu, SubstitutionModel *basemodel) :
-        AbstractBiblioSubstitutionModel("PIP_Codon."),
-        pmodel_(new CodonDistanceFrequenciesSubstitutionModel(gc,
-                                                              new K80(dynamic_cast<const CodonAlphabet *>(gc->getSourceAlphabet())->getNucleicAlphabet()),
-                                                              const_cast<FrequenciesSet *>(basemodel->getFrequenciesSet()))) {
+PIP_Codon::PIP_Codon(const CodonAlphabet *alpha, const GeneticCode *gc, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData):
+        AbstractParameterAliasable("PIP."),
+        AbstractReversibleSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP."),
+        lambda_(lambda), mu_(mu), freqSet_(0){
 
     computeFrequencies(false);
 
 
+    // Setting basemodel to PIP and inherit freq set
+    submodel_ = basemodel;
+
+    // Inherit frequency set from basemodel and the associated parameters
+    freqSet_  = const_cast<FrequenciesSet *>(submodel_->getFrequenciesSet());
+
+    // Extending namespace
+    std::string namespaceModel = submodel_->getName()+"+PIP." + freqSet_->getName();
+
+
+    std::vector<double> subModelFreqs;
+    // Compute frequencies from data
+    if(initFreqFromData){
+        setFreqFromData(data, 0);
+    }else{
+        // Add fixed frequency for gap character
+        //freq_ = freqSet_->getFrequencies();
+    }
+
+
+    freqSet_->setNamespace(namespaceModel);
+
+    // Set model name and prefix
+    name_ = namespaceModel;
+    modelname_ = "PIP." + submodel_->getName() + "." + freqSet_->getName();
+
+    // Inheriting basemodel parameters (excluded frequency parameters)
+    ParameterList parlist = basemodel->getParameters();
+
+    for (int i = 0; i < parlist.size(); i++) {
+        addParameter_(new Parameter("PIP." + parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
+    }
+
+    // Add PIP parameters
+    addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS_STAR));
+    addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
+
+
+
+    //Update parameters and re-compute generator and eigen values:
+    updateMatrices();
+
+
+
+    /*
     // Setting basemodel to PIP
     submodel_ = basemodel;
 
@@ -427,22 +469,28 @@ PIP_Codon::PIP_Codon(const GeneticCode *gc, double lambda, double mu, Substituti
     // update matrice
 
     updateMatrices();
-
-}
-
-PIP_Codon::PIP_Codon(const PIP_Codon &pip_codon) :
-        AbstractBiblioSubstitutionModel(pip_codon),
-        pmodel_(new CodonDistanceFrequenciesSubstitutionModel(*pip_codon.pmodel_)) {}
-
-
-PIP_Codon &PIP_Codon::operator=(const PIP_Codon &pip_codon) {
-    AbstractBiblioSubstitutionModel::operator=(pip_codon);
-    pmodel_.reset(new CodonDistanceFrequenciesSubstitutionModel(*pip_codon.pmodel_));
-    return *this;
+    */
 }
 
 PIP_Codon::~PIP_Codon() {}
 
+void PIP_Codon::updateMatrices() {
+    lambda_ = getParameterValue("lambda");
+    mu_ = getParameterValue("mu");
+
+
+
+
+}
+
+PIP_Codon::PIP_Codon(const PIP_Codon& pip_codon):
+        AbstractParameterAliasable("PIP."),
+       AbstractReversibleSubstitutionModel(pip_codon) {}
+
+PIP_Codon& PIP_Codon::operator=(const PIP_Codon& pip_codon)
+{
+    return *this;
+}
 
 
 
