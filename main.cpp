@@ -616,7 +616,8 @@ int main(int argc, char *argv[]) {
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
-            alignment->PIPAligner(ftn, true);
+            bool flag_RAM = true;
+            alignment->PIPAligner(ftn, true,flag_RAM);
 
             LOG(INFO) << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
 

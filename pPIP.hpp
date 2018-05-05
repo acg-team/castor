@@ -76,7 +76,7 @@ namespace bpp {
 
         ~pPIP(){};
 
-        void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local);
+        void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local,bool flag_RAM);
 
 
         std::vector< std::string > getMSA(bpp::Node *node);
@@ -121,6 +121,10 @@ namespace bpp {
         std::vector<double> mu_;                                   // vector[rate] of mu rate with Gamma distribution
         std::vector<double> nu_;                                   // vector[rate] of nu (normalizing constant) with Gamma distribution
         double tau_;                                               // total tree length
+
+
+        double *lk_down;
+
 
         bpp::ColMatrix<double> pi_;                                // steady state base frequencies
 
@@ -307,6 +311,8 @@ namespace bpp {
                                  std::map<MSAcolumn_t, double> &lkY);
 
         void DP3D_PIP(bpp::Node *node, bool local);
+
+        void DP3D_PIP_RAM(bpp::Node *node, bool local);
 
         void DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,
                          double temperature,int num_SB);
