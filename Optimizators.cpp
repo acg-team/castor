@@ -613,8 +613,8 @@ namespace bpp {
 
             pAlignment->setSubstModel(tu_subModel);
             pAlignment->setTree(&tl->getTree());
-            // TODO: flag_RAM
-            pAlignment->PIPAligner(ftn, true,true);
+            // TODO: flag_RAM, flag_map
+            pAlignment->PIPAligner(ftn, true,true,true);
 
             double score = pAlignment->getScore(pAlignment->getRootNode());
             ApplicationTools::displayResult("\nLog likelihood after MSA optimisation", TextTools::toString(score, 15));

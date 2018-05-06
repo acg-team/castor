@@ -1157,7 +1157,8 @@ double pPIP::computeLK_M_local(double NU,
                                MSAcolumn_t &sL,
                                MSAcolumn_t &sR,
                                unsigned long m,
-                               std::map<MSAcolumn_t, double> &lkM) {
+                               std::map<MSAcolumn_t, double> &lkM,
+                               bool flag_map) {
 
     double log_pr;
 
@@ -1177,8 +1178,17 @@ double pPIP::computeLK_M_local(double NU,
     s.append(sL);
     s.append(sR);
 
-    auto it = lkM.find(s);
-    if (it == lkM.end()) {
+    bool is_found;
+    std::map<MSAcolumn_t, double>::iterator it;
+    if(flag_map){
+        it = lkM.find(s);
+        is_found= (it == lkM.end());
+    }else{
+        is_found=true;
+    }
+
+
+    if (is_found) {
         // is the first time that it computes the lk of this column
 
         unsigned long idx;
@@ -1245,7 +1255,8 @@ double pPIP::computeLK_X_local(double NU,
                                MSAcolumn_t &sL,
                                MSAcolumn_t &col_gap_R,
                                unsigned long m,
-                               std::map<MSAcolumn_t, double> &lkX) {
+                               std::map<MSAcolumn_t, double> &lkX,
+                               bool flag_map) {
 
     double log_pr;
 
@@ -1265,8 +1276,16 @@ double pPIP::computeLK_X_local(double NU,
     s.append(sL);
     s.append(col_gap_R);
 
-    auto it = lkX.find(s);
-    if (it == lkX.end()) {
+    bool is_found;
+    std::map<MSAcolumn_t, double>::iterator it;
+    if(flag_map){
+        it = lkX.find(s);
+        is_found= (it == lkX.end());
+    }else{
+        is_found=true;
+    }
+
+    if (is_found) {
         // is the first time that it computes the lk of this column
 
         unsigned long idx;
@@ -1334,7 +1353,8 @@ double pPIP::computeLK_Y_local(double NU,
                                MSAcolumn_t &col_gap_L,
                                MSAcolumn_t &sR,
                                unsigned long m,
-                               std::map<MSAcolumn_t, double> &lkY) {
+                               std::map<MSAcolumn_t, double> &lkY,
+                               bool flag_map) {
 
     double log_pr;
 
@@ -1354,8 +1374,16 @@ double pPIP::computeLK_Y_local(double NU,
     s.append(col_gap_L);
     s.append(sR);
 
-    auto it = lkY.find(s);
-    if (it == lkY.end()) {
+    bool is_found;
+    std::map<MSAcolumn_t, double>::iterator it;
+    if(flag_map){
+        it = lkY.find(s);
+        is_found= (it == lkY.end());
+    }else{
+        is_found=true;
+    }
+
+    if (is_found) {
         // is the first time that it computes the lk of this column
 
         // number of discrete gamma categories
@@ -1416,7 +1444,7 @@ double pPIP::computeLK_Y_local(double NU,
     return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 }
 
-void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local) {
+void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
     // TODO: place as argument
     // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
@@ -1745,7 +1773,8 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local) {
                                                 sLs,
                                                 sRs,
                                                 m,
-                                                lkM);
+                                                lkM,
+                                                flag_map);
                     } else {
                         /*
                         val=computeLK_M_all_edges_s_opt(valM,
@@ -1873,7 +1902,8 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local) {
                                                 sLs,
                                                 col_gap_Rs,
                                                 m,
-                                                lkX);
+                                                lkX,
+                                                flag_map);
                     } else {
                         /*
                         val=computeLK_X_all_edges_s_opt(valM,
@@ -2000,7 +2030,8 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local) {
                                                 col_gap_Ls,
                                                 sRs,
                                                 m,
-                                                lkY);
+                                                lkY,
+                                                flag_map);
                     } else {
                         /*
                         val=computeLK_Y_all_edges_s_opt(valM,
@@ -2251,7 +2282,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local) {
     //==========================================================================================
 }
 
-void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
+void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
     // TODO: place as argument
     // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
@@ -2561,7 +2592,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                                 sLs,
                                                 sRs,
                                                 m,
-                                                lkM);
+                                                lkM,
+                                                flag_map);
                     } else {
                         /*
                         val=computeLK_M_all_edges_s_opt(valM,
@@ -2689,7 +2721,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                                 sLs,
                                                 col_gap_Rs,
                                                 m,
-                                                lkX);
+                                                lkX,
+                                                flag_map);
                     } else {
                         /*
                         val=computeLK_X_all_edges_s_opt(valM,
@@ -2816,7 +2849,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local) {
                                                 col_gap_Ls,
                                                 sRs,
                                                 m,
-                                                lkY);
+                                                lkY,
+                                                flag_map);
                     } else {
                         /*
                         val=computeLK_Y_all_edges_s_opt(valM,
@@ -3528,7 +3562,7 @@ void pPIP::setTree(const Tree *tree) {
 }
 
 
-void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local,bool flag_RAM) {
+void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local,bool flag_RAM,bool flag_map) {
     // progressive PIP aligner
     // local: local subtree, rooted at the current node
 
@@ -3585,9 +3619,9 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bo
 
             // align using progressive 3D DP PIP
             if(flag_RAM){
-
+                DP3D_PIP_RAM(node, local,flag_map); // local: tree rooted at the given node
             }else{
-                DP3D_PIP(node, local); // local: tree rooted at the given node
+                DP3D_PIP(node, local,flag_map); // local: tree rooted at the given node
             }
 
         }

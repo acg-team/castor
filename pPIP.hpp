@@ -76,7 +76,7 @@ namespace bpp {
 
         ~pPIP(){};
 
-        void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local,bool flag_RAM);
+        void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local,bool flag_RAM,bool flag_map);
 
 
         std::vector< std::string > getMSA(bpp::Node *node);
@@ -288,7 +288,8 @@ namespace bpp {
                                  std::string &sL,
                                  std::string &sR,
                                  unsigned long m,
-                                 std::map<MSAcolumn_t, double> &lkM);
+                                 std::map<MSAcolumn_t, double> &lkM,
+                                 bool flag_map);
 
         double computeLK_X_local(double NU,
                                  double valM,
@@ -298,7 +299,8 @@ namespace bpp {
                                  MSAcolumn_t &sL,
                                  MSAcolumn_t &col_gap_R,
                                  unsigned long m,
-                                 std::map<MSAcolumn_t, double> &lkX);
+                                 std::map<MSAcolumn_t, double> &lkX,
+                                 bool flag_map);
 
         double computeLK_Y_local(double NU,
                                  double valM,
@@ -308,11 +310,12 @@ namespace bpp {
                                  MSAcolumn_t &col_gap_L,
                                  MSAcolumn_t &sR,
                                  unsigned long m,
-                                 std::map<MSAcolumn_t, double> &lkY);
+                                 std::map<MSAcolumn_t, double> &lkY,
+                                 bool flag_map);
 
-        void DP3D_PIP(bpp::Node *node, bool local);
+        void DP3D_PIP(bpp::Node *node, bool local,bool flag_map);
 
-        void DP3D_PIP_RAM(bpp::Node *node, bool local);
+        void DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map);
 
         void DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,
                          double temperature,int num_SB);

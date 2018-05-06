@@ -617,7 +617,8 @@ int main(int argc, char *argv[]) {
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_RAM = true;
-            alignment->PIPAligner(ftn, true,flag_RAM);
+            bool flag_map = true;
+            alignment->PIPAligner(ftn, true,flag_RAM,flag_map);
 
             LOG(INFO) << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
 
