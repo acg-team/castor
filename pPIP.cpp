@@ -1256,7 +1256,8 @@ double pPIP::computeLK_X_local(double NU,
                                MSAcolumn_t &col_gap_R,
                                unsigned long m,
                                std::map<MSAcolumn_t, double> &lkX,
-                               bool flag_map) {
+                               bool flag_map,
+                               bool flag_RAM,int idx) {
 
     double log_pr;
 
@@ -1325,7 +1326,12 @@ double pPIP::computeLK_X_local(double NU,
                         betasNode_[nodeID][catg] * \
                         fv0;
 
-            double pL = compute_lk_down(sonLeft, sL, catg);
+            double pL;
+            if (flag_RAM) {
+                //pL = sonLeft.lk_down[idx];
+            } else {
+                pL = compute_lk_down(sonLeft, sL, catg);
+            }
 
             pr += p0 + pL;
         }
@@ -1354,7 +1360,8 @@ double pPIP::computeLK_Y_local(double NU,
                                MSAcolumn_t &sR,
                                unsigned long m,
                                std::map<MSAcolumn_t, double> &lkY,
-                               bool flag_map) {
+                               bool flag_map,
+                               bool flag_RAM,int idx) {
 
     double log_pr;
 
@@ -1423,7 +1430,12 @@ double pPIP::computeLK_Y_local(double NU,
                         betasNode_[nodeID][catg] * \
                         fv0;
 
-            double pR = compute_lk_down(sonRight, sR, catg);
+            double pR;
+            if (flag_RAM) {
+                //pR = sonLeft.lk_down[idx];
+            } else {
+                pR = compute_lk_down(sonRight, sR, catg);
+            }
 
             pr += p0 + pR;
 
@@ -1694,8 +1706,9 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 //                          bot_corner_j,
 //                          h, w)) {
 
-            lw = 0;
-            for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            //lw = 0;
+            //for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            for (unsigned long i = 0; i < h; i++) {
 
                 coordTriangle_this_i = i;
                 coordSeq_1 = coordTriangle_this_i - 1;
@@ -1704,7 +1717,8 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                 // get left MSA column
                 sLs = (MSA_.at(sequenceID_1).at(coordSeq_1));
 
-                for (int j = 0; j <= lw; j++) {
+                //for (int j = 0; j <= lw; j++) {
+                for (unsigned long j = 0; j < w; j++) {
 
                     coordTriangle_this_j = up_corner_j - j;
                     coordSeq_2 = coordTriangle_this_j - 1;
@@ -1827,8 +1841,9 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 //                          bot_corner_j,
 //                          h, w)) {
 
-            lw = 0;
-            for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            //lw = 0;
+            //for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            for (unsigned long i = 0; i < h; i++) {
 
                 coordTriangle_this_i = i;
                 coordTriangle_prev_i = coordTriangle_this_i - 1;
@@ -1837,18 +1852,19 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                 // get left MSA column
                 sLs = (MSA_.at(sequenceID_1).at(coordSeq_1));
 
-                for (int j = 0; j <= lw; j++) {
+                //for (int j = 0; j <= lw; j++) {
+                for (unsigned long j = 0; j < w; j++) {
 
                     coordTriangle_this_j = up_corner_j - j;
                     coordTriangle_prev_j = coordTriangle_this_j;
 
-                    idx = get_indices_M(coordTriangle_prev_i,
-                                        coordTriangle_prev_j,
-                                        up_corner_i,
-                                        up_corner_j,
-                                        bot_corner_i,
-                                        bot_corner_j,
-                                        m - 1, h, w);
+//                    idx = get_indices_M(coordTriangle_prev_i,
+//                                        coordTriangle_prev_j,
+//                                        up_corner_i,
+//                                        up_corner_j,
+//                                        bot_corner_i,
+//                                        bot_corner_j,
+//                                        m - 1, h, w);
                     if (idx >= 0) {
                         valM = LogM[m_binary_prev][i][j];
                     } else {
@@ -1903,7 +1919,9 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                                                 col_gap_Rs,
                                                 m,
                                                 lkX,
-                                                flag_map);
+                                                flag_map,
+                                                true,
+                                                i);
                     } else {
                         /*
                         val=computeLK_X_all_edges_s_opt(valM,
@@ -1927,13 +1945,13 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                     if (std::isnan(val)) {
                         LOG(FATAL) << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
                     }
-                    idx = get_indices_X(coordTriangle_this_i,
-                                        coordTriangle_this_j,
-                                        up_corner_i,
-                                        up_corner_j,
-                                        bot_corner_i,
-                                        bot_corner_j,
-                                        m, h, w);
+//                    idx = get_indices_X(coordTriangle_this_i,
+//                                        coordTriangle_this_j,
+//                                        up_corner_i,
+//                                        up_corner_j,
+//                                        bot_corner_i,
+//                                        bot_corner_j,
+//                                        m, h, w);
 
                     LogX[m_binary_this][i][j] = val;
                 }
@@ -1957,11 +1975,14 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 //                          bot_corner_j,
 //                          h, w)) {
 
-            lw = 0;
-            for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            //lw = 0;
+            //for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            for (unsigned long i = 0; i < h; i++) {
+
                 coordTriangle_this_i = i;
                 coordTriangle_prev_i = coordTriangle_this_i;
-                for (int j = 0; j <= lw; j++) {
+                //for (int j = 0; j <= lw; j++) {
+                for (unsigned long j = 0; j < w; j++) {
 
                     coordTriangle_this_j = up_corner_j - j;
                     coordTriangle_prev_j = coordTriangle_this_j - 1;
@@ -2031,7 +2052,9 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                                                 sRs,
                                                 m,
                                                 lkY,
-                                                flag_map);
+                                                flag_map,
+                                                true,
+                                                j);
                     } else {
                         /*
                         val=computeLK_Y_all_edges_s_opt(valM,
@@ -2088,10 +2111,14 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 //                          bot_corner_j,
 //                          h, w)) {
 
-            lw = 0;
-            for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            //lw = 0;
+            //for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            for (unsigned long i = 0; i < h; i++) {
+
                 coordTriangle_this_i = i;
-                for (int j = 0; j <= lw; j++) {
+                //for (int j = 0; j <= lw; j++) {
+                for (unsigned long j = 0; j < w; j++) {
+
                     coordTriangle_this_j = up_corner_j - j;
 
                     double mval;
@@ -2722,7 +2749,9 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                                                 col_gap_Rs,
                                                 m,
                                                 lkX,
-                                                flag_map);
+                                                flag_map,
+                                                false,
+                                                0);
                     } else {
                         /*
                         val=computeLK_X_all_edges_s_opt(valM,
@@ -2850,7 +2879,9 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                                                 sRs,
                                                 m,
                                                 lkY,
-                                                flag_map);
+                                                flag_map,
+                                                false,
+                                                0);
                     } else {
                         /*
                         val=computeLK_Y_all_edges_s_opt(valM,

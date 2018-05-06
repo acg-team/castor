@@ -300,7 +300,9 @@ namespace bpp {
                                  MSAcolumn_t &col_gap_R,
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkX,
-                                 bool flag_map);
+                                 bool flag_map,
+                                 bool flag_RAM,
+                                 int idx);
 
         double computeLK_Y_local(double NU,
                                  double valM,
@@ -311,7 +313,9 @@ namespace bpp {
                                  MSAcolumn_t &sR,
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkY,
-                                 bool flag_map);
+                                 bool flag_map,
+                                 bool flag_RAM,
+                                 int idx);
 
         void DP3D_PIP(bpp::Node *node, bool local,bool flag_map);
 
