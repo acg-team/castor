@@ -879,6 +879,10 @@ int main(int argc, char *argv[]) {
             out.endLine();
         }
 
+        // Export estimates in a computer-readable format
+        OutputUtils::exportOutput2JSON(tl, sites, parametersFile);
+
+
         // Compute support measures
         std::string PAR_support = ApplicationTools::getStringParameter("support", jatiapp.getParams(), "", "", true, true);
         if(PAR_support == "bootstrap") {

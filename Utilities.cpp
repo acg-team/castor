@@ -42,6 +42,12 @@
  * @see For more information visit: 
  */
 #include <glog/logging.h>
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/foreach.hpp>
+
 #include <Bpp/Phyl/Io/Newick.h>
 #include <Bpp/Phyl/App/PhylogeneticsApplicationTools.h>
 #include <Bpp/Seq/Io/Fasta.h>
@@ -448,6 +454,7 @@ void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib:
 void UtreeBppUtils::updateTree_u2b(bpp::Tree *inBTree, tshlib::Utree *inUTree, UtreeBppUtils::treemap &tm) {
 
 }
+
 /*
 Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix) {
 
@@ -664,7 +671,6 @@ void OutputUtils::printParametersLikelihood(bpp::AbstractHomogeneousTreeLikeliho
     std::ostringstream oss;
 
 
-
     parModel = tl->getSubstitutionModelParameters();
     if (parModel.size() > 0) {
         oss << "model=" << tl->getModel()->getName() << "(";
@@ -710,6 +716,64 @@ std::string OutputUtils::tree2string(bpp::Tree *tree) {
     treeWriter.write(ttree, oss);
     std::string out = oss.str();
     return out;
+}
+
+void OutputUtils::exportOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl, bpp::SiteContainer *sites, std::string prefix) {
+
+    boost::property_tree::ptree pt; // initial ptree structure for json output
+
+    try {
+
+        bpp::ParameterList parModel;
+        std::ostringstream oss;
+
+        pt.put("Input.sites.length",sites->getNumberOfSites());
+        pt.put("Input.sites.sequences",sites->getNumberOfSequences());
+        pt.put("Input.alphabet.states",sites->getAlphabet()->getNumberOfStates());
+        pt.put("Input.alphabet.type",sites->getAlphabet()->getAlphabetType());
+
+        parModel = tl->getSubstitutionModelParameters();
+        if (parModel.size() > 0) {
+
+            for (auto &parameterName:parModel.getParameterNames()) {
+                pt.put("Model."+parameterName,parModel.getParameter(parameterName).getValue());
+            }
+        }
+
+        parModel = tl->getRateDistributionParameters();
+        if (parModel.size() > 0) {
+            for (auto &parameterName:parModel.getParameterNames()) {
+                pt.put("ASVR."+parameterName,parModel.getParameter(parameterName).getValue());
+            }
+
+        }
+
+        parModel = tl->getBranchLengthsParameters();
+        if (parModel.size() > 0) {
+            for (auto &parameterName:parModel.getParameterNames()) {
+                pt.put("Tree."+parameterName,parModel.getParameter(parameterName).getValue());
+            }
+        }
+
+        pt.put("Final.LogLikelihood", tl->getLogLikelihood());
+        pt.put("Final.Likelihood", tl->getLikelihood());
+
+
+
+
+        boost::filesystem::path p(prefix);
+
+        std::string path = p.parent_path().string();
+        std::string stem = p.stem().string();
+        std::string filename = path+"/"+stem+".json";
+
+        boost::property_tree::write_json(filename, pt);
+
+    } catch (std::exception const &e) {
+        std::cerr << e.what() << std::endl;
+    }
+
+
 }
 
 bpp::DistanceEstimation DistanceUtils::computeDistanceMethod(std::string seqfilename, bpp::Alphabet *alphabet, bpp::GeneticCode *gCode, std::map<std::string, std::string> &params) {
@@ -1032,6 +1096,8 @@ std::string TextUtils::appendToFilePath(std::string inputFilePath, std::string s
     return fullInitialMSAFilePath;
 }
 
+
+
 void AlignmentUtils::CheckAlignmentConsistency(bpp::SiteContainer &sites) {
 
     int gapCode = sites.getAlphabet()->getGapCharacterCode();
@@ -1040,25 +1106,25 @@ void AlignmentUtils::CheckAlignmentConsistency(bpp::SiteContainer &sites) {
     bool nonUnkownSeen = false;
     int currentChar;
 
-    for (unsigned long i=0;i<sites.getNumberOfSites();i++){
+    for (unsigned long i = 0; i < sites.getNumberOfSites(); i++) {
 
         nonGapSeen = false;
         nonUnkownSeen = false;
 
-        for(unsigned long s=0;s<sites.getNumberOfSequences();s++) {
+        for (unsigned long s = 0; s < sites.getNumberOfSequences(); s++) {
 
             currentChar = sites.getSite(i).getValue(s);
 
-            if(currentChar != gapCode) nonGapSeen=true;
-            if(currentChar != unresolvedCode) nonUnkownSeen=true;
+            if (currentChar != gapCode) nonGapSeen = true;
+            if (currentChar != unresolvedCode) nonUnkownSeen = true;
 
         }
 
-        LOG_IF(FATAL, !nonGapSeen || !nonUnkownSeen) << "Column #"<<  i+1 << " of the alignment contains only gaps. Please remove it and try again!";
+        LOG_IF(FATAL, !nonGapSeen || !nonUnkownSeen) << "Column #" << i + 1 << " of the alignment contains only gaps. Please remove it and try again!";
 
     }
 }
 
 bool ComparisonUtils::areLogicallyEqual(double a, double b) {
-    return a==b || std::abs(a-b)<std::abs(std::min(a,b))*std::numeric_limits<double>::epsilon();
+    return a == b || std::abs(a - b) < std::abs(std::min(a, b)) * std::numeric_limits<double>::epsilon();
 }
