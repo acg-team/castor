@@ -176,14 +176,17 @@ int main(int argc, char *argv[]) {
 
         // Alphabet without gaps
         bpp::Alphabet *alphabetNoGaps = bpp::SequenceApplicationTools::getAlphabet(jatiapp.getParams(), "", false, false);
+
         // Genetic code
         unique_ptr<GeneticCode> gCode;
+
         // Codon alphabet ?
         bool codonAlphabet = false;
 
         // Alphabet used for all the computational steps (it can allows for gap extension)
         bpp::Alphabet *alphabet;
         if (PAR_model_indels) {
+
             if (PAR_Alphabet.find("DNA") != std::string::npos || PAR_Alphabet.find("Codon") != std::string::npos) {
                 alphabet = new bpp::DNA_EXTENDED();
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
@@ -197,6 +200,7 @@ int main(int argc, char *argv[]) {
             }
 
         } else {
+
             if (PAR_Alphabet.find("DNA") != std::string::npos || PAR_Alphabet.find("Codon") != std::string::npos) {
                 alphabet = new bpp::DNA();
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
@@ -215,12 +219,14 @@ int main(int argc, char *argv[]) {
         if (codonAlphabet) {
             std::string codeDesc = ApplicationTools::getStringParameter("genetic_code", jatiapp.getParams(), "Standard", "", true, true);
             ApplicationTools::displayResult("Genetic Code", codeDesc);
-            if (PAR_model_indels) {
-                gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet_Extended *>(alphabet)->getNucleicAlphabet(), codeDesc));
-            } else {
-                gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet *>(alphabet)->getNucleicAlphabet(), codeDesc));
-            }
+            //if (PAR_model_indels) {
+            //    gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet_Extended *>(alphabet)->getNucleicAlphabet(), codeDesc));
+            //} else {
+                gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet *>(alphabetNoGaps)->getNucleicAlphabet(), codeDesc));
+            //}
         }
+
+
 
         ApplicationTools::displayResult("Alphabet", TextTools::toString(alphabetNoGaps->getAlphabetType()));
         ApplicationTools::displayBooleanResult("Allow gaps as extra character", PAR_model_indels);
@@ -530,7 +536,7 @@ int main(int argc, char *argv[]) {
             }
 
             // Instantiation of the canonical substitution model
-            if(PAR_Alphabet.find("Protein") != std::string::npos){
+            if(PAR_Alphabet.find("Codon") != std::string::npos || PAR_Alphabet.find("Protein") != std::string::npos ){
                 smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(), sites, modelMap, "", true, false, 0);
             }else{
                 smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, modelMap, "", true, false, 0);
@@ -557,12 +563,12 @@ int main(int argc, char *argv[]) {
             }
 
             // Instatiate the corrisponding PIP model given the alphabet
-            if (PAR_Alphabet.find("DNA") != std::string::npos) {
+            if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
                 smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
                 smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
             } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
-                smodel = new PIP_Codon(gCode.get(), lambda, mu, smodel);
+                smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabet), gCode.get(), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
                 ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
                 LOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
             }

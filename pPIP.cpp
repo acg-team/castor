@@ -50,7 +50,7 @@
 #include <glog/logging.h>
 
 #define ERR_STATE (-999)
-#define DBL_EPSILON 2.2204460492503131e-16
+#define DBL_EPSILON 2.2204460492503131e-16 //TODO: Not compliant with real machine epsilon number
 #define MATCH_STATE 1
 #define GAP_X_STATE 2
 #define GAP_Y_STATE 3
@@ -2925,6 +2925,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
         /*TODO: optimize size TR*/
         TR[m] = new int[size_tr]();
+
+        // #TODO: Memset is not compliant with C++ standards. The following lines need to be refactored asap.
         memset(TR[m], 0, size_tr * sizeof(TR[m][0]));
         set_indeces_T(up_corner_i,
                       up_corner_j,
@@ -3087,6 +3089,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
     //==========================================================================================
     // memory freeing
+    // #TODO: Free is not compliant with C++ standards. The following lines need to be refactored asap.
     free(LogM[1]);
     free(LogM[0]);
     free(LogM);
