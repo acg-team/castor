@@ -756,10 +756,6 @@ void OutputUtils::exportOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl, 
         }
 
         pt.put("Final.LogLikelihood", tl->getLogLikelihood());
-        pt.put("Final.Likelihood", tl->getLikelihood());
-
-
-
 
         boost::filesystem::path p(prefix);
 
