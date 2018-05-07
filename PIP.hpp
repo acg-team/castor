@@ -55,6 +55,7 @@
 
 #include <Bpp/Seq/GeneticCode/GeneticCode.h>
 #include <Bpp/Seq/AlphabetIndex/GranthamAAChemicalDistance.h>
+#include "ExtendedAlphabet.hpp"
 
 
 using namespace bpp;
@@ -151,12 +152,7 @@ namespace bpp {
         PIP_AA *clone() const { return new PIP_AA(*this); }
 
     public:
-        std::string getName() const {
-            if (freqSet_->getNamespace().find("PIP_AA+F.") != std::string::npos)
-                return name_ + "+F";
-            else
-                return name_;
-        }
+        std::string getName() const { return name_ ;}
 
         void fireParameterChanged(const ParameterList &parameters) {
             freqSet_->matchParametersValues(parameters);
@@ -209,7 +205,7 @@ namespace bpp {
     public:
         size_t getNumberOfStates() const override { return 65; };
 
-        PIP_Codon(const CodonAlphabet *alpha, const GeneticCode *gc, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData);
+        PIP_Codon(const CodonAlphabet_Extended *alpha, const GeneticCode *gc, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData);
 
         ~PIP_Codon();
 
@@ -223,7 +219,9 @@ namespace bpp {
     public:
 
 
-        std::string getName() const { return "PIP_Codon"; }
+        std::string getName() const { return name_; }
+
+        void setFreqFromData(const SequenceContainer &data, double pseudoCount = 0);
 
         //const SubstitutionModel &getSubstitutionModel() const { return *pmodel_.get(); }
 
@@ -237,6 +235,7 @@ namespace bpp {
         void updateMatrices() override;
 
     protected:
+
         //SubstitutionModel &getSubstitutionModel() { return *pmodel_.get(); }
 
     };

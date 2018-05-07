@@ -136,7 +136,7 @@ void PIP_Nuc::updateMatrices() {
 
     // Exchangeability
     for (int i = 0; i < rows - 1; i++) {
-        for (int j = 0; j < cols - 1; j++) {
+        for (int j = 0; j < cols; j++) {
 
             if (i == j) {
                 exchangeability_(i, j) = exMatrix(i, j) - mu_;
@@ -304,8 +304,8 @@ void PIP_AA::updateMatrices() {
     // Copy the generator from substitution model + extend it
     const bpp::Matrix<double> &qmatrix = submodel_->getGenerator();
 
-    int cols = qmatrix.getNumberOfColumns();
-    int rows = qmatrix.getNumberOfRows();
+    int cols = qmatrix.getNumberOfColumns()+1;
+    int rows = qmatrix.getNumberOfRows()+1;
 
 
     for (int i = 0; i < rows - 1; i++) {
@@ -324,7 +324,7 @@ void PIP_AA::updateMatrices() {
 
     // Exchangeability
     for (int i = 0; i < rows - 1; i++) {
-        for (int j = 0; j < cols - 1; j++) {
+        for (int j = 0; j < cols; j++) {
             if (i == j) {
                 exchangeability_(i, j) = exMatrix(i, j) - mu_;
             } else {
@@ -393,14 +393,12 @@ void PIP_AA::setFreqFromData(const SequenceContainer &data, double pseudoCount) 
 
 
 
-
-PIP_Codon::PIP_Codon(const CodonAlphabet *alpha, const GeneticCode *gc, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData):
+PIP_Codon::PIP_Codon(const CodonAlphabet_Extended *alpha, const GeneticCode *gc, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData):
         AbstractParameterAliasable("PIP."),
         AbstractReversibleSubstitutionModel(alpha, new CanonicalStateMap(alpha, false), "PIP."),
         lambda_(lambda), mu_(mu), freqSet_(0){
 
     computeFrequencies(false);
-
 
     // Setting basemodel to PIP and inherit freq set
     submodel_ = basemodel;
@@ -411,14 +409,13 @@ PIP_Codon::PIP_Codon(const CodonAlphabet *alpha, const GeneticCode *gc, Substitu
     // Extending namespace
     std::string namespaceModel = submodel_->getName()+"+PIP." + freqSet_->getName();
 
-
     std::vector<double> subModelFreqs;
     // Compute frequencies from data
     if(initFreqFromData){
         setFreqFromData(data, 0);
     }else{
         // Add fixed frequency for gap character
-        //freq_ = freqSet_->getFrequencies();
+        freq_ = freqSet_->getFrequencies();
     }
 
 
@@ -440,52 +437,127 @@ PIP_Codon::PIP_Codon(const CodonAlphabet *alpha, const GeneticCode *gc, Substitu
     addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS_STAR));
 
 
-
     //Update parameters and re-compute generator and eigen values:
     updateMatrices();
 
-
-
-    /*
-    // Setting basemodel to PIP
-    submodel_ = basemodel;
-
-    // Inheriting basemodel parameters
-    ParameterList parlist = submodel_->getParameters();
-
-    for (int i = 0; i < parlist.size(); i++) {
-        addParameter_(new Parameter("PIP." + parlist[i].getName(), parlist[i].getValue(), parlist[i].getConstraint()));
-    }
-
-    // Update model name
-    name_ = submodel_->getName() + "+PIP";
-    modelname_ = "PIP." + submodel_->getName();
-
-    // Add PIP parameters to the list of parameters inherited from the basemodel
-    addParameter_(new Parameter("PIP.lambda", lambda, &Parameter::R_PLUS));
-    addParameter_(new Parameter("PIP.mu", mu, &Parameter::R_PLUS));
-
-
-    // update matrice
-
-    updateMatrices();
-    */
 }
 
 PIP_Codon::~PIP_Codon() {}
 
 void PIP_Codon::updateMatrices() {
+
     lambda_ = getParameterValue("lambda");
     mu_ = getParameterValue("mu");
 
+    // Reset frequency for gap character
+    freq_ = freqSet_->getFrequencies();
+    freq_.resize(getNumberOfStates());
+    // Reset frequency for gap character
+    LOG_IF(WARNING, bpp::VectorTools::sum(freq_)!= 1) << "The state frequencies do not sum up to 1. Please review your model definition.";
+
+    unsigned long eraseCharNum = 4; // substring="PIP."
+
+    for (int i = 0; i < getParameters().size(); i++) {
+        //test[i].getName();
+        std::string parName = getParameters()[i].getName();
+        if (parName.find(modelname_) != std::string::npos) {
+            parName.erase(parName.begin(), parName.begin() + eraseCharNum + submodel_->getName().size() + 1 );
+            submodel_->setParameterValue(parName, getParameters()[i].getValue());
+        }
+    }
+
+    // Copy the generator from substitution model + extend it
+    const bpp::Matrix<double> &qmatrix = submodel_->getGenerator();
+
+    int cols = qmatrix.getNumberOfColumns() +1;
+    int rows = qmatrix.getNumberOfRows() +1 ;
+
+    for (int i = 0; i < rows - 1; i++) {
+        for (int j = 0; j < cols; j++) {
+            if (i == j) {
+                generator_(i, j) = qmatrix(i, j) - mu_;
+            } else {
+                generator_(i, j) = qmatrix(i, j);
+            }
+        }
+        generator_(i, cols - 1) = mu_;
+    }
+
+    // Copy the exchangeability from substitution model + extend it
+    const bpp::Matrix<double> &exMatrix = submodel_->getExchangeabilityMatrix();
+
+    // Exchangeability
+    for (int i = 0; i < rows - 1; i++) {
+        for (int j = 0; j < cols ; j++) {
+            if (i == j) {
+                exchangeability_(i, j) = exMatrix(i, j) - mu_;
+            } else {
+                exchangeability_(i, j) = exMatrix(i, j);
+            }
+        }
+        exchangeability_(i, cols - 1) = mu_;
+    }
+
+    // Normalization:
+    setDiagonal();
+    //normalize();
 
 
+    // Compute eigen values and vectors:
+    if (enableEigenDecomposition()) {
+        EigenValue<double> ev(generator_);
+        rightEigenVectors_ = ev.getV();
+        eigenValues_ = ev.getRealEigenValues();
+        iEigenValues_ = ev.getImagEigenValues();
+        try {
+            MatrixTools::inv(rightEigenVectors_, leftEigenVectors_);
+            isNonSingular_ = true;
+            isDiagonalizable_ = true;
+            for (size_t i = 0; i < size_ && isDiagonalizable_; i++) {
+                if (abs(iEigenValues_[i]) > NumConstants::TINY())
+                    isDiagonalizable_ = false;
+            }
+        }
+        catch (ZeroDivisionException &e) {
+            ApplicationTools::displayMessage("Singularity during diagonalization. Taylor series used instead.");
+
+            isNonSingular_ = false;
+            isDiagonalizable_ = false;
+            MatrixTools::Taylor(generator_, 30, vPowGen_);
+        }
+    }
 
 }
 
+void PIP_Codon::setFreqFromData(const SequenceContainer &data, double pseudoCount) {
+    std::map<int, int> counts;
+    SequenceContainerTools::getCounts(data, counts);
+    std::vector<double> frequencies(getNumberOfStates()-1);
+    double t = 0;
+    for (int i = 0; i < static_cast<int>(size_)-1; i++) {
+
+        t += (counts[i] + pseudoCount);
+    }
+    for (size_t i = 0; i < size_-1; ++i) frequencies[i] = (static_cast<double>(counts[static_cast<int>(i)]) + pseudoCount) / t;
+
+    freqSet_->setFrequencies(frequencies);
+    matchParametersValues(freqSet_->getParameters());
+
+    freq_ = freqSet_->getFrequencies();
+    // Reset frequency for gap character
+
+    freq_.resize(getNumberOfStates());
+    freq_[data.getAlphabet()->getGapCharacterCode()] = 0;
+
+    LOG_IF(WARNING, bpp::VectorTools::sum(freq_)!= 1) << "The state frequencies do not sum up to 1. Please review your model definition.";
+
+}
+
+
+
 PIP_Codon::PIP_Codon(const PIP_Codon& pip_codon):
         AbstractParameterAliasable("PIP."),
-       AbstractReversibleSubstitutionModel(pip_codon) {}
+        AbstractReversibleSubstitutionModel(pip_codon) {}
 
 PIP_Codon& PIP_Codon::operator=(const PIP_Codon& pip_codon)
 {
