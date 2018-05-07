@@ -61,6 +61,7 @@ namespace bpp {
 
     public:
 
+        // TODO: is it really necessary to redefine std::string? and vectors of strings?
         typedef std::string MSAcolumn_t;           // MSA column type
         typedef std::vector<MSAcolumn_t> MSA_t;    // MSA as vector of columns
         typedef std::vector<MSA_t> MSAensemble_t;  // for SB: set (vector) of MSAs
