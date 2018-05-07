@@ -593,49 +593,39 @@ double bpp::estimateMuFromData(Tree *tree, double proportion) {
 double bpp::estimateLambdaFromData(Tree *tree, SiteContainer *alignment) {
     double N = 0;
     double M = 0;
-    double lambda = 0;
 
     // Alignment length with gaps
     M = alignment->getNumberOfSites();
 
     // Compute average sequence length without gaps
-    std::vector<std::string> seqNames = alignment->getSequencesNames();
-    for (auto &seqName : seqNames) {
-
-        std::string tmpseq = alignment->getSequence(seqName).toString();
-        boost::erase_all(tmpseq, "-");
-        N += tmpseq.size();
+    for (auto &seqName : alignment->getSequencesNames()) {
+        for(int i=0;i<alignment->getNumberOfSites();i++){
+            if(alignment->getSequence(seqName)[i] != alignment->getAlphabet()->getGapCharacterCode()){
+                N++;
+            }
+        }
     }
     N = N / alignment->getNumberOfSequences();
 
-
-    lambda = (M - N) / tree->getTotalLength();
-
-
-    return lambda;
+    return (M - N) / tree->getTotalLength();
 }
 
 double bpp::estimateMuFromData(Tree *tree, SiteContainer *alignment) {
     double N = 0;
     double M = 0;
-    double mu = 0;
 
     // Alignment length with gaps
     M = alignment->getNumberOfSites();
 
     // Compute average sequence length without gaps
-    std::vector<std::string> seqNames = alignment->getSequencesNames();
-    for (auto &seqName : seqNames) {
-
-        std::string tmpseq = alignment->getSequence(seqName).toString();
-        boost::erase_all(tmpseq, "-");
-        N += tmpseq.size();
+    for (auto &seqName : alignment->getSequencesNames()) {
+        for(int i=0;i<alignment->getNumberOfSites();i++){
+            if(alignment->getSequence(seqName)[i] != alignment->getAlphabet()->getGapCharacterCode()){
+                N++;
+            }
+        }
     }
     N = N / alignment->getNumberOfSequences();
 
-
-    mu = (M - N) / (tree->getTotalLength() * N);
-
-
-    return mu;
+    return (M - N) / (tree->getTotalLength() * N);
 }
