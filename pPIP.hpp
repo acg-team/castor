@@ -79,7 +79,6 @@ namespace bpp {
 
         void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local,bool flag_RAM,bool flag_map);
 
-
         std::vector< std::string > getMSA(bpp::Node *node);
         double getScore(bpp::Node *node);
         std::vector< std::string > getSeqnames(bpp::Node *node);
