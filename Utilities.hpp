@@ -125,6 +125,7 @@ namespace TextUtils {
 
     std::string appendToFilePath(std::string inputFilePath, std::string string2append);
 
+
 }
 
 namespace OutputUtils {
@@ -132,6 +133,8 @@ namespace OutputUtils {
     void printParametersLikelihood(bpp::AbstractHomogeneousTreeLikelihood *tl);
 
     std::string tree2string(bpp::Tree *tree);
+
+    void exportOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl, bpp::SiteContainer *sites, std::string prefix="");
 
 }
 
