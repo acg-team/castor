@@ -102,9 +102,9 @@ namespace bpp {
 
         int getUnknownCharacterCode() const { return 15; }
 
-        bool isUnresolved(int state) const { return state > 3; }
+        bool isUnresolved(int state) const { return state > 4; }
 
-        bool isUnresolved(const std::string &state) const { return charToInt(state) > 3; }
+        bool isUnresolved(const std::string &state) const { return charToInt(state) > 4; }
 
         int getGapCharacterCode() const { return 4; }
     };
@@ -189,9 +189,9 @@ namespace bpp {
 
         std::string getGeneric(const std::vector<std::string> &states) const throw(BadCharException);
 
-        bool isUnresolved(int state) const { return state > 20; }
+        bool isUnresolved(int state) const { return state > 21; }
 
-        bool isUnresolved(const std::string &state) const { return charToInt(state) > 20; }
+        bool isUnresolved(const std::string &state) const { return charToInt(state) > 21; }
 
         std::string getAlphabetType() const { return "Proteic"; }
 
@@ -298,6 +298,8 @@ namespace bpp {
         unsigned int getSize() const {
             return 65;
         }
+
+        int getGapCharacterCode() const { return 64; }
 
         int getUnknownCharacterCode() const {
             return 65;
