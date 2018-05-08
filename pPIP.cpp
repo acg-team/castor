@@ -1534,18 +1534,10 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
         // compute the lk of a column full of gaps
         pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs);
     } else {
-        /*
-        pc0 = compute_pr_gap_all_edges_s(node,
-                                         col_gap_Ls,
-                                         col_gap_Rs,
-                                         pi,
-                                         originalAlphabetSize,
-                                         alphabet);
-        */
+        //global
     }
     //***************************************************************************************
     //***************************************************************************************
-
     auto ***LogM = new double **[2]; // DP sparse matrix for MATCH case (only 2 layer are needed)
     auto ***LogX = new double **[2]; // DP sparse matrix for GAPX case (only 2 layer are needed)
     auto ***LogY = new double **[2]; // DP sparse matrix for GAPY case (only 2 layer are needed)
@@ -1566,13 +1558,22 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
         }
     }
 
-    //============================================================
+    TR[0] = new int*[1]();
+    LK[0] = new double*[1]();
+    for(int k = 1; k < d; k++){
+        TR[k] = new int *[h]();
+        LK[k] = new double *[h]();
+        for(int i = 0; i < h; i++){
+            TR[k][i] = new int[w]();
+            LK[k][i] = new double[w]();
+        }
+    }
+    //***************************************************************************************
+    //***************************************************************************************
     // marginal likelihood for all empty columns with rate variation (gamma distribution)
     // phi(m,pc0,r) depends on the MSA length m
-
     // marginal phi marginalized over gamma categories
     double log_phi_gamma;
-    //double prev_log_phi_gamma; // to store old value
 
     auto **PHI = new double *[d];
     double PC0 = 0.0;
@@ -1589,26 +1590,14 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
         NU += rDist_->getProbability((size_t) catg) * nu_.at(catg);
     }
 
-
-
     // computes the marginal phi marginalized over all the gamma categories
     log_phi_gamma = NU * (PC0 - 1);
-    //log_phi_gamma = PHI[0][0];
-    //for (int catg = 1; catg < num_gamma_categories; catg++) {
-    //    log_phi_gamma=pPIPUtils::add_lns(log_phi_gamma,PHI[0][catg]);
-    //}
     //============================================================
 
     LogM[0][0][0] = log_phi_gamma;
     LogX[0][0][0] = log_phi_gamma;
     LogY[0][0][0] = log_phi_gamma;
-
-    TR[0] = new int*[1]();
-    TR[0][0] = new int[1]();
     TR[0][0][0] = STOP_STATE;
-
-    LK[0] = new double*[1]();
-    LK[0][0] = new double[1]();
     LK[0][0][0] = -std::numeric_limits<double>::infinity();
 
     double max_of_3 = -std::numeric_limits<double>::infinity();
@@ -1618,18 +1607,20 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     unsigned long m_binary_this;
     unsigned long m_binary_prev;
 
-    double valM;
-    double valX;
-    double valY;
+    double valM_this,valM_prev;
+    double valX_this,valX_prev;
+    double valY_this,valY_prev;
 
     signed long idx;
 
-    unsigned long coordSeq_1;
-    unsigned long coordSeq_2;
-    unsigned long coordTriangle_this_i;
-    unsigned long coordTriangle_this_j;
-    unsigned long coordTriangle_prev_i;
-    unsigned long coordTriangle_prev_j;
+//    unsigned long coordSeq_1;
+//    unsigned long coordSeq_2;
+//    unsigned long coordTriangle_this_i;
+//    unsigned long coordTriangle_this_j;
+//    unsigned long coordTriangle_prev_i;
+//    unsigned long coordTriangle_prev_j;
+
+    int tr; // traceback index
 
     double score = -std::numeric_limits<double>::infinity();
 
@@ -1650,7 +1641,6 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
     // ============================================================
     // For each slice of the 3D cube, compute the values of each cell
-
     for (unsigned long m = 1; m < d; m++) {
 
         if (flag_exit) {
@@ -1670,9 +1660,6 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
             PHI[m][catg] = PHI[m - 1][catg] - log((long double) m) + log((long double) nu_.at(catg));
         }
 
-        // store old value
-        //prev_log_phi_gamma = log_phi_gamma;
-
         // computes the marginal phi marginalized over all the gamma categories
         log_phi_gamma = PHI[m][0];
         for (int catg = 1; catg < num_gamma_categories; catg++) {
@@ -1680,253 +1667,80 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
         }
         //***************************************************************************************
         //***************************************************************************************
+        for (unsigned long i = 0; i < h; i++) {
 
-        //***************************************************************************************
-        //***************************************************************************************
-        // COMPUTES MATCH LK
-//        set_indeces_M(up_corner_i,
-//                      up_corner_j,
-//                      bot_corner_i,
-//                      bot_corner_j,
-//                      m, h, w);
+            sLs = (MSA_.at(sequenceID_1).at(i));
 
-//        if (checkboundary(up_corner_i,
-//                          up_corner_j,
-//                          bot_corner_i,
-//                          bot_corner_j,
-//                          h, w)) {
+            for (unsigned long j = 0; j < w; j++) {
 
-            //lw = 0;
-            //for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
-            for (unsigned long i = 0; i < h; i++) {
+                sRs = (MSA_.at(sequenceID_2).at(j));
 
-                //coordTriangle_this_i = i;
-                //coordSeq_1 = coordTriangle_this_i - 1;
-                //coordTriangle_prev_i = coordTriangle_this_i - 1;
+                //=======================================
+                // MATCH
+                if( (i-1) >=0 && (j-1)>=0 ){
 
-                valM = -std::numeric_limits<double>::infinity();
-                valX = -std::numeric_limits<double>::infinity();
-                valY = -std::numeric_limits<double>::infinity();
+                    valM_prev = LogM[m_binary_prev][i-1][j-1];
+                    valX_prev = LogX[m_binary_prev][i-1][j-1];
+                    valY_prev = LogY[m_binary_prev][i-1][j-1];
 
-                if(i>=0){
+                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
 
-                // get left MSA column
-                    sLs = (MSA_.at(sequenceID_1).at(i));
+                        LogM[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
-                    //for (int j = 0; j <= lw; j++) {
-                    for (unsigned long j = 0; j < w; j++) {
+                    }else{
 
-                        //coordTriangle_this_j = up_corner_j - j;
-                        //coordSeq_2 = coordTriangle_this_j - 1;
-                        //coordTriangle_prev_j = coordTriangle_this_j - 1;
+                        if (local) {
 
-                        if(j>=0){
+                            valM_this = computeLK_M_local(NU,
+                                                    valM_prev,
+                                                    valX_prev,
+                                                    valY_prev,
+                                                    node,
+                                                    sLs,
+                                                    sRs,
+                                                    m,
+                                                    lkM,
+                                                    flag_map);
 
-                        // get right MSA column
-                            sRs = (MSA_.at(sequenceID_2).at(j));
-
-                            //                    idx = get_indices_M(coordTriangle_prev_i,
-                            //                                        coordTriangle_prev_j,
-                            //                                        up_corner_i,
-                            //                                        up_corner_j,
-                            //                                        bot_corner_i,
-                            //                                        bot_corner_j,
-                            //                                        m - 1, h, w);
-                            //if (idx >= 0) {
-                                valM = LogM[m_binary_prev][i-1][j-1];
-                            //} else {
-                                // unreachable region of the 3D matrix
-                            //    valM = -std::numeric_limits<double>::infinity();
-                            //}
-
-                            //                    idx = get_indices_X(coordTriangle_prev_i,
-                            //                                        coordTriangle_prev_j,
-                            //                                        up_corner_i,
-                            //                                        up_corner_j,
-                            //                                        bot_corner_i,
-                            //                                        bot_corner_j,
-                            //                                        m - 1, h, w);
-                            //if (idx >= 0) {
-                                valX = LogX[m_binary_prev][i-1][j-1];
-                            //} else {
-                                // unreachable region of the 3D matrix
-                            //    valX = -std::numeric_limits<double>::infinity();
-                            //}
-
-                            //                    idx = get_indices_Y(coordTriangle_prev_i,
-                            //                                        coordTriangle_prev_j,
-                            //                                        up_corner_i,
-                            //                                        up_corner_j,
-                            //                                        bot_corner_i,
-                            //                                        bot_corner_j,
-                            //                                        m - 1, h, w);
-                            //if (idx >= 0) {
-                                valY = LogY[m_binary_prev][i-1][j-1];
-                            //} else {
-                                // unreachable region of the 3D matrix
-                            //    valY = -std::numeric_limits<double>::infinity();
-                            //}
-
-                            if (std::isinf(valM) && std::isinf(valX) && std::isinf(valY)) {
-                                LOG(FATAL)
-                                        << "\nSomething went wrong during the comparison of valM, valX, valY in function pPIP::DP3D_PIP. Check call stack below.";
-                            }
-
-                            if (local) {
-                                // compute MATCH lk
-                                //valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
-                                //valX -= prev_log_phi_gamma;
-                                //valY -= prev_log_phi_gamma;
-                                //val = computeLK_M_local(log_phi_gamma,
-                                val = computeLK_M_local(NU,
-                                                        valM,
-                                                        valX,
-                                                        valY,
-                                                        node,
-                                                        sLs,
-                                                        sRs,
-                                                        m,
-                                                        lkM,
-                                                        flag_map);
-                            } else {
-                                /*
-                                val=computeLK_M_all_edges_s_opt(valM,
-                                                                valX,
-                                                                valY,
-                                                                nu,
-                                                                node,
-                                                                sLs, sRs,
-                                                                pi,
-                                                                m,
-                                                                lkM,
-                                                                originalAlphabetSize, alphabet);
-                                */
-                            }
-
-                            if (std::isinf(val)) {
+                            if (std::isinf(valM_this)) {
                                 LOG(FATAL)
                                         << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
                             }
 
-                            if (std::isnan(val)) {
+                            if (std::isnan(valM_this)) {
                                 LOG(FATAL)
                                         << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
                             }
 
-                            //                    idx = get_indices_M(coordTriangle_this_i,
-                            //                                        coordTriangle_this_j,
-                            //                                        up_corner_i,
-                            //                                        up_corner_j,
-                            //                                        bot_corner_i,
-                            //                                        bot_corner_j,
-                            //                                        m, h, w);
+                            LogM[m_binary_this][i][j] = valM_this;
 
-                            LogM[m_binary_this][i][j] = val;
-
+                        } else {
+                            //global
                         }
 
                     }
 
                 }
-                //lw++;
-            }
-        //}
-        //***************************************************************************************
-        //***************************************************************************************
-        // COMPUTES GAPX LK
-//        set_indeces_X(up_corner_i,
-//                      up_corner_j,
-//                      bot_corner_i,
-//                      bot_corner_j,
-//                      m, h, w);
-//        tr_down_i = bot_corner_i;
-//        tr_down_j = bot_corner_j;
-//        if (checkboundary(up_corner_i,
-//                          up_corner_j,
-//                          bot_corner_i,
-//                          bot_corner_j,
-//                          h, w)) {
+                //=======================================
+                // GAPX
+                if( (i-1) >=0 ){
 
-            //lw = 0;
-            //for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
-            for (unsigned long i = 0; i < h; i++) {
+                    valM_prev = LogM[m_binary_prev][i-1][j];
+                    valX_prev = LogX[m_binary_prev][i-1][j];
+                    valY_prev = LogY[m_binary_prev][i-1][j];
 
-                //coordTriangle_this_i = i;
-                //coordTriangle_prev_i = coordTriangle_this_i - 1;
-                //coordSeq_1 = coordTriangle_this_i - 1;
+                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
 
-                valM = -std::numeric_limits<double>::infinity();
-                valX = -std::numeric_limits<double>::infinity();
-                valY = -std::numeric_limits<double>::infinity();
+                        LogX[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
-                if(i>=0){
-
-                // get left MSA column
-                    sLs = (MSA_.at(sequenceID_1).at(i-1));
-
-                    //for (int j = 0; j <= lw; j++) {
-                    for (unsigned long j = 0; j < w; j++) {
-
-                        //coordTriangle_this_j = up_corner_j - j;
-                        //coordTriangle_prev_j = coordTriangle_this_j;
-
-    //                    idx = get_indices_M(coordTriangle_prev_i,
-    //                                        coordTriangle_prev_j,
-    //                                        up_corner_i,
-    //                                        up_corner_j,
-    //                                        bot_corner_i,
-    //                                        bot_corner_j,
-    //                                        m - 1, h, w);
-                        //if (idx >= 0) {
-                            valM = LogM[m_binary_prev][i-1][j];
-                        //} else {
-                            // unreachable region of the 3D matrix
-                        //    valM = -std::numeric_limits<double>::infinity();
-                        //}
-
-//                        idx = get_indices_X(coordTriangle_prev_i,
-//                                            coordTriangle_prev_j,
-//                                            up_corner_i,
-//                                            up_corner_j,
-//                                            bot_corner_i,
-//                                            bot_corner_j,
-//                                            m - 1, h, w);
-                        //if (idx >= 0) {
-                            valX = LogX[m_binary_prev][i-1][j];
-                        //} else {
-                            // unreachable region of the 3D matrix
-                        //    valX = -std::numeric_limits<double>::infinity();
-                        //}
-
-    //                    idx = get_indices_Y(coordTriangle_prev_i,
-    //                                        coordTriangle_prev_j,
-    //                                        up_corner_i,
-    //                                        up_corner_j,
-    //                                        bot_corner_i,
-    //                                        bot_corner_j,
-    //                                        m - 1, h, w);
-                        //if (idx >= 0) {
-                            valY = LogY[m_binary_prev][i][j];
-                        //} else {
-                            // unreachable region of the 3D matrix
-                        //    valY = -std::numeric_limits<double>::infinity();
-                        //}
-
-                        if (std::isinf(valM) && std::isinf(valX) && std::isinf(valY)) {
-                            LOG(FATAL)
-                                    << "\nSomething went wrong during the comparison of valM, valX, valY in function pPIP::DP3D_PIP. Check call stack below.";
-                        }
+                    }else{
 
                         if (local) {
-                            // compute GAPX lk
-                            //valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
-                            //valX -= prev_log_phi_gamma;
-                            //valY -= prev_log_phi_gamma;
-                            //val= computeLK_X_local(log_phi_gamma,
-                            val = computeLK_X_local(NU,
-                                                    valM,
-                                                    valX,
-                                                    valY,
+
+                            valX_this = computeLK_X_local(NU,
+                                                    valM_prev,
+                                                    valX_prev,
+                                                    valY_prev,
                                                     node,
                                                     sLs,
                                                     col_gap_Rs,
@@ -1935,144 +1749,46 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                                                     flag_map,
                                                     true,
                                                     i);
+
+                            if (std::isinf(valX_this)) {
+                                LOG(FATAL)
+                                        << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
+                            }
+
+                            if (std::isnan(valX_this)) {
+                                LOG(FATAL)
+                                        << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
+                            }
+
+                            LogX[m_binary_this][i][j] = valX_this;
+
                         } else {
-                            /*
-                            val=computeLK_X_all_edges_s_opt(valM,
-                                                            valX,
-                                                            valY,
-                                                            nu,
-                                                            node,
-                                                            sLs, col_gap_Rs,
-                                                            pi,
-                                                            m,
-                                                            lkX,
-                                                            originalAlphabetSize, alphabet);
-                            */
+                            //global
                         }
 
-                        if (std::isinf(val)) {
-                            LOG(FATAL)
-                                    << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
-
-                        }
-
-                        if (std::isnan(val)) {
-                            LOG(FATAL)
-                                    << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
-                        }
-    //                    idx = get_indices_X(coordTriangle_this_i,
-    //                                        coordTriangle_this_j,
-    //                                        up_corner_i,
-    //                                        up_corner_j,
-    //                                        bot_corner_i,
-    //                                        bot_corner_j,
-    //                                        m, h, w);
-
-                        LogX[m_binary_this][i][j] = val;
                     }
 
                 }
-                //lw++;
-            }
+                //=======================================
+                // GAPY
+                if( (j-1)>=0 ){
 
-        //}
-        //***************************************************************************************
-        //***************************************************************************************
-        // COMPUTES GAPY LK
-//        set_indeces_Y(up_corner_i,
-//                      up_corner_j,
-//                      bot_corner_i,
-//                      bot_corner_j,
-//                      m, h, w);
-//        tr_up_i = up_corner_i;
-//        tr_up_j = up_corner_j;
-//        if (checkboundary(up_corner_i,
-//                          up_corner_j,
-//                          bot_corner_i,
-//                          bot_corner_j,
-//                          h, w)) {
+                    valM_prev = LogM[m_binary_prev][i][j-1];
+                    valX_prev = LogX[m_binary_prev][i][j-1];
+                    valY_prev = LogY[m_binary_prev][i][j-1];
 
-            //lw = 0;
-            //for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
-            for (unsigned long i = 0; i < h; i++) {
+                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
 
+                        LogY[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
-
-                //coordTriangle_this_i = i;
-                //coordTriangle_prev_i = coordTriangle_this_i;
-                //for (int j = 0; j <= lw; j++) {
-                for (unsigned long j = 0; j < w; j++) {
-
-                    //coordTriangle_this_j = up_corner_j - j;
-                    //coordTriangle_prev_j = coordTriangle_this_j - 1;
-                    //coordSeq_2 = coordTriangle_this_j - 1;
-
-                    valM = -std::numeric_limits<double>::infinity();
-                    valX = -std::numeric_limits<double>::infinity();
-                    valY = -std::numeric_limits<double>::infinity();
-
-                    if(j>=0){
-
-                    // get right MSA column
-                        sRs = (MSA_.at(sequenceID_2).at(j));
-
-    //                    idx = get_indices_M(coordTriangle_prev_i,
-    //                                        coordTriangle_prev_j,
-    //                                        up_corner_i,
-    //                                        up_corner_j,
-    //                                        bot_corner_i,
-    //                                        bot_corner_j,
-    //                                        m - 1, h, w);
-                        //if (idx >= 0) {
-                            valM = LogM[m_binary_prev][i][j-1];
-                        //} else {
-                            // unreachable region of the 3D matrix
-                        //    valM = -std::numeric_limits<double>::infinity();
-                        //}
-
-    //                    idx = get_indices_X(coordTriangle_prev_i,
-    //                                        coordTriangle_prev_j,
-    //                                        up_corner_i,
-    //                                        up_corner_j,
-    //                                        bot_corner_i,
-    //                                        bot_corner_j,
-    //                                        m - 1, h, w);
-                        //if (idx >= 0) {
-                            valX = LogX[m_binary_prev][i][j-1];
-                        //} else {
-                            // unreachable region of the 3D matrix
-                        //    valX = -std::numeric_limits<double>::infinity();
-                        //}
-
-    //                    idx = get_indices_Y(coordTriangle_prev_i,
-    //                                        coordTriangle_prev_j,
-    //                                        up_corner_i,
-    //                                        up_corner_j,
-    //                                        bot_corner_i,
-    //                                        bot_corner_j,
-    //                                        m - 1, h, w);
-                        //if (idx >= 0) {
-                            valY = LogY[m_binary_prev][i][j-1];
-                        //} else {
-                            // unreachable region of the 3D matrix
-                        //    valY = -std::numeric_limits<double>::infinity();
-                        //}
-
-                        if (std::isinf(valM) && std::isinf(valX) && std::isinf(valY)) {
-                            LOG(FATAL)
-                                    << "\nSomething went wrong during the comparison of valM, valX, valY in function pPIP::DP3D_PIP. Check call stack below.";
-                        }
+                    }else{
 
                         if (local) {
-                            // compute GAPY lk
-                            //valM -= prev_log_phi_gamma; // to avoid summing the marginal phi twice
-                            //valX -= prev_log_phi_gamma;
-                            //valY -= prev_log_phi_gamma;
-                            //val= computeLK_Y_local(log_phi_gamma,
-                            val = computeLK_Y_local(NU,
-                                                    valM,
-                                                    valX,
-                                                    valY,
+
+                            valY_this = computeLK_Y_local(NU,
+                                                    valM_prev,
+                                                    valX_prev,
+                                                    valY_prev,
                                                     node,
                                                     col_gap_Ls,
                                                     sRs,
@@ -2081,184 +1797,84 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                                                     flag_map,
                                                     true,
                                                     j);
-                        } else {
-                            /*
-                            val=computeLK_Y_all_edges_s_opt(valM,
-                                                            valX,
-                                                            valY,
-                                                            nu,
-                                                            node,
-                                                            col_gap_Ls, sRs,
-                                                            pi,
-                                                            m,
-                                                            lkY,
-                                                            originalAlphabetSize, alphabet);
-                             */
-                        }
 
-                        if (std::isinf(val)) {
-                            LOG(FATAL)
-                                    << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
-                        }
-
-                        if (std::isnan(val)) {
-                            LOG(FATAL)
-                                    << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
-
-                        }
-
-    //                    idx = get_indices_Y(coordTriangle_this_i,
-    //                                        coordTriangle_this_j,
-    //                                        up_corner_i,
-    //                                        up_corner_j,
-    //                                        bot_corner_i,
-    //                                        bot_corner_j,
-    //                                        m, h, w);
-
-                        LogY[m_binary_this][i][j] = val;
-
-                    }
-                }
-                //lw++;
-            }
-
-        //}
-
-        size_tr = (unsigned long) ceil((tr_down_i - tr_up_i + 1) * (tr_up_j - tr_down_j + 1 + 1) / 2);
-
-        /*TODO: optimize size TR*/
-        //TR[m] = new int[size_tr]();
-        //memset(TR[m], 0, size_tr * sizeof(TR[m][0]));
-//        set_indeces_T(up_corner_i,
-//                      up_corner_j,
-//                      bot_corner_i,
-//                      bot_corner_j,
-//                      m, h, w);
-
-//        if (checkboundary(up_corner_i,
-//                          up_corner_j,
-//                          bot_corner_i,
-//                          bot_corner_j,
-//                          h, w)) {
-
-            //lw = 0;
-            //for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
-            for (unsigned long i = 0; i < h; i++) {
-
-                //coordTriangle_this_i = i;
-                //for (int j = 0; j <= lw; j++) {
-                for (unsigned long j = 0; j < w; j++) {
-
-                    //coordTriangle_this_j = up_corner_j - j;
-
-                    double mval;
-                    double xval;
-                    double yval;
-
-//                    idx = get_indices_M(coordTriangle_this_i,
-//                                        coordTriangle_this_j,
-//                                        up_corner_i,
-//                                        up_corner_j,
-//                                        bot_corner_i,
-//                                        bot_corner_j,
-//                                        m, h, w);
-                    //if (idx >= 0) {
-                        mval = LogM[m_binary_this][i][j];
-                    //} else {
-                    //    mval = -std::numeric_limits<double>::infinity();
-                    //}
-
-//                    idx = get_indices_X(coordTriangle_this_i,
-//                                        coordTriangle_this_j,
-//                                        up_corner_i,
-//                                        up_corner_j,
-//                                        bot_corner_i,
-//                                        bot_corner_j,
-//                                        m, h, w);
-                    //if (idx >= 0) {
-                        xval = LogX[m_binary_this][i][j];
-                    //} else {
-                    //    xval = -std::numeric_limits<double>::infinity();
-                    //}
-
-//                    idx = get_indices_Y(coordTriangle_this_i,
-//                                        coordTriangle_this_j,
-//                                        up_corner_i,
-//                                        up_corner_j,
-//                                        bot_corner_i,
-//                                        bot_corner_j,
-//                                        m, h, w);
-                    //if (idx >= 0) {
-                        yval = LogY[m_binary_this][i][j];
-                    //} else {
-                    //    yval = -std::numeric_limits<double>::infinity();
-                    //}
-
-                    mval = fabs((long double) mval) < epsilon ? -std::numeric_limits<double>::infinity() : mval;
-                    xval = fabs((long double) xval) < epsilon ? -std::numeric_limits<double>::infinity() : xval;
-                    yval = fabs((long double) yval) < epsilon ? -std::numeric_limits<double>::infinity() : yval;
-
-                    int ttrr;
-
-                    ttrr = index_of_max(mval, xval, yval, epsilon, generator, distribution);
-
-                    if (ttrr == MATCH_STATE) {
-                        LK[m][i][j]=mval;
-                    } else if (ttrr == GAP_X_STATE) {
-                        LK[m][i][j]=xval;
-                    } else if (ttrr == GAP_Y_STATE) {
-                        LK[m][i][j]=yval;
-                    } else{
-                        LOG(FATAL) <<"\nERROR...";
-                    }
-
-
-//                    idx = get_indices_T(coordTriangle_this_i,
-//                                        coordTriangle_this_j,
-//                                        up_corner_i,
-//                                        up_corner_j,
-//                                        bot_corner_i,
-//                                        bot_corner_j,
-//                                        m, h, w);
-
-                    if (TR[m][idx] != 0) {
-                        LOG(FATAL) << "\nSomething went wrong in accessing TR at indices:[" << m << "][" << idx << "] in function pPIP::DP3D_PIP. Check call stack below.";
-                    }
-
-                    TR[m][i][j] = ttrr;
-
-                    if ((coordTriangle_this_i == (h - 1)) & (coordTriangle_this_j == (w - 1))) {
-                        // the algorithm is filling the last column of 3D DP matrix where
-                        // all the characters are in the MSA
-
-                        max_of_3 = max_of_three(mval, xval, yval, epsilon);
-
-                        if (max_of_3 > score) {
-                            score = max_of_3;
-                            level_max_lk = m;
-                        }
-
-                        //=====================================================================
-                        // early stop condition
-                        if (score < prev_lk) {
-                            prev_lk = score;
-                            counter_to_early_stop++;
-                            if (counter_to_early_stop > max_decrease_before_stop) {
-                                // if for max_decrease_before_stop consecutive times
-                                // the lk decrease then exit, the maximum lk has been reached
-                                flag_exit = true;
+                            if (std::isinf(valY_this)) {
+                                LOG(FATAL)
+                                        << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
                             }
+
+                            if (std::isnan(valY_this)) {
+                                LOG(FATAL)
+                                        << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
+                            }
+
+                            LogY[m_binary_this][i][j] = valY_this;
+
                         } else {
-                            counter_to_early_stop = 0;
+                            //global
                         }
-                        //=====================================================================
 
                     }
 
                 }
-                lw++;
+                //=======================================
+                valM_this = LogM[m_binary_this][i][j];
+                valX_this = LogX[m_binary_this][i][j];
+                valY_this = LogY[m_binary_this][i][j];
+
+                valM_this = fabs((long double) valM_this) < epsilon ? -std::numeric_limits<double>::infinity() : valM_this;
+                valX_this = fabs((long double) valX_this) < epsilon ? -std::numeric_limits<double>::infinity() : valX_this;
+                valY_this = fabs((long double) valY_this) < epsilon ? -std::numeric_limits<double>::infinity() : valY_this;
+
+                tr = index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution);
+
+                if (tr == MATCH_STATE) {
+                    LK[m][i][j]=valM_this;
+                } else if (tr == GAP_X_STATE) {
+                    LK[m][i][j]=valX_this;
+                } else if (tr == GAP_Y_STATE) {
+                    LK[m][i][j]=valY_this;
+                } else{
+                    LOG(FATAL) <<"\nERROR...";
+                }
+
+                if (TR[m][i][j] != 0) {
+                    LOG(FATAL) << "\nSomething went wrong in accessing TR at indices:[" << m << "][" << idx << "] in function pPIP::DP3D_PIP. Check call stack below.";
+                }
+
+                TR[m][i][j] = tr;
+
+                if ( (i == (h - 1)) & (j == (w - 1))) {
+                    // the algorithm is filling the last column of 3D DP matrix where
+                    // all the characters are in the MSA
+
+                    max_of_3 = max_of_three(valM_this, valX_this, valY_this, epsilon);
+
+                    if (max_of_3 > score) {
+                        score = max_of_3;
+                        level_max_lk = m;
+                    }
+
+                    //=====================================================================
+                    // early stop condition
+                    if (score < prev_lk) {
+                        prev_lk = score;
+                        counter_to_early_stop++;
+                        if (counter_to_early_stop > max_decrease_before_stop) {
+                            // if for max_decrease_before_stop consecutive times
+                            // the lk decrease then exit, the maximum lk has been reached
+                            flag_exit = true;
+                        }
+                    } else {
+                        counter_to_early_stop = 0;
+                    }
+                    //=====================================================================
+
+                }
             }
-        //}
+
+        }
+
     }
 
     // level (k position) in the DP matrix that contains the highest lk value
@@ -2274,8 +1890,6 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     int id1 = h - 1;
     int id2 = w - 1;
     for (int lev = depth; lev > 0; lev--) {
-        //set_indeces_T(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, lev, h, w);
-        //idx = get_indices_T(id1, id2, up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, lev, h, w);
         int state = TR[lev][id1][id2];
         switch (state) {
             case MATCH_STATE:
@@ -2317,28 +1931,9 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
     //==========================================================================================
     // memory freeing
-    //TODO: re-implement RAM freeing
-//    free(LogM[1]);
-//    free(LogM[0]);
-//    free(LogM);
-//
-//    free(LogX[1]);
-//    free(LogX[0]);
-//    free(LogX);
-//
-//    free(LogY[1]);
-//    free(LogY[0]);
-//    free(LogY);
-//
-//    for (int i = last_d; i >= 0; i--) {
-//        free(TR[i]);
-//        //free(PHI[i]);
-//    }
-//    free(TR);
-    //free(PHI);
-    delete[] logM;
-    delete[] logX;
-    delete[] logY;
+    delete[] LogM;
+    delete[] LogX;
+    delete[] LogY;
     delete[] LK;
     delete[] TR;
     //==========================================================================================
@@ -3122,28 +2717,9 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
     //==========================================================================================
     // memory freeing
-    // #TODO: Free is not compliant with C++ standards. The following lines need to be refactored asap.
-//    free(LogM[1]);
-//    free(LogM[0]);
-//    free(LogM);
-//
-//    free(LogX[1]);
-//    free(LogX[0]);
-//    free(LogX);
-//
-//    free(LogY[1]);
-//    free(LogY[0]);
-//    free(LogY);
-//
-//    for (int i = last_d; i >= 0; i--) {
-//        free(TR[i]);
-//        //free(PHI[i]);
-//    }
-//    free(TR);
-    //free(PHI);
-    delete[] logM;
-    delete[] logX;
-    delete[] logY;
+    delete[] LogM;
+    delete[] LogX;
+    delete[] LogY;
     delete[] TR;
     //==========================================================================================
 }
