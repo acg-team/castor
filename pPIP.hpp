@@ -123,8 +123,8 @@ namespace bpp {
         double tau_;                                               // total tree length
 
 
-        double *lk_down;
-
+        std::vector<vector<double >> lk_down_;
+        vector<double > lk_empty_down_;
 
         bpp::ColMatrix<double> pi_;                                // steady state base frequencies
 
@@ -276,7 +276,10 @@ namespace bpp {
 
         double compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
-        std::vector<double> computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR);
+        std::vector<double> computeLK_GapColumn_local(bpp::Node *node,
+                                                      MSAcolumn_t &sL,
+                                                      MSAcolumn_t &sR,
+                                                      bool flag_RAM);
 
         double compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 

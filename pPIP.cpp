@@ -109,6 +109,13 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     // normalizing constant with rate variation (gamma)
     nu_.resize(numCatg);
 
+
+
+    lk_down_.resize(numNodes);
+    lk_empty_down_.resize(numNodes);
+
+
+
     // Initialise iotas and betas maps
     for (auto &vnode:nodeList) {
 
@@ -1091,7 +1098,10 @@ double pPIP::compute_lk_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
     return pr;
 }
 
-std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t &sL, MSAcolumn_t &sR) {
+std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
+                                                    MSAcolumn_t &sL,
+                                                    MSAcolumn_t &sR,
+                                                    bool flag_RAM) {
 
     // number of discrete gamma categories
     int num_gamma_categories = rDist_->getNumberOfCategories();
@@ -1139,9 +1149,19 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node, MSAcolumn_t
         // lk at the actual node (considered as root node => beta = 1.0)
         double p0 = iotasNode_[node->getId()][catg] * fv0;
 
-        double pL = compute_lk_gap_down(sonLeft, sL, catg);
+        double pL,pR;
+        if (flag_RAM) {
 
-        double pR = compute_lk_gap_down(sonRight, sR, catg);
+            pL=lk_empty_down_[sonLeftID];
+            pR=lk_empty_down_[sonRightID];
+
+        }else{
+
+            pL = compute_lk_gap_down(sonLeft, sL, catg);
+            pR = compute_lk_gap_down(sonRight, sR, catg);
+
+        }
+
 
         pc0.at(catg) = p0 + pL + pR;
     }
@@ -1257,7 +1277,8 @@ double pPIP::computeLK_X_local(double NU,
                                unsigned long m,
                                std::map<MSAcolumn_t, double> &lkX,
                                bool flag_map,
-                               bool flag_RAM,int idx) {
+                               bool flag_RAM,
+                               int idx) {
 
     double log_pr;
 
@@ -1361,7 +1382,8 @@ double pPIP::computeLK_Y_local(double NU,
                                unsigned long m,
                                std::map<MSAcolumn_t, double> &lkY,
                                bool flag_map,
-                               bool flag_RAM,int idx) {
+                               bool flag_RAM,
+                               int idx) {
 
     double log_pr;
 
@@ -1479,11 +1501,6 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
         _setAllBetas(node, true);
     }
 
-    unsigned long up_corner_i;
-    unsigned long up_corner_j;
-    unsigned long bot_corner_i;
-    unsigned long bot_corner_j;
-    unsigned long lw;
     unsigned long h, w;
 
     // Get the IDs of the sons nodes given the current node
@@ -1532,7 +1549,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     //***************************************************************************************
     if (local) {
         // compute the lk of a column full of gaps
-        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs);
+        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs,true);
     } else {
         //global
     }
@@ -1882,7 +1899,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
     score_.at(nodeID) = score;
 
-    lk_down = new double[depth];
+    lk_down_[nodeID].resize(depth);
 
     //==========================================================================================
     // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
@@ -1894,7 +1911,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
         switch (state) {
             case MATCH_STATE:
 
-                lk_down[lev - 1]=LogM[lev][id1][id2];
+                lk_down_[nodeID][lev - 1]=LogM[lev][id1][id2];
 
                 id1 = id1 - 1;
                 id2 = id2 - 1;
@@ -1903,14 +1920,14 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                 break;
             case GAP_X_STATE:
 
-                lk_down[lev - 1]=LogX[lev][id1][id2];
+                lk_down_[nodeID][lev - 1]=LogX[lev][id1][id2];
 
                 id1 = id1 - 1;
                 traceback_path[lev - 1] = GAP_X_CHAR;
                 break;
             case GAP_Y_STATE:
 
-                lk_down[lev - 1]=LogY[lev][id1][id2];
+                lk_down_[nodeID][lev - 1]=LogY[lev][id1][id2];
 
                 id2 = id2 - 1;
                 traceback_path[lev - 1] = GAP_Y_CHAR;
@@ -2014,7 +2031,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     //***************************************************************************************
     if (local) {
         // compute the lk of a column full of gaps
-        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs);
+        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs,false);
     } else {
         /*
         pc0 = compute_pr_gap_all_edges_s(node,
