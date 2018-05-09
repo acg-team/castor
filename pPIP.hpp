@@ -123,8 +123,13 @@ namespace bpp {
         double tau_;                                               // total tree length
 
 
-        std::vector<vector<double >> lk_down_;
-        vector<double > lk_empty_down_;
+
+
+        std::vector<vector<double >> lk_down_; //each node a vector of lk
+        std::vector<vector<double >> lk_empty_down_; //each node a vector of lk_empty (for each gamma category)
+
+
+
 
         bpp::ColMatrix<double> pi_;                                // steady state base frequencies
 

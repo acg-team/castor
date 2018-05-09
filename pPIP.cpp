@@ -81,9 +81,7 @@ pPIP::pPIP(tshlib::Utree *utree,
 
 };
 
-
 void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
-
     int numNodes = nodeList.size();
     int numCatg = rDist_->getNumberOfCategories();
 
@@ -1151,17 +1149,12 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
 
         double pL,pR;
         if (flag_RAM) {
-
-            pL=lk_empty_down_[sonLeftID];
-            pR=lk_empty_down_[sonRightID];
-
+            pL=lk_empty_down_[sonLeftID][catg];
+            pR=lk_empty_down_[sonRightID][catg];
         }else{
-
             pL = compute_lk_gap_down(sonLeft, sL, catg);
             pR = compute_lk_gap_down(sonRight, sR, catg);
-
         }
-
 
         pc0.at(catg) = p0 + pL + pR;
     }
@@ -1295,19 +1288,20 @@ double pPIP::computeLK_X_local(double NU,
 
     // create left + right column
     MSAcolumn_t s;
-    s.append(sL);
-    s.append(col_gap_R);
-
     bool is_found;
     std::map<MSAcolumn_t, double>::iterator it;
+
     if(flag_map){
+        s.append(sL);
+        s.append(col_gap_R);
+
         it = lkX.find(s);
-        is_found= (it == lkX.end());
+        is_found= (it != lkX.end());
     }else{
-        is_found=true;
+        is_found=false;
     }
 
-    if (is_found) {
+    if (!is_found) {
         // is the first time that it computes the lk of this column
 
         unsigned long idx;
@@ -1349,7 +1343,7 @@ double pPIP::computeLK_X_local(double NU,
 
             double pL;
             if (flag_RAM) {
-                //pL = sonLeft.lk_down[idx];
+                pL = lk_down_[sonLeftID][idx];
             } else {
                 pL = compute_lk_down(sonLeft, sL, catg);
             }
@@ -1359,7 +1353,9 @@ double pPIP::computeLK_X_local(double NU,
 
         log_pr = log((long double) pr);
 
-        lkX[s] = log_pr;
+        if(flag_map) {
+            lkX[s] = log_pr;
+        }
 
     } else {
         // the lk of a column like this has been already computed,
@@ -1400,19 +1396,20 @@ double pPIP::computeLK_Y_local(double NU,
 
     // create left + right column
     MSAcolumn_t s;
-    s.append(col_gap_L);
-    s.append(sR);
-
     bool is_found;
     std::map<MSAcolumn_t, double>::iterator it;
+
     if(flag_map){
+        s.append(col_gap_L);
+        s.append(sR);
+
         it = lkY.find(s);
-        is_found= (it == lkY.end());
+        is_found= (it != lkY.end());
     }else{
-        is_found=true;
+        is_found=false;
     }
 
-    if (is_found) {
+    if (!is_found) {
         // is the first time that it computes the lk of this column
 
         // number of discrete gamma categories
@@ -1454,7 +1451,7 @@ double pPIP::computeLK_Y_local(double NU,
 
             double pR;
             if (flag_RAM) {
-                //pR = sonLeft.lk_down[idx];
+                pR = lk_down_[sonRightID][idx];
             } else {
                 pR = compute_lk_down(sonRight, sR, catg);
             }
@@ -1465,7 +1462,9 @@ double pPIP::computeLK_Y_local(double NU,
 
         log_pr = log((long double) pr);
 
-        lkY[s] = log_pr;
+        if(flag_map) {
+            lkY[s] = log_pr;
+        }
 
     } else {
         // the lk of a column like this has been already computed,
@@ -1550,6 +1549,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     if (local) {
         // compute the lk of a column full of gaps
         pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs,true);
+        lk_empty_down_[nodeID]=pc0;
     } else {
         //global
     }
@@ -1561,7 +1561,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
     auto ***TR = new int **[d]; // 3D traceback matrix
 
-    auto ***LK = new double **[d];
+    auto ***LK = new double **[d]; // 3D LK matrix, stores best lk at each position
 
     // allocate memory for the 2 layers
     for(int k = 0; k < 2; k++){
@@ -1617,7 +1617,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     TR[0][0][0] = STOP_STATE;
     LK[0][0][0] = -std::numeric_limits<double>::infinity();
 
-    double max_of_3 = -std::numeric_limits<double>::infinity();
+    double max_of_MXY = -std::numeric_limits<double>::infinity();
 
     signed long level_max_lk = INT_MIN;
     double val;
@@ -1630,13 +1630,6 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
     signed long idx;
 
-//    unsigned long coordSeq_1;
-//    unsigned long coordSeq_2;
-//    unsigned long coordTriangle_this_i;
-//    unsigned long coordTriangle_this_j;
-//    unsigned long coordTriangle_prev_i;
-//    unsigned long coordTriangle_prev_j;
-
     int tr; // traceback index
 
     double score = -std::numeric_limits<double>::infinity();
@@ -1644,7 +1637,6 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     unsigned long depth;
 
     unsigned long last_d = d - 1;
-    unsigned long size_tr, tr_up_i, tr_up_j, tr_down_i, tr_down_j;
     std::map<MSAcolumn_t, double> lkM;
     std::map<MSAcolumn_t, double> lkX;
     std::map<MSAcolumn_t, double> lkY;
@@ -1845,14 +1837,18 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
                 tr = index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution);
 
-                if (tr == MATCH_STATE) {
-                    LK[m][i][j]=valM_this;
-                } else if (tr == GAP_X_STATE) {
-                    LK[m][i][j]=valX_this;
-                } else if (tr == GAP_Y_STATE) {
-                    LK[m][i][j]=valY_this;
-                } else{
-                    LOG(FATAL) <<"\nERROR...";
+                switch (tr) {
+                    case MATCH_STATE:
+                        LK[m][i][j]=valM_this;
+                        break;
+                    case GAP_X_STATE:
+                        LK[m][i][j]=valX_this;
+                        break;
+                    case GAP_Y_STATE:
+                        LK[m][i][j]=valY_this;
+                        break;
+                    default:
+                        LOG(FATAL) <<"\nERROR...";
                 }
 
                 if (TR[m][i][j] != 0) {
@@ -1865,10 +1861,10 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                     // the algorithm is filling the last column of 3D DP matrix where
                     // all the characters are in the MSA
 
-                    max_of_3 = max_of_three(valM_this, valX_this, valY_this, epsilon);
+                    max_of_MXY = max_of_three(valM_this, valX_this, valY_this, epsilon);
 
-                    if (max_of_3 > score) {
-                        score = max_of_3;
+                    if (max_of_MXY > score) {
+                        score = max_of_MXY;
                         level_max_lk = m;
                     }
 
@@ -1915,6 +1911,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
                 id1 = id1 - 1;
                 id2 = id2 - 1;
+
                 traceback_path[lev - 1] = MATCH_CHAR;
 
                 break;
@@ -1923,14 +1920,18 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                 lk_down_[nodeID][lev - 1]=LogX[lev][id1][id2];
 
                 id1 = id1 - 1;
+
                 traceback_path[lev - 1] = GAP_X_CHAR;
+
                 break;
             case GAP_Y_STATE:
 
                 lk_down_[nodeID][lev - 1]=LogY[lev][id1][id2];
 
                 id2 = id2 - 1;
+
                 traceback_path[lev - 1] = GAP_Y_CHAR;
+
                 break;
             default:
                 LOG(FATAL) << "\nSomething went wrong during the alignment reconstruction in function pPIP::DP3D_PIP. Check call stack below.";
