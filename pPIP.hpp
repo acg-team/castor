@@ -85,7 +85,11 @@ namespace bpp {
 
         ~pPIP(){};
 
-        void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, bool local,bool flag_RAM,bool flag_map);
+        void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
+                        bool local,
+                        bool flag_RAM,
+                        bool flag_map,
+                        bool flag_pattern);
 
         std::vector< std::string > getMSA(bpp::Node *node);
         double getScore(bpp::Node *node);
@@ -98,6 +102,7 @@ namespace bpp {
 
         void setTree(const Tree *tree);
 
+        void setFVleaf(bpp::Node *node);
 
     protected:
 
@@ -135,7 +140,7 @@ namespace bpp {
         std::vector<vector<double >> lk_down_;                      //each node a vector of lk
         std::vector<vector<double >> lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
 
-
+        std::vector< bpp::ColMatrix<double> > fv_data_;
 
 
         bpp::ColMatrix<double> pi_;                                // steady state base frequencies
@@ -310,8 +315,10 @@ namespace bpp {
                                  std::string &sR,
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkM,
+                                 std::vector< std::vector<double> > &lkM_pattern,
                                  bool flag_map,
-                                 bool flag_RAM);
+                                 bool flag_RAM,
+                                 bool flag_pattern);
 
         double computeLK_X_local(double NU,
                                  double valM,
@@ -322,9 +329,10 @@ namespace bpp {
                                  MSAcolumn_t &col_gap_R,
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkX,
+                                 std::vector< std::vector<double> > &lkX_pattern,
                                  bool flag_map,
                                  bool flag_RAM,
-                                 int idx);
+                                 bool flag_pattern);
 
         double computeLK_Y_local(double NU,
                                  double valM,
@@ -335,13 +343,17 @@ namespace bpp {
                                  MSAcolumn_t &sR,
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkY,
+                                 std::vector< std::vector<double> > &lkY_pattern,
                                  bool flag_map,
                                  bool flag_RAM,
-                                 int idx);
+                                 bool flag_pattern);
 
         void DP3D_PIP(bpp::Node *node, bool local,bool flag_map);
 
-        void DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map);
+        void DP3D_PIP_RAM(bpp::Node *node,
+                          bool local,
+                          bool flag_map,
+                          bool flag_pattern);
 
         void DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,
                          double temperature,int num_SB);
