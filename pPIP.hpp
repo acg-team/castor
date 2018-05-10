@@ -252,9 +252,14 @@ namespace bpp {
                          double y,
                          double epsilon,
                          std::default_random_engine &generator,
-                         std::uniform_real_distribution<double> &distribution);
+                         std::uniform_real_distribution<double> &distribution,
+                         bool flag_RAM);
 
-        double max_of_three(double a, double b, double c,double epsilon);
+        double max_of_three(double a,
+                            double b,
+                            double c,
+                            double epsilon,
+                            bool flag_RAM);
 
         bool checkboundary(unsigned long up_corner_i,
                            unsigned long up_corner_j,
@@ -297,7 +302,8 @@ namespace bpp {
                                  std::string &sR,
                                  unsigned long m,
                                  std::map<MSAcolumn_t, double> &lkM,
-                                 bool flag_map);
+                                 bool flag_map,
+                                 bool flag_RAM);
 
         double computeLK_X_local(double NU,
                                  double valM,

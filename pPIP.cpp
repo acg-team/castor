@@ -425,13 +425,18 @@ int pPIP::index_of_max(double m,
                        double y,
                        double epsilon,
                        std::default_random_engine &generator,
-                       std::uniform_real_distribution<double> &distribution) {
+                       std::uniform_real_distribution<double> &distribution,
+                       bool flag_RAM) {
 
     double random_number;
 
     if (std::isinf(m) & std::isinf(x) & std::isinf(y))
-        LOG(FATAL) << "\nSomething went wrong during the comparison of m,x,y variables in function pPIP::index_of_max. Check call stack below. ";
-
+        if (flag_RAM) {
+            return int(MATCH_STATE);
+        } else{
+            LOG(FATAL)
+                    << "\nSomething went wrong during the comparison of m,x,y variables in function pPIP::index_of_max. Check call stack below. ";
+        }
     if (not(std::isinf(m)) & not(std::isinf(x)) & (fabs((m - x)) < epsilon)) {
         x = m;
     }
@@ -513,7 +518,7 @@ int pPIP::index_of_max(double m,
 
 }
 
-double pPIP::max_of_three(double a, double b, double c, double epsilon) {
+double pPIP::max_of_three(double a, double b, double c, double epsilon,bool flag_RAM) {
 
     if (fabs(a) < epsilon) {
         a = -std::numeric_limits<double>::infinity();
@@ -526,7 +531,12 @@ double pPIP::max_of_three(double a, double b, double c, double epsilon) {
     }
 
     if (std::isinf(a) && std::isinf(b) && std::isinf(c)) {
-        LOG(FATAL) << "\nSomething went wrong during the comparison in function pPIP::max_of_three. Check call stack below.";
+        if(flag_RAM){
+            return -std::numeric_limits<double>::infinity();
+        }else{
+            LOG(FATAL) << "\nSomething went wrong during the comparison in function pPIP::max_of_three. Check call stack below.";
+        }
+
     }
 
     if (a > b) {
@@ -1149,8 +1159,16 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
 
         double pL,pR;
         if (flag_RAM) {
-            pL=lk_empty_down_[sonLeftID][catg];
-            pR=lk_empty_down_[sonRightID][catg];
+            if(sonLeft->isLeaf()){
+                pL = compute_lk_gap_down(sonLeft, sL, catg);
+            }else{
+                pL=lk_empty_down_[sonLeftID][catg];
+            }
+            if(sonRight->isLeaf()){
+                pR = compute_lk_gap_down(sonRight, sR, catg);
+            }else{
+                pR=lk_empty_down_[sonRightID][catg];
+            }
         }else{
             pL = compute_lk_gap_down(sonLeft, sL, catg);
             pR = compute_lk_gap_down(sonRight, sR, catg);
@@ -1171,7 +1189,8 @@ double pPIP::computeLK_M_local(double NU,
                                MSAcolumn_t &sR,
                                unsigned long m,
                                std::map<MSAcolumn_t, double> &lkM,
-                               bool flag_map) {
+                               bool flag_map,
+                               bool flag_RAM) {
 
     double log_pr;
 
@@ -1257,7 +1276,7 @@ double pPIP::computeLK_M_local(double NU,
     }
 
     //return  log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
-    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,flag_RAM);
 }
 
 double pPIP::computeLK_X_local(double NU,
@@ -1309,6 +1328,7 @@ double pPIP::computeLK_X_local(double NU,
         // number of discrete gamma categories
         int num_gamma_categories = rDist_->getNumberOfCategories();
 
+        double pL;
         double pr = 0.0;
         for (int catg = 0; catg < num_gamma_categories; catg++) {
 
@@ -1341,9 +1361,14 @@ double pPIP::computeLK_X_local(double NU,
                         betasNode_[nodeID][catg] * \
                         fv0;
 
-            double pL;
+
             if (flag_RAM) {
-                pL = lk_down_[sonLeftID][idx];
+                if(sonLeft->isLeaf()){
+                    pL += compute_lk_down(sonLeft, sL, catg);
+                }else{
+                    pL = lk_down_.at(sonLeftID).at(idx);
+                    pL = exp(pL);
+                }
             } else {
                 pL = compute_lk_down(sonLeft, sL, catg);
             }
@@ -1365,7 +1390,7 @@ double pPIP::computeLK_X_local(double NU,
     }
 
     //return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
-    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,flag_RAM);
 }
 
 double pPIP::computeLK_Y_local(double NU,
@@ -1417,6 +1442,7 @@ double pPIP::computeLK_Y_local(double NU,
 
         unsigned long idx;
 
+        double pR;
         double pr = 0.0;
         for (int catg = 0; catg < num_gamma_categories; catg++) {
 
@@ -1449,9 +1475,14 @@ double pPIP::computeLK_Y_local(double NU,
                         betasNode_[nodeID][catg] * \
                         fv0;
 
-            double pR;
+
             if (flag_RAM) {
-                pR = lk_down_[sonRightID][idx];
+                if(sonRight->isLeaf()){
+                    pR = compute_lk_down(sonRight, sR, catg);
+                }else{
+                    pR = lk_down_.at(sonRightID).at(idx);
+                    pR = exp(pR);
+                }
             } else {
                 pR = compute_lk_down(sonRight, sR, catg);
             }
@@ -1474,7 +1505,7 @@ double pPIP::computeLK_Y_local(double NU,
     }
 
     //return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
-    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,flag_RAM);
 }
 
 void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
@@ -1510,11 +1541,18 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     int sequenceID_1 = treemap_.right.at(vnode_left);
     int sequenceID_2 = treemap_.right.at(vnode_right);
 
+    /*
     // Compute dimensions of the 3D block at current internal node.
     h = MSA_.at(sequenceID_1).size() + 1; // dimension of the alignment on the left side
     w = MSA_.at(sequenceID_2).size() + 1; // dimension of the alignment on the riht side
 
     unsigned long d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
+    */
+
+    h = MSA_.at(sequenceID_1).size(); // dimension of the alignment on the left side
+    w = MSA_.at(sequenceID_2).size(); // dimension of the alignment on the riht side
+
+    unsigned long d = h + w + 1; // third dimension of the DP matrix
 
     // lk of a single empty column (full of gaps) with rate variation (gamma distribution)
     std::vector<double> pc0;
@@ -1555,6 +1593,8 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     }
     //***************************************************************************************
     //***************************************************************************************
+    //std::vector<vector<vector<double > >>
+
     auto ***LogM = new double **[2]; // DP sparse matrix for MATCH case (only 2 layer are needed)
     auto ***LogX = new double **[2]; // DP sparse matrix for GAPX case (only 2 layer are needed)
     auto ***LogY = new double **[2]; // DP sparse matrix for GAPY case (only 2 layer are needed)
@@ -1576,7 +1616,9 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     }
 
     TR[0] = new int*[1]();
+    TR[0][0] = new int[1]();
     LK[0] = new double*[1]();
+    LK[0][0] = new double[1]();
     for(int k = 1; k < d; k++){
         TR[k] = new int *[h]();
         LK[k] = new double *[h]();
@@ -1585,6 +1627,24 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
             LK[k][i] = new double[w]();
         }
     }
+
+
+
+
+
+//    for(int k=0;k<2;k++){
+//        for(int i=0;i<10;i++){
+//            for(int j=0;j<10;j++){
+//                std::cout<<LogM[k][i][j]<<"  ";
+//            }
+//            std::cout<<"\n";
+//        }
+//        std::cout<<"\n";
+//        std::cout<<"\n";
+//    }
+
+
+
     //***************************************************************************************
     //***************************************************************************************
     // marginal likelihood for all empty columns with rate variation (gamma distribution)
@@ -1647,10 +1707,9 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     int counter_to_early_stop;
     int max_decrease_before_stop = 10;
     double prev_lk = std::numeric_limits<double>::infinity();
-
     // ============================================================
     // For each slice of the 3D cube, compute the values of each cell
-    for (unsigned long m = 1; m < d; m++) {
+    for (int m = 1; m < d; m++) {
 
         if (flag_exit) {
             break;
@@ -1676,17 +1735,17 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
         }
         //***************************************************************************************
         //***************************************************************************************
-        for (unsigned long i = 0; i < h; i++) {
+        for (int i = 0; i < h; i++) {
 
             sLs = (MSA_.at(sequenceID_1).at(i));
 
-            for (unsigned long j = 0; j < w; j++) {
+            for (int j = 0; j < w; j++) {
 
                 sRs = (MSA_.at(sequenceID_2).at(j));
 
                 //=======================================
                 // MATCH
-                if( (i-1) >=0 && (j-1)>=0 ){
+                if( (i-1) >= 0 && (j-1) >= 0 ){
 
                     valM_prev = LogM[m_binary_prev][i-1][j-1];
                     valX_prev = LogX[m_binary_prev][i-1][j-1];
@@ -1709,13 +1768,14 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                                                     sRs,
                                                     m,
                                                     lkM,
-                                                    flag_map);
+                                                    flag_map,
+                                                    true);
 
-                            if (std::isinf(valM_this)) {
-                                LOG(FATAL)
-                                        << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
-                            }
-
+//                            if (std::isinf(valM_this)) {
+//                                LOG(FATAL)
+//                                        << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
+//                            }
+//
                             if (std::isnan(valM_this)) {
                                 LOG(FATAL)
                                         << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
@@ -1759,11 +1819,11 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                                                     true,
                                                     i);
 
-                            if (std::isinf(valX_this)) {
-                                LOG(FATAL)
-                                        << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
-                            }
-
+//                            if (std::isinf(valX_this)) {
+//                                LOG(FATAL)
+//                                        << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
+//                            }
+//
                             if (std::isnan(valX_this)) {
                                 LOG(FATAL)
                                         << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
@@ -1807,11 +1867,11 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                                                     true,
                                                     j);
 
-                            if (std::isinf(valY_this)) {
-                                LOG(FATAL)
-                                        << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
-                            }
-
+//                            if (std::isinf(valY_this)) {
+//                                LOG(FATAL)
+//                                        << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is infinite. Check call stack below.";
+//                            }
+//
                             if (std::isnan(valY_this)) {
                                 LOG(FATAL)
                                         << "\nSomething went wrong function pPIP::DP3D_PIP. The value of 'val' is nan. Check call stack below.";
@@ -1835,7 +1895,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                 valX_this = fabs((long double) valX_this) < epsilon ? -std::numeric_limits<double>::infinity() : valX_this;
                 valY_this = fabs((long double) valY_this) < epsilon ? -std::numeric_limits<double>::infinity() : valY_this;
 
-                tr = index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution);
+                tr = index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution,true);
 
                 switch (tr) {
                     case MATCH_STATE:
@@ -1861,7 +1921,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                     // the algorithm is filling the last column of 3D DP matrix where
                     // all the characters are in the MSA
 
-                    max_of_MXY = max_of_three(valM_this, valX_this, valY_this, epsilon);
+                    max_of_MXY = max_of_three(valM_this, valX_this, valY_this, epsilon,true);
 
                     if (max_of_MXY > score) {
                         score = max_of_MXY;
@@ -1907,7 +1967,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
         switch (state) {
             case MATCH_STATE:
 
-                lk_down_[nodeID][lev - 1]=LogM[lev][id1][id2];
+                lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
 
                 id1 = id1 - 1;
                 id2 = id2 - 1;
@@ -1917,7 +1977,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                 break;
             case GAP_X_STATE:
 
-                lk_down_[nodeID][lev - 1]=LogX[lev][id1][id2];
+                lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
 
                 id1 = id1 - 1;
 
@@ -1926,7 +1986,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                 break;
             case GAP_Y_STATE:
 
-                lk_down_[nodeID][lev - 1]=LogY[lev][id1][id2];
+                lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
 
                 id2 = id2 - 1;
 
@@ -2268,7 +2328,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                                                 sRs,
                                                 m,
                                                 lkM,
-                                                flag_map);
+                                                flag_map,
+                                                false);
                     } else {
                         /*
                         val=computeLK_M_all_edges_s_opt(valM,
@@ -2641,7 +2702,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
                     int ttrr;
 
-                    ttrr = index_of_max(mval, xval, yval, epsilon, generator, distribution);
+                    ttrr = index_of_max(mval, xval, yval, epsilon, generator, distribution,false);
 
                     idx = get_indices_T(coordTriangle_this_i,
                                         coordTriangle_this_j,
@@ -2661,7 +2722,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                         // the algorithm is filling the last column of 3D DP matrix where
                         // all the characters are in the MSA
 
-                        max_of_3 = max_of_three(mval, xval, yval, epsilon);
+                        max_of_3 = max_of_three(mval, xval, yval, epsilon, false);
 
                         if (max_of_3 > score) {
                             score = max_of_3;
