@@ -833,6 +833,9 @@ int main(int argc, char *argv[]) {
         {
             ApplicationTools::displayResult("Output annotation to file", PAR_output_annotation_file);
             OutputUtils::exportTreeAnnotations2TSV(tree, PAR_output_annotation_file);
+            std::vector<Tree*> tmp;
+            tmp.push_back(tree);
+            OutputUtils::writeNexusMetaTree(tmp, PAR_output_annotation_file+".tree", false);
         }
 
 

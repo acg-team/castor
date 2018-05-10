@@ -138,6 +138,15 @@ namespace OutputUtils {
 
     void exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfile);
 
+    void writeNexusMetaTree(std::vector<bpp::Tree*> trees, std::string outputfile, bool internalNodesNames);
+
+    namespace TreeTools {
+
+        std::string treeToParenthesis(const bpp::Tree& tree, bool internalNodesNames);
+        std::string nodeToParenthesis(const bpp::Tree& tree, int nodeId, bool internalNodesNames) throw (bpp::NodeNotFoundException);
+
+    }
+
 }
 
 namespace DistanceUtils {
