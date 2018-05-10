@@ -1694,18 +1694,18 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
 //    LK[0] = new double*[1]();
 //    LK[0][0] = new double[1]();
-    for(int k = 1; k < d; k++){
-//        TR[k] = new int *[h]();
-//        LK[k] = new double *[h]();
-        TR[k].resize(h);
-        LK[k].resize(h);
-        for(int i = 0; i < h; i++){
-//            TR[k][i] = new int[w]();
-//            LK[k][i] = new double[w]();
-            TR[k][i].resize(w,0);
-            LK[k][i].resize(w,0);
-        }
-    }
+//    for(int k = 1; k < d; k++){
+////        TR[k] = new int *[h]();
+////        LK[k] = new double *[h]();
+//        TR[k].resize(h);
+//        LK[k].resize(h);
+//        for(int i = 0; i < h; i++){
+////            TR[k][i] = new int[w]();
+////            LK[k][i] = new double[w]();
+//            TR[k][i].resize(w,0);
+//            LK[k][i].resize(w,0);
+//        }
+//    }
 
     //***************************************************************************************
     //***************************************************************************************
@@ -1780,6 +1780,15 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
         // alternate the two layers
         m_binary_this = m % 2;
         m_binary_prev = (m + 1) % 2;
+
+        //===========================
+        TR[m].resize(h);
+        LK[m].resize(h);
+        for(int z = 0; z < h; z++){
+            TR[m][z].resize(w,0);
+            LK[m][z].resize(w,0);
+        }
+        //===========================
 
         //***************************************************************************************
         //***************************************************************************************
