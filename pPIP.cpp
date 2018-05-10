@@ -1593,8 +1593,19 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     }
     //***************************************************************************************
     //***************************************************************************************
-    //std::vector<vector<vector<double > >>
+    std::vector< vector< vector<double> > > LogM;
+    std::vector< vector< vector<double> > > LogX;
+    std::vector< vector< vector<double> > > LogY;
+    std::vector< vector< vector<int> > > TR;
+    std::vector< vector< vector<double> > > LK;
 
+    LogM.resize(2);
+    LogX.resize(2);
+    LogY.resize(2);
+    TR.resize(d);
+    LK.resize(d);
+
+    /*
     auto ***LogM = new double **[2]; // DP sparse matrix for MATCH case (only 2 layer are needed)
     auto ***LogX = new double **[2]; // DP sparse matrix for GAPX case (only 2 layer are needed)
     auto ***LogY = new double **[2]; // DP sparse matrix for GAPY case (only 2 layer are needed)
@@ -1602,48 +1613,52 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     auto ***TR = new int **[d]; // 3D traceback matrix
 
     auto ***LK = new double **[d]; // 3D LK matrix, stores best lk at each position
+    */
 
     // allocate memory for the 2 layers
     for(int k = 0; k < 2; k++){
-        LogM[k] = new double *[h]();
-        LogX[k] = new double *[h]();
-        LogY[k] = new double *[h]();
+        //LogM[k] = new double *[h]();
+        //LogX[k] = new double *[h]();
+        //LogY[k] = new double *[h]();
+
+        LogM[k].resize(h);
+        LogX[k].resize(h);
+        LogY[k].resize(h);
+
         for(int i = 0; i < h; i++){
-            LogM[k][i] = new double[w]();
-            LogX[k][i] = new double[w]();
-            LogY[k][i] = new double[w]();
+            //LogM[k][i] = new double[w]();
+            //LogX[k][i] = new double[w]();
+            //LogY[k][i] = new double[w]();
+
+            LogM[k][i].resize(w,0);
+            LogX[k][i].resize(w,0);
+            LogY[k][i].resize(w,0);
         }
     }
 
-    TR[0] = new int*[1]();
-    TR[0][0] = new int[1]();
-    LK[0] = new double*[1]();
-    LK[0][0] = new double[1]();
+//    TR[0] = new int*[1]();
+//    TR[0][0] = new int[1]();
+
+    TR[0].resize(1);
+    LK[0].resize(1);
+
+    TR[0][0].resize(1,0);
+    LK[0][0].resize(1,0);
+
+//    LK[0] = new double*[1]();
+//    LK[0][0] = new double[1]();
     for(int k = 1; k < d; k++){
-        TR[k] = new int *[h]();
-        LK[k] = new double *[h]();
+//        TR[k] = new int *[h]();
+//        LK[k] = new double *[h]();
+        TR[k].resize(h);
+        LK[k].resize(h);
         for(int i = 0; i < h; i++){
-            TR[k][i] = new int[w]();
-            LK[k][i] = new double[w]();
+//            TR[k][i] = new int[w]();
+//            LK[k][i] = new double[w]();
+            TR[k][i].resize(w,0);
+            LK[k][i].resize(w,0);
         }
     }
-
-
-
-
-
-//    for(int k=0;k<2;k++){
-//        for(int i=0;i<10;i++){
-//            for(int j=0;j<10;j++){
-//                std::cout<<LogM[k][i][j]<<"  ";
-//            }
-//            std::cout<<"\n";
-//        }
-//        std::cout<<"\n";
-//        std::cout<<"\n";
-//    }
-
-
 
     //***************************************************************************************
     //***************************************************************************************
@@ -2009,11 +2024,11 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
     //==========================================================================================
     // memory freeing
-    delete[] LogM;
-    delete[] LogX;
-    delete[] LogY;
-    delete[] LK;
-    delete[] TR;
+    delete[] &LogM;
+    delete[] &LogX;
+    delete[] &LogY;
+    delete[] &LK;
+    delete[] &TR;
     //==========================================================================================
 }
 
