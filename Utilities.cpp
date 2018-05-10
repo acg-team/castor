@@ -772,6 +772,38 @@ void OutputUtils::exportOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl, 
 
 }
 
+void OutputUtils::exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfile) {
+
+    std::ofstream outfile;
+    outfile.open(outputfile);
+    //lkFile << score;
+
+    // Write header
+    outfile << "Taxa\t";
+    for (auto &attributeName:tree->getNodePropertyNames(tree->getRootId())){
+
+        outfile << attributeName << "\t";
+    }
+    outfile << "\n";
+
+    // Write content
+    for(auto &nodeID:tree->getNodesId()){
+        outfile << tree->getNodeName(nodeID) << "\t";
+        for (auto &attributeName:tree->getNodePropertyNames(tree->getRootId())){
+            if (attributeName == "evolEvents") {
+                outfile << dynamic_cast<const Number<int> *>(tree->getNodeProperty(nodeID, attributeName))->getValue() << "\t";
+            }
+            if (attributeName == "evolEventsWeighted") {
+                outfile << dynamic_cast<const Number<double> *>(tree->getNodeProperty(nodeID, attributeName))->getValue() << "\t";
+            }
+
+        }
+        outfile << "\n";
+    }
+    outfile.close();
+
+}
+
 bpp::DistanceEstimation DistanceUtils::computeDistanceMethod(std::string seqfilename, bpp::Alphabet *alphabet, bpp::GeneticCode *gCode, std::map<std::string, std::string> &params) {
 
     // Create a map containing the required parameters passed by the user

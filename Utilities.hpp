@@ -136,6 +136,8 @@ namespace OutputUtils {
 
     void exportOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl, bpp::SiteContainer *sites, std::string prefix="");
 
+    void exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfile);
+
 }
 
 namespace DistanceUtils {
