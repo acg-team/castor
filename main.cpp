@@ -622,7 +622,7 @@ int main(int argc, char *argv[]) {
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
-            bool flag_RAM = true;
+            bool flag_RAM = false;
             bool flag_map = true;
             alignment->PIPAligner(ftn, true,flag_RAM,flag_map);
 

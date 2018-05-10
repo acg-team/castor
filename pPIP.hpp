@@ -125,8 +125,8 @@ namespace bpp {
 
 
 
-        std::vector<vector<double >> lk_down_; //each node a vector of lk
-        std::vector<vector<double >> lk_empty_down_; //each node a vector of lk_empty (for each gamma category)
+        std::vector<vector<double >> lk_down_;                      //each node a vector of lk
+        std::vector<vector<double >> lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
 
 
 

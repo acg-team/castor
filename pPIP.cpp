@@ -86,14 +86,14 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     int numCatg = rDist_->getNumberOfCategories();
 
     // lk score at each node
-    score_.resize(numNodes);
-    score_.assign(numNodes, -std::numeric_limits<double>::infinity());
+    score_.resize(numNodes);                                                        // best likelihood score at each node (final)
+    score_.assign(numNodes, -std::numeric_limits<double>::infinity());              // initialisation of the best score
 
     // traceback path at each node
-    traceback_path_.resize(numNodes);
+    traceback_path_.resize(numNodes);                                               // vector of strings with the traceback to the path that generates the best MSA
 
     // sequence names in the MSA at each node
-    seqNames_.resize(numNodes);
+    seqNames_.resize(numNodes);                                                     // it stores the order of the sequences added to the MSA at each node
 
     // MSA at each node
     MSA_.resize(numNodes);
@@ -108,7 +108,7 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     nu_.resize(numCatg);
 
 
-
+    //
     lk_down_.resize(numNodes);
     lk_empty_down_.resize(numNodes);
 
@@ -1210,6 +1210,7 @@ double pPIP::computeLK_M_local(double NU,
     s.append(sL);
     s.append(sR);
 
+    // If the columns has been already seen in the alignment, then do not compute the value, but get it from the map
     bool is_found;
     std::map<MSAcolumn_t, double>::iterator it;
     if(flag_map){
@@ -1538,19 +1539,19 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
     tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
-    int sequenceID_1 = treemap_.right.at(vnode_left);
-    int sequenceID_2 = treemap_.right.at(vnode_right);
+    int nodeID_L = treemap_.right.at(vnode_left);
+    int nodeID_R = treemap_.right.at(vnode_right);
 
     /*
     // Compute dimensions of the 3D block at current internal node.
-    h = MSA_.at(sequenceID_1).size() + 1; // dimension of the alignment on the left side
-    w = MSA_.at(sequenceID_2).size() + 1; // dimension of the alignment on the riht side
+    h = MSA_.at(nodeID_L).size() + 1; // dimension of the alignment on the left side
+    w = MSA_.at(nodeID_R).size() + 1; // dimension of the alignment on the right side
 
     unsigned long d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
     */
 
-    h = MSA_.at(sequenceID_1).size(); // dimension of the alignment on the left side
-    w = MSA_.at(sequenceID_2).size(); // dimension of the alignment on the riht side
+    h = MSA_.at(nodeID_L).size(); // dimension of the alignment on the left side
+    w = MSA_.at(nodeID_R).size(); // dimension of the alignment on the right side
 
     unsigned long d = h + w + 1; // third dimension of the DP matrix
 
@@ -1563,8 +1564,8 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     MSAcolumn_t col_gap_Ls; // left column full of gaps
     MSAcolumn_t col_gap_Rs; //right column full of gaps
 
-    unsigned long numLeavesLeft = seqNames_.at(sequenceID_1).size(); // number of leaves in the left sub-tree
-    unsigned long numLeavesRight = seqNames_.at(sequenceID_2).size(); // number of leaves in the right sub-tree
+    unsigned long numLeavesLeft = seqNames_.at(nodeID_L).size(); // number of leaves in the left sub-tree
+    unsigned long numLeavesRight = seqNames_.at(nodeID_R).size(); // number of leaves in the right sub-tree
 
     col_gap_Ls = createGapCol(numLeavesLeft); // create column of gaps for the left sub-tree
     col_gap_Rs = createGapCol(numLeavesRight); // create column of gaps for the right sub-tree
@@ -1591,13 +1592,15 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     } else {
         //global
     }
+
     //***************************************************************************************
+    // Initialisation of the datastructure
     //***************************************************************************************
-    std::vector< vector< vector<double> > > LogM;
-    std::vector< vector< vector<double> > > LogX;
-    std::vector< vector< vector<double> > > LogY;
-    std::vector< vector< vector<int> > > TR;
-    std::vector< vector< vector<double> > > LK;
+    std::vector< vector< vector<double> > > LogM;   // DP sparse matrix for MATCH case (only 2 layer are needed)
+    std::vector< vector< vector<double> > > LogX;   // DP sparse matrix for GAPX case (only 2 layer are needed)
+    std::vector< vector< vector<double> > > LogY;   // DP sparse matrix for GAPY case (only 2 layer are needed)
+    std::vector< vector< vector<int> > > TR;        // 3D traceback matrix
+    std::vector< vector< vector<double> > > LK;     // 3D LK matrix, stores best lk at each position
 
     LogM.resize(2);
     LogX.resize(2);
@@ -1606,13 +1609,11 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     LK.resize(d);
 
     /*
-    auto ***LogM = new double **[2]; // DP sparse matrix for MATCH case (only 2 layer are needed)
-    auto ***LogX = new double **[2]; // DP sparse matrix for GAPX case (only 2 layer are needed)
-    auto ***LogY = new double **[2]; // DP sparse matrix for GAPY case (only 2 layer are needed)
-
-    auto ***TR = new int **[d]; // 3D traceback matrix
-
-    auto ***LK = new double **[d]; // 3D LK matrix, stores best lk at each position
+    auto ***LogM = new double **[2];
+    auto ***LogX = new double **[2];
+    auto ***LogY = new double **[2];
+    auto ***TR = new int **[d];
+    auto ***LK = new double **[d];
     */
 
     // allocate memory for the 2 layers
@@ -1692,26 +1693,24 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     TR[0][0][0] = STOP_STATE;
     LK[0][0][0] = -std::numeric_limits<double>::infinity();
 
-    double max_of_MXY = -std::numeric_limits<double>::infinity();
+    double max_of_MXY = -std::numeric_limits<double>::infinity();                   // Max value found in the matrices M,X,Y
 
-    signed long level_max_lk = INT_MIN;
-    double val;
-    unsigned long m_binary_this;
-    unsigned long m_binary_prev;
+
+    unsigned long m_binary_this;            // Level Index during computation / current
+    unsigned long m_binary_prev;            // Level Index during computation / old
 
     double valM_this,valM_prev;
     double valX_this,valX_prev;
     double valY_this,valY_prev;
 
-    signed long idx;
-
     int tr; // traceback index
 
-    double score = -std::numeric_limits<double>::infinity();
+    double score = -std::numeric_limits<double>::infinity();        // best likelihood value at this node
 
-    unsigned long depth;
+    signed long level_max_lk = INT_MIN;                             // Depth in M,X,Y with the highest lk value
+    //unsigned long depth;
 
-    unsigned long last_d = d - 1;
+    //unsigned long last_d = d - 1;
     std::map<MSAcolumn_t, double> lkM;
     std::map<MSAcolumn_t, double> lkX;
     std::map<MSAcolumn_t, double> lkY;
@@ -1719,9 +1718,9 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     //============================================================
     // early stop condition flag
     bool flag_exit = false;
-    int counter_to_early_stop;
-    int max_decrease_before_stop = 10;
-    double prev_lk = std::numeric_limits<double>::infinity();
+    int counter_to_early_stop = 0;
+    int max_decrease_before_stop = 10;                              // hardcoded to prevent early-stops
+    double prev_best_lk = -std::numeric_limits<double>::infinity(); // TODO: Check for the same bug in the other version
     // ============================================================
     // For each slice of the 3D cube, compute the values of each cell
     for (int m = 1; m < d; m++) {
@@ -1752,11 +1751,11 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
         //***************************************************************************************
         for (int i = 0; i < h; i++) {
 
-            sLs = (MSA_.at(sequenceID_1).at(i));
+            sLs = (MSA_.at(nodeID_L).at(i));
 
             for (int j = 0; j < w; j++) {
 
-                sRs = (MSA_.at(sequenceID_2).at(j));
+                sRs = (MSA_.at(nodeID_R).at(j));
 
                 //=======================================
                 // MATCH
@@ -1906,10 +1905,11 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                 valX_this = LogX[m_binary_this][i][j];
                 valY_this = LogY[m_binary_this][i][j];
 
-                valM_this = fabs((long double) valM_this) < epsilon ? -std::numeric_limits<double>::infinity() : valM_this;
-                valX_this = fabs((long double) valX_this) < epsilon ? -std::numeric_limits<double>::infinity() : valX_this;
-                valY_this = fabs((long double) valY_this) < epsilon ? -std::numeric_limits<double>::infinity() : valY_this;
+                //valM_this = fabs((long double) valM_this) < epsilon ? -std::numeric_limits<double>::infinity() : valM_this;
+                //valX_this = fabs((long double) valX_this) < epsilon ? -std::numeric_limits<double>::infinity() : valX_this;
+                //valY_this = fabs((long double) valY_this) < epsilon ? -std::numeric_limits<double>::infinity() : valY_this;
 
+                // Find which matrix contains the best value of LK found until this point.
                 tr = index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution,true);
 
                 switch (tr) {
@@ -1923,15 +1923,17 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                         LK[m][i][j]=valY_this;
                         break;
                     default:
-                        LOG(FATAL) <<"\nERROR...";
+                        LOG(FATAL) <<"\nSomething went wrong in reading the TR value. TR is neither MATCH, nor GAPX, nor GAPY. ";
                 }
-
+                /*
                 if (TR[m][i][j] != 0) {
-                    LOG(FATAL) << "\nSomething went wrong in accessing TR at indices:[" << m << "][" << idx << "] in function pPIP::DP3D_PIP. Check call stack below.";
+                    LOG_IF(FATAL, TR[m][i][j] != 0 ) << "\nSomething went wrong in accessing TR at indices:[" << m << "][" << i << "][" << j << "] in function pPIP::DP3D_PIP. Check call stack below.";
                 }
-
+*/
+                // Store the index for the traceback
                 TR[m][i][j] = tr;
 
+                // If we reached the corner of the 3D cube, then:
                 if ( (i == (h - 1)) & (j == (w - 1))) {
                     // the algorithm is filling the last column of 3D DP matrix where
                     // all the characters are in the MSA
@@ -1945,8 +1947,8 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
                     //=====================================================================
                     // early stop condition
-                    if (score < prev_lk) {
-                        prev_lk = score;
+                    if (score < prev_best_lk) {
+                        prev_best_lk = score;
                         counter_to_early_stop++;
                         if (counter_to_early_stop > max_decrease_before_stop) {
                             // if for max_decrease_before_stop consecutive times
@@ -1966,18 +1968,18 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     }
 
     // level (k position) in the DP matrix that contains the highest lk value
-    depth = level_max_lk;
+    //    depth     = level_max_lk;
 
     score_.at(nodeID) = score;
 
-    lk_down_[nodeID].resize(depth);
+    lk_down_[nodeID].resize(level_max_lk);
 
     //==========================================================================================
     // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
-    TracebackPath_t traceback_path(depth, ' ');
+    TracebackPath_t traceback_path(level_max_lk, ' ');
     int id1 = h - 1;
     int id2 = w - 1;
-    for (int lev = depth; lev > 0; lev--) {
+    for (int lev = level_max_lk; lev > 0; lev--) {
         int state = TR[lev][id1][id2];
         switch (state) {
             case MATCH_STATE:
@@ -2024,11 +2026,11 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
     //==========================================================================================
     // memory freeing
-    delete[] &LogM;
-    delete[] &LogX;
-    delete[] &LogY;
-    delete[] &LK;
-    delete[] &TR;
+    //delete[] &LogM;
+    //delete[] &LogX;
+    //delete[] &LogY;
+    //delete[] &LK;
+    //delete[] &TR;
     //==========================================================================================
 }
 
@@ -2213,7 +2215,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     bool flag_exit = false;
     int counter_to_early_stop;
     int max_decrease_before_stop = 10;
-    double prev_lk = std::numeric_limits<double>::infinity();
+    double prev_lk = -std::numeric_limits<double>::infinity();
 
     // ============================================================
     // For each slice of the 3D cube, compute the values of each cell
