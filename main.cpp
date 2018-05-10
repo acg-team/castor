@@ -825,7 +825,15 @@ int main(int argc, char *argv[]) {
 
         // Export final tree
         tree = new TreeTemplate<Node>(tl->getTree());
-        PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
+
+        std::string PAR_output_tree_format = ApplicationTools::getStringParameter("output.tree.format", jatiapp.getParams(), "Newick", "", true, true);
+        if(PAR_output_tree_format.find("Nexus") != std::string::npos){
+            std::vector<Tree*> tmp;
+            tmp.push_back(tree);
+            OutputUtils::writeNexusMetaTree(tmp, jatiapp.getParams());
+        }else{
+            PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
+        }
 
         // Export annotation file
         std::string PAR_output_annotation_file = ApplicationTools::getAFilePath("output.annotation.file", jatiapp.getParams(), false, false, "", true, "", 1);
@@ -833,10 +841,10 @@ int main(int argc, char *argv[]) {
         {
             ApplicationTools::displayResult("Output annotation to file", PAR_output_annotation_file);
             OutputUtils::exportTreeAnnotations2TSV(tree, PAR_output_annotation_file);
-            std::vector<Tree*> tmp;
-            tmp.push_back(tree);
-            OutputUtils::writeNexusMetaTree(tmp, PAR_output_annotation_file+".tree", false);
+
         }
+
+
 
 
         // Write parameters to screen:

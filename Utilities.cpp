@@ -798,12 +798,39 @@ void OutputUtils::exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputf
 
 }
 
-void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree*> trees, std::string outputfile, bool internaNodeNames) {
+void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree*> trees, std::map<std::string, std::string> &params, const std::string &suffix, bool suffixIsOptional, bool verbose, int warn) {
 
-    //void NexusIOTree::write_(const vector<Tree*>& trees, ostream& out) const throw (Exception)
-    //{
+        std::string PAR_output_tree_filename = ApplicationTools::getAFilePath("output.tree.file", params, false, false, "", true, "", 1);
+        std::string PAR_output_tree_attributes = ApplicationTools::getStringParameter("output.tree.attributes", params, "", "", true, true);
+
+        bool internaNodeNames = false;
+        std::vector<std::string> attributeNames;
+
+        // Split all the attributes to parse for making the tree beautiful
+        StringTokenizer st(PAR_output_tree_attributes, ",");
+        while (st.hasMoreToken()) {
+            try {
+
+                string param = st.nextToken();
+
+                if(param == "InternalNodes"){
+
+                    internaNodeNames = true;
+
+                }else if(param != "AllAttributes"){
+
+                    attributeNames.push_back(param);
+
+                }
+
+            }catch (ParameterNotFoundException &pnfe) {
+                ApplicationTools::displayWarning("Parameter '" + pnfe.getParameter() + "' not found, and so can't be ignored!");
+
+            }
+        }
+
         std::ofstream out;
-        out.open(outputfile);
+        out.open(PAR_output_tree_filename);
         // Checking the existence of specified file, and possibility to open it in write mode
         if (! out) { throw IOException ("writeNexusMetaTree::write: failed to write to stream"); }
 
@@ -853,7 +880,7 @@ void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree*> trees, std::string 
         //Finally we print all tree descriptions:
         for (size_t i = 0; i < trees.size(); i++)
         {
-            out << endl << "  TREE tree" << (i+1) << " = " << OutputUtils::TreeTools::treeToParenthesis(*translatedTrees[i], internaNodeNames);
+            out << endl << "  TREE tree" << (i+1) << " = " << OutputUtils::TreeTools::treeToParenthesis(*translatedTrees[i], internaNodeNames, attributeNames);
         }
         out << "END;" << endl;
 
@@ -865,7 +892,7 @@ void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree*> trees, std::string 
 
 }
 
-std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree& tree, int nodeId, bool internalNodesNames) throw (NodeNotFoundException) {
+std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree& tree, int nodeId, bool internalNodesNames, std::vector<std::string> attributeNames) throw (NodeNotFoundException) {
 
     if (!tree.hasNode(nodeId))
         throw NodeNotFoundException("OutputUtils::TreeTools::nodeToParenthesis", nodeId);
@@ -878,10 +905,10 @@ std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree& tree, int node
     {
         s << "(";
         vector<int> sonsId = tree.getSonsId(nodeId);
-        s << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[0], internalNodesNames);
+        s << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[0], internalNodesNames, attributeNames);
         for (size_t i = 1; i < sonsId.size(); i++)
         {
-            s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames);
+            s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames, attributeNames);
         }
         s << ")";
 
@@ -898,22 +925,26 @@ std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree& tree, int node
 
     }
 
-    // Add metacomments
-    std::vector<std::string> properties = tree.getBranchPropertyNames(nodeId);
-    if(properties.size() > 0) {
+    // Add metacomments (if not specified elsewhere, then all the attributes associated on the branches)
+    if(attributeNames.empty()) {
+        attributeNames = tree.getBranchPropertyNames(nodeId);
+    }
+
+    if(attributeNames.size() > 0) {
         s << "[&";
 
-        for (int i = 0; i < properties.size(); i++) {
-            std::string propertyName = properties.at(i);
+        for (int i = 0; i < attributeNames.size(); i++) {
+            std::string propertyName = attributeNames.at(i);
             if (tree.hasBranchProperty(nodeId, propertyName))
                 s << propertyName << "=" << *(dynamic_cast<const BppString *>(tree.getBranchProperty(nodeId, propertyName)));
             //}
-            if(i<properties.size()-1){
+            if(i<attributeNames.size()-1){
                 s << ",";
             }
         }
         s << "]";
     }
+
     if (tree.hasDistanceToFather(nodeId))
         s << ":" << tree.getDistanceToFather(nodeId);
     return s.str();
@@ -921,7 +952,7 @@ std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree& tree, int node
 
 
 
-std::string OutputUtils::TreeTools::treeToParenthesis(const Tree& tree, bool internalNodesNames) {
+std::string OutputUtils::TreeTools::treeToParenthesis(const Tree& tree, bool internalNodesNames, std::vector<std::string> attributeNames) {
     ostringstream s;
     s << "(";
     int rootId = tree.getRootId();
@@ -931,15 +962,15 @@ std::string OutputUtils::TreeTools::treeToParenthesis(const Tree& tree, bool int
         s << tree.getNodeName(rootId);
         for (size_t i = 0; i < sonsId.size(); i++)
         {
-            s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames);
+            s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames, attributeNames);
         }
     }
     else
     {
-        s << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[0], internalNodesNames);
+        s << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[0], internalNodesNames, attributeNames);
         for (size_t i = 1; i < sonsId.size(); i++)
         {
-            s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames);
+            s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames, attributeNames);
         }
     }
     s << ")";
@@ -950,11 +981,26 @@ std::string OutputUtils::TreeTools::treeToParenthesis(const Tree& tree, bool int
     //}
     //else
     //{
-    for (auto &propertyName:tree.getNodePropertyNames(rootId)) {
-        if (tree.hasBranchProperty(rootId, propertyName))
-            s << *(dynamic_cast<const BppString *>(tree.getBranchProperty(rootId, propertyName)));
-        //}
+
+    if(attributeNames.empty()) {
+        attributeNames = tree.getBranchPropertyNames(rootId);
     }
+
+    if(attributeNames.size() > 0) {
+        s << "[&";
+
+        for (int i = 0; i < attributeNames.size(); i++) {
+            std::string propertyName = attributeNames.at(i);
+            if (tree.hasBranchProperty(rootId, propertyName))
+                s << propertyName << "=" << *(dynamic_cast<const BppString *>(tree.getBranchProperty(rootId, propertyName)));
+            //}
+            if(i<attributeNames.size()-1){
+                s << ",";
+            }
+        }
+        s << "]";
+    }
+
     s << ";" << endl;
     return s.str();
 }

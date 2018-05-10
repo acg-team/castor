@@ -138,12 +138,17 @@ namespace OutputUtils {
 
     void exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfile);
 
-    void writeNexusMetaTree(std::vector<bpp::Tree*> trees, std::string outputfile, bool internalNodesNames);
+    void writeNexusMetaTree(std::vector<bpp::Tree*> trees,
+                            std::map<std::string, std::string> &params,
+                            const std::string &suffix = "",
+                            bool suffixIsOptional = true,
+                            bool verbose = true,
+                            int warn = 1);
 
     namespace TreeTools {
 
-        std::string treeToParenthesis(const bpp::Tree& tree, bool internalNodesNames);
-        std::string nodeToParenthesis(const bpp::Tree& tree, int nodeId, bool internalNodesNames) throw (bpp::NodeNotFoundException);
+        std::string treeToParenthesis(const bpp::Tree& tree, bool internalNodesNames, std::vector<std::string> attributeNames);
+        std::string nodeToParenthesis(const bpp::Tree& tree, int nodeId, bool internalNodesNames, std::vector<std::string> attributeNames) throw (bpp::NodeNotFoundException);
 
     }
 
