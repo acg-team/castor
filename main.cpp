@@ -823,8 +823,18 @@ int main(int argc, char *argv[]) {
 
         delete sequences;
 
+        // Export final tree
         tree = new TreeTemplate<Node>(tl->getTree());
         PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
+
+        // Export annotation file
+        std::string PAR_output_annotation_file = ApplicationTools::getAFilePath("output.annotation.file", jatiapp.getParams(), false, false, "", true, "", 1);
+        if(!(PAR_output_annotation_file.empty()))
+        {
+            ApplicationTools::displayResult("Output annotation to file", PAR_output_annotation_file);
+            OutputUtils::exportTreeAnnotations2TSV(tree, PAR_output_annotation_file);
+        }
+
 
         // Write parameters to screen:
         ApplicationTools::displayResult("Final Log likelihood", TextTools::toString(logL, 15));

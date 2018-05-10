@@ -175,10 +175,12 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     }
 
 
-    // Initialise iotas and betas maps
+    // Initialise iotas, betas, evolutionary events and weighted evolutionary events maps
     for(bpp::Node *node:tree_->getNodes()) {
         iotasData_.insert(std::make_pair(node->getId(), 0));
         betasData_.insert(std::make_pair(node->getId(), 0));
+        evolutionaryEvents_[node->getId()] = 0;
+        evolutionaryEventsWeighted_[node->getId()] = 0;
         indicatorFun_[node->getId()].resize(nbDistinctSites_);
     }
 
@@ -568,12 +570,16 @@ void RHomogeneousTreeLikelihood_PIP::initialiseInsertionHistories() const {
 
             // Initialize vectors descCount_ and setA_ and indicatorFunctionVector
             std::vector<int> descCount_;
+            std::vector<bool> descGapCount_;
             std::vector<bool> setA_;
             descCount_.resize(nbDistinctSites_);
+            descGapCount_.resize(nbDistinctSites_);
+
             setA_.resize(nbDistinctSites_);
             indicatorFun_[node->getId()].at(i).resize(nbStates_);
 
             descCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
+            descGapCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
             setAData_.insert(std::make_pair(node->getId(), std::make_pair(setA_, node->getId())));
         }
     }
@@ -592,7 +598,8 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
             // Computing descCount
             if (node->isLeaf()){
                 descCountData_[nodeID].first.at(i) = (sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode() ? 0 : 1);
-
+                descGapCountData_[nodeID].first.at(i) = sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode();
+                if(i==0) cladeSizeData_[nodeID] = 1;
             }else{
 
                 std::vector<int> sonsIDs;
@@ -605,20 +612,43 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
 
                 // Reset value stored at the internal node
                 descCountData_[nodeID].first.at(i) = 0;
+                descGapCountData_[nodeID].first.at(i) = false;
 
                 // Recompute it
                 for (size_t l = 0; l < nbNodes; l++) {
                     descCountData_[nodeID].first.at(i) += getNodeDescCountForASite(tree_->getNode(sonsIDs.at(l)), i);
+                    descGapCountData_[nodeID].first.at(i) = (descGapCountData_[sonsIDs.at(l)].first.at(i) && descGapCountData_[sonsIDs.at(l)].first.at(i));
+
+                    if(i==0) cladeSizeData_[nodeID] += cladeSizeData_[sonsIDs.at(l)];
+
                 }
+
+                if(i==0) cladeSizeData_[nodeID] += 1;
 
             }
 
             // Activate or deactivate set A
             setAData_[nodeID].first.at(i) = (getNodeDescCountForASite(node, i) == nonGaps_);
-            DVLOG(3) << "setInsertionHistories [BPP] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << setAData_[nodeID].first.at(i);
 
+            DVLOG(3) << "setInsertionHistories [setA] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << setAData_[nodeID].first.at(i);
+
+            //
+            int evolValue = (descGapCountData_[nodeID].first.at(i) + (int) setAData_[nodeID].first.at(i));
+            evolutionaryEvents_[nodeID] += evolValue;
+            evolutionaryEventsWeighted_[nodeID] += ((double) evolValue/cladeSizeData_[nodeID]);
+
+            DVLOG(3) << "setInsertionHistories [evolEvents] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << evolValue;
+            DVLOG(3) << "setInsertionHistories [evolEvents] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << ((double) evolValue/cladeSizeData_[nodeID]);
+
+            // Set attributes on the node
+            if(i==(nbDistinctSites_-1)) {
+                node->setNodeProperty("evolEvents", *unique_ptr<Clonable>(new Number<int>(evolutionaryEvents_[nodeID])));
+                node->setNodeProperty("evolEventsWeighted",*unique_ptr<Clonable>(new Number<double>(evolutionaryEventsWeighted_[nodeID])));
+            }
 
         }
+
+
     }
 
 }
@@ -1691,4 +1721,6 @@ void RHomogeneousTreeLikelihood_PIP::setLikelihoodNodes(std::vector<int> &nodeLi
     likelihoodNodes_ = nodeList;
 
 }
+
+
 

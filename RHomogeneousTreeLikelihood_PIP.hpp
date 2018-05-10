@@ -66,7 +66,13 @@ namespace bpp {
         mutable std::vector<int> likelihoodNodes_;                            //The node is represented via its <int> ID
 
         mutable std::map<int, std::pair<std::vector<int>, int>> descCountData_;
-        mutable std::map<int, std::pair<std::vector<bool>, int>> setAData_;
+        mutable std::map<int, std::pair<std::vector<bool>, int>> setAData_;                   // SetA flags if a node should be included in the insertion histories
+
+        mutable std::map<int, std::pair<std::vector<int>, bool>> descGapCountData_;           // Counts the number of gaps in the descending nodes
+        mutable std::map<int, int> evolutionaryEvents_;                                       // Evolutionary events counts the number of possible evolutionary events happened on the node
+        mutable std::map<int, double> evolutionaryEventsWeighted_;                            // Evolutionary events counts the number of possible evolutionary events happened on the node
+                                                                                              // weighted them by the number of nodes in the clade
+        mutable std::map<int, int> cladeSizeData_;
         mutable std::map<int, double> iotasData_;
         mutable std::map<int, double> betasData_;
         mutable std::map<int, std::vector<std::vector<double>>> indicatorFun_;
@@ -380,8 +386,14 @@ namespace bpp {
 
         /**
          * @brief This method sets DescCount (number of characters different from gap per column) value for all the nodes in the tree
+         * @param sites SiteContainer of the aligned sites
          */
         virtual void setInsertionHistories(const SiteContainer &sites) const;
+
+        /**
+         * @brief This method sets the indicator for the number of evolutionary events (Insertions and Deletions) at each node of the topology
+         * @param sites SiteContainer reference of the aligned sites
+         */
 
         /**
          * @brief This method sets the setA (setA=1: possible insertion on that edge) value for all the nodes in the tree
