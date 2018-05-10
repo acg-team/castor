@@ -72,7 +72,6 @@ namespace bpp {
         mutable std::map<int, int> evolutionaryEvents_;                                       // Evolutionary events counts the number of possible evolutionary events happened on the node
         mutable std::map<int, double> evolutionaryEventsWeighted_;                            // Evolutionary events counts the number of possible evolutionary events happened on the node
                                                                                               // weighted them by the number of nodes in the clade
-        mutable std::map<int, int> cladeSizeData_;
         mutable std::map<int, double> iotasData_;
         mutable std::map<int, double> betasData_;
         mutable std::map<int, std::vector<std::vector<double>>> indicatorFun_;

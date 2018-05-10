@@ -780,7 +780,7 @@ void OutputUtils::exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputf
 
     // Write header
     outfile << "Taxa\t";
-    for (auto &attributeName:tree->getNodePropertyNames(tree->getRootId())){
+    for (auto &attributeName:tree->getBranchPropertyNames(tree->getRootId())){
 
         outfile << attributeName << "\t";
     }
@@ -789,20 +789,178 @@ void OutputUtils::exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputf
     // Write content
     for(auto &nodeID:tree->getNodesId()){
         outfile << tree->getNodeName(nodeID) << "\t";
-        for (auto &attributeName:tree->getNodePropertyNames(tree->getRootId())){
-            if (attributeName == "evolEvents") {
-                outfile << dynamic_cast<const Number<int> *>(tree->getNodeProperty(nodeID, attributeName))->getValue() << "\t";
-            }
-            if (attributeName == "evolEventsWeighted") {
-                outfile << dynamic_cast<const Number<double> *>(tree->getNodeProperty(nodeID, attributeName))->getValue() << "\t";
-            }
-
+        for (auto &attributeName:tree->getBranchPropertyNames(tree->getRootId())){
+                outfile << dynamic_cast<const BppString*>(tree->getBranchProperty(nodeID, attributeName))->toSTL() << "\t";
         }
         outfile << "\n";
     }
     outfile.close();
 
 }
+
+void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree*> trees, std::string outputfile, bool internaNodeNames) {
+
+    //void NexusIOTree::write_(const vector<Tree*>& trees, ostream& out) const throw (Exception)
+    //{
+        std::ofstream out;
+        out.open(outputfile);
+        // Checking the existence of specified file, and possibility to open it in write mode
+        if (! out) { throw IOException ("writeNexusMetaTree::write: failed to write to stream"); }
+
+        out << "#NEXUS" << endl;
+        out << endl;
+        out << "BEGIN TREES;" << endl;
+
+        //First, we retrieve all leaf names from all trees:
+        std::vector<std::string> names;
+        for (size_t i = 0; i < trees.size(); i++)
+        {
+            names = VectorTools::vectorUnion(names, trees[i]->getLeavesNames());
+        }
+        //... and create a translation map:
+        map<string, size_t> translation;
+        size_t code = 0;
+        for (size_t i = 0; i < names.size(); i++)
+        {
+            translation[names[i]] = code++;
+        }
+
+        //Second we translate all leaf names to their corresponding code:
+        vector<Tree*> translatedTrees(trees.size());
+        for (size_t i = 0; i < trees.size(); i++)
+        {
+            vector<int> leavesId = trees[i]->getLeavesId();
+            Tree* tree = dynamic_cast<Tree*>(trees[i]->clone());
+            for (size_t j = 0; j < leavesId.size(); j++)
+            {
+                tree->setNodeName(leavesId[j], TextTools::toString(translation[tree->getNodeName(leavesId[j])]));
+            }
+            translatedTrees[i] = tree;
+        }
+
+        //Third we print the translation command:
+        out << "  TRANSLATE";
+        size_t count = 0;
+        for (map<string, size_t>::iterator it = translation.begin(); it != translation.end(); it++)
+        {
+            out << endl << "    " << it->second << "\t" << it->first;
+            count++;
+            if (count < translation.size())
+                out << ",";
+        }
+        out << ";";
+
+        //Finally we print all tree descriptions:
+        for (size_t i = 0; i < trees.size(); i++)
+        {
+            out << endl << "  TREE tree" << (i+1) << " = " << OutputUtils::TreeTools::treeToParenthesis(*translatedTrees[i], internaNodeNames);
+        }
+        out << "END;" << endl;
+
+        //Clean trees:
+        for (size_t i = 0; i < translatedTrees.size(); i++)
+        {
+            delete translatedTrees[i];
+        }
+
+}
+
+std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree& tree, int nodeId, bool internalNodesNames) throw (NodeNotFoundException) {
+
+    if (!tree.hasNode(nodeId))
+        throw NodeNotFoundException("OutputUtils::TreeTools::nodeToParenthesis", nodeId);
+    ostringstream s;
+    if (tree.isLeaf(nodeId))
+    {
+        s << tree.getNodeName(nodeId);
+    }
+    else
+    {
+        s << "(";
+        vector<int> sonsId = tree.getSonsId(nodeId);
+        s << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[0], internalNodesNames);
+        for (size_t i = 1; i < sonsId.size(); i++)
+        {
+            s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames);
+        }
+        s << ")";
+
+        if(internalNodesNames && !tree.getNodeName(nodeId).empty()){
+            s << tree.getNodeName(nodeId);
+        }
+        //if (bootstrap)
+        //{
+            //if (tree.hasBranchProperty(nodeId, BOOTSTRAP))
+            //    s << (dynamic_cast<const Number<double>*>(tree.getBranchProperty(nodeId, BOOTSTRAP))->getValue());
+        //}
+        //else
+        //{
+
+    }
+
+    // Add metacomments
+    std::vector<std::string> properties = tree.getBranchPropertyNames(nodeId);
+    if(properties.size() > 0) {
+        s << "[&";
+
+        for (int i = 0; i < properties.size(); i++) {
+            std::string propertyName = properties.at(i);
+            if (tree.hasBranchProperty(nodeId, propertyName))
+                s << propertyName << "=" << *(dynamic_cast<const BppString *>(tree.getBranchProperty(nodeId, propertyName)));
+            //}
+            if(i<properties.size()-1){
+                s << ",";
+            }
+        }
+        s << "]";
+    }
+    if (tree.hasDistanceToFather(nodeId))
+        s << ":" << tree.getDistanceToFather(nodeId);
+    return s.str();
+}
+
+
+
+std::string OutputUtils::TreeTools::treeToParenthesis(const Tree& tree, bool internalNodesNames) {
+    ostringstream s;
+    s << "(";
+    int rootId = tree.getRootId();
+    vector<int> sonsId = tree.getSonsId(rootId);
+    if (tree.isLeaf(rootId))
+    {
+        s << tree.getNodeName(rootId);
+        for (size_t i = 0; i < sonsId.size(); i++)
+        {
+            s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames);
+        }
+    }
+    else
+    {
+        s << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[0], internalNodesNames);
+        for (size_t i = 1; i < sonsId.size(); i++)
+        {
+            s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames);
+        }
+    }
+    s << ")";
+    //if (bootstrap)
+    //{
+        //if (tree.hasBranchProperty(rootId, BOOTSTRAP))
+        //    s << (dynamic_cast<const Number<double>*>(tree.getBranchProperty(rootId, BOOTSTRAP))->getValue());
+    //}
+    //else
+    //{
+    for (auto &propertyName:tree.getNodePropertyNames(rootId)) {
+        if (tree.hasBranchProperty(rootId, propertyName))
+            s << *(dynamic_cast<const BppString *>(tree.getBranchProperty(rootId, propertyName)));
+        //}
+    }
+    s << ";" << endl;
+    return s.str();
+}
+
+
+
 
 bpp::DistanceEstimation DistanceUtils::computeDistanceMethod(std::string seqfilename, bpp::Alphabet *alphabet, bpp::GeneticCode *gCode, std::map<std::string, std::string> &params) {
 

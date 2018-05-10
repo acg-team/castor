@@ -595,13 +595,17 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
 
         for (auto &nodeID:likelihoodNodes_) {
             Node *node = tree_->getNode(nodeID);
-            // Computing descCount
+
+            // Computing descCount and descGapCount
             if (node->isLeaf()){
+
                 descCountData_[nodeID].first.at(i) = (sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode() ? 0 : 1);
                 descGapCountData_[nodeID].first.at(i) = sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode();
-                if(i==0) cladeSizeData_[nodeID] = 1;
+
+
             }else{
 
+                // Get the left and right son of the current node (mapped on the utree structure which can differ from tree_).
                 std::vector<int> sonsIDs;
                 tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
                 tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
@@ -612,38 +616,61 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
 
                 // Reset value stored at the internal node
                 descCountData_[nodeID].first.at(i) = 0;
-                descGapCountData_[nodeID].first.at(i) = false;
+                descGapCountData_[nodeID].first.at(i) = true;
+
 
                 // Recompute it
                 for (size_t l = 0; l < nbNodes; l++) {
-                    descCountData_[nodeID].first.at(i) += getNodeDescCountForASite(tree_->getNode(sonsIDs.at(l)), i);
-                    descGapCountData_[nodeID].first.at(i) = (descGapCountData_[sonsIDs.at(l)].first.at(i) && descGapCountData_[sonsIDs.at(l)].first.at(i));
 
-                    if(i==0) cladeSizeData_[nodeID] += cladeSizeData_[sonsIDs.at(l)];
+                    descCountData_[nodeID].first.at(i) += getNodeDescCountForASite(tree_->getNode(sonsIDs.at(l)), i);
+                    descGapCountData_[nodeID].first.at(i) = (descGapCountData_[nodeID].first.at(i) && descGapCountData_[sonsIDs.at(l)].first.at(i));
 
                 }
-
-                if(i==0) cladeSizeData_[nodeID] += 1;
 
             }
 
             // Activate or deactivate set A
             setAData_[nodeID].first.at(i) = (getNodeDescCountForASite(node, i) == nonGaps_);
-
             DVLOG(3) << "setInsertionHistories [setA] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << setAData_[nodeID].first.at(i);
 
-            //
-            int evolValue = (descGapCountData_[nodeID].first.at(i) + (int) setAData_[nodeID].first.at(i));
-            evolutionaryEvents_[nodeID] += evolValue;
-            evolutionaryEventsWeighted_[nodeID] += ((double) evolValue/cladeSizeData_[nodeID]);
-
-            DVLOG(3) << "setInsertionHistories [evolEvents] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << evolValue;
-            DVLOG(3) << "setInsertionHistories [evolEvents] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << ((double) evolValue/cladeSizeData_[nodeID]);
 
             // Set attributes on the node
             if(i==(nbDistinctSites_-1)) {
-                node->setNodeProperty("evolEvents", *unique_ptr<Clonable>(new Number<int>(evolutionaryEvents_[nodeID])));
-                node->setNodeProperty("evolEventsWeighted",*unique_ptr<Clonable>(new Number<double>(evolutionaryEventsWeighted_[nodeID])));
+
+                evolutionaryEvents_[nodeID] = 0;
+                evolutionaryEventsWeighted_[nodeID] = 0;
+                int cladeSize = tree_->cloneSubtree(nodeID)->getNumberOfNodes();
+
+                double distanceToFather = 1;
+                if(tree_->hasDistanceToFather(nodeID)){
+                    distanceToFather = tree_->getDistanceToFather(nodeID);
+                }
+
+                std::for_each(setAData_[nodeID].first.begin(), setAData_[nodeID].first.end(), [&] (int n) {
+                    evolutionaryEvents_[nodeID] += n;
+                });
+
+                evolutionaryEventsWeighted_[nodeID] = (double) evolutionaryEvents_[nodeID]/cladeSize;
+
+                double insertions_weighted_branch = (double) evolutionaryEvents_[nodeID]/ distanceToFather;
+
+                node->setBranchProperty("insertions", *unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEvents_[nodeID]))));
+                node->setBranchProperty("insertions_weighted",*unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEventsWeighted_[nodeID]))));
+                node->setBranchProperty("insertions_weighted_branch",*unique_ptr<Clonable>(new BppString(std::to_string(insertions_weighted_branch))));
+
+
+                std::for_each(descGapCountData_[nodeID].first.begin(), descGapCountData_[nodeID].first.end(), [&] (int n) {
+                    evolutionaryEvents_[nodeID] += n;
+                });
+
+                evolutionaryEventsWeighted_[nodeID] = (double) evolutionaryEvents_[nodeID]/cladeSize;
+
+                double indels_weighted_branch = (double) evolutionaryEvents_[nodeID]/ distanceToFather;
+
+                node->setBranchProperty("indels", *unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEvents_[nodeID]))));
+                node->setBranchProperty("indels_weighted",*unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEventsWeighted_[nodeID]))));
+                node->setBranchProperty("indels_weighted_branch",*unique_ptr<Clonable>(new BppString(std::to_string(indels_weighted_branch))));
+
             }
 
         }
