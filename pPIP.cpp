@@ -109,11 +109,9 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     // normalizing constant with rate variation (gamma)
     nu_.resize(numCatg);
 
-
     //
     lk_down_.resize(numNodes);
     lk_empty_down_.resize(numNodes);
-
 
 
     // Initialise iotas and betas maps
@@ -422,22 +420,27 @@ unsigned long pPIP::get_indices_T(unsigned long nx,
 
 }
 
-int pPIP::index_of_max(double m,
+bool pPIP::index_of_max(double m,
                        double x,
                        double y,
                        double epsilon,
                        std::default_random_engine &generator,
                        std::uniform_real_distribution<double> &distribution,
+                       max_val_str &max_val,
                        bool flag_RAM) {
 
     double random_number;
 
     if (std::isinf(m) & std::isinf(x) & std::isinf(y))
         if (flag_RAM) {
-            return int(MATCH_STATE);
+            max_val.index = int(MATCH_STATE);
+            max_val.val = m;
+            return true;
+            //return int(MATCH_STATE);
         } else{
             LOG(FATAL)
                     << "\nSomething went wrong during the comparison of m,x,y variables in function pPIP::index_of_max. Check call stack below. ";
+            return false;
         }
     if (not(std::isinf(m)) & not(std::isinf(x)) & (fabs((m - x)) < epsilon)) {
         x = m;
@@ -453,39 +456,61 @@ int pPIP::index_of_max(double m,
 
     if (m > x) {
         if (m > y) {
-            return int(MATCH_STATE);
+            max_val.index = int(MATCH_STATE);
+            max_val.val = m;
+            return true;
+            //return int(MATCH_STATE);
         } else if (y > m) {
-            return int(GAP_Y_STATE);
+            max_val.index = int(GAP_Y_STATE);
+            max_val.val = y;
+            return true;
+            //return int(GAP_Y_STATE);
         } else {
             if (abs(m - y) < epsilon) {
                 //m or y
                 random_number = distribution(generator);
                 if (random_number < (1.0 / 2.0)) {
-                    return int(MATCH_STATE);
+                    max_val.index = int(MATCH_STATE);
+                    max_val.val = m;
+                    return true;
+                    //return int(MATCH_STATE);
                 } else {
-                    return int(GAP_Y_STATE);
+                    max_val.index = int(GAP_Y_STATE);
+                    max_val.val = y;
+                    return true;
+                    //return int(GAP_Y_STATE);
                 }
             } else {
                 LOG(FATAL) << "\nSomething went wrong during the comparison in function pPIP::index_of_max. Check call stack below.";
-
+                return false;
             }
         }
     } else if (x > m) {
         if (x > y) {
             return int(GAP_X_STATE);
         } else if (y > x) {
-            return int(GAP_Y_STATE);
+            max_val.index = int(GAP_Y_STATE);
+            max_val.val = y;
+            return true;
+            //return int(GAP_Y_STATE);
         } else {
             if (abs(x - y) < epsilon) {
                 //x or y
                 random_number = distribution(generator);
                 if (random_number < (1.0 / 2.0)) {
-                    return int(GAP_X_STATE);
+                    max_val.index = int(GAP_X_STATE);
+                    max_val.val = x;
+                    return true;
+                    //return int(GAP_X_STATE);
                 } else {
-                    return int(GAP_Y_STATE);
+                    max_val.index = int(GAP_Y_STATE);
+                    max_val.val = y;
+                    return true;
+                    //return int(GAP_Y_STATE);
                 }
             } else {
                 LOG(FATAL) << "\nSomething went wrong during the comparison in function pPIP::index_of_max. Check call stack below.";
+                return false;
             }
         }
     } else {
@@ -495,25 +520,44 @@ int pPIP::index_of_max(double m,
             //m or x
             random_number = distribution(generator);
             if (random_number < (1.0 / 2.0)) {
-                return int(MATCH_STATE);
+                max_val.index = int(MATCH_STATE);
+                max_val.val = m;
+                return true;
+                //return int(MATCH_STATE);
             } else {
-                return int(GAP_X_STATE);
+                max_val.index = int(GAP_X_STATE);
+                max_val.val = x;
+                return true;
+                //return int(GAP_X_STATE);
             }
         } else if (y > mx) {
-            return int(GAP_Y_STATE);
+            max_val.index = int(GAP_Y_STATE);
+            max_val.val = y;
+            return true;
+            //return int(GAP_Y_STATE);
         } else {
             if (abs(mx - y) < epsilon) {
                 //m or x or y
                 random_number = distribution(generator);
                 if (random_number < (1.0 / 3.0)) {
-                    return int(MATCH_STATE);
+                    max_val.index = int(MATCH_STATE);
+                    max_val.val = m;
+                    return true;
+                    //return int(MATCH_STATE);
                 } else if (random_number < (2.0 / 3.0)) {
-                    return int(GAP_X_STATE);
+                    max_val.index = int(GAP_X_STATE);
+                    max_val.val = x;
+                    return true;
+                    //return int(GAP_X_STATE);
                 } else {
-                    return int(GAP_Y_STATE);
+                    max_val.index = int(GAP_Y_STATE);
+                    max_val.val = y;
+                    return true;
+                    //return int(GAP_Y_STATE);
                 }
             } else {
                 LOG(FATAL) << "\nSomething went wrong during the comparison in function pPIP::index_of_max. Check call stack below.";
+                return false;
             }
         }
     }
@@ -1705,7 +1749,9 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     double valX_this,valX_prev;
     double valY_this,valY_prev;
 
-    int tr; // traceback index
+    //int tr; // traceback index
+
+    max_val_str max_val_index;
 
     double score = -std::numeric_limits<double>::infinity();        // best likelihood value at this node
 
@@ -1912,9 +1958,9 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                 //valY_this = fabs((long double) valY_this) < epsilon ? -std::numeric_limits<double>::infinity() : valY_this;
 
                 // Find which matrix contains the best value of LK found until this point.
-                tr = index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution,true);
+                index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution,max_val_index,true);
 
-                switch (tr) {
+                switch (max_val_index.index) {
                     case MATCH_STATE:
                         LK[m][i][j]=valM_this;
                         break;
@@ -1933,14 +1979,17 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
                 }
 */
                 // Store the index for the traceback
-                TR[m][i][j] = tr;
+                TR[m][i][j] = max_val_index.index;
 
                 // If we reached the corner of the 3D cube, then:
                 if ( (i == (h - 1)) & (j == (w - 1))) {
                     // the algorithm is filling the last column of 3D DP matrix where
                     // all the characters are in the MSA
 
-                    max_of_MXY = max_of_three(valM_this, valX_this, valY_this, epsilon,true);
+                    //max_of_MXY = max_of_three(valM_this, valX_this, valY_this, epsilon,true);
+
+                    max_of_MXY = max_val_index.val;
+
 
                     if (max_of_MXY > score) {
                         score = max_of_MXY;
@@ -2131,7 +2180,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
     auto **TR = new int *[d]; // 3D traceback matrix
 
-    // max num of cells occupied in a layer
+    // val num of cells occupied in a layer
     int numcells = int((w * (h + 1)) / 2);
 
     // allocate memory for the 2 layers
@@ -2194,6 +2243,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     double valY;
 
     signed long idx;
+    max_val_str max_val_index;
 
     unsigned long coordSeq_1;
     unsigned long coordSeq_2;
@@ -2715,13 +2765,15 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                         yval = -std::numeric_limits<double>::infinity();
                     }
 
+
+                    // TODO:: remove these 3 lines
                     mval = fabs((long double) mval) < epsilon ? -std::numeric_limits<double>::infinity() : mval;
                     xval = fabs((long double) xval) < epsilon ? -std::numeric_limits<double>::infinity() : xval;
                     yval = fabs((long double) yval) < epsilon ? -std::numeric_limits<double>::infinity() : yval;
 
-                    int ttrr;
+                    //int ttrr;
 
-                    ttrr = index_of_max(mval, xval, yval, epsilon, generator, distribution,false);
+                    index_of_max(mval, xval, yval, epsilon, generator, distribution,max_val_index,false);
 
                     idx = get_indices_T(coordTriangle_this_i,
                                         coordTriangle_this_j,
@@ -2735,16 +2787,19 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                         LOG(FATAL) << "\nSomething went wrong in accessing TR at indices:[" << m << "][" << idx << "] in function pPIP::DP3D_PIP. Check call stack below.";
                     }
 
-                    TR[m][idx] = ttrr;
+                    TR[m][idx] = max_val_index.index;
 
                     if ((coordTriangle_this_i == (h - 1)) & (coordTriangle_this_j == (w - 1))) {
                         // the algorithm is filling the last column of 3D DP matrix where
                         // all the characters are in the MSA
 
-                        max_of_3 = max_of_three(mval, xval, yval, epsilon, false);
+                        //max_of_3 = max_of_three(mval, xval, yval, epsilon, false);
 
-                        if (max_of_3 > score) {
-                            score = max_of_3;
+
+                        //max_of_3 = max_val_index.val;
+
+                        if (max_val_index.val > score) {
+                            score = max_val_index.val;
                             level_max_lk = m;
                         }
 

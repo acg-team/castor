@@ -57,6 +57,13 @@
 
 namespace bpp {
 
+    struct max_val_str
+    {
+        double val;
+        int index;
+    };
+
+
     class pPIP {
 
     public:
@@ -122,10 +129,8 @@ namespace bpp {
         std::vector<double> lambda_;                               // vector[rate] of lambda rate with Gamma distribution
         std::vector<double> mu_;                                   // vector[rate] of mu rate with Gamma distribution
         std::vector<double> nu_;                                   // vector[rate] of nu (normalizing constant) with Gamma distribution
+
         double tau_;                                               // total tree length
-
-
-
 
         std::vector<vector<double >> lk_down_;                      //each node a vector of lk
         std::vector<vector<double >> lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
@@ -249,12 +254,13 @@ namespace bpp {
                                     unsigned long h,
                                     unsigned long w);
 
-        int index_of_max(double m,
+        bool index_of_max(double m,
                          double x,
                          double y,
                          double epsilon,
                          std::default_random_engine &generator,
                          std::uniform_real_distribution<double> &distribution,
+                         max_val_str &max_val,
                          bool flag_RAM);
 
         double max_of_three(double a,
@@ -341,7 +347,6 @@ namespace bpp {
                          double temperature,int num_SB);
 
     };
-
 
 }
 

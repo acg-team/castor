@@ -383,7 +383,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", jatiapp.getParams(), 1000000);
-                ApplicationTools::displayResult("Initial tree optimization | max # ML evaluations", TextTools::toString(nbEvalMax));
+                ApplicationTools::displayResult("Initial tree optimization | val # ML evaluations", TextTools::toString(nbEvalMax));
 
                 double tolerance = ApplicationTools::getDoubleParameter("optimization.tolerance", jatiapp.getParams(), .000001);
                 ApplicationTools::displayResult("Initial tree optimization | Tolerance", TextTools::toString(tolerance));

@@ -141,7 +141,7 @@ namespace bpp {
 
 
             auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.scale_first.max_number_f_eval", params, 1000000, suffix, suffixIsOptional, warn + 1);
-            if (verbose) ApplicationTools::displayResult("Scaling max # f eval:", nbEvalMax);
+            if (verbose) ApplicationTools::displayResult("Scaling val # f eval:", nbEvalMax);
 
 
             OptimizationTools::optimizeTreeScale(tl, tolerance, nbEvalMax, messageHandler, profiler);
@@ -289,7 +289,7 @@ namespace bpp {
         // Options for optimization routines
         // -------------------------------------------------------------------------
 
-        // Number of max likelihood evaluations
+        // Number of val likelihood evaluations
         auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", params, 1000000, suffix, suffixIsOptional, warn + 1);
         //LOG(INFO) << "[Parameter optimization]\tMax # ML evaluations: " << nbEvalMax;
         ApplicationTools::displayResult("Max # ML evaluations", TextTools::toString(nbEvalMax));
