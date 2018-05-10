@@ -616,7 +616,11 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
-            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist);
+
+            long seed = jatiapp.getSeed();
+
+
+            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist,seed);
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();

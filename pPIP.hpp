@@ -73,7 +73,8 @@ namespace bpp {
              bpp::SubstitutionModel *smodel,    // extended substitution model
              UtreeBppUtils::treemap &inTreeMap, // bpp::Node * <-> tshlib::VirtualNode *
              bpp::SequenceContainer *sequences, // un-aligned input sequences
-             bpp::DiscreteDistribution *rDist); // distribution for rate variation among sites
+             bpp::DiscreteDistribution *rDist,  // distribution for rate variation among sites
+             long seed);                        // seed for the random numbers generation
 
         ~pPIP(){};
 
@@ -98,6 +99,7 @@ namespace bpp {
         tshlib::Utree *utree_;                   // tshlib:: tree
         bpp::TreeTemplate<bpp::Node> *tree_;     // bpp::tree
         bpp::SubstitutionModel *substModel_;
+        long seed_;                              //jatiapp seed for the random numbers generation
 
     private:
         // extended substitution model

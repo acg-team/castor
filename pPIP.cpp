@@ -67,7 +67,8 @@ pPIP::pPIP(tshlib::Utree *utree,
            bpp::SubstitutionModel *smodel,
            UtreeBppUtils::treemap &inTreeMap,
            bpp::SequenceContainer *sequences,
-           bpp::DiscreteDistribution *rDist) {
+           bpp::DiscreteDistribution *rDist,
+           long seed) {
 
     utree_ = utree;
     _setTree(tree);
@@ -78,6 +79,7 @@ pPIP::pPIP(tshlib::Utree *utree,
     alphabet_ = substModel_->getAlphabet();
     alphabetSize_ = alphabet_->getSize() - 1;
     extendedAlphabetSize_ = alphabetSize_ + 1;
+    seed_ = seed;
 
 };
 
@@ -1513,7 +1515,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
 
     // TODO: place as argument
     // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
-    bool randomSeed = true;
+    //bool randomSeed = true;
 
     // number of discrete gamma categories
     size_t num_gamma_categories = rDist_->getNumberOfCategories();
@@ -1571,13 +1573,13 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node, bool local,bool flag_map) {
     col_gap_Rs = createGapCol(numLeavesRight); // create column of gaps for the right sub-tree
 
     signed long seed;
-    if (randomSeed) {
-        seed = std::chrono::system_clock::now().time_since_epoch().count(); // "random" seed
-    } else {
-        seed = 0; // fixed seed
-    }
+//    if (randomSeed) {
+//        seed = std::chrono::system_clock::now().time_since_epoch().count(); // "random" seed
+//    } else {
+//        seed = 0; // fixed seed
+//    }
 
-    std::default_random_engine generator(seed);
+    std::default_random_engine generator(seed_);              // jatiapp seed
     std::uniform_real_distribution<double> distribution(0.0,
                                                         1.0); // Uniform distribution for the selection of lks with the same value
 
@@ -2038,7 +2040,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
     // TODO: place as argument
     // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
-    bool randomSeed = true;
+    //bool randomSeed = true;
 
     // number of discrete gamma categories
     size_t num_gamma_categories = rDist_->getNumberOfCategories();
@@ -2093,14 +2095,14 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     col_gap_Ls = createGapCol(numLeavesLeft); // create column of gaps for the left sub-tree
     col_gap_Rs = createGapCol(numLeavesRight); // create column of gaps for the right sub-tree
 
-    signed long seed;
-    if (randomSeed) {
-        seed = std::chrono::system_clock::now().time_since_epoch().count(); // "random" seed
-    } else {
-        seed = 0; // fixed seed
-    }
+//    signed long seed;
+//    if (randomSeed) {
+//        seed = std::chrono::system_clock::now().time_since_epoch().count(); // "random" seed
+//    } else {
+//        seed = 0; // fixed seed
+//    }
 
-    std::default_random_engine generator(seed);
+    std::default_random_engine generator(seed_);                   // jatiapp seed
     std::uniform_real_distribution<double> distribution(0.0, 1.0); // Uniform distribution for the selection of lks with the same value
 
     auto epsilon = DBL_EPSILON;
