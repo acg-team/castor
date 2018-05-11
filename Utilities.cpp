@@ -1256,6 +1256,7 @@ bpp::TreeTemplate<bpp::Node> *DistanceUtils::computeDistanceTree(bpp::Transition
 }
 
 
+
 void DistanceMethodsUtils::computeDistanceMatrix() {
 
     // Create a map containing the required parameters passed by the user
@@ -1438,7 +1439,7 @@ std::string TextUtils::appendToFilePath(std::string inputFilePath, std::string s
 }
 
 
-void AlignmentUtils::CheckAlignmentConsistency(bpp::SiteContainer &sites) {
+void AlignmentUtils::checkAlignmentConsistency(bpp::SiteContainer &sites) {
 
     int gapCode = sites.getAlphabet()->getGapCharacterCode();
     int unresolvedCode = sites.getAlphabet()->getUnknownCharacterCode();

@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
                 VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet, jatiapp.getParams());
                 sites = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams(), "", true, !PAR_model_indels, true, 1);
                 delete allSites;
-                AlignmentUtils::CheckAlignmentConsistency(*sites);
+                AlignmentUtils::checkAlignmentConsistency(*sites);
                 ApplicationTools::displayResult("Number of sequences", TextTools::toString(sites->getNumberOfSequences()));
                 ApplicationTools::displayResult("Number of sites", TextTools::toString(sites->getNumberOfSites()));
 

@@ -188,7 +188,7 @@ namespace DistanceUtils {
 
 namespace AlignmentUtils{
 
-    void CheckAlignmentConsistency(bpp::SiteContainer &sites);
+    void checkAlignmentConsistency(bpp::SiteContainer &sites);
 
 }
 
