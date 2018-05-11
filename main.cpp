@@ -383,7 +383,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", jatiapp.getParams(), 1000000);
-                ApplicationTools::displayResult("Initial tree optimization | val # ML evaluations", TextTools::toString(nbEvalMax));
+                ApplicationTools::displayResult("Initial tree optimization | max # ML evaluations", TextTools::toString(nbEvalMax));
 
                 double tolerance = ApplicationTools::getDoubleParameter("optimization.tolerance", jatiapp.getParams(), .000001);
                 ApplicationTools::displayResult("Initial tree optimization | Tolerance", TextTools::toString(tolerance));
@@ -469,7 +469,7 @@ int main(int argc, char *argv[]) {
         } else throw Exception("Method '" + initBrLenMethod + "' unknown for computing branch lengths.");
         ApplicationTools::displayResult("Branch lengths", cmdName);
 
-        DLOG(INFO) << "[Initial Tree Topology] " << OutputUtils::tree2string(tree);
+        DLOG(INFO) << "[Initial Tree Topology] " << OutputUtils::TreeTools::writeTree2String(tree);
 
         // Convert the bpp into utree for tree-search engine
         auto utree = new Utree();
@@ -477,7 +477,7 @@ int main(int argc, char *argv[]) {
         UtreeBppUtils::convertTree_b2u(tree, utree, tm);
         if (PAR_alignment) {
             UtreeBppUtils::associateNode2Alignment(sequences, utree);
-        }else{
+        } else {
             UtreeBppUtils::associateNode2Alignment(sites, utree);
         }
 
@@ -507,16 +507,16 @@ int main(int argc, char *argv[]) {
             bool computeFrequenciesFromData = false;
 
             // If frequencies are estimated from the data, but there is no alignment, then flag it.
-            if(PAR_alignment){
+            if (PAR_alignment) {
                 std::string baseModel;
 
                 std::map<std::string, std::string> basemodelMap;
                 KeyvalTools::parseProcedure(modelMap["model"], baseModel, basemodelMap);
 
                 std::vector<std::string> keys;
-                for(auto it = basemodelMap.begin(); it != basemodelMap.end(); ++it) keys.push_back(it->first);
+                for (auto it = basemodelMap.begin(); it != basemodelMap.end(); ++it) keys.push_back(it->first);
 
-                if(!keys.empty()) {
+                if (!keys.empty()) {
                     baseModel += "(";
                     for (auto &key:keys) {
                         if (key != "initFreqs") {
@@ -536,9 +536,9 @@ int main(int argc, char *argv[]) {
             }
 
             // Instantiation of the canonical substitution model
-            if(PAR_Alphabet.find("Codon") != std::string::npos || PAR_Alphabet.find("Protein") != std::string::npos ){
+            if (PAR_Alphabet.find("Codon") != std::string::npos || PAR_Alphabet.find("Protein") != std::string::npos) {
                 smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(), sites, modelMap, "", true, false, 0);
-            }else{
+            } else {
                 smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, modelMap, "", true, false, 0);
             }
 
@@ -617,10 +617,7 @@ int main(int argc, char *argv[]) {
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
 
-            long seed = jatiapp.getSeed();
-
-
-            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist,seed);
+            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed());
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
@@ -645,7 +642,7 @@ int main(int argc, char *argv[]) {
 
             // Get profiling statistics TODO: export this stats on XML file
             double score;
-            score=alignment->getScore(alignment->getRootNode());
+            score = alignment->getScore(alignment->getRootNode());
 
             std::ofstream lkFile;
             lkFile << std::setprecision(18);
@@ -788,13 +785,13 @@ int main(int argc, char *argv[]) {
         ApplicationTools::displayMessage("\n[Executing numerical parameters and topology optimization]");
 
         tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl,
-                                                                                            alignment,
-                                                                                            tl->getParameters(),
-                                                                                            jatiapp.getParams(),
-                                                                                            "",
-                                                                                            true,
-                                                                                            true,
-                                                                                            0));
+                                                                                                alignment,
+                                                                                                tl->getParameters(),
+                                                                                                jatiapp.getParams(),
+                                                                                                "",
+                                                                                                true,
+                                                                                                true,
+                                                                                                0));
 
 
         // Overwrite the initial alignment with the optimised one  | TODO: the likelihood function should not be reimplemented here.
@@ -819,6 +816,7 @@ int main(int argc, char *argv[]) {
         /////////////////////////
         // OUTPUT
 
+        // Export final alignment
         if (PAR_output_file_msa.find("none") == std::string::npos) {
             ApplicationTools::displayResult("\n\nOutput alignment to file", PAR_output_file_msa);
             LOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
@@ -828,29 +826,26 @@ int main(int argc, char *argv[]) {
 
         delete sequences;
 
-        // Export final tree
+        // Export final tree (if nexus is required, then our re-implementation of the the nexus writer is called)
         tree = new TreeTemplate<Node>(tl->getTree());
 
         std::string PAR_output_tree_format = ApplicationTools::getStringParameter("output.tree.format", jatiapp.getParams(), "Newick", "", true, true);
-        if(PAR_output_tree_format.find("Nexus") != std::string::npos){
-            std::vector<Tree*> tmp;
+        if (PAR_output_tree_format.find("Nexus") != std::string::npos) {
+            std::vector<Tree *> tmp;
             tmp.push_back(tree);
             OutputUtils::writeNexusMetaTree(tmp, jatiapp.getParams());
-        }else{
+        } else {
             PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
         }
 
-        // Export annotation file
+
+        // Export annotation file (tab separated values)
         std::string PAR_output_annotation_file = ApplicationTools::getAFilePath("output.annotation.file", jatiapp.getParams(), false, false, "", true, "", 1);
-        if(!(PAR_output_annotation_file.empty()))
-        {
+        if (!(PAR_output_annotation_file.empty())) {
             ApplicationTools::displayResult("Output annotation to file", PAR_output_annotation_file);
-            OutputUtils::exportTreeAnnotations2TSV(tree, PAR_output_annotation_file);
+            OutputUtils::writeTreeAnnotations2TSV(tree, PAR_output_annotation_file);
 
         }
-
-
-
 
         // Write parameters to screen:
         ApplicationTools::displayResult("Final Log likelihood", TextTools::toString(logL, 15));
@@ -867,7 +862,10 @@ int main(int argc, char *argv[]) {
         // Checking convergence:
         PhylogeneticsApplicationTools::checkEstimatedParameters(tl->getParameters());
 
-        // Write parameters to file:
+        // Write parameters to file (according to arguments)
+        OutputUtils::exportOutput(tl, sites, jatiapp.getParams());
+
+        /*
         string parametersFile = ApplicationTools::getAFilePath("output.estimates", jatiapp.getParams(), false, false, "none", true);
         bool withAlias = ApplicationTools::getBooleanParameter("output.estimates.alias", jatiapp.getParams(), true, "", true, 0);
 
@@ -905,13 +903,12 @@ int main(int argc, char *argv[]) {
             out.endLine();
         }
 
-        // Export estimates in a computer-readable format
-        OutputUtils::exportOutput2JSON(tl, sites, parametersFile);
 
+        */
 
         // Compute support measures
         std::string PAR_support = ApplicationTools::getStringParameter("support", jatiapp.getParams(), "", "", true, true);
-        if(PAR_support == "bootstrap") {
+        if (PAR_support == "bootstrap") {
             ApplicationTools::displayMessage("\n[Tree support measures]");
 
             bpp::Bootstrap(tl, *sites, rDist, utree, &tm, jatiapp.getParams(), "support.");

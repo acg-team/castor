@@ -271,7 +271,7 @@ namespace bpp {
             std::cout << std::endl;
             std::cout << "Exponential(n={int>=2}, lambda={float>0})                        a discretized exponential distribution, with n classes and parameter lambda." << std::endl;
             std::cout << std::endl;
-            std::cout << "Simple(values={vector<double>}, probas={vector<double>} [, ranges={vector<parametername[min;val]>}])" << std::endl;
+            std::cout << "Simple(values={vector<double>}, probas={vector<double>} [, ranges={vector<parametername[min;max]>}])" << std::endl;
             std::cout << "                                                                 A discrete distribution with specific values (in values) and their respective " << std::endl;
             std::cout << "                                                                 non-negative probabibilities (in probas). The parameters are V1, V2, ..., Vn" << std::endl;
             std::cout << "                                                                 for all the values and the relative probabibility parameters are " << std::endl;

@@ -165,6 +165,7 @@ void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::
     }
 }
 
+
 void UtreeBppUtils::convertTree_b2u(bpp::Tree *in_tree, Utree *out_tree, treemap &tm) {
     int rootId = in_tree->getRootId();
 
@@ -256,6 +257,7 @@ bpp::TreeTemplate<bpp::Node> *UtreeBppUtils::convertTree_u2b(tshlib::Utree *in_t
     return tree;
 }
 
+
 void UtreeBppUtils::_traverseTree_u2b(bpp::Node *target, tshlib::VirtualNode *source) {
 
     auto *child = new bpp::Node;
@@ -276,6 +278,7 @@ void UtreeBppUtils::_traverseTree_u2b(bpp::Node *target, tshlib::VirtualNode *so
 
 
 }
+
 
 void UtreeBppUtils::associateNode2Alignment(bpp::SiteContainer *sites, tshlib::Utree *in_tree) {
 
@@ -300,6 +303,7 @@ void UtreeBppUtils::associateNode2Alignment(bpp::SiteContainer *sites, tshlib::U
     }
 }
 
+
 void UtreeBppUtils::associateNode2Alignment(bpp::SequenceContainer *sequences, tshlib::Utree *in_tree) {
 
     for (auto &node:in_tree->listVNodes) {
@@ -323,6 +327,7 @@ void UtreeBppUtils::associateNode2Alignment(bpp::SequenceContainer *sequences, t
     }
 }
 
+
 void UtreeBppUtils::renameInternalNodes(bpp::Tree *in_tree, std::string prefix) {
 
     // Rename internal nodes with standard Vxx * where xx is a progressive number
@@ -343,6 +348,7 @@ void UtreeBppUtils::renameInternalNodes(bpp::Tree *in_tree, std::string prefix) 
 
 }
 
+
 std::vector<bpp::Node *> UtreeBppUtils::remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm) {
 
     std::vector<bpp::Node *> newList;
@@ -354,6 +360,7 @@ std::vector<bpp::Node *> UtreeBppUtils::remapNodeLists(std::vector<tshlib::Virtu
 
     return newList;
 }
+
 
 void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib::Utree *inUTree, UtreeBppUtils::treemap &tm) {
 
@@ -451,9 +458,11 @@ void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib:
 
 }
 
+
 void UtreeBppUtils::updateTree_u2b(bpp::Tree *inBTree, tshlib::Utree *inUTree, UtreeBppUtils::treemap &tm) {
 
 }
+
 
 /*
 Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix) {
@@ -548,6 +557,7 @@ double MatrixBppUtils::dotProd(const std::vector<double> *x, const std::vector<d
     return val;
 }
 
+
 double MatrixBppUtils::dotProd(const bpp::ColMatrix<double> &x, const bpp::ColMatrix<double> &y) {
 
     double val;
@@ -563,6 +573,7 @@ double MatrixBppUtils::dotProd(const bpp::ColMatrix<double> &x, const bpp::ColMa
 
     return val;
 }
+
 
 std::vector<double> MatrixBppUtils::cwiseProd(std::vector<double> *x, std::vector<double> *y) {
 
@@ -582,6 +593,7 @@ std::vector<double> MatrixBppUtils::cwiseProd(std::vector<double> *x, std::vecto
     return val;
 }
 
+
 double MatrixBppUtils::sumVector(std::vector<double> *x) {
 
     double val;
@@ -593,6 +605,7 @@ double MatrixBppUtils::sumVector(std::vector<double> *x) {
 
     return val;
 }
+
 
 std::vector<double> MatrixBppUtils::matrixVectorProd(bpp::RowMatrix<double> &M, std::vector<double> &A) {
 
@@ -609,6 +622,7 @@ std::vector<double> MatrixBppUtils::matrixVectorProd(bpp::RowMatrix<double> &M, 
 
     return B;
 }
+
 
 bpp::DistanceMatrix *InputUtils::parseDistanceMatrix(std::string filepath) {
 
@@ -666,7 +680,8 @@ bpp::DistanceMatrix *InputUtils::parseDistanceMatrix(std::string filepath) {
 
 }
 
-void OutputUtils::printParametersLikelihood(bpp::AbstractHomogeneousTreeLikelihood *tl) {
+
+void OutputUtils::writeOutput2LOG(bpp::AbstractHomogeneousTreeLikelihood *tl) {
     bpp::ParameterList parModel;
     std::ostringstream oss;
 
@@ -709,7 +724,8 @@ void OutputUtils::printParametersLikelihood(bpp::AbstractHomogeneousTreeLikeliho
     oss.str("");
 }
 
-std::string OutputUtils::tree2string(bpp::Tree *tree) {
+
+std::string OutputUtils::TreeTools::writeTree2String(bpp::Tree *tree) {
     bpp::Newick treeWriter;
     bpp::TreeTemplate<bpp::Node> ttree(*tree);
     std::ostringstream oss;
@@ -718,7 +734,16 @@ std::string OutputUtils::tree2string(bpp::Tree *tree) {
     return out;
 }
 
-void OutputUtils::exportOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl, bpp::SiteContainer *sites, std::string prefix) {
+
+void OutputUtils::writeOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl,
+                                   bpp::SiteContainer *sites,
+                                   std::map<std::string, std::string> &params,
+                                   const string &suffix,
+                                   bool suffixIsOptional,
+                                   bool verbose,
+                                   int warn) {
+
+    std::string estimate_filename = ApplicationTools::getAFilePath("output.estimates.file", params, false, false, "none", true);
 
     boost::property_tree::ptree pt; // initial ptree structure for json output
 
@@ -727,23 +752,23 @@ void OutputUtils::exportOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl, 
         bpp::ParameterList parModel;
         std::ostringstream oss;
 
-        pt.put("Input.sites.length",sites->getNumberOfSites());
-        pt.put("Input.sites.sequences",sites->getNumberOfSequences());
-        pt.put("Input.alphabet.states",sites->getAlphabet()->getNumberOfStates());
-        pt.put("Input.alphabet.type",sites->getAlphabet()->getAlphabetType());
+        pt.put("Input.sites.length", sites->getNumberOfSites());
+        pt.put("Input.sites.sequences", sites->getNumberOfSequences());
+        pt.put("Input.alphabet.states", sites->getAlphabet()->getNumberOfStates());
+        pt.put("Input.alphabet.type", sites->getAlphabet()->getAlphabetType());
 
         parModel = tl->getSubstitutionModelParameters();
         if (parModel.size() > 0) {
 
             for (auto &parameterName:parModel.getParameterNames()) {
-                pt.put("Model."+parameterName,parModel.getParameter(parameterName).getValue());
+                pt.put("Model." + parameterName, parModel.getParameter(parameterName).getValue());
             }
         }
 
         parModel = tl->getRateDistributionParameters();
         if (parModel.size() > 0) {
             for (auto &parameterName:parModel.getParameterNames()) {
-                pt.put("ASVR."+parameterName,parModel.getParameter(parameterName).getValue());
+                pt.put("ASVR." + parameterName, parModel.getParameter(parameterName).getValue());
             }
 
         }
@@ -751,19 +776,21 @@ void OutputUtils::exportOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl, 
         parModel = tl->getBranchLengthsParameters();
         if (parModel.size() > 0) {
             for (auto &parameterName:parModel.getParameterNames()) {
-                pt.put("Tree."+parameterName,parModel.getParameter(parameterName).getValue());
+                pt.put("Tree." + parameterName, parModel.getParameter(parameterName).getValue());
             }
         }
 
         pt.put("Final.LogLikelihood", tl->getLogLikelihood());
 
+        /*
         boost::filesystem::path p(prefix);
 
         std::string path = p.parent_path().string();
         std::string stem = p.stem().string();
-        std::string filename = path+"/"+stem+".json";
+        std::string filename = path + "/" + stem + ".json";
+        */
 
-        boost::property_tree::write_json(filename, pt);
+        boost::property_tree::write_json(estimate_filename, pt);
 
     } catch (std::exception const &e) {
         std::cerr << e.what() << std::endl;
@@ -772,7 +799,8 @@ void OutputUtils::exportOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl, 
 
 }
 
-void OutputUtils::exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfile) {
+
+void OutputUtils::writeTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfile) {
 
     std::ofstream outfile;
     outfile.open(outputfile);
@@ -780,17 +808,17 @@ void OutputUtils::exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputf
 
     // Write header
     outfile << "Taxa\t";
-    for (auto &attributeName:tree->getBranchPropertyNames(tree->getRootId())){
+    for (auto &attributeName:tree->getBranchPropertyNames(tree->getRootId())) {
 
         outfile << attributeName << "\t";
     }
     outfile << "\n";
 
     // Write content
-    for(auto &nodeID:tree->getNodesId()){
+    for (auto &nodeID:tree->getNodesId()) {
         outfile << tree->getNodeName(nodeID) << "\t";
-        for (auto &attributeName:tree->getBranchPropertyNames(tree->getRootId())){
-                outfile << dynamic_cast<const BppString*>(tree->getBranchProperty(nodeID, attributeName))->toSTL() << "\t";
+        for (auto &attributeName:tree->getBranchPropertyNames(tree->getRootId())) {
+            outfile << dynamic_cast<const BppString *>(tree->getBranchProperty(nodeID, attributeName))->toSTL() << "\t";
         }
         outfile << "\n";
     }
@@ -798,127 +826,210 @@ void OutputUtils::exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputf
 
 }
 
-void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree*> trees, std::map<std::string, std::string> &params, const std::string &suffix, bool suffixIsOptional, bool verbose, int warn) {
 
-        std::string PAR_output_tree_filename = ApplicationTools::getAFilePath("output.tree.file", params, false, false, "", true, "", 1);
-        std::string PAR_output_tree_attributes = ApplicationTools::getStringParameter("output.tree.attributes", params, "", "", true, true);
+void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree *> trees, std::map<std::string, std::string> &params, const std::string &suffix, bool suffixIsOptional, bool verbose, int warn) {
 
-        bool internaNodeNames = false;
-        std::vector<std::string> attributeNames;
+    std::string PAR_output_tree_filename = ApplicationTools::getAFilePath("output.tree.file", params, false, false, "", true, "", 1);
+    std::string PAR_output_tree_attributes = ApplicationTools::getStringParameter("output.tree.attributes", params, "", "", true, true);
 
-        // Split all the attributes to parse for making the tree beautiful
-        StringTokenizer st(PAR_output_tree_attributes, ",");
-        while (st.hasMoreToken()) {
-            try {
+    bool internaNodeNames = false;
+    std::vector<std::string> attributeNames;
 
-                string param = st.nextToken();
+    // Split all the attributes to parse for making the tree beautiful
+    StringTokenizer st(PAR_output_tree_attributes, ",");
+    while (st.hasMoreToken()) {
+        try {
 
-                if(param == "InternalNodes"){
+            string param = st.nextToken();
 
-                    internaNodeNames = true;
+            if (param == "InternalNodes") {
 
-                }else if(param != "AllAttributes"){
+                internaNodeNames = true;
 
-                    attributeNames.push_back(param);
+            } else if (param != "AllAttributes") {
 
-                }
-
-            }catch (ParameterNotFoundException &pnfe) {
-                ApplicationTools::displayWarning("Parameter '" + pnfe.getParameter() + "' not found, and so can't be ignored!");
+                attributeNames.push_back(param);
 
             }
-        }
 
-        std::ofstream out;
-        out.open(PAR_output_tree_filename);
-        // Checking the existence of specified file, and possibility to open it in write mode
-        if (! out) { throw IOException ("writeNexusMetaTree::write: failed to write to stream"); }
+        } catch (ParameterNotFoundException &pnfe) {
+            ApplicationTools::displayWarning("Parameter '" + pnfe.getParameter() + "' not found, and so can't be ignored!");
 
-        out << "#NEXUS" << endl;
-        out << endl;
-        out << "BEGIN TREES;" << endl;
+        }
+    }
 
-        //First, we retrieve all leaf names from all trees:
-        std::vector<std::string> names;
-        for (size_t i = 0; i < trees.size(); i++)
-        {
-            names = VectorTools::vectorUnion(names, trees[i]->getLeavesNames());
-        }
-        //... and create a translation map:
-        map<string, size_t> translation;
-        size_t code = 0;
-        for (size_t i = 0; i < names.size(); i++)
-        {
-            translation[names[i]] = code++;
-        }
+    std::ofstream out;
+    out.open(PAR_output_tree_filename);
+    // Checking the existence of specified file, and possibility to open it in write mode
+    if (!out) { throw IOException("writeNexusMetaTree::write: failed to write to stream"); }
 
-        //Second we translate all leaf names to their corresponding code:
-        vector<Tree*> translatedTrees(trees.size());
-        for (size_t i = 0; i < trees.size(); i++)
-        {
-            vector<int> leavesId = trees[i]->getLeavesId();
-            Tree* tree = dynamic_cast<Tree*>(trees[i]->clone());
-            for (size_t j = 0; j < leavesId.size(); j++)
-            {
-                tree->setNodeName(leavesId[j], TextTools::toString(translation[tree->getNodeName(leavesId[j])]));
-            }
-            translatedTrees[i] = tree;
-        }
+    out << "#NEXUS" << endl;
+    out << endl;
+    out << "BEGIN TREES;" << endl;
 
-        //Third we print the translation command:
-        out << "  TRANSLATE";
-        size_t count = 0;
-        for (map<string, size_t>::iterator it = translation.begin(); it != translation.end(); it++)
-        {
-            out << endl << "    " << it->second << "\t" << it->first;
-            count++;
-            if (count < translation.size())
-                out << ",";
-        }
-        out << ";";
+    //First, we retrieve all leaf names from all trees:
+    std::vector<std::string> names;
+    for (size_t i = 0; i < trees.size(); i++) {
+        names = VectorTools::vectorUnion(names, trees[i]->getLeavesNames());
+    }
+    //... and create a translation map:
+    map <string, size_t> translation;
+    size_t code = 0;
+    for (size_t i = 0; i < names.size(); i++) {
+        translation[names[i]] = code++;
+    }
 
-        //Finally we print all tree descriptions:
-        for (size_t i = 0; i < trees.size(); i++)
-        {
-            out << endl << "  TREE tree" << (i+1) << " = " << OutputUtils::TreeTools::treeToParenthesis(*translatedTrees[i], internaNodeNames, attributeNames);
+    //Second we translate all leaf names to their corresponding code:
+    vector < Tree * > translatedTrees(trees.size());
+    for (size_t i = 0; i < trees.size(); i++) {
+        vector<int> leavesId = trees[i]->getLeavesId();
+        Tree *tree = dynamic_cast<Tree *>(trees[i]->clone());
+        for (size_t j = 0; j < leavesId.size(); j++) {
+            tree->setNodeName(leavesId[j], TextTools::toString(translation[tree->getNodeName(leavesId[j])]));
         }
-        out << "END;" << endl;
+        translatedTrees[i] = tree;
+    }
 
-        //Clean trees:
-        for (size_t i = 0; i < translatedTrees.size(); i++)
-        {
-            delete translatedTrees[i];
-        }
+    //Third we print the translation command:
+    out << "  TRANSLATE";
+    size_t count = 0;
+    for (map<string, size_t>::iterator it = translation.begin(); it != translation.end(); it++) {
+        out << endl << "    " << it->second << "\t" << it->first;
+        count++;
+        if (count < translation.size())
+            out << ",";
+    }
+    out << ";";
+
+    //Finally we print all tree descriptions:
+    for (size_t i = 0; i < trees.size(); i++) {
+        out << endl << "  TREE tree" << (i + 1) << " = " << OutputUtils::TreeTools::treeToParenthesis(*translatedTrees[i], internaNodeNames, attributeNames);
+    }
+    out << "END;" << endl;
+
+    //Clean trees:
+    for (size_t i = 0; i < translatedTrees.size(); i++) {
+        delete translatedTrees[i];
+    }
 
 }
 
-std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree& tree, int nodeId, bool internalNodesNames, std::vector<std::string> attributeNames) throw (NodeNotFoundException) {
+
+void OutputUtils::exportOutput(bpp::AbstractHomogeneousTreeLikelihood *tl,
+                               bpp::SiteContainer *sites,
+                               std::map<std::string, std::string> &params,
+                               const string &suffix,
+                               bool suffixIsOptional,
+                               bool verbose,
+                               int warn) {
+
+
+
+    std::string estimate_filename = ApplicationTools::getAFilePath("output.estimates.file", params, false, false, "none", true);
+    std::string estimate_format = ApplicationTools::getStringParameter("output.estimates.format", params, "json",  "", true, true);
+
+    if(!estimate_filename.empty()) {
+
+        size_t lastindex = estimate_filename.find_last_of(".");
+        std::string rawname = estimate_filename.substr(0, lastindex);
+
+        if (estimate_format.find("json") != std::string::npos) {
+            ApplicationTools::displayResult("Output estimates format", 'json');
+
+            rawname = rawname + ".json";
+            params["output.estimates.file"] = rawname;
+
+            // Export estimates in a computer-readable format (JSON)
+            writeOutput2JSON(tl, sites, params);
+
+
+        }else {
+            ApplicationTools::displayResult("Output estimates format", 'human-readable text');
+
+            rawname = rawname + ".log";
+            params["output.estimates.file"] = rawname;
+            // Output estimates in a text file (TEXT)
+            writeOutput2Text(tl, sites, params);
+        }
+
+        ApplicationTools::displayResult("Output estimates to file", estimate_filename);
+
+    }
+
+}
+
+
+void OutputUtils::writeOutput2Text(bpp::AbstractHomogeneousTreeLikelihood *tl,
+                                   bpp::SiteContainer *sites,
+                                   std::map<std::string, std::string> &params,
+                                   const string &suffix,
+                                   bool suffixIsOptional,
+                                   bool verbose,
+                                   int warn) {
+
+
+    std::string parametersFile = ApplicationTools::getAFilePath("output.estimates.file", params, false, false, "none", true);
+    bool withAlias = ApplicationTools::getBooleanParameter("output.estimates.alias", params, true, "", true, 0);
+
+    ApplicationTools::displayResult("Output estimates to file", parametersFile);
+
+
+    if (parametersFile != "none") {
+        StlOutputStream out(new ofstream(parametersFile.c_str(), ios::out));
+
+        int numParametersModel = 0;
+
+        numParametersModel += tl->getTree().getNumberOfNodes() - 1;
+
+        out << "# Log likelihood = ";
+        out.setPrecision(20) << (tl->getLogLikelihood());
+        out.endLine();
+        out << "# Number of sites = ";
+        out.setPrecision(20) << sites->getNumberOfSites();
+        out.endLine();
+        out.endLine();
+        out << "# Substitution model parameters:";
+        out.endLine();
+
+        tl->getModel()->matchParametersValues(tl->getParameters());
+        numParametersModel += tl->getModel()->getNumberOfParameters();
+        PhylogeneticsApplicationTools::printParameters(tl->getModel(), out, 1, withAlias);
+
+        out.endLine();
+        (out << "# Rate distribution parameters:").endLine();
+        tl->getRateDistribution()->matchParametersValues(tl->getParameters());
+        numParametersModel += tl->getRateDistribution()->getNumberOfParameters();
+        PhylogeneticsApplicationTools::printParameters(tl->getRateDistribution(), out, withAlias);
+        out.endLine();
+        out << "# Total number of parameters: " << numParametersModel;
+        out.endLine();
+    }
+
+}
+
+std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree &tree, int nodeId, bool internalNodesNames, std::vector<std::string> attributeNames) throw(NodeNotFoundException) {
 
     if (!tree.hasNode(nodeId))
         throw NodeNotFoundException("OutputUtils::TreeTools::nodeToParenthesis", nodeId);
     ostringstream s;
-    if (tree.isLeaf(nodeId))
-    {
+    if (tree.isLeaf(nodeId)) {
         s << tree.getNodeName(nodeId);
-    }
-    else
-    {
+    } else {
         s << "(";
         vector<int> sonsId = tree.getSonsId(nodeId);
         s << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[0], internalNodesNames, attributeNames);
-        for (size_t i = 1; i < sonsId.size(); i++)
-        {
+        for (size_t i = 1; i < sonsId.size(); i++) {
             s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames, attributeNames);
         }
         s << ")";
 
-        if(internalNodesNames && !tree.getNodeName(nodeId).empty()){
+        if (internalNodesNames && !tree.getNodeName(nodeId).empty()) {
             s << tree.getNodeName(nodeId);
         }
         //if (bootstrap)
         //{
-            //if (tree.hasBranchProperty(nodeId, BOOTSTRAP))
-            //    s << (dynamic_cast<const Number<double>*>(tree.getBranchProperty(nodeId, BOOTSTRAP))->getValue());
+        //if (tree.hasBranchProperty(nodeId, BOOTSTRAP))
+        //    s << (dynamic_cast<const Number<double>*>(tree.getBranchProperty(nodeId, BOOTSTRAP))->getValue());
         //}
         //else
         //{
@@ -926,11 +1037,11 @@ std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree& tree, int node
     }
 
     // Add metacomments (if not specified elsewhere, then all the attributes associated on the branches)
-    if(attributeNames.empty()) {
+    if (attributeNames.empty()) {
         attributeNames = tree.getBranchPropertyNames(nodeId);
     }
 
-    if(attributeNames.size() > 0) {
+    if (attributeNames.size() > 0) {
         s << "[&";
 
         for (int i = 0; i < attributeNames.size(); i++) {
@@ -938,7 +1049,7 @@ std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree& tree, int node
             if (tree.hasBranchProperty(nodeId, propertyName))
                 s << propertyName << "=" << *(dynamic_cast<const BppString *>(tree.getBranchProperty(nodeId, propertyName)));
             //}
-            if(i<attributeNames.size()-1){
+            if (i < attributeNames.size() - 1) {
                 s << ",";
             }
         }
@@ -951,42 +1062,36 @@ std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree& tree, int node
 }
 
 
-
-std::string OutputUtils::TreeTools::treeToParenthesis(const Tree& tree, bool internalNodesNames, std::vector<std::string> attributeNames) {
+std::string OutputUtils::TreeTools::treeToParenthesis(const Tree &tree, bool internalNodesNames, std::vector<std::string> attributeNames) {
     ostringstream s;
     s << "(";
     int rootId = tree.getRootId();
     vector<int> sonsId = tree.getSonsId(rootId);
-    if (tree.isLeaf(rootId))
-    {
+    if (tree.isLeaf(rootId)) {
         s << tree.getNodeName(rootId);
-        for (size_t i = 0; i < sonsId.size(); i++)
-        {
+        for (size_t i = 0; i < sonsId.size(); i++) {
             s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames, attributeNames);
         }
-    }
-    else
-    {
+    } else {
         s << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[0], internalNodesNames, attributeNames);
-        for (size_t i = 1; i < sonsId.size(); i++)
-        {
+        for (size_t i = 1; i < sonsId.size(); i++) {
             s << "," << OutputUtils::TreeTools::nodeToParenthesis(tree, sonsId[i], internalNodesNames, attributeNames);
         }
     }
     s << ")";
     //if (bootstrap)
     //{
-        //if (tree.hasBranchProperty(rootId, BOOTSTRAP))
-        //    s << (dynamic_cast<const Number<double>*>(tree.getBranchProperty(rootId, BOOTSTRAP))->getValue());
+    //if (tree.hasBranchProperty(rootId, BOOTSTRAP))
+    //    s << (dynamic_cast<const Number<double>*>(tree.getBranchProperty(rootId, BOOTSTRAP))->getValue());
     //}
     //else
     //{
 
-    if(attributeNames.empty()) {
+    if (attributeNames.empty()) {
         attributeNames = tree.getBranchPropertyNames(rootId);
     }
 
-    if(attributeNames.size() > 0) {
+    if (attributeNames.size() > 0) {
         s << "[&";
 
         for (int i = 0; i < attributeNames.size(); i++) {
@@ -994,7 +1099,7 @@ std::string OutputUtils::TreeTools::treeToParenthesis(const Tree& tree, bool int
             if (tree.hasBranchProperty(rootId, propertyName))
                 s << propertyName << "=" << *(dynamic_cast<const BppString *>(tree.getBranchProperty(rootId, propertyName)));
             //}
-            if(i<attributeNames.size()-1){
+            if (i < attributeNames.size() - 1) {
                 s << ",";
             }
         }
@@ -1006,12 +1111,10 @@ std::string OutputUtils::TreeTools::treeToParenthesis(const Tree& tree, bool int
 }
 
 
-
-
 bpp::DistanceEstimation DistanceUtils::computeDistanceMethod(std::string seqfilename, bpp::Alphabet *alphabet, bpp::GeneticCode *gCode, std::map<std::string, std::string> &params) {
 
     // Create a map containing the required parameters passed by the user
-    map<std::string, std::string> parmap;
+    map <std::string, std::string> parmap;
     parmap = params;
     // Overwrite the model parameter
     parmap["model"] = "JC69";
@@ -1038,8 +1141,11 @@ bpp::DistanceEstimation DistanceUtils::computeDistanceMethod(std::string seqfile
     return distEstimation;
 }
 
-bpp::TreeTemplate<bpp::Node> *
-DistanceUtils::computeDistanceTree(bpp::TransitionModel *model, bpp::DiscreteDistribution *rDist, bpp::DistanceEstimation &distEstimation, std::map<std::string, std::string> &params) {
+
+bpp::TreeTemplate<bpp::Node> *DistanceUtils::computeDistanceTree(bpp::TransitionModel *model,
+                                                                 bpp::DiscreteDistribution *rDist,
+                                                                 bpp::DistanceEstimation &distEstimation,
+                                                                 std::map<std::string, std::string> &params) {
 
     std::string method = ApplicationTools::getStringParameter("distance.method", params, "nj");
     bpp::ApplicationTools::displayResult("Initial tree reconstruction method", method);
@@ -1149,10 +1255,11 @@ DistanceUtils::computeDistanceTree(bpp::TransitionModel *model, bpp::DiscreteDis
     return tree;
 }
 
+
 void DistanceMethodsUtils::computeDistanceMatrix() {
 
     // Create a map containing the required parameters passed by the user
-    map<std::string, std::string> parmap;
+    map <std::string, std::string> parmap;
     parmap = params_;
     // Overwrite the model parameter
     parmap["model"] = "JC69";
@@ -1298,9 +1405,11 @@ bpp::TreeTemplate<bpp::Node> *DistanceMethodsUtils::computeDistanceTree() {
     return tree;
 }
 
+
 void DistanceMethodsUtils::setDistanceMatrix() {
 
 }
+
 
 std::string TextUtils::appendToFilePath(std::string inputFilePath, std::string string2append) {
 
@@ -1327,7 +1436,6 @@ std::string TextUtils::appendToFilePath(std::string inputFilePath, std::string s
 
     return fullInitialMSAFilePath;
 }
-
 
 
 void AlignmentUtils::CheckAlignmentConsistency(bpp::SiteContainer &sites) {
@@ -1357,6 +1465,8 @@ void AlignmentUtils::CheckAlignmentConsistency(bpp::SiteContainer &sites) {
     }
 }
 
+
 bool ComparisonUtils::areLogicallyEqual(double a, double b) {
     return a == b || std::abs(a - b) < std::abs(std::min(a, b)) * std::numeric_limits<double>::epsilon();
 }
+
