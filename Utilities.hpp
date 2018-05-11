@@ -130,13 +130,34 @@ namespace TextUtils {
 
 namespace OutputUtils {
 
-    void printParametersLikelihood(bpp::AbstractHomogeneousTreeLikelihood *tl);
+    void exportOutput(bpp::AbstractHomogeneousTreeLikelihood *tl,
+                      bpp::SiteContainer *sites,
+                      std::map<std::string, std::string> &params,
+                      const std::string &suffix = "",
+                      bool suffixIsOptional = true,
+                      bool verbose = true,
+                      int warn = 1);
 
-    std::string tree2string(bpp::Tree *tree);
+    void writeOutput2LOG(bpp::AbstractHomogeneousTreeLikelihood *tl);
 
-    void exportOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl, bpp::SiteContainer *sites, std::string prefix="");
 
-    void exportTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfile);
+    void writeOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl,
+                          bpp::SiteContainer *sites,
+                          std::map<std::string, std::string> &params,
+                          const std::string &suffix = "",
+                          bool suffixIsOptional = true,
+                          bool verbose = true,
+                          int warn = 1);
+
+    void writeOutput2Text(bpp::AbstractHomogeneousTreeLikelihood *tl,
+                          bpp::SiteContainer *sites,
+                          std::map<std::string, std::string> &params,
+                          const std::string &suffix = "",
+                          bool suffixIsOptional = true,
+                          bool verbose = true,
+                          int warn = 1);
+
+    void writeTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfile);
 
     void writeNexusMetaTree(std::vector<bpp::Tree*> trees,
                             std::map<std::string, std::string> &params,
@@ -147,6 +168,7 @@ namespace OutputUtils {
 
     namespace TreeTools {
 
+        std::string writeTree2String(bpp::Tree *tree);
         std::string treeToParenthesis(const bpp::Tree& tree, bool internalNodesNames, std::vector<std::string> attributeNames);
         std::string nodeToParenthesis(const bpp::Tree& tree, int nodeId, bool internalNodesNames, std::vector<std::string> attributeNames) throw (bpp::NodeNotFoundException);
 
@@ -166,7 +188,7 @@ namespace DistanceUtils {
 
 namespace AlignmentUtils{
 
-    void CheckAlignmentConsistency(bpp::SiteContainer &sites);
+    void checkAlignmentConsistency(bpp::SiteContainer &sites);
 
 }
 

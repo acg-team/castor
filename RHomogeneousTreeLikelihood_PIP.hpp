@@ -446,6 +446,15 @@ namespace bpp {
 
         int countNonGapCharacterInSite(const SiteContainer &sites, int siteID) const;
 
+        void computeInDelDispersionOnTree(const SiteContainer &sites);
+
+        SiteContainer *getSubAlignment(const SiteContainer &sites, std::vector<std::string> subsetSequences);
+
+        void setNhNgOnNode(SiteContainer &sites, int nodeID);
+
+        double getNodeAge(int nodeID);
+
+
         //friend class RHomogeneousMixedTreeLikelihood;
 
     };

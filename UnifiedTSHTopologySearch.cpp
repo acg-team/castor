@@ -157,7 +157,7 @@ double tshlib::TreeSearch::performTreeSearch() {
             stopcondition = "convergence";
             break;
         case tshlib::TreeSearchStopCondition::iterations:
-            stopcondition = "val iterations";
+            stopcondition = "max iterations";
             break;
     }
     std::string startingnodes = "";
