@@ -1229,7 +1229,10 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
 
 double pPIP::computeLK_M_local(bpp::Node *node,
                                MSAcolumn_t &sL,
-                               MSAcolumn_t &sR) {
+                               MSAcolumn_t &sR,
+                               bpp::ColMatrix<double> &fvL,
+                               bpp::ColMatrix<double> &fvR,
+                               bpp::ColMatrix<double> &Fv_M_ij) {
 
     double log_pr;
 
@@ -1253,12 +1256,12 @@ double pPIP::computeLK_M_local(bpp::Node *node,
     for (int catg = 0; catg < num_gamma_categories; catg++) {
 
         // computes the recursive Felsenstein's peeling weight on the left subtree
-        idx = 0;
-        bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
+        //idx = 0;
+        //bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
 
         // computes the recursive Felsenstein's peeling weight on the right subtree
-        idx = 0;
-        bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
+        //idx = 0;
+        //bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
 
         // PrfvL = Pr_L * fv_L
         bpp::ColMatrix<double> PrfvL;
@@ -1271,6 +1274,8 @@ double pPIP::computeLK_M_local(bpp::Node *node,
         // fv = PrfvL * PrfvR
         bpp::ColMatrix<double> fv;
         bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+        Fv_M_ij = fv;
 
         // fv0 = pi * fv
         double fv0 = MatrixBppUtils::dotProd(fv, pi_);
@@ -1412,7 +1417,10 @@ double pPIP::computeLK_M_local(double NU,
 
 double pPIP::computeLK_X_local(bpp::Node *node,
                                MSAcolumn_t &sL,
-                               MSAcolumn_t &col_gap_R) {
+                               MSAcolumn_t &col_gap_R,
+                               bpp::ColMatrix<double> &fvL,
+                               bpp::ColMatrix<double> &fvR,
+                               bpp::ColMatrix<double> &Fv_X_ij) {
 
     double log_pr;
 
@@ -1437,12 +1445,12 @@ double pPIP::computeLK_X_local(bpp::Node *node,
     for (int catg = 0; catg < num_gamma_categories; catg++) {
 
         // computes the recursive Felsenstein's peeling weight on the left subtree
-        idx = 0;
-        bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
+        //idx = 0;
+        //bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
 
         // computes the recursive Felsenstein's peeling weight on the right subtree
-        idx = 0;
-        bpp::ColMatrix<double> fvR = computeFVrec(sonRight, col_gap_R, idx, catg);
+        //idx = 0;
+        //bpp::ColMatrix<double> fvR = computeFVrec(sonRight, col_gap_R, idx, catg);
 
         // PrfvL = Pr_L * fv_L
         bpp::ColMatrix<double> PrfvL;
@@ -1455,6 +1463,8 @@ double pPIP::computeLK_X_local(bpp::Node *node,
         // fv = PrfvL * PrfvR
         bpp::ColMatrix<double> fv;
         bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+        Fv_X_ij = fv;
 
         // fv0 = pi * fv
         double fv0 = MatrixBppUtils::dotProd(fv, pi_);
@@ -1603,7 +1613,10 @@ double pPIP::computeLK_X_local(double NU,
 
 double pPIP::computeLK_Y_local(bpp::Node *node,
                                MSAcolumn_t &col_gap_L,
-                               MSAcolumn_t &sR) {
+                               MSAcolumn_t &sR,
+                               bpp::ColMatrix<double> &fvL,
+                               bpp::ColMatrix<double> &fvR,
+                               bpp::ColMatrix<double> &Fv_Y_ij) {
 
     double log_pr;
 
@@ -1633,12 +1646,12 @@ double pPIP::computeLK_Y_local(bpp::Node *node,
     for (int catg = 0; catg < num_gamma_categories; catg++) {
 
         // computes the recursive Felsenstein's peeling weight on the left subtree
-        idx = 0;
-        bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, col_gap_L, idx, catg);
+        //idx = 0;
+        //bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, col_gap_L, idx, catg);
 
         // computes the recursive Felsenstein's peeling weight on the right subtree
-        idx = 0;
-        bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
+        //idx = 0;
+        //bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
 
         // PrfvL = Pr_L * fv_L
         bpp::ColMatrix<double> PrfvL;
@@ -1651,6 +1664,8 @@ double pPIP::computeLK_Y_local(bpp::Node *node,
         // fv = PrfvL * PrfvR
         bpp::ColMatrix<double> fv;
         bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+        Fv_Y_ij = fv;
 
         // fv0 = pi * fv
         double fv0 = MatrixBppUtils::dotProd(fv, pi_);
@@ -2546,13 +2561,26 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     std::vector< vector< double > > Log2DM;
     std::vector< vector< double > > Log2DX;
     std::vector< vector< double > > Log2DY;
+
+    std::vector< vector< bpp::ColMatrix<double> > > Fv_M;
+    std::vector< vector< bpp::ColMatrix<double> > > Fv_X;
+    std::vector< vector< bpp::ColMatrix<double> > > Fv_Y;
+
     Log2DM.resize(h);
     Log2DX.resize(h);
     Log2DY.resize(h);
+
+    Fv_M.resize(h);
+    Fv_X.resize(h);
+    Fv_Y.resize(h);
     for(int i = 0; i < h; i++){
         LogM[i].resize(w);
         LogX[i].resize(w);
         LogY[i].resize(w);
+
+        Fv_M[i].resize(w);
+        Fv_X[i].resize(w);
+        Fv_Y[i].resize(w);
     }
 
     for (int i = 0; i < h; i++) {
@@ -2563,9 +2591,24 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
             sRs = (MSA_.at(nodeID_R).at(j));
 
-            Log2DM[i][j] = computeLK_M_local(node, sLs, sRs);
-            Log2DX[i][j] = computeLK_X_local(node, sLs, col_gap_Rs);
-            Log2DY[i][j] = computeLK_Y_local(node, col_gap_Ls, sRs);
+            Log2DM[i][j] = computeLK_M_local(node,
+                                             sLs,
+                                             sRs,
+                                             fv_data_.at(nodeID_L).at(i),
+                                             fv_data_.at(nodeID_R).at(j),
+                                             Fv_M[i][j]);
+            Log2DX[i][j] = computeLK_X_local(node,
+                                             sLs,
+                                             col_gap_Rs,
+                                             fv_data_[nodeID_L].at(i),
+                                             fv_data_[nodeID_R].at(j), // TODO: fv_GAP
+                                             Fv_X[i][j]);
+            Log2DY[i][j] = computeLK_Y_local(node,
+                                             col_gap_Ls,
+                                             sRs,
+                                             fv_data_[nodeID_L].at(i), // TODO: fv_GAP
+                                             fv_data_[nodeID_R].at(j),
+                                             Fv_Y[i][j]);
         }
     }
     //============================================================
@@ -2770,6 +2813,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     score_.at(nodeID) = score;
 
     lk_down_[nodeID].resize(level_max_lk);
+    fv_data_[nodeID].resize(level_max_lk);
 
     //==========================================================================================
     // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
@@ -2782,6 +2826,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
             case MATCH_STATE:
 
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
+                fv_data_.at(nodeID).at(lev - 1) = Fv_M[id1][id2];
 
                 id1 = id1 - 1;
                 id2 = id2 - 1;
@@ -2792,6 +2837,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
             case GAP_X_STATE:
 
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
+                fv_data_.at(nodeID).at(lev - 1) = Fv_X[id1][id2];
 
                 id1 = id1 - 1;
 
@@ -2801,6 +2847,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
             case GAP_Y_STATE:
 
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
+                fv_data_.at(nodeID).at(lev - 1) = Fv_Y[id1][id2];
 
                 id2 = id2 - 1;
 
@@ -4133,7 +4180,7 @@ void pPIP::setFVleaf(bpp::Node *node){
 
         fv(idx, 0) = 1.0;
 
-        fv_data_[node->getId()]=fv;
+        fv_data_[node->getId()].at(i)=fv;
 
     }
 
@@ -4197,8 +4244,9 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
             // create a column containing the sequence associated to the leaf node
             setMSAleaves(node, sequences_->getSequence(seqname).toString());
 
-
-
+            if(flag_fv) {
+                setFVleaf(node);
+            }
 
         } else {
 

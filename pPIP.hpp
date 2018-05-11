@@ -141,7 +141,7 @@ namespace bpp {
         std::vector<vector<double >> lk_down_;                      //each node a vector of lk
         std::vector<vector<double >> lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
 
-        std::vector< bpp::ColMatrix<double> > fv_data_;
+        std::vector< vector< bpp::ColMatrix<double> > > fv_data_;
 
 
         bpp::ColMatrix<double> pi_;                                // steady state base frequencies
@@ -329,8 +329,11 @@ namespace bpp {
                                  bool flag_pattern);
 
         double computeLK_M_local(bpp::Node *node,
-                                       MSAcolumn_t &sL,
-                                       MSAcolumn_t &sR);
+                                 MSAcolumn_t &sL,
+                                 MSAcolumn_t &sR,
+                                 bpp::ColMatrix<double> &fvL,
+                                 bpp::ColMatrix<double> &fvR,
+                                 bpp::ColMatrix<double> &Fv_M_ij);
 
         double computeLK_X_local(double NU,
                                  double valM,
@@ -347,8 +350,11 @@ namespace bpp {
                                  bool flag_pattern);
 
         double computeLK_X_local(bpp::Node *node,
-                                       MSAcolumn_t &sL,
-                                       MSAcolumn_t &col_gap_R);
+                                 MSAcolumn_t &sL,
+                                 MSAcolumn_t &col_gap_R,
+                                 bpp::ColMatrix<double> &fvL,
+                                 bpp::ColMatrix<double> &fvR,
+                                 bpp::ColMatrix<double> &Fv_X_ij);
 
         double computeLK_Y_local(double NU,
                                  double valM,
@@ -366,8 +372,11 @@ namespace bpp {
 
 
         double computeLK_Y_local(bpp::Node *node,
-                                       MSAcolumn_t &col_gap_L,
-                                       MSAcolumn_t &sR);
+                                 MSAcolumn_t &col_gap_L,
+                                 MSAcolumn_t &sR,
+                                 bpp::ColMatrix<double> &fvL,
+                                 bpp::ColMatrix<double> &fvR,
+                                 bpp::ColMatrix<double> &Fv_Y_ij);
 
         void DP3D_PIP(bpp::Node *node, bool local,bool flag_map);
 
