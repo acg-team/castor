@@ -2553,9 +2553,30 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     double prev_best_lk = -std::numeric_limits<double>::infinity(); // TODO: Check for the same bug in the other version
     //============================================================
 
+    auto sequencesL = new bpp::VectorSequenceContainer(alphabet_);
+    auto sequencesR = new bpp::VectorSequenceContainer(alphabet_);
+    for(int i=0;i<numLeavesLeft;i++){
+        sequencesL->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID_L).at(i),
+                                                         MSA_.at(nodeID_L).at(i),
+                                                         alphabet_)), true);
+    }
+    for(int i=0;i<numLeavesRight;i++){
+        sequencesR->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID_R).at(i),
+                                                         MSA_.at(nodeID_R).at(i),
+                                                         alphabet_)), true);
+    }
 
+    auto siteContainerL=new bpp::VectorSiteContainer(*sequencesL);
+    auto siteContainerR=new bpp::VectorSiteContainer(*sequencesR);
+    auto siteContComprL=bpp::PatternTools::shrinkSiteSet(*siteContainerL);
+    auto siteContComprR=bpp::PatternTools::shrinkSiteSet(*siteContainerR);
+    auto mapL = bpp::PatternTools::getIndexes(*siteContainerL,*siteContComprL);
+    auto mapR = bpp::PatternTools::getIndexes(*siteContainerR,*siteContComprR);
     //============================================================
     // first 2D-DP
+
+    int h_compr = mapL.size();
+    int w_compr = mapR.size();
 
     // memory allocation
     std::vector< vector< double > > Log2DM;
@@ -2566,30 +2587,34 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     std::vector< vector< bpp::ColMatrix<double> > > Fv_X;
     std::vector< vector< bpp::ColMatrix<double> > > Fv_Y;
 
-    Log2DM.resize(h);
-    Log2DX.resize(h);
-    Log2DY.resize(h);
+    Log2DM.resize(h_compr);
+    Log2DX.resize(h_compr);
+    Log2DY.resize(h_compr);
 
-    Fv_M.resize(h);
-    Fv_X.resize(h);
-    Fv_Y.resize(h);
-    for(int i = 0; i < h; i++){
-        LogM[i].resize(w);
-        LogX[i].resize(w);
-        LogY[i].resize(w);
+    Fv_M.resize(h_compr);
+    Fv_X.resize(h_compr);
+    Fv_Y.resize(h_compr);
+    for(int i = 0; i < h_compr; i++){
+        LogM[i].resize(w_compr);
+        LogX[i].resize(w_compr);
+        LogY[i].resize(w_compr);
 
-        Fv_M[i].resize(w);
-        Fv_X[i].resize(w);
-        Fv_Y[i].resize(w);
+        Fv_M[i].resize(w_compr);
+        Fv_X[i].resize(w_compr);
+        Fv_Y[i].resize(w_compr);
     }
 
-    for (int i = 0; i < h; i++) {
+    for (int i = 0; i < h_compr; i++) {
 
-        sLs = (MSA_.at(nodeID_L).at(i));
+        sLs = siteContComprL->getSite(i).toString();
 
-        for (int j = 0; j < w; j++) {
+        //sLs = (MSA_.at(nodeID_L).at(i));
 
-            sRs = (MSA_.at(nodeID_R).at(j));
+        for (int j = 0; j < w_compr; j++) {
+
+            sRs = siteContComprR->getSite(j).toString();
+
+            //sRs = (MSA_.at(nodeID_R).at(j));
 
             Log2DM[i][j] = computeLK_M_local(node,
                                              sLs,
@@ -2612,6 +2637,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         }
     }
     //============================================================
+
+    int id1,id2;
 
     // For each slice of the 3D cube, compute the values of each cell
     for (int m = 1; m < d; m++) {
@@ -2651,11 +2678,15 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         //***************************************************************************************
         for (int i = 0; i < h; i++) {
 
-            sLs = (MSA_.at(nodeID_L).at(i));
+            id1 = mapL[i];
+
+            //sLs = (MSA_.at(nodeID_L).at(i));
 
             for (int j = 0; j < w; j++) {
 
-                sRs = (MSA_.at(nodeID_R).at(j));
+                id2 = mapR[j];
+
+                //sRs = (MSA_.at(nodeID_R).at(j));
 
                 //=======================================
                 // MATCH
@@ -2675,7 +2706,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                                                       valM_prev,
                                                       valX_prev,
                                                       valY_prev,
-                                                      Log2DM[i][j],
+                                                      Log2DM[id1][id2],
                                                       m);
 
                         if (std::isnan(valM_this)) {
@@ -2706,7 +2737,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                                                         valM_prev,
                                                         valX_prev,
                                                         valY_prev,
-                                                        Log2DX[i][j],
+                                                        Log2DX[id1][id2],
                                                         m);
 
                         if (std::isnan(valX_this)) {
@@ -2737,7 +2768,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                                                         valM_prev,
                                                         valX_prev,
                                                         valY_prev,
-                                                        Log2DY[i][j],
+                                                        Log2DY[id1][id2],
                                                         m);
 
                         if (std::isnan(valY_this)) {
@@ -2818,8 +2849,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //==========================================================================================
     // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
     TracebackPath_t traceback_path(level_max_lk, ' ');
-    int id1 = h - 1;
-    int id2 = w - 1;
+    id1 = h - 1;
+    id2 = w - 1;
     for (int lev = level_max_lk; lev > 0; lev--) {
         int state = TR[lev][id1][id2];
         switch (state) {

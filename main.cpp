@@ -617,6 +617,27 @@ int main(int argc, char *argv[]) {
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
 
+
+
+
+
+
+
+//            auto sequences = new bpp::VectorSequenceContainer(smodel->getAlphabet());
+//
+//            sequences->addSequence(*(new bpp::BasicSequence("s1", "ACGTATCG", smodel->getAlphabet())), true);
+//            sequences->addSequence(*(new bpp::BasicSequence("s2", "ACACACCT", smodel->getAlphabet())), true);
+//
+//            SiteContainer *sss=new bpp::VectorSiteContainer(*sequences);
+//
+//            SiteContainer * newSequences=bpp::PatternTools::shrinkSiteSet(*sss);
+//
+//
+//            auto idx = bpp::PatternTools::getIndexes(*sss,*newSequences);
+
+
+
+
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed());
 
             // Execute alignment on post-order node list
