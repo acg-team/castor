@@ -2555,14 +2555,18 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
     auto sequencesL = new bpp::VectorSequenceContainer(alphabet_);
     auto sequencesR = new bpp::VectorSequenceContainer(alphabet_);
+
+    std::vector<std::string> seqsL = pPIPUtils::siteContainer_2_sequence_vector(MSA_.at(nodeID_L));
     for(int i=0;i<numLeavesLeft;i++){
         sequencesL->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID_L).at(i),
-                                                         MSA_.at(nodeID_L).at(i),
+                                                         seqsL.at(i),
                                                          alphabet_)), true);
     }
+
+    std::vector<std::string> seqsR = pPIPUtils::siteContainer_2_sequence_vector(MSA_.at(nodeID_R));
     for(int i=0;i<numLeavesRight;i++){
         sequencesR->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID_R).at(i),
-                                                         MSA_.at(nodeID_R).at(i),
+                                                         seqsR.at(i),
                                                          alphabet_)), true);
     }
 
@@ -2575,8 +2579,11 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //============================================================
     // first 2D-DP
 
-    int h_compr = mapL.size();
-    int w_compr = mapR.size();
+    std::vector<int> rev_mapL = pPIPUtils::reverse_map(mapL);
+    std::vector<int> rev_mapR = pPIPUtils::reverse_map(mapR);
+
+    int h_compr = rev_mapL.size();
+    int w_compr = rev_mapR.size();
 
     // memory allocation
     std::vector< vector< double > > Log2DM;
@@ -2594,25 +2601,36 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     Fv_M.resize(h_compr);
     Fv_X.resize(h_compr);
     Fv_Y.resize(h_compr);
+
     for(int i = 0; i < h_compr; i++){
-        LogM[i].resize(w_compr);
-        LogX[i].resize(w_compr);
-        LogY[i].resize(w_compr);
+        Log2DM[i].resize(w_compr);
+        Log2DX[i].resize(w_compr);
+        Log2DY[i].resize(w_compr);
 
         Fv_M[i].resize(w_compr);
         Fv_X[i].resize(w_compr);
         Fv_Y[i].resize(w_compr);
     }
 
+    int id1,id2;
+
     for (int i = 0; i < h_compr; i++) {
 
-        sLs = siteContComprL->getSite(i).toString();
+        std::cout<<"i="<<i<<std::endl;
+
+        id1=rev_mapL.at(i);
+
+        sLs = siteContComprL->getSite(id1).toString();
 
         //sLs = (MSA_.at(nodeID_L).at(i));
 
         for (int j = 0; j < w_compr; j++) {
 
-            sRs = siteContComprR->getSite(j).toString();
+            std::cout<<"j="<<j<<std::endl;
+
+            id2=rev_mapL.at(j);
+
+            sRs = siteContComprR->getSite(id2).toString();
 
             //sRs = (MSA_.at(nodeID_R).at(j));
 
@@ -2622,12 +2640,14 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                                              fv_data_.at(nodeID_L).at(i),
                                              fv_data_.at(nodeID_R).at(j),
                                              Fv_M[i][j]);
+
             Log2DX[i][j] = computeLK_X_local(node,
                                              sLs,
                                              col_gap_Rs,
                                              fv_data_[nodeID_L].at(i),
                                              fv_data_[nodeID_R].at(j), // TODO: fv_GAP
                                              Fv_X[i][j]);
+
             Log2DY[i][j] = computeLK_Y_local(node,
                                              col_gap_Ls,
                                              sRs,
@@ -2637,8 +2657,6 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         }
     }
     //============================================================
-
-    int id1,id2;
 
     // For each slice of the 3D cube, compute the values of each cell
     for (int m = 1; m < d; m++) {
@@ -4198,6 +4216,10 @@ void pPIP::setFVleaf(bpp::Node *node){
 
     MSA_t MSA = MSA_.at(node->getId());
 
+    int len = MSA.size();
+    int ID = node->getId();
+
+    fv_data_[ID].resize(len);
     for (int i = 0; i < MSA.size(); i++) {
         MSAcolumn_t s = MSA.at(i);
 
@@ -4211,7 +4233,7 @@ void pPIP::setFVleaf(bpp::Node *node){
 
         fv(idx, 0) = 1.0;
 
-        fv_data_[node->getId()].at(i)=fv;
+        fv_data_[ID].at(i)=fv;
 
     }
 
@@ -4356,4 +4378,41 @@ void pPIPUtils::max_val_in_column(double ***M, int depth, int height, int width,
     }
 
 
+}
+
+std::vector<std::string> pPIPUtils::siteContainer_2_sequence_vector(std::vector<bpp::pPIP::MSAcolumn_t> &MSA){
+
+    std::vector<std::string> seqs;
+
+    int len = MSA.size();
+    int nseq = MSA.at(0).size();
+
+    seqs.resize(nseq);
+    for(int i=0;i<nseq;i++){
+        std::string s;
+        s.resize(len);
+        for(int j=0;j<len;j++){
+            s.at(j)=MSA.at(j).at(i);
+        }
+        seqs[i]=s;
+    }
+
+    return seqs;
+
+};
+
+std::vector<int> pPIPUtils::reverse_map(std::vector<int> &m){
+
+    std::vector<int> rev_m;
+
+    for(int i=0;i<m.size();i++){
+        if( (m.at(i)+1) > rev_m.size()){
+            if(m.at(i)-rev_m.size() > 0){
+                LOG(FATAL) << "\nERROR in reverse_map";
+            }
+            rev_m.push_back(i);
+        }
+    }
+
+    return rev_m;
 }

@@ -649,7 +649,17 @@ int main(int argc, char *argv[]) {
             bool flag_map = true;
             bool flag_pattern = true;
             bool flag_fv = true;
+
+            std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
+
             alignment->PIPAligner(ftn, flag_local, flag_RAM, flag_map, flag_pattern, flag_fv);
+
+            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+
+            VLOG(1) << "[TSH Cycle] Elapsed time: " << duration << " microseconds" << std::endl;
 
             LOG(INFO) << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
 
