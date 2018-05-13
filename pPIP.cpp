@@ -2620,9 +2620,9 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
         id1=rev_mapL.at(i);
 
-        sLs = siteContComprL->getSite(id1).toString();
+        //sLs = siteContComprL->getSite(id1).toString();
 
-        //sLs = (MSA_.at(nodeID_L).at(i));
+        sLs = (MSA_.at(nodeID_L).at(id1));
 
         for (int j = 0; j < w_compr; j++) {
 
@@ -2630,9 +2630,9 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
             id2=rev_mapL.at(j);
 
-            sRs = siteContComprR->getSite(id2).toString();
+            //sRs = siteContComprR->getSite(id2).toString();
 
-            //sRs = (MSA_.at(nodeID_R).at(j));
+            sRs = (MSA_.at(nodeID_R).at(id2));
 
             Log2DM[i][j] = computeLK_M_local(node,
                                              sLs,
