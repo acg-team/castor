@@ -617,16 +617,39 @@ int main(int argc, char *argv[]) {
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
 
+
+
+
+
+
+
+//            auto sequences = new bpp::VectorSequenceContainer(smodel->getAlphabet());
+//
+//            sequences->addSequence(*(new bpp::BasicSequence("s1", "ACGTATCG", smodel->getAlphabet())), true);
+//            sequences->addSequence(*(new bpp::BasicSequence("s2", "ACACACCT", smodel->getAlphabet())), true);
+//
+//            SiteContainer *sss=new bpp::VectorSiteContainer(*sequences);
+//
+//            SiteContainer * newSequences=bpp::PatternTools::shrinkSiteSet(*sss);
+//
+//
+//            auto idx = bpp::PatternTools::getIndexes(*sss,*newSequences);
+
+
+
+
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed());
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
+            bool flag_local = true;
             bool flag_RAM = false;
             bool flag_map = true;
             bool flag_pattern = true;
-            alignment->PIPAligner(ftn, true,flag_RAM,flag_map,flag_pattern);
+            bool flag_fv = true;
+            alignment->PIPAligner(ftn, flag_local, flag_RAM, flag_map, flag_pattern, flag_fv);
 
             LOG(INFO) << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
 
