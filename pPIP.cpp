@@ -2869,13 +2869,18 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     TracebackPath_t traceback_path(level_max_lk, ' ');
     id1 = h - 1;
     id2 = w - 1;
+    int idmL,idmR;
     for (int lev = level_max_lk; lev > 0; lev--) {
         int state = TR[lev][id1][id2];
         switch (state) {
             case MATCH_STATE:
 
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
-                fv_data_.at(nodeID).at(lev - 1) = Fv_M[id1][id2];
+
+                idmL = mapL.at(id1);
+                idmR = mapL.at(id2);
+
+                fv_data_.at(nodeID).at(lev - 1) = Fv_M[idmL][idmR];
 
                 id1 = id1 - 1;
                 id2 = id2 - 1;
@@ -2886,7 +2891,11 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
             case GAP_X_STATE:
 
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
-                fv_data_.at(nodeID).at(lev - 1) = Fv_X[id1][id2];
+
+                idmL = mapL.at(id1);
+                idmR = mapL.at(id2);
+
+                fv_data_.at(nodeID).at(lev - 1) = Fv_X[idmL][idmR];
 
                 id1 = id1 - 1;
 
@@ -2896,7 +2905,11 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
             case GAP_Y_STATE:
 
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
-                fv_data_.at(nodeID).at(lev - 1) = Fv_Y[id1][id2];
+
+                idmL = mapL.at(id1);
+                idmR = mapL.at(id2);
+
+                fv_data_.at(nodeID).at(lev - 1) = Fv_Y[idmL][idmR];
 
                 id2 = id2 - 1;
 
