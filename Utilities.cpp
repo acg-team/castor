@@ -808,7 +808,7 @@ void OutputUtils::writeTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfi
 
     // Write header
     outfile << "Taxa\t";
-    for (auto &attributeName:tree->getBranchPropertyNames(tree->getRootId())) {
+    for (auto &attributeName:tree->getBranchPropertyNames(tree->getInnerNodesId().at(1))) {
 
         outfile << attributeName << "\t";
     }
@@ -817,8 +817,12 @@ void OutputUtils::writeTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfi
     // Write content
     for (auto &nodeID:tree->getNodesId()) {
         outfile << tree->getNodeName(nodeID) << "\t";
-        for (auto &attributeName:tree->getBranchPropertyNames(tree->getRootId())) {
-            outfile << dynamic_cast<const BppString *>(tree->getBranchProperty(nodeID, attributeName))->toSTL() << "\t";
+        for (auto &attributeName:tree->getBranchPropertyNames(tree->getInnerNodesId().at(1))) {
+            if(tree->hasBranchProperty(nodeID, attributeName)) {
+                outfile << dynamic_cast<const BppString *>(tree->getBranchProperty(nodeID, attributeName))->toSTL() << "\t";
+            }else{
+                outfile << "\t";
+            }
         }
         outfile << "\n";
     }
@@ -934,7 +938,7 @@ void OutputUtils::exportOutput(bpp::AbstractHomogeneousTreeLikelihood *tl,
         std::string rawname = estimate_filename.substr(0, lastindex);
 
         if (estimate_format.find("json") != std::string::npos) {
-            ApplicationTools::displayResult("Output estimates format", 'json');
+            ApplicationTools::displayResult("Output estimates format", TextTools::toString("json"));
 
             rawname = rawname + ".json";
             params["output.estimates.file"] = rawname;
@@ -944,7 +948,7 @@ void OutputUtils::exportOutput(bpp::AbstractHomogeneousTreeLikelihood *tl,
 
 
         }else {
-            ApplicationTools::displayResult("Output estimates format", 'human-readable text');
+            ApplicationTools::displayResult("Output estimates format", TextTools::toString("human-readable text"));
 
             rawname = rawname + ".log";
             params["output.estimates.file"] = rawname;
