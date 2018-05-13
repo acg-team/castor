@@ -1756,7 +1756,7 @@ void RHomogeneousTreeLikelihood_PIP::computeInDelDispersionOnTree(const SiteCont
 
     for (auto &nodeID:likelihoodNodes_) {
         // For each node in the tree (except the root node)
-        if (tree_->getNode(nodeID)->hasFather()) {
+        //if (tree_->getNode(nodeID)->hasFather()) {
             if (tree_->getNode(nodeID)->isLeaf()) {
                 // leaf node
                 subsetAlignmentOnNode[nodeID].push_back(tree_->getNode(nodeID)->getName());
@@ -1778,7 +1778,7 @@ void RHomogeneousTreeLikelihood_PIP::computeInDelDispersionOnTree(const SiteCont
 
             delete subAlignment;
 
-        }
+        //}
     }
 }
 
