@@ -404,6 +404,10 @@ namespace pPIPUtils {
 
     void max_val_in_column(double ***M,int depth, int height, int width, double &val, int &level);
 
+    std::vector<std::string> siteContainer_2_sequence_vector(std::vector<bpp::pPIP::MSAcolumn_t> &MSA);
+
+    std::vector<int> reverse_map(std::vector<int> &m);
+
 }
 
 #endif //MINIJATI_PPIP_HPP

@@ -2386,6 +2386,8 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
 }
 void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
+    std::cout<<"\n"<<node->getName()<<"\n\n";
+
     // four levels of optimization:
     // 1) to pre-compute DP 2D
     // 2) to use LK (lk_down)
@@ -2469,9 +2471,14 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     std::vector< vector< vector<int> > > TR;        // 3D traceback matrix
     std::vector< vector< vector<double> > > LK;     // 3D LK matrix, stores best lk at each position
 
+    std::vector< vector< vector<bool> > > bool_MXY;
+
     LogM.resize(2);
     LogX.resize(2);
     LogY.resize(2);
+
+    bool_MXY.resize(2);
+
     TR.resize(d);
     LK.resize(d);
 
@@ -2480,10 +2487,15 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         LogM[k].resize(h);
         LogX[k].resize(h);
         LogY[k].resize(h);
+
+        bool_MXY[k].resize(h);
+
         for(int i = 0; i < h; i++){
             LogM[k][i].resize(w,0);
             LogX[k][i].resize(w,0);
             LogY[k][i].resize(w,0);
+
+            bool_MXY[k][i].resize(w,false);
         }
     }
 
@@ -2525,7 +2537,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     TR[0][0][0] = STOP_STATE;
     LK[0][0][0] = -std::numeric_limits<double>::infinity();
 
-    double max_of_MXY = -std::numeric_limits<double>::infinity();                   // Max value found in the matrices M,X,Y
+    //double max_of_MXY = -std::numeric_limits<double>::infinity();                   // Max value found in the matrices M,X,Y
 
 
     unsigned long m_binary_this;            // Level Index during computation / current
@@ -2555,14 +2567,18 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
     auto sequencesL = new bpp::VectorSequenceContainer(alphabet_);
     auto sequencesR = new bpp::VectorSequenceContainer(alphabet_);
+
+    std::vector<std::string> seqsL = pPIPUtils::siteContainer_2_sequence_vector(MSA_.at(nodeID_L));
     for(int i=0;i<numLeavesLeft;i++){
         sequencesL->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID_L).at(i),
-                                                         MSA_.at(nodeID_L).at(i),
+                                                         seqsL.at(i),
                                                          alphabet_)), true);
     }
+
+    std::vector<std::string> seqsR = pPIPUtils::siteContainer_2_sequence_vector(MSA_.at(nodeID_R));
     for(int i=0;i<numLeavesRight;i++){
         sequencesR->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID_R).at(i),
-                                                         MSA_.at(nodeID_R).at(i),
+                                                         seqsR.at(i),
                                                          alphabet_)), true);
     }
 
@@ -2575,8 +2591,11 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //============================================================
     // first 2D-DP
 
-    int h_compr = mapL.size();
-    int w_compr = mapR.size();
+    std::vector<int> rev_mapL = pPIPUtils::reverse_map(mapL);
+    std::vector<int> rev_mapR = pPIPUtils::reverse_map(mapR);
+
+    int h_compr = rev_mapL.size();
+    int w_compr = rev_mapR.size();
 
     // memory allocation
     std::vector< vector< double > > Log2DM;
@@ -2594,27 +2613,47 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     Fv_M.resize(h_compr);
     Fv_X.resize(h_compr);
     Fv_Y.resize(h_compr);
+
     for(int i = 0; i < h_compr; i++){
-        LogM[i].resize(w_compr);
-        LogX[i].resize(w_compr);
-        LogY[i].resize(w_compr);
+        Log2DM[i].resize(w_compr);
+        Log2DX[i].resize(w_compr);
+        Log2DY[i].resize(w_compr);
 
         Fv_M[i].resize(w_compr);
         Fv_X[i].resize(w_compr);
         Fv_Y[i].resize(w_compr);
     }
 
+    int id1,id2;
+
     for (int i = 0; i < h_compr; i++) {
 
-        sLs = siteContComprL->getSite(i).toString();
+        std::cout<<"i="<<i<<std::endl;
 
-        //sLs = (MSA_.at(nodeID_L).at(i));
+        id1=rev_mapL.at(i);
+
+        //sLs = siteContComprL->getSite(id1).toString();
+
+        sLs = (MSA_.at(nodeID_L).at(id1));
 
         for (int j = 0; j < w_compr; j++) {
 
-            sRs = siteContComprR->getSite(j).toString();
 
-            //sRs = (MSA_.at(nodeID_R).at(j));
+//            if(i==0 and j==3){
+//                std::cout<<"\n"<<node->getName()<<"\n";
+//            }
+
+
+
+
+
+            std::cout<<"j="<<j<<std::endl;
+
+            id2=rev_mapR.at(j);
+
+            //sRs = siteContComprR->getSite(id2).toString();
+
+            sRs = (MSA_.at(nodeID_R).at(id2));
 
             Log2DM[i][j] = computeLK_M_local(node,
                                              sLs,
@@ -2622,12 +2661,14 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                                              fv_data_.at(nodeID_L).at(i),
                                              fv_data_.at(nodeID_R).at(j),
                                              Fv_M[i][j]);
+
             Log2DX[i][j] = computeLK_X_local(node,
                                              sLs,
                                              col_gap_Rs,
                                              fv_data_[nodeID_L].at(i),
                                              fv_data_[nodeID_R].at(j), // TODO: fv_GAP
                                              Fv_X[i][j]);
+
             Log2DY[i][j] = computeLK_Y_local(node,
                                              col_gap_Ls,
                                              sRs,
@@ -2638,10 +2679,13 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     }
     //============================================================
 
-    int id1,id2;
-
     // For each slice of the 3D cube, compute the values of each cell
+
+    bool_MXY[0][0][0]=true;
     for (int m = 1; m < d; m++) {
+
+        std::cout<<".....m="<<m<<std::endl;
+
 
         if (flag_exit) {
             break;
@@ -2684,6 +2728,15 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
             for (int j = 0; j < w; j++) {
 
+
+                LogM[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
+                LogX[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
+                LogY[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
+
+                bool_MXY[m_binary_this][i][j]=false;
+
+
+
                 id2 = mapR[j];
 
                 //sRs = (MSA_.at(nodeID_R).at(j));
@@ -2692,11 +2745,15 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 // MATCH
                 if( (i-1) >= 0 && (j-1) >= 0 ){
 
+                    bool_MXY[m_binary_this][i][j]=true;
+
                     valM_prev = LogM[m_binary_prev][i-1][j-1];
                     valX_prev = LogX[m_binary_prev][i-1][j-1];
                     valY_prev = LogY[m_binary_prev][i-1][j-1];
 
-                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    //if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    if(!bool_MXY[m_binary_prev][i-1][j-1]){
+
 
                         LogM[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
@@ -2723,11 +2780,14 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 // GAPX
                 if( (i-1) >=0 ){
 
+                    bool_MXY[m_binary_this][i][j]=true;
+
                     valM_prev = LogM[m_binary_prev][i-1][j];
                     valX_prev = LogX[m_binary_prev][i-1][j];
                     valY_prev = LogY[m_binary_prev][i-1][j];
 
-                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    //if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    if(!bool_MXY[m_binary_prev][i-1][j]){
 
                         LogX[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
@@ -2754,11 +2814,14 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 // GAPY
                 if( (j-1)>=0 ){
 
+                    bool_MXY[m_binary_this][i][j]=true;
+
                     valM_prev = LogM[m_binary_prev][i][j-1];
                     valX_prev = LogX[m_binary_prev][i][j-1];
                     valY_prev = LogY[m_binary_prev][i][j-1];
 
-                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    //if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    if(!bool_MXY[m_binary_prev][i][j-1]){
 
                         LogY[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
@@ -2807,15 +2870,20 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 TR[m][i][j] = max_val_index.index;
 
                 // If we reached the corner of the 3D cube, then:
-                if ( (i == (h - 1)) & (j == (w - 1))) {
+                //if ( (i == (h - 1)) && (j == (w - 1)) && (m>=h) && (m>=w) ) {
+                //if ( (i == (h - 1)) && (j == (w - 1))) {
+                if(bool_MXY[m_binary_this][i][j]){
                     // the algorithm is filling the last column of 3D DP matrix where
                     // all the characters are in the MSA
 
-                    max_of_MXY = max_val_index.val;
+                    //max_of_MXY = max_val_index.val;
 
-                    if (max_of_MXY > score) {
-                        score = max_of_MXY;
+                    if (max_val_index.val > score) {
+                        score = max_val_index.val;
                         level_max_lk = m;
+
+                        std::cout<<"["<<i<<","<<j<<","<<m<<"]";
+
                     }
 
                     //=====================================================================
@@ -2851,13 +2919,18 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     TracebackPath_t traceback_path(level_max_lk, ' ');
     id1 = h - 1;
     id2 = w - 1;
+    int idmL,idmR;
     for (int lev = level_max_lk; lev > 0; lev--) {
         int state = TR[lev][id1][id2];
         switch (state) {
             case MATCH_STATE:
 
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
-                fv_data_.at(nodeID).at(lev - 1) = Fv_M[id1][id2];
+
+                idmL = mapL.at(id1);
+                idmR = mapR.at(id2);
+
+                fv_data_.at(nodeID).at(lev - 1) = Fv_M[idmL][idmR];
 
                 id1 = id1 - 1;
                 id2 = id2 - 1;
@@ -2868,7 +2941,11 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
             case GAP_X_STATE:
 
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
-                fv_data_.at(nodeID).at(lev - 1) = Fv_X[id1][id2];
+
+                idmL = mapL.at(id1);
+                idmR = mapR.at(id2);
+
+                fv_data_.at(nodeID).at(lev - 1) = Fv_X[idmL][idmR];
 
                 id1 = id1 - 1;
 
@@ -2878,7 +2955,11 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
             case GAP_Y_STATE:
 
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
-                fv_data_.at(nodeID).at(lev - 1) = Fv_Y[id1][id2];
+
+                idmL = mapL.at(id1);
+                idmR = mapR.at(id2);
+
+                fv_data_.at(nodeID).at(lev - 1) = Fv_Y[idmL][idmR];
 
                 id2 = id2 - 1;
 
@@ -4198,6 +4279,10 @@ void pPIP::setFVleaf(bpp::Node *node){
 
     MSA_t MSA = MSA_.at(node->getId());
 
+    int len = MSA.size();
+    int ID = node->getId();
+
+    fv_data_[ID].resize(len);
     for (int i = 0; i < MSA.size(); i++) {
         MSAcolumn_t s = MSA.at(i);
 
@@ -4211,7 +4296,7 @@ void pPIP::setFVleaf(bpp::Node *node){
 
         fv(idx, 0) = 1.0;
 
-        fv_data_[node->getId()].at(i)=fv;
+        fv_data_[ID].at(i)=fv;
 
     }
 
@@ -4356,4 +4441,41 @@ void pPIPUtils::max_val_in_column(double ***M, int depth, int height, int width,
     }
 
 
+}
+
+std::vector<std::string> pPIPUtils::siteContainer_2_sequence_vector(std::vector<bpp::pPIP::MSAcolumn_t> &MSA){
+
+    std::vector<std::string> seqs;
+
+    int len = MSA.size();
+    int nseq = MSA.at(0).size();
+
+    seqs.resize(nseq);
+    for(int i=0;i<nseq;i++){
+        std::string s;
+        s.resize(len);
+        for(int j=0;j<len;j++){
+            s.at(j)=MSA.at(j).at(i);
+        }
+        seqs[i]=s;
+    }
+
+    return seqs;
+
+};
+
+std::vector<int> pPIPUtils::reverse_map(std::vector<int> &m){
+
+    std::vector<int> rev_m;
+
+    for(int i=0;i<m.size();i++){
+        if( (m.at(i)+1) > rev_m.size()){
+            if(m.at(i)-rev_m.size() > 0){
+                LOG(FATAL) << "\nERROR in reverse_map";
+            }
+            rev_m.push_back(i);
+        }
+    }
+
+    return rev_m;
 }
