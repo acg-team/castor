@@ -1838,6 +1838,14 @@ void RHomogeneousTreeLikelihood_PIP::setNhNgOnNode(SiteContainer &sites, int nod
     tree_->getNode(nodeID)->setBranchProperty("node_age",* unique_ptr<Clonable>(new BppString(std::to_string((double)getNodeAge(nodeID)))));
     tree_->getNode(nodeID)->setBranchProperty("nh", *unique_ptr<Clonable>(new BppString(std::to_string(columnsWithoutGaps))));
     tree_->getNode(nodeID)->setBranchProperty("ng", *unique_ptr<Clonable>(new BppString(std::to_string(columnsWithGaps))));
+
+    double ratio_nhng = 0;
+    if(columnsWithoutGaps>0 && columnsWithGaps>0){
+        ratio_nhng = (double) columnsWithoutGaps/columnsWithGaps;
+    }
+    tree_->getNode(nodeID)->setBranchProperty("ratio_nhng", *unique_ptr<Clonable>(new BppString(std::to_string(ratio_nhng))));
+
+
     //tree_->getNode(nodeID)->setBranchProperty("nh_w", *unique_ptr<Clonable>(new BppString(std::to_string((double)columnsWithoutGaps/getNodeAge(nodeID)))));
     //tree_->getNode(nodeID)->setBranchProperty("ng_w", *unique_ptr<Clonable>(new BppString(std::to_string((double)columnsWithGaps/getNodeAge(nodeID)))));
 
