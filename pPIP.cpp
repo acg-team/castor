@@ -2420,18 +2420,18 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     int nodeID_L = treemap_.right.at(vnode_left);
     int nodeID_R = treemap_.right.at(vnode_right);
 
-    /*
     // Compute dimensions of the 3D block at current internal node.
     h = MSA_.at(nodeID_L).size() + 1; // dimension of the alignment on the left side
     w = MSA_.at(nodeID_R).size() + 1; // dimension of the alignment on the right side
 
     unsigned long d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
-    */
 
+    /*
     h = MSA_.at(nodeID_L).size(); // dimension of the alignment on the left side
     w = MSA_.at(nodeID_R).size(); // dimension of the alignment on the right side
 
     unsigned long d = h + w + 1; // third dimension of the DP matrix
+    */
 
     // lk of a single empty column (full of gaps) with rate variation (gamma distribution)
     std::vector<double> pc0;
@@ -2491,9 +2491,9 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         bool_MXY[k].resize(h);
 
         for(int i = 0; i < h; i++){
-            LogM[k][i].resize(w,0);
-            LogX[k][i].resize(w,0);
-            LogY[k][i].resize(w,0);
+            LogM[k][i].resize(w,-std::numeric_limits<double>::infinity());
+            LogX[k][i].resize(w,-std::numeric_limits<double>::infinity());
+            LogY[k][i].resize(w,-std::numeric_limits<double>::infinity());
 
             bool_MXY[k][i].resize(w,false);
         }
@@ -2502,8 +2502,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     TR[0].resize(1);
     LK[0].resize(1);
 
-    TR[0][0].resize(1,0);
-    LK[0][0].resize(1,0);
+    TR[0][0].resize(1,STOP_STATE);
+    LK[0][0].resize(1,-std::numeric_limits<double>::infinity());
 
     //***************************************************************************************
     //***************************************************************************************
@@ -2557,6 +2557,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     std::map<MSAcolumn_t, double> lkX;
     std::map<MSAcolumn_t, double> lkY;
 
+    int id1,id2;
     //============================================================
     // early stop condition flag
     bool flag_exit = false;
@@ -2598,34 +2599,36 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     int w_compr = rev_mapR.size();
 
     // memory allocation
-    std::vector< vector< double > > Log2DM;
-    std::vector< vector< double > > Log2DX;
-    std::vector< vector< double > > Log2DY;
+    std::vector< vector<double> > Log2DM;
+    std::vector<double> Log2DX;
+    std::vector<double> Log2DY;
 
     std::vector< vector< bpp::ColMatrix<double> > > Fv_M;
-    std::vector< vector< bpp::ColMatrix<double> > > Fv_X;
-    std::vector< vector< bpp::ColMatrix<double> > > Fv_Y;
+    std::vector< bpp::ColMatrix<double> > Fv_X;
+    std::vector< bpp::ColMatrix<double> > Fv_Y;
 
     Log2DM.resize(h_compr);
     Log2DX.resize(h_compr);
-    Log2DY.resize(h_compr);
+    //Log2DY.resize(h_compr);
+    Log2DY.resize(w_compr);
 
     Fv_M.resize(h_compr);
     Fv_X.resize(h_compr);
-    Fv_Y.resize(h_compr);
+    //Fv_Y.resize(h_compr);
+    Fv_Y.resize(w_compr);
 
     for(int i = 0; i < h_compr; i++){
         Log2DM[i].resize(w_compr);
-        Log2DX[i].resize(w_compr);
-        Log2DY[i].resize(w_compr);
+        //Log2DX[i].resize(w_compr);
+        //Log2DY[i].resize(w_compr);
 
         Fv_M[i].resize(w_compr);
-        Fv_X[i].resize(w_compr);
-        Fv_Y[i].resize(w_compr);
+        //Fv_X[i].resize(w_compr);
+        //Fv_Y[i].resize(w_compr);
     }
 
-    int id1,id2;
-
+    //================================================================
+    // MATCH
     for (int i = 0; i < h_compr; i++) {
 
         std::cout<<"i="<<i<<std::endl;
@@ -2638,15 +2641,6 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
         for (int j = 0; j < w_compr; j++) {
 
-
-//            if(i==0 and j==3){
-//                std::cout<<"\n"<<node->getName()<<"\n";
-//            }
-
-
-
-
-
             std::cout<<"j="<<j<<std::endl;
 
             id2=rev_mapR.at(j);
@@ -2658,26 +2652,55 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
             Log2DM[i][j] = computeLK_M_local(node,
                                              sLs,
                                              sRs,
-                                             fv_data_.at(nodeID_L).at(i),
-                                             fv_data_.at(nodeID_R).at(j),
+                                             fv_data_.at(nodeID_L).at(id1),
+                                             fv_data_.at(nodeID_R).at(id2),
                                              Fv_M[i][j]);
 
-            Log2DX[i][j] = computeLK_X_local(node,
-                                             sLs,
-                                             col_gap_Rs,
-                                             fv_data_[nodeID_L].at(i),
-                                             fv_data_[nodeID_R].at(j), // TODO: fv_GAP
-                                             Fv_X[i][j]);
-
-            Log2DY[i][j] = computeLK_Y_local(node,
-                                             col_gap_Ls,
-                                             sRs,
-                                             fv_data_[nodeID_L].at(i), // TODO: fv_GAP
-                                             fv_data_[nodeID_R].at(j),
-                                             Fv_Y[i][j]);
         }
     }
-    //============================================================
+    //================================================================
+    // GAPX
+    bpp::ColMatrix<double> fv_gap_R;
+    fv_gap_R.resize(extendedAlphabetSize_,0);
+    //TODO compute fv_gap_R
+    for (int i = 0; i < h_compr; i++) {
+
+        std::cout << "i=" << i << std::endl;
+
+        id1 = rev_mapL.at(i);
+
+        sLs = (MSA_.at(nodeID_L).at(id1));
+
+        Log2DX[i] = computeLK_X_local(node,
+                                      sLs,
+                                      col_gap_Rs,
+                                      fv_data_[nodeID_L].at(id1),
+                                      fv_gap_R,
+                                      Fv_X[i]);
+    }
+    //================================================================
+    // GAPY
+    bpp::ColMatrix<double> fv_gap_L;
+    fv_gap_L.resize(extendedAlphabetSize_,0);
+    //TODO compute fv_gap_L
+    for (int j = 0; j < w_compr; j++) {
+
+        std::cout << "j=" << j << std::endl;
+
+        id2 = rev_mapR.at(j);
+
+        //sRs = siteContComprR->getSite(id2).toString();
+
+        sRs = (MSA_.at(nodeID_R).at(id2));
+
+        Log2DY[j] = computeLK_Y_local(node,
+                                      col_gap_Ls,
+                                      sRs,
+                                      fv_gap_L,
+                                      fv_data_[nodeID_R].at(id2),
+                                      Fv_Y[j]);
+    }
+    //================================================================
 
     // For each slice of the 3D cube, compute the values of each cell
 
@@ -2722,10 +2745,6 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         //***************************************************************************************
         for (int i = 0; i < h; i++) {
 
-            id1 = mapL[i];
-
-            //sLs = (MSA_.at(nodeID_L).at(i));
-
             for (int j = 0; j < w; j++) {
 
 
@@ -2735,15 +2754,12 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
                 bool_MXY[m_binary_this][i][j]=false;
 
-
-
-                id2 = mapR[j];
-
-                //sRs = (MSA_.at(nodeID_R).at(j));
-
                 //=======================================
                 // MATCH
                 if( (i-1) >= 0 && (j-1) >= 0 ){
+
+                    id1 = mapL[i-1];
+                    id2 = mapR[j-1];
 
                     bool_MXY[m_binary_this][i][j]=true;
 
@@ -2753,7 +2769,6 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
                     //if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
                     if(!bool_MXY[m_binary_prev][i-1][j-1]){
-
 
                         LogM[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
@@ -2780,6 +2795,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 // GAPX
                 if( (i-1) >=0 ){
 
+                    id1 = mapL[i-1];
+
                     bool_MXY[m_binary_this][i][j]=true;
 
                     valM_prev = LogM[m_binary_prev][i-1][j];
@@ -2797,7 +2814,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                                                         valM_prev,
                                                         valX_prev,
                                                         valY_prev,
-                                                        Log2DX[id1][id2],
+                                                        Log2DX[id1],
                                                         m);
 
                         if (std::isnan(valX_this)) {
@@ -2813,6 +2830,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 //=======================================
                 // GAPY
                 if( (j-1)>=0 ){
+
+                    id2 = mapR[j-1];
 
                     bool_MXY[m_binary_this][i][j]=true;
 
@@ -2831,7 +2850,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                                                         valM_prev,
                                                         valX_prev,
                                                         valY_prev,
-                                                        Log2DY[id1][id2],
+                                                        Log2DY[id2],
                                                         m);
 
                         if (std::isnan(valY_this)) {
@@ -2943,9 +2962,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
 
                 idmL = mapL.at(id1);
-                idmR = mapR.at(id2);
 
-                fv_data_.at(nodeID).at(lev - 1) = Fv_X[idmL][idmR];
+                fv_data_.at(nodeID).at(lev - 1) = Fv_X[idmL];
 
                 id1 = id1 - 1;
 
@@ -2956,10 +2974,9 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
 
-                idmL = mapL.at(id1);
                 idmR = mapR.at(id2);
 
-                fv_data_.at(nodeID).at(lev - 1) = Fv_Y[idmL][idmR];
+                fv_data_.at(nodeID).at(lev - 1) = Fv_Y[idmR];
 
                 id2 = id2 - 1;
 
@@ -4361,6 +4378,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
             setMSAleaves(node, sequences_->getSequence(seqname).toString());
 
             if(flag_fv) {
+                //TODO: shrinkdata
                 setFVleaf(node);
             }
 
