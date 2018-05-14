@@ -878,7 +878,7 @@ void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree *> trees, std::map<st
     }
     //... and create a translation map:
     map <string, size_t> translation;
-    size_t code = 0;
+    size_t code = 1;
     for (size_t i = 0; i < names.size(); i++) {
         translation[names[i]] = code++;
     }
