@@ -2386,6 +2386,8 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
 }
 void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
+    std::cout<<"\n"<<node->getName()<<"\n\n";
+
     // four levels of optimization:
     // 1) to pre-compute DP 2D
     // 2) to use LK (lk_down)
@@ -2525,7 +2527,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     TR[0][0][0] = STOP_STATE;
     LK[0][0][0] = -std::numeric_limits<double>::infinity();
 
-    double max_of_MXY = -std::numeric_limits<double>::infinity();                   // Max value found in the matrices M,X,Y
+    //double max_of_MXY = -std::numeric_limits<double>::infinity();                   // Max value found in the matrices M,X,Y
 
 
     unsigned long m_binary_this;            // Level Index during computation / current
@@ -2626,9 +2628,16 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
         for (int j = 0; j < w_compr; j++) {
 
+
+//            if(i==0 and j==3){
+//                std::cout<<"\n"<<node->getName()<<"\n";
+//            }
+
+
+
             std::cout<<"j="<<j<<std::endl;
 
-            id2=rev_mapL.at(j);
+            id2=rev_mapR.at(j);
 
             //sRs = siteContComprR->getSite(id2).toString();
 
@@ -2660,6 +2669,9 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
     // For each slice of the 3D cube, compute the values of each cell
     for (int m = 1; m < d; m++) {
+
+        std::cout<<".....m="<<m<<std::endl;
+
 
         if (flag_exit) {
             break;
@@ -2701,6 +2713,12 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
             //sLs = (MSA_.at(nodeID_L).at(i));
 
             for (int j = 0; j < w; j++) {
+
+
+                LogM[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
+                LogX[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
+                LogY[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
+
 
                 id2 = mapR[j];
 
@@ -2825,15 +2843,19 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 TR[m][i][j] = max_val_index.index;
 
                 // If we reached the corner of the 3D cube, then:
-                if ( (i == (h - 1)) & (j == (w - 1))) {
+                //if ( (i == (h - 1)) && (j == (w - 1)) && (m>=h) && (m>=w) ) {
+                if ( (i == (h - 1)) && (j == (w - 1))) {
                     // the algorithm is filling the last column of 3D DP matrix where
                     // all the characters are in the MSA
 
-                    max_of_MXY = max_val_index.val;
+                    //max_of_MXY = max_val_index.val;
 
-                    if (max_of_MXY > score) {
-                        score = max_of_MXY;
+                    if (max_val_index.val > score) {
+                        score = max_val_index.val;
                         level_max_lk = m;
+
+                        std::cout<<"["<<i<<","<<j<<","<<m<<"]";
+
                     }
 
                     //=====================================================================
@@ -2878,7 +2900,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
 
                 idmL = mapL.at(id1);
-                idmR = mapL.at(id2);
+                idmR = mapR.at(id2);
 
                 fv_data_.at(nodeID).at(lev - 1) = Fv_M[idmL][idmR];
 
@@ -2893,7 +2915,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
 
                 idmL = mapL.at(id1);
-                idmR = mapL.at(id2);
+                idmR = mapR.at(id2);
 
                 fv_data_.at(nodeID).at(lev - 1) = Fv_X[idmL][idmR];
 
@@ -2907,7 +2929,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 lk_down_.at(nodeID).at(lev - 1)=LK[lev][id1][id2];
 
                 idmL = mapL.at(id1);
-                idmR = mapL.at(id2);
+                idmR = mapR.at(id2);
 
                 fv_data_.at(nodeID).at(lev - 1) = Fv_Y[idmL][idmR];
 
