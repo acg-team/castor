@@ -2471,9 +2471,14 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     std::vector< vector< vector<int> > > TR;        // 3D traceback matrix
     std::vector< vector< vector<double> > > LK;     // 3D LK matrix, stores best lk at each position
 
+    std::vector< vector< vector<bool> > > bool_MXY;
+
     LogM.resize(2);
     LogX.resize(2);
     LogY.resize(2);
+
+    bool_MXY.resize(2);
+
     TR.resize(d);
     LK.resize(d);
 
@@ -2482,10 +2487,15 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         LogM[k].resize(h);
         LogX[k].resize(h);
         LogY[k].resize(h);
+
+        bool_MXY[k].resize(h);
+
         for(int i = 0; i < h; i++){
             LogM[k][i].resize(w,0);
             LogX[k][i].resize(w,0);
             LogY[k][i].resize(w,0);
+
+            bool_MXY[k][i].resize(w,false);
         }
     }
 
@@ -2635,6 +2645,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
 
 
+
+
             std::cout<<"j="<<j<<std::endl;
 
             id2=rev_mapR.at(j);
@@ -2668,6 +2680,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //============================================================
 
     // For each slice of the 3D cube, compute the values of each cell
+
+    bool_MXY[0][0][0]=true;
     for (int m = 1; m < d; m++) {
 
         std::cout<<".....m="<<m<<std::endl;
@@ -2719,6 +2733,9 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 LogX[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
                 LogY[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
+                bool_MXY[m_binary_this][i][j]=false;
+
+
 
                 id2 = mapR[j];
 
@@ -2728,11 +2745,15 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 // MATCH
                 if( (i-1) >= 0 && (j-1) >= 0 ){
 
+                    bool_MXY[m_binary_this][i][j]=true;
+
                     valM_prev = LogM[m_binary_prev][i-1][j-1];
                     valX_prev = LogX[m_binary_prev][i-1][j-1];
                     valY_prev = LogY[m_binary_prev][i-1][j-1];
 
-                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    //if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    if(!bool_MXY[m_binary_prev][i-1][j-1]){
+
 
                         LogM[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
@@ -2759,11 +2780,14 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 // GAPX
                 if( (i-1) >=0 ){
 
+                    bool_MXY[m_binary_this][i][j]=true;
+
                     valM_prev = LogM[m_binary_prev][i-1][j];
                     valX_prev = LogX[m_binary_prev][i-1][j];
                     valY_prev = LogY[m_binary_prev][i-1][j];
 
-                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    //if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    if(!bool_MXY[m_binary_prev][i-1][j]){
 
                         LogX[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
@@ -2790,11 +2814,14 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 // GAPY
                 if( (j-1)>=0 ){
 
+                    bool_MXY[m_binary_this][i][j]=true;
+
                     valM_prev = LogM[m_binary_prev][i][j-1];
                     valX_prev = LogX[m_binary_prev][i][j-1];
                     valY_prev = LogY[m_binary_prev][i][j-1];
 
-                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    //if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    if(!bool_MXY[m_binary_prev][i][j-1]){
 
                         LogY[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
@@ -2844,7 +2871,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
                 // If we reached the corner of the 3D cube, then:
                 //if ( (i == (h - 1)) && (j == (w - 1)) && (m>=h) && (m>=w) ) {
-                if ( (i == (h - 1)) && (j == (w - 1))) {
+                //if ( (i == (h - 1)) && (j == (w - 1))) {
+                if(bool_MXY[m_binary_this][i][j]){
                     // the algorithm is filling the last column of 3D DP matrix where
                     // all the characters are in the MSA
 
