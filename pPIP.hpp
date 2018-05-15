@@ -105,6 +105,10 @@ namespace bpp {
 
         void setFVleaf(bpp::Node *node);
 
+        void set_lk_leaf(bpp::Node *node);
+
+        void set_lk_empty_leaf(bpp::Node *node);
+
         void setRevMapComprSeqsleaf(bpp::Node *node);
 
     protected:
@@ -137,14 +141,13 @@ namespace bpp {
         std::vector<double> lambda_;                               // vector[rate] of lambda rate with Gamma distribution
         std::vector<double> mu_;                                   // vector[rate] of mu rate with Gamma distribution
         std::vector<double> nu_;                                   // vector[rate] of nu (normalizing constant) with Gamma distribution
-
         double tau_;                                               // total tree length
 
-        std::vector<vector<double>> lk_down_;                      //each node a vector of lk
-        std::vector<vector<double>> lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
-        std::vector< vector< bpp::ColMatrix<double> > > fv_data_;
-        std::vector< bpp::ColMatrix<double> > fv_empty_data_;
-        std::vector< vector<int> > rev_map_compressed_seqs_;
+        std::vector< vector<double> > lk_down_;                      //each node a vector of lk
+        std::vector< vector<double> > lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
+        std::vector< vector< vector< bpp::ColMatrix<double> > > > fv_data_; // [node][column][catg][fv]
+        std::vector< vector< bpp::ColMatrix<double> > > fv_empty_data_; // [node][catg][fv]
+        std::vector< vector<int> > rev_map_compressed_seqs_; // [node][idx]
 
         bpp::ColMatrix<double> pi_;                                // steady state base frequencies
 
@@ -330,12 +333,14 @@ namespace bpp {
                                  bool flag_RAM,
                                  bool flag_pattern);
 
-        double computeLK_M_local(bpp::Node *node,
+        double computeLK_M_local(int nodeID,
+                                 int sonLeftID,
+                                 int sonRightID,
                                  MSAcolumn_t &sL,
                                  MSAcolumn_t &sR,
-                                 bpp::ColMatrix<double> &fvL,
-                                 bpp::ColMatrix<double> &fvR,
-                                 bpp::ColMatrix<double> &Fv_M_ij);
+                                 std::vector< bpp::ColMatrix<double> > &fvL,
+                                 std::vector< bpp::ColMatrix<double> > &fvR,
+                                 std::vector< bpp::ColMatrix<double> > &Fv_M_ij);
 
         double computeLK_X_local(double NU,
                                  double valM,
@@ -351,12 +356,14 @@ namespace bpp {
                                  bool flag_RAM,
                                  bool flag_pattern);
 
-        double computeLK_X_local(bpp::Node *node,
+        double computeLK_X_local(int nodeID,
+                                 int sonLeftID,
+                                 int sonRightID,
                                  MSAcolumn_t &sL,
                                  MSAcolumn_t &col_gap_R,
-                                 bpp::ColMatrix<double> &fvL,
-                                 bpp::ColMatrix<double> &fvR,
-                                 bpp::ColMatrix<double> &Fv_X_ij);
+                                 std::vector< bpp::ColMatrix<double> > &fvL,
+                                 std::vector< bpp::ColMatrix<double> > &fvR,
+                                 std::vector< bpp::ColMatrix<double> > &Fv_X_ij);
 
         double computeLK_Y_local(double NU,
                                  double valM,
@@ -373,12 +380,14 @@ namespace bpp {
                                  bool flag_pattern);
 
 
-        double computeLK_Y_local(bpp::Node *node,
+        double computeLK_Y_local(int nodeID,
+                                 int sonLeftID,
+                                 int sonRightID,
                                  MSAcolumn_t &col_gap_L,
                                  MSAcolumn_t &sR,
-                                 bpp::ColMatrix<double> &fvL,
-                                 bpp::ColMatrix<double> &fvR,
-                                 bpp::ColMatrix<double> &Fv_Y_ij);
+                                 std::vector< bpp::ColMatrix<double> > &fvL,
+                                 std::vector< bpp::ColMatrix<double> > &fvR,
+                                 std::vector< bpp::ColMatrix<double> > &Fv_Y_ij);
 
         void DP3D_PIP(bpp::Node *node, bool local,bool flag_map);
 

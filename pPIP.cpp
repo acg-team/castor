@@ -1228,25 +1228,14 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
     return pc0;
 }
 
-double pPIP::computeLK_M_local(bpp::Node *node,
+double pPIP::computeLK_M_local(int nodeID,
+                               int sonLeftID,
+                               int sonRightID,
                                MSAcolumn_t &sL,
                                MSAcolumn_t &sR,
-                               bpp::ColMatrix<double> &fvL,
-                               bpp::ColMatrix<double> &fvR,
-                               bpp::ColMatrix<double> &Fv_M_ij) {
-
-    double log_pr;
-
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
-
-    int sonLeftID = treemap_.right.at(vnode_left);
-    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
-
-    int sonRightID = treemap_.right.at(vnode_right);
-    bpp::Node *sonRight = tree_->getNode(sonRightID);
-
-    int nodeID = node->getId();
+                               std::vector< bpp::ColMatrix<double> > &fvL,
+                               std::vector< bpp::ColMatrix<double> > &fvR,
+                               std::vector< bpp::ColMatrix<double> > &Fv_M_ij) {
 
     unsigned long idx;
 
@@ -1256,27 +1245,19 @@ double pPIP::computeLK_M_local(bpp::Node *node,
     double pr = 0.0;
     for (int catg = 0; catg < num_gamma_categories; catg++) {
 
-        // computes the recursive Felsenstein's peeling weight on the left subtree
-        //idx = 0;
-        //bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
-
-        // computes the recursive Felsenstein's peeling weight on the right subtree
-        //idx = 0;
-        //bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
-
         // PrfvL = Pr_L * fv_L
         bpp::ColMatrix<double> PrfvL;
-        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL.at(catg), PrfvL);
 
         // PrfvR = Pr_R * fv_R
         bpp::ColMatrix<double> PrfvR;
-        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR.at(catg), PrfvR);
 
         // fv = PrfvL * PrfvR
         bpp::ColMatrix<double> fv;
         bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
-        Fv_M_ij = fv;
+        Fv_M_ij[catg] = fv;
 
         // fv0 = pi * fv
         double fv0 = MatrixBppUtils::dotProd(fv, pi_);
@@ -1291,9 +1272,7 @@ double pPIP::computeLK_M_local(bpp::Node *node,
         pr += p;
     }
 
-    log_pr = log((long double) pr);
-
-    return log_pr;
+    return log((long double) pr);
 }
 
 double pPIP::computeLK_MXY_local(double NU,
@@ -1416,56 +1395,37 @@ double pPIP::computeLK_M_local(double NU,
     return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,flag_RAM);
 }
 
-double pPIP::computeLK_X_local(bpp::Node *node,
+double pPIP::computeLK_X_local(int nodeID,
+                               int sonLeftID,
+                               int sonRightID,
                                MSAcolumn_t &sL,
                                MSAcolumn_t &col_gap_R,
-                               bpp::ColMatrix<double> &fvL,
-                               bpp::ColMatrix<double> &fvR,
-                               bpp::ColMatrix<double> &Fv_X_ij) {
-
-    double log_pr;
-
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
-
-    int sonLeftID = treemap_.right.at(vnode_left);
-    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
-
-    int sonRightID = treemap_.right.at(vnode_right);
-    bpp::Node *sonRight = tree_->getNode(sonRightID);
-
-    int nodeID = node->getId();
-
-    unsigned long idx;
+                               std::vector< bpp::ColMatrix<double> > &fvL,
+                               std::vector< bpp::ColMatrix<double> > &fvR,
+                               std::vector< bpp::ColMatrix<double> > &Fv_X_ij) {
 
     // number of discrete gamma categories
     int num_gamma_categories = rDist_->getNumberOfCategories();
+
+    unsigned long idx;
 
     double pL;
     double pr = 0.0;
     for (int catg = 0; catg < num_gamma_categories; catg++) {
 
-        // computes the recursive Felsenstein's peeling weight on the left subtree
-        //idx = 0;
-        //bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
-
-        // computes the recursive Felsenstein's peeling weight on the right subtree
-        //idx = 0;
-        //bpp::ColMatrix<double> fvR = computeFVrec(sonRight, col_gap_R, idx, catg);
-
         // PrfvL = Pr_L * fv_L
         bpp::ColMatrix<double> PrfvL;
-        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL.at(catg), PrfvL);
 
         // PrfvR = Pr_R * fv_R
         bpp::ColMatrix<double> PrfvR;
-        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR.at(catg), PrfvR);
 
         // fv = PrfvL * PrfvR
         bpp::ColMatrix<double> fv;
         bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
-        Fv_X_ij = fv;
+        Fv_X_ij[catg] = fv;
 
         // fv0 = pi * fv
         double fv0 = MatrixBppUtils::dotProd(fv, pi_);
@@ -1476,19 +1436,22 @@ double pPIP::computeLK_X_local(bpp::Node *node,
                 betasNode_[nodeID][catg] * \
                 fv0;
 
-        if (sonLeft->isLeaf()) {
-            pL += compute_lk_down(sonLeft, sL, catg);
-        } else {
-            pL = lk_down_.at(sonLeftID).at(idx);
-            pL = exp(pL);
-        }
+//        if (sonLeft->isLeaf()) {
+//            pL += compute_lk_down(sonLeft, sL, catg);
+//        } else {
+//            pL = lk_down_.at(sonLeftID).at(idx);
+//            pL = exp(pL);
+//        }
 
-        pr += p0 + pL;
+        pr += p0;
     }
 
-    log_pr = log((long double) pr);
+    pL = lk_down_.at(sonLeftID).at(idx);
+    pL = exp(pL);
+    pr += pL;
 
-    return log_pr;
+    return log((long double) pr);
+
 }
 
 double pPIP::computeLK_X_local(double NU,
@@ -1612,30 +1575,14 @@ double pPIP::computeLK_X_local(double NU,
     return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,flag_RAM);
 }
 
-double pPIP::computeLK_Y_local(bpp::Node *node,
+double pPIP::computeLK_Y_local(int nodeID,
+                               int sonLeftID,
+                               int sonRightID,
                                MSAcolumn_t &col_gap_L,
                                MSAcolumn_t &sR,
-                               bpp::ColMatrix<double> &fvL,
-                               bpp::ColMatrix<double> &fvR,
-                               bpp::ColMatrix<double> &Fv_Y_ij) {
-
-    double log_pr;
-
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
-
-    int sonLeftID = treemap_.right.at(vnode_left);
-    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
-
-    int sonRightID = treemap_.right.at(vnode_right);
-    bpp::Node *sonRight = tree_->getNode(sonRightID);
-
-    int nodeID = node->getId();
-
-    // create left + right column
-    MSAcolumn_t s;
-    bool is_found;
-    std::map<MSAcolumn_t, double>::iterator it;
+                               std::vector< bpp::ColMatrix<double> > &fvL,
+                               std::vector< bpp::ColMatrix<double> > &fvR,
+                               std::vector< bpp::ColMatrix<double> > &Fv_Y_ij) {
 
     // number of discrete gamma categories
     int num_gamma_categories = rDist_->getNumberOfCategories();
@@ -1646,27 +1593,19 @@ double pPIP::computeLK_Y_local(bpp::Node *node,
     double pr = 0.0;
     for (int catg = 0; catg < num_gamma_categories; catg++) {
 
-        // computes the recursive Felsenstein's peeling weight on the left subtree
-        //idx = 0;
-        //bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, col_gap_L, idx, catg);
-
-        // computes the recursive Felsenstein's peeling weight on the right subtree
-        //idx = 0;
-        //bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
-
         // PrfvL = Pr_L * fv_L
         bpp::ColMatrix<double> PrfvL;
-        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL.at(catg), PrfvL);
 
         // PrfvR = Pr_R * fv_R
         bpp::ColMatrix<double> PrfvR;
-        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR.at(catg), PrfvR);
 
         // fv = PrfvL * PrfvR
         bpp::ColMatrix<double> fv;
         bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
-        Fv_Y_ij = fv;
+        Fv_Y_ij[catg] = fv;
 
         // fv0 = pi * fv
         double fv0 = MatrixBppUtils::dotProd(fv, pi_);
@@ -1677,20 +1616,16 @@ double pPIP::computeLK_Y_local(bpp::Node *node,
                     betasNode_[nodeID][catg] * \
                     fv0;
 
-        if(sonRight->isLeaf()){
-            pR = compute_lk_down(sonRight, sR, catg);
-        }else{
-            pR = lk_down_.at(sonRightID).at(idx);
-            pR = exp(pR);
-        }
-
-        pr += p0 + pR;
+        pr += p0;
 
     }
 
-    log_pr = log((long double) pr);
+    pR = lk_down_.at(sonRightID).at(idx);
+    pR = exp(pR);
+    pr += pR;
 
-    return log_pr;
+    return log((long double) pr);
+
 }
 
 double pPIP::computeLK_Y_local(double NU,
@@ -2372,6 +2307,10 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
     // converts traceback path into an MSA
     build_MSA(node, traceback_path);
 
+
+    //TODO: compress
+
+
     // assigns the sequence names of the new alligned sequences to the current MSA
     setMSAsequenceNames(node);
     //==========================================================================================
@@ -2552,91 +2491,80 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     int max_decrease_before_stop = 10;                              // hardcoded to prevent early-stops
     double prev_best_lk = -std::numeric_limits<double>::infinity(); // TODO: Check for the same bug in the other version
     //============================================================
-
-    auto sequencesL = new bpp::VectorSequenceContainer(alphabet_);
-    auto sequencesR = new bpp::VectorSequenceContainer(alphabet_);
-
-    std::vector<std::string> seqsL = pPIPUtils::siteContainer_2_sequence_vector(MSA_.at(nodeID_L));
-    for(int i=0;i<numLeavesLeft;i++){
-        sequencesL->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID_L).at(i),
-                                                         seqsL.at(i),
-                                                         alphabet_)), true);
-    }
-
-    std::vector<std::string> seqsR = pPIPUtils::siteContainer_2_sequence_vector(MSA_.at(nodeID_R));
-    for(int i=0;i<numLeavesRight;i++){
-        sequencesR->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID_R).at(i),
-                                                         seqsR.at(i),
-                                                         alphabet_)), true);
-    }
-
-    auto siteContainerL=new bpp::VectorSiteContainer(*sequencesL);
-    auto siteContainerR=new bpp::VectorSiteContainer(*sequencesR);
-    auto siteContComprL=bpp::PatternTools::shrinkSiteSet(*siteContainerL);
-    auto siteContComprR=bpp::PatternTools::shrinkSiteSet(*siteContainerR);
-    auto mapL = bpp::PatternTools::getIndexes(*siteContainerL,*siteContComprL);
-    auto mapR = bpp::PatternTools::getIndexes(*siteContainerR,*siteContComprR);
+//    auto sequencesL = new bpp::VectorSequenceContainer(alphabet_);
+//    auto sequencesR = new bpp::VectorSequenceContainer(alphabet_);
+//
+//    std::vector<std::string> seqsL = pPIPUtils::siteContainer_2_sequence_vector(MSA_.at(nodeID_L));
+//    for(int i=0;i<numLeavesLeft;i++){
+//        sequencesL->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID_L).at(i),
+//                                                         seqsL.at(i),
+//                                                         alphabet_)), true);
+//    }
+//
+//    std::vector<std::string> seqsR = pPIPUtils::siteContainer_2_sequence_vector(MSA_.at(nodeID_R));
+//    for(int i=0;i<numLeavesRight;i++){
+//        sequencesR->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID_R).at(i),
+//                                                         seqsR.at(i),
+//                                                         alphabet_)), true);
+//    }
+//
+//    auto siteContainerL=new bpp::VectorSiteContainer(*sequencesL);
+//    auto siteContainerR=new bpp::VectorSiteContainer(*sequencesR);
+//    auto siteContComprL=bpp::PatternTools::shrinkSiteSet(*siteContainerL);
+//    auto siteContComprR=bpp::PatternTools::shrinkSiteSet(*siteContainerR);
+//    auto mapL = bpp::PatternTools::getIndexes(*siteContainerL,*siteContComprL);
+//    auto mapR = bpp::PatternTools::getIndexes(*siteContainerR,*siteContComprR);
+//    std::vector<int> rev_mapL = pPIPUtils::reverse_map(mapL);
+//    std::vector<int> rev_mapR = pPIPUtils::reverse_map(mapR);
     //============================================================
     // first 2D-DP
 
-    std::vector<int> rev_mapL = pPIPUtils::reverse_map(mapL);
-    std::vector<int> rev_mapR = pPIPUtils::reverse_map(mapR);
-
-    int h_compr = rev_mapL.size();
-    int w_compr = rev_mapR.size();
+    int h_compr = rev_map_compressed_seqs_.at(nodeID_L).size();
+    int w_compr = rev_map_compressed_seqs_.at(nodeID_R).size();
 
     // memory allocation
     std::vector< vector<double> > Log2DM;
     std::vector<double> Log2DX;
     std::vector<double> Log2DY;
 
-    std::vector< vector< bpp::ColMatrix<double> > > Fv_M;
-    std::vector< bpp::ColMatrix<double> > Fv_X;
-    std::vector< bpp::ColMatrix<double> > Fv_Y;
+    std::vector< vector< vector< bpp::ColMatrix<double> > > > Fv_M;
+    std::vector< vector< bpp::ColMatrix<double> > > Fv_X;
+    std::vector< vector< bpp::ColMatrix<double> > > Fv_Y;
 
     Log2DM.resize(h_compr);
     Log2DX.resize(h_compr);
-    //Log2DY.resize(h_compr);
     Log2DY.resize(w_compr);
 
     Fv_M.resize(h_compr);
     Fv_X.resize(h_compr);
-    //Fv_Y.resize(h_compr);
     Fv_Y.resize(w_compr);
 
     for(int i = 0; i < h_compr; i++){
         Log2DM[i].resize(w_compr);
-        //Log2DX[i].resize(w_compr);
-        //Log2DY[i].resize(w_compr);
-
         Fv_M[i].resize(w_compr);
-        //Fv_X[i].resize(w_compr);
-        //Fv_Y[i].resize(w_compr);
+        for(int j = 0; j < w_compr; j++){
+            Fv_M[i][j].resize(num_gamma_categories);
+        }
     }
-
+    for(int i = 0; i < h_compr; i++){
+        Fv_X[i].resize(num_gamma_categories);
+    }
+    for(int j = 0; j < w_compr; j++){
+        Fv_Y[j].resize(num_gamma_categories);
+    }
     //================================================================
     // MATCH
     for (int i = 0; i < h_compr; i++) {
-
-        std::cout<<"i="<<i<<std::endl;
-
-        id1=rev_mapL.at(i);
-
-        //sLs = siteContComprL->getSite(id1).toString();
-
+        id1=rev_map_compressed_seqs_.at(nodeID_L).at(i);
         sLs = (MSA_.at(nodeID_L).at(id1));
 
         for (int j = 0; j < w_compr; j++) {
-
-            std::cout<<"j="<<j<<std::endl;
-
-            id2=rev_mapR.at(j);
-
-            //sRs = siteContComprR->getSite(id2).toString();
-
+            id2=rev_map_compressed_seqs_.at(nodeID_R).at(j);
             sRs = (MSA_.at(nodeID_R).at(id2));
 
-            Log2DM[i][j] = computeLK_M_local(node,
+            Log2DM[i][j] = computeLK_M_local(nodeID,
+                                             nodeID_L,
+                                             nodeID_R,
                                              sLs,
                                              sRs,
                                              fv_data_.at(nodeID_L).at(id1),
@@ -2648,14 +2576,12 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //================================================================
     // GAPX
     for (int i = 0; i < h_compr; i++) {
-
-        std::cout << "i=" << i << std::endl;
-
-        id1 = rev_mapL.at(i);
-
+        id1 = rev_map_compressed_seqs_.at(nodeID_L).at(i);
         sLs = (MSA_.at(nodeID_L).at(id1));
 
-        Log2DX[i] = computeLK_X_local(node,
+        Log2DX[i] = computeLK_X_local(nodeID,
+                                      nodeID_L,
+                                      nodeID_R,
                                       sLs,
                                       col_gap_Rs,
                                       fv_data_[nodeID_L].at(id1),
@@ -2665,16 +2591,12 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //================================================================
     // GAPY
     for (int j = 0; j < w_compr; j++) {
-
-        std::cout << "j=" << j << std::endl;
-
-        id2 = rev_mapR.at(j);
-
-        //sRs = siteContComprR->getSite(id2).toString();
-
+        id2 = rev_map_compressed_seqs_.at(nodeID_R).at(j);
         sRs = (MSA_.at(nodeID_R).at(id2));
 
-        Log2DY[j] = computeLK_Y_local(node,
+        Log2DY[j] = computeLK_Y_local(nodeID,
+                                      nodeID_L,
+                                      nodeID_R,
                                       col_gap_Ls,
                                       sRs,
                                       fv_empty_data_[nodeID_L],
@@ -2739,8 +2661,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 // MATCH
                 if( (i-1) >= 0 && (j-1) >= 0 ){
 
-                    id1 = mapL[i-1];
-                    id2 = mapR[j-1];
+                    id1 = rev_map_compressed_seqs_.at(nodeID_L).at(i-1);
+                    id2 = rev_map_compressed_seqs_.at(nodeID_R).at(j-1);
 
                     bool_MXY[m_binary_this][i][j]=true;
 
@@ -2776,7 +2698,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 // GAPX
                 if( (i-1) >=0 ){
 
-                    id1 = mapL[i-1];
+                    id1 = rev_map_compressed_seqs_.at(nodeID_L).at(i-1);
 
                     bool_MXY[m_binary_this][i][j]=true;
 
@@ -2812,7 +2734,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 // GAPY
                 if( (j-1)>=0 ){
 
-                    id2 = mapR[j-1];
+                    id2 = rev_map_compressed_seqs_.at(nodeID_R).at(j-1);
 
                     bool_MXY[m_binary_this][i][j]=true;
 
@@ -2932,8 +2854,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
                 lk_down_.at(nodeID).at(lev - 1)=LK3D[lev][id1][id2];
 
-                idmL = mapL.at(id1);
-                idmR = mapR.at(id2);
+                idmL = rev_map_compressed_seqs_.at(nodeID_L).at(id1);
+                idmR = rev_map_compressed_seqs_.at(nodeID_R).at(id2);
 
                 fv_data_.at(nodeID).at(lev - 1) = Fv_M[idmL][idmR];
 
@@ -2947,7 +2869,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
                 lk_down_.at(nodeID).at(lev - 1)=LK3D[lev][id1][id2];
 
-                idmL = mapL.at(id1);
+                idmL = rev_map_compressed_seqs_.at(nodeID_L).at(id1);
 
                 fv_data_.at(nodeID).at(lev - 1) = Fv_X[idmL];
 
@@ -2960,7 +2882,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
                 lk_down_.at(nodeID).at(lev - 1)=LK3D[lev][id1][id2];
 
-                idmR = mapR.at(id2);
+                idmR = rev_map_compressed_seqs_.at(nodeID_R).at(id2);
 
                 fv_data_.at(nodeID).at(lev - 1) = Fv_Y[idmR];
 
@@ -4286,9 +4208,15 @@ void pPIP::setFVleaf(bpp::Node *node) {
 
     MSA_t MSA = MSA_.at(nodeID);
 
+    size_t num_gamma_categories = rDist_->getNumberOfCategories();
+
     int lenComprSeqs = rev_map_compressed_seqs_.at(nodeID).size();
 
     fv_data_[nodeID].resize(lenComprSeqs);
+
+    for (int i = 0; i < lenComprSeqs; i++) {
+        fv_data_[nodeID][i].resize(num_gamma_categories);
+    }
 
     for (int i = 0; i < lenComprSeqs; i++) {
 
@@ -4303,20 +4231,70 @@ void pPIP::setFVleaf(bpp::Node *node) {
         idx = idx < 0 ? alphabetSize_ : idx;
 
         fv(idx, 0) = 1.0;
-
-        fv_data_[nodeID].at(i)=fv;
+        for (int catg = 0; catg < num_gamma_categories; catg++) {
+            fv_data_[nodeID].at(i).at(catg) = fv;
+        }
 
     }
-
 
     bpp::ColMatrix<double> fv;
     fv.resize(extendedAlphabetSize_, 1);
     bpp::MatrixTools::fill(fv, 0.0);
     fv(alphabetSize_, 0) = 1.0;
 
-    fv_empty_data_[nodeID]=fv;
+    fv_empty_data_.resize(num_gamma_categories);
+    for (int catg = 0; catg < num_gamma_categories; catg++) {
+        fv_empty_data_[nodeID].at(catg) = fv;
+    }
 
 }
+
+void pPIP::set_lk_leaf(bpp::Node *node) {
+
+    int nodeID = node->getId();
+
+    size_t num_gamma_categories = rDist_->getNumberOfCategories();
+
+    int len = rev_map_compressed_seqs_.at(nodeID).size();
+    for(int i = 0; i < len; i++) {
+        double p = 0.0;
+        for (int catg = 0; catg < num_gamma_categories; catg++) {
+
+            double fv0 = MatrixBppUtils::dotProd(fv_data_[nodeID].at(i).at(catg), pi_);
+
+            p += rDist_->getProbability((size_t) catg) * \
+                       iotasNode_[nodeID][catg] * \
+                       betasNode_[nodeID][catg] * \
+                       fv0;
+        }
+
+        lk_down_.at(nodeID).at(i) = p;
+
+    }
+
+}
+
+void pPIP::set_lk_empty_leaf(bpp::Node *node) {
+
+    int nodeID = node->getId();
+
+    size_t num_gamma_categories = rDist_->getNumberOfCategories();
+
+    double p = 0.0;
+    for (int catg = 0; catg < num_gamma_categories; catg++) {
+
+        double fv0 = MatrixBppUtils::dotProd(fv_empty_data_[nodeID].at(catg), pi_);
+
+//        p += rDist_->getProbability((size_t) catg) * ( \
+//                   iotasNode_[nodeID][catg] - \
+//                   iotasNode_[nodeID][catg] * betasNode_[nodeID][catg]\
+//                   iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0);
+    }
+
+    //lk_empty_down_.at(nodeID) = p;
+
+}
+
 void pPIP::setRevMapComprSeqsleaf(bpp::Node *node){
 
     int nodeID = node->getId();
@@ -4403,6 +4381,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
                 //TODO: shrinkdata
                 setRevMapComprSeqsleaf(node);
                 setFVleaf(node);
+                set_lk_leaf(node);
             }
 
         } else {
