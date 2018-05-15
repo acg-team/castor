@@ -634,7 +634,7 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
             setAData_[nodeID].first.at(i) = (getNodeDescCountForASite(node, i) == nonGaps_);
             DVLOG(3) << "setInsertionHistories [setA] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << setAData_[nodeID].first.at(i);
 
-
+            /*
             // Set attributes on the node
             if (i == (nbDistinctSites_ - 1)) {
 
@@ -674,6 +674,7 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
 
             }
 
+             */
         }
 
 
@@ -1872,7 +1873,6 @@ void RHomogeneousTreeLikelihood_PIP::setNhNgOnNode(SiteContainer &sites, int nod
 
     //tree_->getNode(nodeID)->setBranchProperty("nh_w", *unique_ptr<Clonable>(new BppString(std::to_string((double)columnsWithoutGaps/getNodeAge(nodeID)))));
     //tree_->getNode(nodeID)->setBranchProperty("ng_w", *unique_ptr<Clonable>(new BppString(std::to_string((double)columnsWithGaps/getNodeAge(nodeID)))));
-
 
 }
 
