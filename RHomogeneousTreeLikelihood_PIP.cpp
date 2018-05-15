@@ -1768,7 +1768,7 @@ void RHomogeneousTreeLikelihood_PIP::computeInDelDispersionOnTree(const SiteCont
                     for (auto &sonItem:subsetAlignmentOnNode[sonID])
                         subsetAlignmentOnNode[nodeID].push_back(sonItem);
                 }
-            }
+
 
             // get SubAlignment
             SiteContainer *subAlignment = getSubAlignment(sites, subsetAlignmentOnNode[nodeID]);
@@ -1777,8 +1777,8 @@ void RHomogeneousTreeLikelihood_PIP::computeInDelDispersionOnTree(const SiteCont
             setNhNgOnNode(*subAlignment, nodeID);
 
             delete subAlignment;
+            }
 
-        //}
     }
 }
 
@@ -1802,6 +1802,36 @@ void RHomogeneousTreeLikelihood_PIP::setNhNgOnNode(SiteContainer &sites, int nod
     int columnsWithGaps = 0;
     int columnsWithoutGaps = 0;
     // remove all the gap/unknown columns
+    int exploredSites = 0;
+    size_t originalSitesSize = sites.getNumberOfSites();
+    size_t currSitePosition = 0;
+
+    while (exploredSites<originalSitesSize){
+
+        int numGapsSeen = 0;
+        int numCharSeen = 0;
+
+        for (unsigned long s = 0; s < sites.getNumberOfSequences(); s++) {
+
+            int currentChar = sites.getSite(currSitePosition).getValue(s);
+
+            if (currentChar == gapCode) {
+                numGapsSeen++;
+            } else {
+                numCharSeen++;
+            }
+        }
+
+        if (numGapsSeen == sites.getSite(currSitePosition).size()) {
+            sites.deleteSite(currSitePosition);
+
+        }else{
+            currSitePosition++;
+        }
+        exploredSites++;
+
+    }
+
     for (unsigned long i = 0; i < sites.getNumberOfSites(); i++) {
 
         int numGapsSeen = 0;
@@ -1817,14 +1847,7 @@ void RHomogeneousTreeLikelihood_PIP::setNhNgOnNode(SiteContainer &sites, int nod
                 numCharSeen++;
             }
 
-
         }
-
-        if (numGapsSeen == sites.getSite(i).size()) {
-            sites.removeSite(i);
-            continue;
-        }
-
         // Count columns with gaps and columns without gaps
         if (numGapsSeen > 0) {
             columnsWithGaps++;
@@ -1832,6 +1855,7 @@ void RHomogeneousTreeLikelihood_PIP::setNhNgOnNode(SiteContainer &sites, int nod
         } else {
             columnsWithoutGaps++;
         }
+
         //LOG_IF(FATAL, !nonGapSeen || !nonUnkownSeen) << "Column #" << i + 1 << " of the alignment contains only gaps. Please remove it and try again!";
     }
 
