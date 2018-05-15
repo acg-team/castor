@@ -56,17 +56,17 @@ JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name
     //LOG(INFO) << "Parsing options:";
     params_ = bpp::AttributesTools::parseOptions(argc, argv);
     bool showversion = bpp::ApplicationTools::getBooleanParameter("version", params_, false, "", true, 3);
-    bpp::ApplicationTools::warningLevel = bpp::ApplicationTools::getIntParameter("--warning", params_, 0, "", true, 3);
-    bool noint = bpp::ApplicationTools::getBooleanParameter("--noninteractive", params_, false, "", true, 3);
+    bpp::ApplicationTools::warningLevel = bpp::ApplicationTools::getIntParameter("warning", params_, 0, "", true, 3);
+    bool noint = bpp::ApplicationTools::getBooleanParameter("noninteractive", params_, false, "", true, 3);
     bpp::ApplicationTools::interactive = !noint;
 
-    seed_ = bpp::ApplicationTools::getParameter<long>("--seed", params_, -1, "", true, 3);
+    seed_ = bpp::ApplicationTools::getParameter<long>("seed", params_, -1, "", true, 3);
     if (seed_ >= 0) {
         bpp::RandomTools::setSeed(seed_);
 
     }else{
-        std::srand(std::time(nullptr));
-        seed_ = std::rand();
+        unsigned int time_ui = (unsigned int) std::time(NULL);
+        seed_ = time_ui;
         bpp::RandomTools::setSeed(seed_);
     }
 
