@@ -108,18 +108,21 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves() {
         case tshlib::TreeSearchHeuristics::hillclimbing:
 
             // fill array with [min value, max_value] number of nodes in the tree
-            std::vector<int> node_ids(utree_->listVNodes.size());
-            std::iota(node_ids.begin(), node_ids.end(), 0);
+            //std::vector<int> node_ids(utree_->listVNodes.size());
+            //std::iota(node_ids.begin(), node_ids.end(), 0);
 
             // shuffle the array
-            std::random_device rd;
-            std::mt19937 e{rd()};
-            std::shuffle(node_ids.begin(), node_ids.end(), e);
+            //std::random_device rd;
+            //std::mt19937 e{rd()};
+            //std::shuffle(node_ids.begin(), node_ids.end(), e);
+
+            std::vector<tshlib::VirtualNode *> pickedNodes((int)search_startingnodes);
+            RandomTools::getSample(utree_->listVNodes,pickedNodes);
 
             // Generate candidate list of possible moves given the node topology and the rearrangement operation type
-            for (int i = 0; i < search_startingnodes; i++) {
-
-                VirtualNode *node = utree_->listVNodes.at(node_ids.at(i));
+            //for (int i = 0; i < search_startingnodes; i++) {
+            for(auto &node:pickedNodes){
+                //VirtualNode *node = utree_->listVNodes.at(node_ids.at(i));
 
                 // Print node description with neighbors
                 //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
