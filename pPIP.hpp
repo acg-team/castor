@@ -109,7 +109,7 @@ namespace bpp {
 
         void set_lk_empty_leaf(bpp::Node *node);
 
-        void setRevMapComprSeqsleaf(bpp::Node *node);
+        void compressMSA(bpp::Node *node);
 
     protected:
 
@@ -147,6 +147,7 @@ namespace bpp {
         std::vector< vector<double> > lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
         std::vector< vector< vector< bpp::ColMatrix<double> > > > fv_data_; // [node][column][catg][fv]
         std::vector< vector< bpp::ColMatrix<double> > > fv_empty_data_; // [node][catg][fv]
+        std::vector< vector<int> > map_compressed_seqs_; // [node][idx]
         std::vector< vector<int> > rev_map_compressed_seqs_; // [node][idx]
 
         bpp::ColMatrix<double> pi_;                                // steady state base frequencies
@@ -305,10 +306,17 @@ namespace bpp {
 
         double compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
-        std::vector<double> computeLK_GapColumn_local(bpp::Node *node,
-                                                      MSAcolumn_t &sL,
-                                                      MSAcolumn_t &sR,
-                                                      bool flag_RAM);
+        std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
+                                                            MSAcolumn_t col_gap_Ls,
+                                                            MSAcolumn_t col_gap_Rs,
+                                                            bool flag_RAM);
+
+        std::vector<double> computeLK_GapColumn_local(int nodeID,
+                                                      int sonLeftID,
+                                                      int sonRightID,
+                                                      std::vector< bpp::ColMatrix<double> > &fvL,
+                                                      std::vector< bpp::ColMatrix<double> > &fvR,
+                                                      std::vector< bpp::ColMatrix<double> > &Fv_gap);
 
         double compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
