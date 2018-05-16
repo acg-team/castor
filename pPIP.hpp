@@ -306,7 +306,7 @@ namespace bpp {
 
         double compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
-        std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
+        std::vector<double> computeLK_GapColumn_local(bpp::Node *node,
                                                             MSAcolumn_t col_gap_Ls,
                                                             MSAcolumn_t col_gap_Rs,
                                                             bool flag_RAM);

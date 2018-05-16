@@ -1237,8 +1237,8 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
                                                     MSAcolumn_t col_gap_Ls,
                                                     MSAcolumn_t col_gap_Rs,
                                                     bool flag_RAM) {
-
-    return std::vector<double> x;
+    std::vector<double> vec_x;
+    return  vec_x;
 
 }
 
