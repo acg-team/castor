@@ -1833,6 +1833,8 @@ void RHomogeneousTreeLikelihood_PIP::setNhNgOnNode(SiteContainer &sites, int nod
 
     }
 
+    size_t purgedAlignmentSize = sites.getNumberOfSites();
+
     for (unsigned long i = 0; i < sites.getNumberOfSites(); i++) {
 
         int numGapsSeen = 0;
@@ -1865,14 +1867,21 @@ void RHomogeneousTreeLikelihood_PIP::setNhNgOnNode(SiteContainer &sites, int nod
     tree_->getNode(nodeID)->setBranchProperty("ng", *unique_ptr<Clonable>(new BppString(std::to_string(columnsWithGaps))));
 
     double ratio_nhng = 0;
+    double weighted_nh = 0;
+    double weighted_ng = 0;
+
     if(columnsWithoutGaps>0 && columnsWithGaps>0){
         ratio_nhng = (double) columnsWithoutGaps/columnsWithGaps;
+        weighted_nh = (double) columnsWithoutGaps/purgedAlignmentSize;
+        weighted_ng = (double) columnsWithGaps/purgedAlignmentSize;
     }
+
     tree_->getNode(nodeID)->setBranchProperty("ratio_nhng", *unique_ptr<Clonable>(new BppString(std::to_string(ratio_nhng))));
+    tree_->getNode(nodeID)->setBranchProperty("nh_weighted", *unique_ptr<Clonable>(new BppString(std::to_string(weighted_nh))));
+    tree_->getNode(nodeID)->setBranchProperty("ng_weighted", *unique_ptr<Clonable>(new BppString(std::to_string(weighted_ng))));
 
+    tree_->getNode(nodeID)->setBranchProperty("align_size", *unique_ptr<Clonable>(new BppString(std::to_string(purgedAlignmentSize))));
 
-    //tree_->getNode(nodeID)->setBranchProperty("nh_w", *unique_ptr<Clonable>(new BppString(std::to_string((double)columnsWithoutGaps/getNodeAge(nodeID)))));
-    //tree_->getNode(nodeID)->setBranchProperty("ng_w", *unique_ptr<Clonable>(new BppString(std::to_string((double)columnsWithGaps/getNodeAge(nodeID)))));
 
 }
 
