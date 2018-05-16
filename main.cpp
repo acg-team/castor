@@ -646,9 +646,9 @@ int main(int argc, char *argv[]) {
             // Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_local = true;
             bool flag_RAM = false;
-            bool flag_map = false;
+            bool flag_map = true;
             bool flag_pattern = false;
-            bool flag_fv = true;
+            bool flag_fv = false;
 
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
