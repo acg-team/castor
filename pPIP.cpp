@@ -113,7 +113,14 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     lk_down_.resize(numNodes);
     lk_empty_down_.resize(numNodes);
     fv_data_.resize(numNodes);
+
+    //======================================
     fv_empty_data_.resize(numNodes);
+    for(int i = 0; i < numNodes; i++){
+        fv_empty_data_[i].resize(numCatg);
+    }
+    //======================================
+
     map_compressed_seqs_.resize(numNodes);
     rev_map_compressed_seqs_.resize(numNodes);
 
@@ -159,7 +166,7 @@ const Alphabet *pPIP::getAlphabet() const {
     return alphabet_;
 }
 
-bool pPIP::is_inside(unsigned long x0, unsigned long y0, unsigned long xf, unsigned long yf, unsigned long xt, unsigned long yt) {
+bool pPIP::is_inside(int x0, int y0, int xf, int yf, int xt, int yt) {
 
     if ((xt < x0) || (yt > y0) || (xt > xf) || (yt < yf)) {
         return false;
@@ -172,13 +179,13 @@ bool pPIP::is_inside(unsigned long x0, unsigned long y0, unsigned long xf, unsig
     return true;
 }
 
-void pPIP::set_indeces_M(unsigned long &up_corner_i,
-                         unsigned long &up_corner_j,
-                         unsigned long &bot_corner_i,
-                         unsigned long &bot_corner_j,
-                         unsigned long level,
-                         unsigned long h,
-                         unsigned long w) {
+void pPIP::set_indeces_M(int &up_corner_i,
+                         int &up_corner_j,
+                         int &bot_corner_i,
+                         int &bot_corner_j,
+                         int level,
+                         int h,
+                         int w) {
 
     if (level == 0) {
         up_corner_i = 0;
@@ -194,13 +201,13 @@ void pPIP::set_indeces_M(unsigned long &up_corner_i,
 
 }
 
-void pPIP::set_indeces_X(unsigned long &up_corner_i,
-                         unsigned long &up_corner_j,
-                         unsigned long &bot_corner_i,
-                         unsigned long &bot_corner_j,
-                         unsigned long level,
-                         unsigned long h,
-                         unsigned long w) {
+void pPIP::set_indeces_X(int &up_corner_i,
+                         int &up_corner_j,
+                         int &bot_corner_i,
+                         int &bot_corner_j,
+                         int level,
+                         int h,
+                         int w) {
 
     if (level == 0) {
         up_corner_i = 0;
@@ -216,13 +223,13 @@ void pPIP::set_indeces_X(unsigned long &up_corner_i,
 
 }
 
-void pPIP::set_indeces_Y(unsigned long &up_corner_i,
-                         unsigned long &up_corner_j,
-                         unsigned long &bot_corner_i,
-                         unsigned long &bot_corner_j,
-                         unsigned long level,
-                         unsigned long h,
-                         unsigned long w) {
+void pPIP::set_indeces_Y(int &up_corner_i,
+                         int &up_corner_j,
+                         int &bot_corner_i,
+                         int &bot_corner_j,
+                         int level,
+                         int h,
+                         int w) {
 
     if (level == 0) {
         up_corner_i = 0;
@@ -238,15 +245,15 @@ void pPIP::set_indeces_Y(unsigned long &up_corner_i,
 
 }
 
-signed long pPIP::get_indices_M(unsigned long nx,
-                                unsigned long ny,
-                                unsigned long up_corner_i,
-                                unsigned long up_corner_j,
-                                unsigned long bot_corner_i,
-                                unsigned long bot_corner_j,
-                                unsigned long m,
-                                unsigned long h,
-                                unsigned long w) {
+signed long pPIP::get_indices_M(int nx,
+                                int ny,
+                                int up_corner_i,
+                                int up_corner_j,
+                                int bot_corner_i,
+                                int bot_corner_j,
+                                int m,
+                                int h,
+                                int w) {
 
     signed long idx;
 
@@ -254,7 +261,7 @@ signed long pPIP::get_indices_M(unsigned long nx,
 
     if (is_inside(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, nx, ny)) {
 
-        unsigned long dx, sx;
+        int dx, sx;
 
         dx = nx - up_corner_i + 1;
 
@@ -269,15 +276,15 @@ signed long pPIP::get_indices_M(unsigned long nx,
 
 }
 
-signed long pPIP::get_indices_X(unsigned long nx,
-                                unsigned long ny,
-                                unsigned long up_corner_i,
-                                unsigned long up_corner_j,
-                                unsigned long bot_corner_i,
-                                unsigned long bot_corner_j,
-                                unsigned long m,
-                                unsigned long h,
-                                unsigned long w) {
+signed long pPIP::get_indices_X(int nx,
+                                int ny,
+                                int up_corner_i,
+                                int up_corner_j,
+                                int bot_corner_i,
+                                int bot_corner_j,
+                                int m,
+                                int h,
+                                int w) {
 
     signed long idx;
 
@@ -285,7 +292,7 @@ signed long pPIP::get_indices_X(unsigned long nx,
 
     if (is_inside(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, nx, ny)) {
 
-        unsigned long dx, sx;
+        int dx, sx;
 
         dx = nx - up_corner_i + 1;
 
@@ -300,15 +307,15 @@ signed long pPIP::get_indices_X(unsigned long nx,
 
 }
 
-signed long pPIP::get_indices_Y(unsigned long nx,
-                                unsigned long ny,
-                                unsigned long up_corner_i,
-                                unsigned long up_corner_j,
-                                unsigned long bot_corner_i,
-                                unsigned long bot_corner_j,
-                                unsigned long m,
-                                unsigned long h,
-                                unsigned long w) {
+signed long pPIP::get_indices_Y(int nx,
+                                int ny,
+                                int up_corner_i,
+                                int up_corner_j,
+                                int bot_corner_i,
+                                int bot_corner_j,
+                                int m,
+                                int h,
+                                int w) {
 
     signed long idx;
 
@@ -316,7 +323,7 @@ signed long pPIP::get_indices_Y(unsigned long nx,
 
     if (is_inside(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, nx, ny)) {
 
-        unsigned long dx, sx;
+        int dx, sx;
 
         dx = nx - up_corner_i + 1;
 
@@ -331,31 +338,31 @@ signed long pPIP::get_indices_Y(unsigned long nx,
 
 }
 
-void pPIP::set_indeces_T(unsigned long &up_corner_i,
-                         unsigned long &up_corner_j,
-                         unsigned long &bot_corner_i,
-                         unsigned long &bot_corner_j,
-                         unsigned long level,
-                         unsigned long h,
-                         unsigned long w) {
+void pPIP::set_indeces_T(int &up_corner_i,
+                         int &up_corner_j,
+                         int &bot_corner_i,
+                         int &bot_corner_j,
+                         int level,
+                         int h,
+                         int w) {
 
-    unsigned long up_corner_i_x;
-    unsigned long up_corner_i_y;
+    int up_corner_i_x;
+    int up_corner_i_y;
 
-    unsigned long up_corner_j_x;
-    unsigned long up_corner_j_y;
+    int up_corner_j_x;
+    int up_corner_j_y;
 
-    unsigned long bot_corner_i_x;
-    unsigned long bot_corner_i_y;
+    int bot_corner_i_x;
+    int bot_corner_i_y;
 
-    unsigned long bot_corner_j_x;
-    unsigned long bot_corner_j_y;
+    int bot_corner_j_x;
+    int bot_corner_j_y;
 
     set_indeces_X(up_corner_i_x, up_corner_j_x, bot_corner_i_x, bot_corner_j_x, level, h, w);
 
     set_indeces_Y(up_corner_i_y, up_corner_j_y, bot_corner_i_y, bot_corner_j_y, level, h, w);
 
-    unsigned long delta_i, delta_j;
+    int delta_i, delta_j;
 
     delta_i = bot_corner_i_x - up_corner_i_y;
     delta_j = up_corner_j_y - bot_corner_j_x;
@@ -374,14 +381,14 @@ void pPIP::set_indeces_T(unsigned long &up_corner_i,
 
 }
 
-void pPIP::reset_corner(unsigned long &up_corner_i,
-                        unsigned long &up_corner_j,
-                        unsigned long &bot_corner_i,
-                        unsigned long &bot_corner_j,
-                        unsigned long h,
-                        unsigned long w) {
+void pPIP::reset_corner(int &up_corner_i,
+                        int &up_corner_j,
+                        int &bot_corner_i,
+                        int &bot_corner_j,
+                        int h,
+                        int w) {
 
-    unsigned long delta;
+    int delta;
 
     if (up_corner_j >= w) {
         delta = up_corner_j - w + 1;
@@ -396,22 +403,22 @@ void pPIP::reset_corner(unsigned long &up_corner_i,
 
 }
 
-unsigned long pPIP::get_indices_T(unsigned long nx,
-                                  unsigned long ny,
-                                  unsigned long up_corner_i,
-                                  unsigned long up_corner_j,
-                                  unsigned long bot_corner_i,
-                                  unsigned long bot_corner_j,
-                                  unsigned long m,
-                                  unsigned long h,
-                                  unsigned long w) {
+int pPIP::get_indices_T(int nx,
+                        int ny,
+                        int up_corner_i,
+                        int up_corner_j,
+                        int bot_corner_i,
+                        int bot_corner_j,
+                        int m,
+                        int h,
+                        int w) {
 
     set_indeces_T(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
 
     reset_corner(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, h, w);
 
-    unsigned long idx;
-    unsigned long dx, sx;
+    int idx;
+    int dx, sx;
 
     dx = nx - up_corner_i + 1;
 
@@ -424,22 +431,25 @@ unsigned long pPIP::get_indices_T(unsigned long nx,
 }
 
 bool pPIP::index_of_max(double m,
-                       double x,
-                       double y,
-                       double epsilon,
-                       std::default_random_engine &generator,
-                       std::uniform_real_distribution<double> &distribution,
-                       max_val_str &max_val,
-                       bool flag_RAM) {
+                        double x,
+                        double y,
+                        double epsilon,
+                        std::default_random_engine &generator,
+                        std::uniform_real_distribution<double> &distribution,
+                        max_val_str &max_val,
+                        bool flag_RAM,
+                        int &index,
+                        double &val) {
 
     double random_number;
 
     if (std::isinf(m) & std::isinf(x) & std::isinf(y))
         if (flag_RAM) {
-            max_val.index = int(MATCH_STATE);
-            max_val.val = m;
+            max_val.index = int(STOP_STATE);
+            max_val.val = -std::numeric_limits<double>::infinity();
+            index = int(STOP_STATE);
+            val = -std::numeric_limits<double>::infinity();
             return true;
-            //return int(MATCH_STATE);
         } else{
             LOG(FATAL)
                     << "\nSomething went wrong during the comparison of m,x,y variables in function pPIP::index_of_max. Check call stack below. ";
@@ -461,11 +471,15 @@ bool pPIP::index_of_max(double m,
         if (m > y) {
             max_val.index = int(MATCH_STATE);
             max_val.val = m;
+            index = int(MATCH_STATE);
+            val = m;
             return true;
             //return int(MATCH_STATE);
         } else if (y > m) {
             max_val.index = int(GAP_Y_STATE);
             max_val.val = y;
+            index = int(GAP_Y_STATE);
+            val = y;
             return true;
             //return int(GAP_Y_STATE);
         } else {
@@ -475,11 +489,15 @@ bool pPIP::index_of_max(double m,
                 if (random_number < (1.0 / 2.0)) {
                     max_val.index = int(MATCH_STATE);
                     max_val.val = m;
+                    index = int(MATCH_STATE);
+                    val = m;
                     return true;
                     //return int(MATCH_STATE);
                 } else {
                     max_val.index = int(GAP_Y_STATE);
                     max_val.val = y;
+                    index = int(GAP_Y_STATE);
+                    val = y;
                     return true;
                     //return int(GAP_Y_STATE);
                 }
@@ -490,10 +508,17 @@ bool pPIP::index_of_max(double m,
         }
     } else if (x > m) {
         if (x > y) {
-            return int(GAP_X_STATE);
+            max_val.index = int(GAP_X_STATE);
+            max_val.val = x;
+            index = int(GAP_X_STATE);
+            val = x;
+            return true;
+            //return int(GAP_X_STATE);
         } else if (y > x) {
             max_val.index = int(GAP_Y_STATE);
             max_val.val = y;
+            index = int(GAP_Y_STATE);
+            val = y;
             return true;
             //return int(GAP_Y_STATE);
         } else {
@@ -503,11 +528,15 @@ bool pPIP::index_of_max(double m,
                 if (random_number < (1.0 / 2.0)) {
                     max_val.index = int(GAP_X_STATE);
                     max_val.val = x;
+                    index = int(GAP_X_STATE);
+                    val = x;
                     return true;
                     //return int(GAP_X_STATE);
                 } else {
                     max_val.index = int(GAP_Y_STATE);
                     max_val.val = y;
+                    index = int(GAP_Y_STATE);
+                    val = y;
                     return true;
                     //return int(GAP_Y_STATE);
                 }
@@ -525,17 +554,23 @@ bool pPIP::index_of_max(double m,
             if (random_number < (1.0 / 2.0)) {
                 max_val.index = int(MATCH_STATE);
                 max_val.val = m;
+                index = int(MATCH_STATE);
+                val = m;
                 return true;
                 //return int(MATCH_STATE);
             } else {
                 max_val.index = int(GAP_X_STATE);
                 max_val.val = x;
+                index = int(GAP_X_STATE);
+                val = x;
                 return true;
                 //return int(GAP_X_STATE);
             }
         } else if (y > mx) {
             max_val.index = int(GAP_Y_STATE);
             max_val.val = y;
+            index = int(GAP_Y_STATE);
+            val = y;
             return true;
             //return int(GAP_Y_STATE);
         } else {
@@ -545,16 +580,22 @@ bool pPIP::index_of_max(double m,
                 if (random_number < (1.0 / 3.0)) {
                     max_val.index = int(MATCH_STATE);
                     max_val.val = m;
+                    index = int(MATCH_STATE);
+                    val = m;
                     return true;
                     //return int(MATCH_STATE);
                 } else if (random_number < (2.0 / 3.0)) {
                     max_val.index = int(GAP_X_STATE);
                     max_val.val = x;
+                    index = int(GAP_X_STATE);
+                    val = x;
                     return true;
                     //return int(GAP_X_STATE);
                 } else {
                     max_val.index = int(GAP_Y_STATE);
                     max_val.val = y;
+                    index = int(GAP_Y_STATE);
+                    val = y;
                     return true;
                     //return int(GAP_Y_STATE);
                 }
@@ -602,12 +643,12 @@ double pPIP::max_of_three(double a, double b, double c, double epsilon,bool flag
 
 }
 
-bool pPIP::checkboundary(unsigned long up_corner_i,
-                         unsigned long up_corner_j,
-                         unsigned long bot_corner_i,
-                         unsigned long bot_corner_j,
-                         unsigned long h,
-                         unsigned long w) {
+bool pPIP::checkboundary(int up_corner_i,
+                         int up_corner_j,
+                         int bot_corner_i,
+                         int bot_corner_j,
+                         int h,
+                         int w) {
 
     if ((up_corner_i >= 0) & (up_corner_i < h) & \
        (up_corner_j >= 0) & (up_corner_j < w) & \
@@ -619,7 +660,7 @@ bool pPIP::checkboundary(unsigned long up_corner_i,
     return false;
 }
 
-std::string pPIP::createGapCol(unsigned long len) {
+std::string pPIP::createGapCol(int len) {
 
     // create an MSA column full of gaps
     std::string colMSA(len, '-');
@@ -640,14 +681,14 @@ void pPIP::build_MSA(bpp::Node *node, TracebackPath_t traceback_path) {
     MSA_t *MSA_L = &(MSA_.at(sonLeftID));
     MSA_t *MSA_R = &(MSA_.at(sonRightID));
 
-    unsigned long lenColL = MSA_L->at(0).size();
-    unsigned long lenColR = MSA_R->at(0).size();
+    int lenColL = MSA_L->at(0).size();
+    int lenColR = MSA_R->at(0).size();
 
     MSA_t MSA;
 
     int idx_i = 0;
     int idx_j = 0;
-    for (unsigned int j = 0; j < traceback_path.size(); j++) {
+    for (int j = 0; j < traceback_path.size(); j++) {
 
         if (traceback_path.at(j) == MATCH_CHAR) {
 
@@ -930,7 +971,7 @@ void pPIP::_getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNod
 
 }
 
-bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn_t &s, unsigned long &idx) {
+bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn_t &s, int &idx) {
 
     // TODO: indicator functions in the initialization, here only retrieval of values
 
@@ -953,7 +994,7 @@ bpp::ColMatrix<double> pPIP::fv_observed(MSAcolumn_t &s, unsigned long &idx) {
     return fv;
 }
 
-bpp::ColMatrix<double> pPIP::computeFVrec(bpp::Node *node, MSAcolumn_t &s, unsigned long &idx, int catg) {
+bpp::ColMatrix<double> pPIP::computeFVrec(bpp::Node *node, MSAcolumn_t &s, int &idx, int catg) {
 
     bpp::ColMatrix<double> fv;
 
@@ -994,7 +1035,7 @@ bpp::ColMatrix<double> pPIP::computeFVrec(bpp::Node *node, MSAcolumn_t &s, unsig
     return fv;
 }
 
-void pPIP::allgaps(bpp::Node *node, std::string &s, unsigned long &idx, bool &flag) {
+void pPIP::allgaps(bpp::Node *node, std::string &s, int &idx, bool &flag) {
 
     // flag is true if all the leaves of the subtree rooted in node contain a gap
 
@@ -1026,7 +1067,7 @@ void pPIP::allgaps(bpp::Node *node, std::string &s, unsigned long &idx, bool &fl
 
 double pPIP::compute_lk_gap_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
 
-    unsigned long idx;
+    int idx;
 
     int nodeID = node->getId();
 
@@ -1075,10 +1116,10 @@ double pPIP::compute_lk_gap_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
     idx = 0;
     allgaps(sonLeft, s, idx, flagL);
 
-    unsigned long ixx = idx;
+    int ixx = idx;
     allgaps(sonRight, s, idx, flagR);
 
-    unsigned long len;
+    int len;
 
     MSAcolumn_t sL;
     len = ixx;
@@ -1094,7 +1135,7 @@ double pPIP::compute_lk_gap_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
 
 double pPIP::compute_lk_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
 
-    unsigned long idx;
+    int idx;
     //bpp::ColMatrix<double> fvL;
     //bpp::ColMatrix<double> fvR;
 
@@ -1135,10 +1176,10 @@ double pPIP::compute_lk_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
     bool flagR = true;
     idx = 0;
     allgaps(sonLeft, s, idx, flagL);
-    unsigned long ixx = idx;
+    int ixx = idx;
     allgaps(sonRight, s, idx, flagR);
 
-    unsigned long len;
+    int len;
     if (flagR) {
         std::string sL;
         len = ixx;
@@ -1178,7 +1219,7 @@ std::vector<double> pPIP::computeLK_GapColumn_local(int nodeID,
 //    int sonRightID = treemap_.right.at(vnode_right);
 //    bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    unsigned long idx;
+    int idx;
 
     for (int catg = 0; catg < num_gamma_categories; catg++) {
 
@@ -1202,7 +1243,7 @@ std::vector<double> pPIP::computeLK_GapColumn_local(int nodeID,
         bpp::ColMatrix<double> fv;
         bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
-        Fv_gap[catg] = fv;
+        Fv_gap.at(catg) = fv;
 
         // fv0 = pi * fv
         double fv0 = MatrixBppUtils::dotProd(fv, pi_);
@@ -1215,13 +1256,13 @@ std::vector<double> pPIP::computeLK_GapColumn_local(int nodeID,
 //            if(sonLeft->isLeaf()){
 //                pL = compute_lk_gap_down(sonLeft, sL, catg);
 //            }else{
-                pL=lk_empty_down_[sonLeftID][catg];
-            //}
+        pL=lk_empty_down_[sonLeftID][catg];
+        //}
 //            if(sonRight->isLeaf()){
 //                pR = compute_lk_gap_down(sonRight, sR, catg);
 //            }else{
-                pR=lk_empty_down_[sonRightID][catg];
-            //}
+        pR=lk_empty_down_[sonRightID][catg];
+        //}
 //        }else{
 //            pL = compute_lk_gap_down(sonLeft, sL, catg);
 //            pR = compute_lk_gap_down(sonRight, sR, catg);
@@ -1234,12 +1275,77 @@ std::vector<double> pPIP::computeLK_GapColumn_local(int nodeID,
 }
 
 std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
-                                                    MSAcolumn_t col_gap_Ls,
-                                                    MSAcolumn_t col_gap_Rs,
+                                                    MSAcolumn_t &sL,
+                                                    MSAcolumn_t &sR,
                                                     bool flag_RAM) {
-    std::vector<double> vec_x;
-    return  vec_x;
 
+    // number of discrete gamma categories
+    int num_gamma_categories = rDist_->getNumberOfCategories();
+
+    // array of lk (for each gamma rate) of a single column full of gaps
+    std::vector<double> pc0;
+    pc0.resize(num_gamma_categories);
+
+    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+
+    int sonLeftID = treemap_.right.at(vnode_left);
+    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+    int sonRightID = treemap_.right.at(vnode_right);
+    bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+    for (int catg = 0; catg < num_gamma_categories; catg++) {
+
+        int idx;
+
+        // computes the recursive Felsenstein's peeling weight on the left subtree
+        idx = 0;
+        bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, sL, idx, catg);
+
+        // computes the recursive Felsenstein's peeling weight on the right subtree
+        idx = 0;
+        bpp::ColMatrix<double> fvR = computeFVrec(sonRight, sR, idx, catg);
+
+        // PrfvL = Pr_L * fv_L
+        bpp::ColMatrix<double> PrfvL;
+        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL, PrfvL);
+
+        // PrfvR = Pr_R * fv_R
+        bpp::ColMatrix<double> PrfvR;
+        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR, PrfvR);
+
+        // fv = PrfvL * PrfvR
+        bpp::ColMatrix<double> fv;
+        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+        // fv0 = pi * fv
+        double fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
+        // lk at the actual node (considered as root node => beta = 1.0)
+        double p0 = iotasNode_[node->getId()][catg] * fv0;
+
+        double pL,pR;
+        if (flag_RAM) {
+            if(sonLeft->isLeaf()){
+                pL = compute_lk_gap_down(sonLeft, sL, catg);
+            }else{
+                pL=lk_empty_down_[sonLeftID][catg];
+            }
+            if(sonRight->isLeaf()){
+                pR = compute_lk_gap_down(sonRight, sR, catg);
+            }else{
+                pR=lk_empty_down_[sonRightID][catg];
+            }
+        }else{
+            pL = compute_lk_gap_down(sonLeft, sL, catg);
+            pR = compute_lk_gap_down(sonRight, sR, catg);
+        }
+
+        pc0.at(catg) = p0 + pL + pR;
+    }
+
+    return pc0;
 }
 
 double pPIP::computeLK_M_local(int nodeID,
@@ -1251,7 +1357,7 @@ double pPIP::computeLK_M_local(int nodeID,
                                std::vector< bpp::ColMatrix<double> > &fvR,
                                std::vector< bpp::ColMatrix<double> > &Fv_M_ij) {
 
-    unsigned long idx;
+    int idx;
 
     // number of discrete gamma categories
     int num_gamma_categories = rDist_->getNumberOfCategories();
@@ -1290,11 +1396,11 @@ double pPIP::computeLK_M_local(int nodeID,
 }
 
 double pPIP::computeLK_MXY_local(double NU,
-                               double valM,
-                               double valX,
-                               double valY,
-                               double log_pr,
-                               unsigned long m) {
+                                 double valM,
+                                 double valX,
+                                 double valY,
+                                 double log_pr,
+                                 int m) {
 
     return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,true);
 }
@@ -1306,7 +1412,7 @@ double pPIP::computeLK_M_local(double NU,
                                bpp::Node *node,
                                MSAcolumn_t &sL,
                                MSAcolumn_t &sR,
-                               unsigned long m,
+                               int m,
                                std::map<MSAcolumn_t, double> &lkM,
                                std::vector< std::vector<double> > &lkM_pattern,
                                bool flag_map,
@@ -1352,7 +1458,7 @@ double pPIP::computeLK_M_local(double NU,
         if (is_found) {
             // is the first time that it computes the lk of this column
 
-            unsigned long idx;
+            int idx;
 
             // number of discrete gamma categories
             int num_gamma_categories = rDist_->getNumberOfCategories();
@@ -1473,7 +1579,7 @@ double pPIP::computeLK_X_local(double NU,
                                bpp::Node *node,
                                MSAcolumn_t &sL,
                                MSAcolumn_t &col_gap_R,
-                               unsigned long m,
+                               int m,
                                std::map<MSAcolumn_t, double> &lkX,
                                std::vector< std::vector<double> > &lkX_pattern,
                                bool flag_map,
@@ -1518,7 +1624,7 @@ double pPIP::computeLK_X_local(double NU,
         if (!is_found) {
             // is the first time that it computes the lk of this column
 
-            unsigned long idx;
+            int idx;
 
             // number of discrete gamma categories
             int num_gamma_categories = rDist_->getNumberOfCategories();
@@ -1599,7 +1705,7 @@ double pPIP::computeLK_Y_local(int nodeID,
     // number of discrete gamma categories
     int num_gamma_categories = rDist_->getNumberOfCategories();
 
-    unsigned long idx;
+    int idx;
 
     double pR;
     double pr = 0.0;
@@ -1647,7 +1753,7 @@ double pPIP::computeLK_Y_local(double NU,
                                bpp::Node *node,
                                MSAcolumn_t &col_gap_L,
                                MSAcolumn_t &sR,
-                               unsigned long m,
+                               int m,
                                std::map<MSAcolumn_t, double> &lkY,
                                std::vector< std::vector<double> > &lkY_pattern,
                                bool flag_map,
@@ -1696,7 +1802,7 @@ double pPIP::computeLK_Y_local(double NU,
             // number of discrete gamma categories
             int num_gamma_categories = rDist_->getNumberOfCategories();
 
-            unsigned long idx;
+            int idx;
 
             double pR;
             double pr = 0.0;
@@ -1792,7 +1898,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
         _setAllBetas(node, true);
     }
 
-    unsigned long h, w;
+    int h, w;
 
     // Get the IDs of the sons nodes given the current node
     int nodeID = node->getId();
@@ -1807,13 +1913,13 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
     h = MSA_.at(nodeID_L).size() + 1; // dimension of the alignment on the left side
     w = MSA_.at(nodeID_R).size() + 1; // dimension of the alignment on the right side
 
-    unsigned long d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
+    int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
     */
 
     h = MSA_.at(nodeID_L).size(); // dimension of the alignment on the left side
     w = MSA_.at(nodeID_R).size(); // dimension of the alignment on the right side
 
-    unsigned long d = h + w + 1; // third dimension of the DP matrix
+    int d = h + w + 1; // third dimension of the DP matrix
 
     // lk of a single empty column (full of gaps) with rate variation (gamma distribution)
     std::vector<double> pc0;
@@ -1824,8 +1930,8 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
     MSAcolumn_t col_gap_Ls; // left column full of gaps
     MSAcolumn_t col_gap_Rs; //right column full of gaps
 
-    unsigned long numLeavesLeft = seqNames_.at(nodeID_L).size(); // number of leaves in the left sub-tree
-    unsigned long numLeavesRight = seqNames_.at(nodeID_R).size(); // number of leaves in the right sub-tree
+    int numLeavesLeft = seqNames_.at(nodeID_L).size(); // number of leaves in the left sub-tree
+    int numLeavesRight = seqNames_.at(nodeID_R).size(); // number of leaves in the right sub-tree
 
     col_gap_Ls = createGapCol(numLeavesLeft); // create column of gaps for the left sub-tree
     col_gap_Rs = createGapCol(numLeavesRight); // create column of gaps for the right sub-tree
@@ -1983,23 +2089,24 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
     double max_of_MXY = -std::numeric_limits<double>::infinity();                   // Max value found in the matrices M,X,Y
 
 
-    unsigned long m_binary_this;            // Level Index during computation / current
-    unsigned long m_binary_prev;            // Level Index during computation / old
+    int m_binary_this;            // Level Index during computation / current
+    int m_binary_prev;            // Level Index during computation / old
 
     double valM_this,valM_prev;
     double valX_this,valX_prev;
     double valY_this,valY_prev;
 
-    //int tr; // traceback index
+    int tr; // traceback index
+    double val_tr;
 
     max_val_str max_val_index;
 
     double score = -std::numeric_limits<double>::infinity();        // best likelihood value at this node
 
     signed long level_max_lk = INT_MIN;                             // Depth in M,X,Y with the highest lk value
-    //unsigned long depth;
+    //int depth;
 
-    //unsigned long last_d = d - 1;
+    //int last_d = d - 1;
     std::map<MSAcolumn_t, double> lkM;
     std::map<MSAcolumn_t, double> lkX;
     std::map<MSAcolumn_t, double> lkY;
@@ -2072,18 +2179,18 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
                         if (local) {
 
                             valM_this = computeLK_M_local(NU,
-                                                    valM_prev,
-                                                    valX_prev,
-                                                    valY_prev,
-                                                    node,
-                                                    sLs,
-                                                    sRs,
-                                                    m,
-                                                    lkM,
-                                                    lkM_pattern,
-                                                    flag_map,
-                                                    true,
-                                                    flag_pattern);
+                                                          valM_prev,
+                                                          valX_prev,
+                                                          valY_prev,
+                                                          node,
+                                                          sLs,
+                                                          sRs,
+                                                          m,
+                                                          lkM,
+                                                          lkM_pattern,
+                                                          flag_map,
+                                                          true,
+                                                          flag_pattern);
 
 //                            if (std::isinf(valM_this)) {
 //                                LOG(FATAL)
@@ -2121,18 +2228,18 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
                         if (local) {
 
                             valX_this = computeLK_X_local(NU,
-                                                    valM_prev,
-                                                    valX_prev,
-                                                    valY_prev,
-                                                    node,
-                                                    sLs,
-                                                    col_gap_Rs,
-                                                    m,
-                                                    lkX,
-                                                    lkX_pattern,
-                                                    flag_map,
-                                                    true,
-                                                    flag_pattern);
+                                                          valM_prev,
+                                                          valX_prev,
+                                                          valY_prev,
+                                                          node,
+                                                          sLs,
+                                                          col_gap_Rs,
+                                                          m,
+                                                          lkX,
+                                                          lkX_pattern,
+                                                          flag_map,
+                                                          true,
+                                                          flag_pattern);
 
 //                            if (std::isinf(valX_this)) {
 //                                LOG(FATAL)
@@ -2170,18 +2277,18 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
                         if (local) {
 
                             valY_this = computeLK_Y_local(NU,
-                                                    valM_prev,
-                                                    valX_prev,
-                                                    valY_prev,
-                                                    node,
-                                                    col_gap_Ls,
-                                                    sRs,
-                                                    m,
-                                                    lkY,
-                                                    lkY_pattern,
-                                                    flag_map,
-                                                    true,
-                                                    flag_pattern);
+                                                          valM_prev,
+                                                          valX_prev,
+                                                          valY_prev,
+                                                          node,
+                                                          col_gap_Ls,
+                                                          sRs,
+                                                          m,
+                                                          lkY,
+                                                          lkY_pattern,
+                                                          flag_map,
+                                                          true,
+                                                          flag_pattern);
 
 //                            if (std::isinf(valY_this)) {
 //                                LOG(FATAL)
@@ -2212,7 +2319,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
                 //valY_this = fabs((long double) valY_this) < epsilon ? -std::numeric_limits<double>::infinity() : valY_this;
 
                 // Find which matrix contains the best value of LK found until this point.
-                index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution,max_val_index,true);
+                index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution,max_val_index,true,tr,val_tr);
 
                 switch (max_val_index.index) {
                     case MATCH_STATE:
@@ -2395,9 +2502,9 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //=======================================
 
     // Compute dimensions of the 3D block at current internal node.
-    unsigned long h = MSA_.at(nodeID_L).size() + 1; // dimension of the alignment on the left side
-    unsigned long w = MSA_.at(nodeID_R).size() + 1; // dimension of the alignment on the right side
-    unsigned long d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
+    int h = MSA_.at(nodeID_L).size() + 1; // dimension of the alignment on the left side
+    int w = MSA_.at(nodeID_R).size() + 1; // dimension of the alignment on the right side
+    int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
 
     // lk of a single empty column (full of gaps) with rate variation (gamma distribution)
     std::vector<double> pc0;
@@ -2408,8 +2515,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     MSAcolumn_t col_gap_Ls; // left column full of gaps
     MSAcolumn_t col_gap_Rs; //right column full of gaps
 
-    unsigned long numLeavesLeft = seqNames_.at(nodeID_L).size(); // number of leaves in the left sub-tree
-    unsigned long numLeavesRight = seqNames_.at(nodeID_R).size(); // number of leaves in the right sub-tree
+    int numLeavesLeft = seqNames_.at(nodeID_L).size(); // number of leaves in the left sub-tree
+    int numLeavesRight = seqNames_.at(nodeID_R).size(); // number of leaves in the right sub-tree
 
     col_gap_Ls = createGapCol(numLeavesLeft); // create column of gaps for the left sub-tree
     col_gap_Rs = createGapCol(numLeavesRight); // create column of gaps for the right sub-tree
@@ -2511,8 +2618,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //double max_of_MXY = -std::numeric_limits<double>::infinity();                   // Max value found in the matrices M,X,Y
 
 
-    unsigned long m_binary_this;            // Level Index during computation / current
-    unsigned long m_binary_prev;            // Level Index during computation / old
+    int m_binary_this;            // Level Index during computation / current
+    int m_binary_prev;            // Level Index during computation / old
 
     double valM_this,valM_prev;
     double valX_this,valX_prev;
@@ -2525,6 +2632,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     signed long level_max_lk = INT_MIN;                             // Depth in M,X,Y with the highest lk value
 
     int tr;
+    double max_of_3;
 
     int id1,id2;
     //============================================================
@@ -2597,13 +2705,13 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         sLs = (MSA_.at(nodeID_L).at(id1));
 
         Log2DX[i] = (computeLK_X_local(nodeID,
-                                      nodeID_L,
-                                      nodeID_R,
-                                      sLs,
-                                      col_gap_Rs,
-                                      fv_data_[nodeID_L].at(i),
-                                      fv_empty_data_[nodeID_R],
-                                      Fv_X[i]) + \
+                                       nodeID_L,
+                                       nodeID_R,
+                                       sLs,
+                                       col_gap_Rs,
+                                       fv_data_[nodeID_L].at(i),
+                                       fv_empty_data_[nodeID_R],
+                                       Fv_X[i]) + \
                                       exp(lk_down_.at(nodeID_L).at(i)));
 
     }
@@ -2614,13 +2722,13 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         sRs = (MSA_.at(nodeID_R).at(id2));
 
         Log2DY[j] = (computeLK_Y_local(nodeID,
-                                      nodeID_L,
-                                      nodeID_R,
-                                      col_gap_Ls,
-                                      sRs,
-                                      fv_empty_data_[nodeID_L],
-                                      fv_data_[nodeID_R].at(j),
-                                      Fv_Y[j]) + \
+                                       nodeID_L,
+                                       nodeID_R,
+                                       col_gap_Ls,
+                                       sRs,
+                                       fv_empty_data_[nodeID_L],
+                                       fv_data_[nodeID_R].at(j),
+                                       Fv_Y[j]) + \
                                       exp(lk_down_.at(nodeID_R).at(j)));
     }
     //================================================================
@@ -2691,19 +2799,19 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                     valX_prev = Log3DX[m_binary_prev][i-1][j-1];
                     valY_prev = Log3DY[m_binary_prev][i-1][j-1];
 
-                    //if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
-                    if(!bool_MXY[m_binary_prev][i-1][j-1]){
+                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    //if(!bool_MXY[m_binary_prev][i-1][j-1]){
 
                         Log3DM[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
                     }else{
 
                         valM_this = computeLK_MXY_local(NU,
-                                                      valM_prev,
-                                                      valX_prev,
-                                                      valY_prev,
-                                                      Log2DM[id1][id2],
-                                                      m);
+                                                        valM_prev,
+                                                        valX_prev,
+                                                        valY_prev,
+                                                        Log2DM[id1][id2],
+                                                        m);
 
                         if (std::isnan(valM_this)) {
                             LOG(FATAL)
@@ -2728,8 +2836,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                     valX_prev = Log3DX[m_binary_prev][i-1][j];
                     valY_prev = Log3DY[m_binary_prev][i-1][j];
 
-                    //if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
-                    if(!bool_MXY[m_binary_prev][i-1][j]){
+                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    //if(!bool_MXY[m_binary_prev][i-1][j]){
 
                         Log3DX[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
@@ -2765,8 +2873,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                     valX_prev = Log3DX[m_binary_prev][i][j-1];
                     valY_prev = Log3DY[m_binary_prev][i][j-1];
 
-                    //if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
-                    if(!bool_MXY[m_binary_prev][i][j-1]){
+                    if (std::isinf(valM_prev) && std::isinf(valX_prev) && std::isinf(valY_prev)) {
+                    //if(!bool_MXY[m_binary_prev][i][j-1]){
 
                         Log3DY[m_binary_this][i][j] = -std::numeric_limits<double>::infinity();
 
@@ -2795,9 +2903,10 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 valY_this = Log3DY[m_binary_this][i][j];
 
                 // Find which matrix contains the best value of LK found until this point.
-                tr=index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution,max_val_index,true);
+                index_of_max(valM_this, valX_this, valY_this, epsilon, generator, distribution,max_val_index,true,tr,max_of_3);
 
-                switch (max_val_index.index) {
+                //switch (max_val_index.index) {
+                switch (tr) {
                     case MATCH_STATE:
                         LK3D[m][i][j]=valM_this;
                         break;
@@ -2808,7 +2917,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                         LK3D[m][i][j]=valY_this;
                         break;
                     default:
-                        LOG(FATAL) <<"\nSomething went wrong in reading the TR value. TR is neither MATCH, nor GAPX, nor GAPY. ";
+                        LK3D[m][i][j]=-std::numeric_limits<double>::infinity();
+                        //LOG(FATAL) <<"\nSomething went wrong in reading the TR value. TR is neither MATCH, nor GAPX, nor GAPY. ";
                 }
 
                 //std::cout<<"TR["<<m<<"]["<<i<<"]["<<j<<"]\n";
@@ -2817,14 +2927,18 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 TR[m][i][j] = tr; //max_val_index.index;
 
                 // If we reached the corner of the 3D cube, then:
-                //if ( (i == (h - 1)) && (j == (w - 1)) && (m>=h) && (m>=w) ) {
+                if ( (i == (h - 1)) && (j == (w - 1)) && (m>=h) && (m>=w) ) {
                 //if ( (i == (h - 1)) && (j == (w - 1))) {
-                if(bool_MXY[m_binary_this][i][j]){
+                //if(bool_MXY[m_binary_this][i][j]){
                     // the algorithm is filling the last column of 3D DP matrix where
                     // all the characters are in the MSA
 
-                    double max_of_3 = max_of_three(valM_this, valX_this, valY_this, epsilon, true);
+                    //double max_of_3 = max_of_three(valM_this, valX_this, valY_this, epsilon, true);
                     //max_of_MXY = max_val_index.val;
+
+                    if(tr==(int)STOP_STATE){
+                        LOG(FATAL) <<"\nSomething went wrong in reading the TR value. TR is neither MATCH, nor GAPX, nor GAPY. ";
+                    }
 
                     //if (max_val_index.val > score) {
                     if (max_of_3 > score) {
@@ -2834,17 +2948,17 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
                     //=====================================================================
                     // early stop condition
-                    if (score < prev_best_lk) {
-                        prev_best_lk = score;
-                        counter_to_early_stop++;
-                        if (counter_to_early_stop > max_decrease_before_stop) {
-                            // if for max_decrease_before_stop consecutive times
-                            // the lk decrease then exit, the maximum lk has been reached
-                            flag_exit = true;
-                        }
-                    } else {
-                        counter_to_early_stop = 0;
-                    }
+//                    if (score < prev_best_lk) {
+//                        prev_best_lk = score;
+//                        counter_to_early_stop++;
+//                        if (counter_to_early_stop > max_decrease_before_stop) {
+//                            // if for max_decrease_before_stop consecutive times
+//                            // the lk decrease then exit, the maximum lk has been reached
+//                            flag_exit = true;
+//                        }
+//                    } else {
+//                        counter_to_early_stop = 0;
+//                    }
                     //=====================================================================
 
                 }
@@ -2993,12 +3107,14 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
         _setAllBetas(node, true);
     }
 
-    unsigned long up_corner_i;
-    unsigned long up_corner_j;
-    unsigned long bot_corner_i;
-    unsigned long bot_corner_j;
-    unsigned long lw;
-    unsigned long h, w;
+    int up_corner_i;
+    int up_corner_j;
+    int bot_corner_i;
+    int bot_corner_j;
+    int lw;
+    int h, w;
+
+    int tr;
 
     // Get the IDs of the sons nodes given the current node
     int nodeID = node->getId();
@@ -3012,7 +3128,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     h = MSA_.at(sequenceID_1).size() + 1; // dimension of the alignment on the left side
     w = MSA_.at(sequenceID_2).size() + 1; // dimension of the alignment on the riht side
 
-    unsigned long d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
+    int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
 
     // lk of a single empty column (full of gaps) with rate variation (gamma distribution)
     std::vector<double> pc0;
@@ -3023,8 +3139,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     MSAcolumn_t col_gap_Ls; // left column full of gaps
     MSAcolumn_t col_gap_Rs; //right column full of gaps
 
-    unsigned long numLeavesLeft = seqNames_.at(sequenceID_1).size(); // number of leaves in the left sub-tree
-    unsigned long numLeavesRight = seqNames_.at(sequenceID_2).size(); // number of leaves in the right sub-tree
+    int numLeavesLeft = seqNames_.at(sequenceID_1).size(); // number of leaves in the left sub-tree
+    int numLeavesRight = seqNames_.at(sequenceID_2).size(); // number of leaves in the right sub-tree
 
     col_gap_Ls = createGapCol(numLeavesLeft); // create column of gaps for the left sub-tree
     col_gap_Rs = createGapCol(numLeavesRight); // create column of gaps for the right sub-tree
@@ -3126,8 +3242,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
     signed long level_max_lk = INT_MIN;
     double val;
-    unsigned long m_binary_this;
-    unsigned long m_binary_prev;
+    int m_binary_this;
+    int m_binary_prev;
 
     double valM;
     double valX;
@@ -3136,19 +3252,19 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     signed long idx;
     max_val_str max_val_index;
 
-    unsigned long coordSeq_1;
-    unsigned long coordSeq_2;
-    unsigned long coordTriangle_this_i;
-    unsigned long coordTriangle_this_j;
-    unsigned long coordTriangle_prev_i;
-    unsigned long coordTriangle_prev_j;
+    int coordSeq_1;
+    int coordSeq_2;
+    int coordTriangle_this_i;
+    int coordTriangle_this_j;
+    int coordTriangle_prev_i;
+    int coordTriangle_prev_j;
 
     double score = -std::numeric_limits<double>::infinity();
 
-    unsigned long depth;
+    int depth;
 
-    unsigned long last_d = d - 1;
-    unsigned long size_tr, tr_up_i, tr_up_j, tr_down_i, tr_down_j;
+    int last_d = d - 1;
+    int size_tr, tr_up_i, tr_up_j, tr_down_i, tr_down_j;
     std::map<MSAcolumn_t, double> lkM;
     std::map<MSAcolumn_t, double> lkX;
     std::map<MSAcolumn_t, double> lkY;
@@ -3163,7 +3279,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     // ============================================================
     // For each slice of the 3D cube, compute the values of each cell
 
-    for (unsigned long m = 1; m < d; m++) {
+    for (int m = 1; m < d; m++) {
 
         if (flag_exit) {
             break;
@@ -3209,7 +3325,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                           h, w)) {
 
             lw = 0;
-            for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            for (int i = up_corner_i; i <= bot_corner_i; i++) {
 
                 coordTriangle_this_i = i;
                 coordSeq_1 = coordTriangle_this_i - 1;
@@ -3345,7 +3461,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                           h, w)) {
 
             lw = 0;
-            for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            for (int i = up_corner_i; i <= bot_corner_i; i++) {
 
                 coordTriangle_this_i = i;
                 coordTriangle_prev_i = coordTriangle_this_i - 1;
@@ -3478,7 +3594,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                           h, w)) {
 
             lw = 0;
-            for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            for (int i = up_corner_i; i <= bot_corner_i; i++) {
                 coordTriangle_this_i = i;
                 coordTriangle_prev_i = coordTriangle_this_i;
                 for (int j = 0; j <= lw; j++) {
@@ -3594,7 +3710,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
         }
 
-        size_tr = (unsigned long) ceil((tr_down_i - tr_up_i + 1) * (tr_up_j - tr_down_j + 1 + 1) / 2);
+        size_tr = (int) ceil((tr_down_i - tr_up_i + 1) * (tr_up_j - tr_down_j + 1 + 1) / 2);
 
         /*TODO: optimize size TR*/
         TR[m] = new int[size_tr]();
@@ -3612,7 +3728,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                           h, w)) {
 
             lw = 0;
-            for (unsigned long i = up_corner_i; i <= bot_corner_i; i++) {
+            for (int i = up_corner_i; i <= bot_corner_i; i++) {
                 coordTriangle_this_i = i;
                 for (int j = 0; j <= lw; j++) {
                     coordTriangle_this_j = up_corner_j - j;
@@ -3668,7 +3784,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
                     //int ttrr;
 
-                    index_of_max(mval, xval, yval, epsilon, generator, distribution,max_val_index,false);
+                    index_of_max(mval, xval, yval, epsilon, generator, distribution,max_val_index,false,tr,max_of_3);
 
                     idx = get_indices_T(coordTriangle_this_i,
                                         coordTriangle_this_j,
@@ -3790,8 +3906,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 //    }else{
 //    }
 //
-//    unsigned long lw;
-//    unsigned long h,w;
+//    int lw;
+//    int h,w;
 //
 //    auto sons = node->getSons();
 //
@@ -3803,7 +3919,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 //    h = MSA_.at(s1ID).size()+1;
 //    w = MSA_.at(s2ID).size()+1;
 //
-//    unsigned long d=(h-1)+(w-1)+1;
+//    int d=(h-1)+(w-1)+1;
 //
 //    double pc0;
 //
@@ -3812,8 +3928,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 //    std::string col_gap_Ls;
 //    std::string col_gap_Rs;
 //
-//    unsigned long numLeavesLeft = seqNames_.at(s1ID).size();
-//    unsigned long numLeavesRight = seqNames_.at(s2ID).size();
+//    int numLeavesLeft = seqNames_.at(s1ID).size();
+//    int numLeavesRight = seqNames_.at(s2ID).size();
 //
 //    col_gap_Ls=createGapCol(numLeavesLeft);
 //    col_gap_Rs=createGapCol(numLeavesRight);
@@ -3893,8 +4009,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 //
 //    signed long level_max_lk=INT_MIN;
 //    double val;
-//    unsigned long m_binary_this;
-//    unsigned long m_binary_prev;
+//    int m_binary_this;
+//    int m_binary_prev;
 //
 //    double valM;
 //    double valX;
@@ -3902,25 +4018,25 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 //
 //    signed long idx;
 //
-//    unsigned long coordSeq_1;
-//    unsigned long coordSeq_2;
-//    unsigned long coordTriangle_this_i;
-//    unsigned long coordTriangle_this_j;
-//    unsigned long coordTriangle_prev_i;
-//    unsigned long coordTriangle_prev_j;
+//    int coordSeq_1;
+//    int coordSeq_2;
+//    int coordTriangle_this_i;
+//    int coordTriangle_this_j;
+//    int coordTriangle_prev_i;
+//    int coordTriangle_prev_j;
 //
 //    double score=-std::numeric_limits<double>::infinity();
 //    int start_depth;
-//    unsigned long depth;
+//    int depth;
 //
 //    bool flag_exit=false;
-//    unsigned long last_d=d-1;
-//    unsigned long size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
+//    int last_d=d-1;
+//    int size_tr,tr_up_i,tr_up_j,tr_down_i,tr_down_j;
 //    std::map<std::string,double> lkM;
 //    std::map<std::string,double> lkX;
 //    std::map<std::string,double> lkY;
 //
-//    unsigned long m,i,j;
+//    int m,i,j;
 //
 //    for(m=1;m<d;m++) {
 //
@@ -4370,8 +4486,8 @@ void pPIP::compressMSA(bpp::Node *node) {
 
     for(int i = 0; i < seqs.size(); i++) {
         sequences->addSequence(*(new bpp::BasicSequence(seqNames_.at(nodeID).at(i),
-                                                    seqs.at(i),
-                                                    alphabet_)), true);
+                                                        seqs.at(i),
+                                                        alphabet_)), true);
     }
 
     auto siteContainer = new bpp::VectorSiteContainer(*sequences);
@@ -4436,7 +4552,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
 
         if (node->isLeaf()) {
 
-            std::string seqname = sequences_->getSequencesNames().at((unsigned long) vnode->vnode_seqid);
+            std::string seqname = sequences_->getSequencesNames().at((int) vnode->vnode_seqid);
 
             // associate the sequence name to the leaf node
             setMSAsequenceNames(node, seqname);
