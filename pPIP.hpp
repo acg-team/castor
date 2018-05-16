@@ -126,9 +126,9 @@ namespace bpp {
         bpp::SequenceContainer *sequences_;      // un-aligned input sequences
         bpp::DiscreteDistribution *rDist_;       // distribution for rate variation among sites
 
-        std::map<unsigned long, std::vector<double>> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
-        std::map<unsigned long, std::vector<double>> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
-        std::map<unsigned long, std::vector<bpp::RowMatrix<double> > >prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
+        std::map<int, std::vector<double>> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
+        std::map<int, std::vector<double>> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
+        std::map<int, std::vector<bpp::RowMatrix<double> > >prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
         std::vector<std::vector<std::string> > seqNames_;          // vector[nodeId] of sequence names (MSAs seq. names at each internal node) node
         std::vector<MSA_t> MSA_;                                   // vector[nodeId] MSA at each node
         std::vector<MSAensemble_t> MSAensemble_;                   // MSA ensemble at each node (for SB)
@@ -179,100 +179,100 @@ namespace bpp {
 
         void _getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNodes);
 
-        bool is_inside(unsigned long x0,
-                       unsigned long y0,
-                       unsigned long xf,
-                       unsigned long yf,
-                       unsigned long xt,
-                       unsigned long yt);
+        bool is_inside(int x0,
+                       int y0,
+                       int xf,
+                       int yf,
+                       int xt,
+                       int yt);
 
-        void set_indeces_M(unsigned long &up_corner_i,
-                           unsigned long &up_corner_j,
-                           unsigned long &bot_corner_i,
-                           unsigned long &bot_corner_j,
-                           unsigned long level,
-                           unsigned long h,
-                           unsigned long w);
+        void set_indeces_M(int &up_corner_i,
+                           int &up_corner_j,
+                           int &bot_corner_i,
+                           int &bot_corner_j,
+                           int level,
+                           int h,
+                           int w);
 
-        void set_indeces_X(unsigned long &up_corner_i,
-                           unsigned long &up_corner_j,
-                           unsigned long &bot_corner_i,
-                           unsigned long &bot_corner_j,
-                           unsigned long level,
-                           unsigned long h,
-                           unsigned long w);
+        void set_indeces_X(int &up_corner_i,
+                           int &up_corner_j,
+                           int &bot_corner_i,
+                           int &bot_corner_j,
+                           int level,
+                           int h,
+                           int w);
 
-        void set_indeces_Y(unsigned long &up_corner_i,
-                           unsigned long &up_corner_j,
-                           unsigned long &bot_corner_i,
-                           unsigned long &bot_corner_j,
-                           unsigned long level,
-                           unsigned long h,
-                           unsigned long w);
+        void set_indeces_Y(int &up_corner_i,
+                           int &up_corner_j,
+                           int &bot_corner_i,
+                           int &bot_corner_j,
+                           int level,
+                           int h,
+                           int w);
 
-        signed long get_indices_M(unsigned long nx,
-                                  unsigned long ny,
-                                  unsigned long up_corner_i,
-                                  unsigned long up_corner_j,
-                                  unsigned long bot_corner_i,
-                                  unsigned long bot_corner_j,
-                                  unsigned long m,
-                                  unsigned long h,
-                                  unsigned long w);
+        signed long get_indices_M(int nx,
+                                  int ny,
+                                  int up_corner_i,
+                                  int up_corner_j,
+                                  int bot_corner_i,
+                                  int bot_corner_j,
+                                  int m,
+                                  int h,
+                                  int w);
 
-        signed long get_indices_X(unsigned long nx,
-                                  unsigned long ny,
-                                  unsigned long up_corner_i,
-                                  unsigned long up_corner_j,
-                                  unsigned long bot_corner_i,
-                                  unsigned long bot_corner_j,
-                                  unsigned long m,
-                                  unsigned long h,
-                                  unsigned long w);
+        signed long get_indices_X(int nx,
+                                  int ny,
+                                  int up_corner_i,
+                                  int up_corner_j,
+                                  int bot_corner_i,
+                                  int bot_corner_j,
+                                  int m,
+                                  int h,
+                                  int w);
 
-        signed long get_indices_Y(unsigned long nx,
-                                  unsigned long ny,
-                                  unsigned long up_corner_i,
-                                  unsigned long up_corner_j,
-                                  unsigned long bot_corner_i,
-                                  unsigned long bot_corner_j,
-                                  unsigned long m,
-                                  unsigned long h,
-                                  unsigned long w);
+        signed long get_indices_Y(int nx,
+                                  int ny,
+                                  int up_corner_i,
+                                  int up_corner_j,
+                                  int bot_corner_i,
+                                  int bot_corner_j,
+                                  int m,
+                                  int h,
+                                  int w);
 
-        void set_indeces_T(unsigned long &up_corner_i,
-                           unsigned long &up_corner_j,
-                           unsigned long &bot_corner_i,
-                           unsigned long &bot_corner_j,
-                           unsigned long level,
-                           unsigned long h,
-                           unsigned long w);
+        void set_indeces_T(int &up_corner_i,
+                           int &up_corner_j,
+                           int &bot_corner_i,
+                           int &bot_corner_j,
+                           int level,
+                           int h,
+                           int w);
 
-        void reset_corner(unsigned long &up_corner_i,
-                          unsigned long &up_corner_j,
-                          unsigned long &bot_corner_i,
-                          unsigned long &bot_corner_j,
-                          unsigned long h,
-                          unsigned long w);
+        void reset_corner(int &up_corner_i,
+                          int &up_corner_j,
+                          int &bot_corner_i,
+                          int &bot_corner_j,
+                          int h,
+                          int w);
 
-        unsigned long get_indices_T(unsigned long nx,
-                                    unsigned long ny,
-                                    unsigned long up_corner_i,
-                                    unsigned long up_corner_j,
-                                    unsigned long bot_corner_i,
-                                    unsigned long bot_corner_j,
-                                    unsigned long m,
-                                    unsigned long h,
-                                    unsigned long w);
+        int get_indices_T(int nx,
+                          int ny,
+                          int up_corner_i,
+                          int up_corner_j,
+                          int bot_corner_i,
+                          int bot_corner_j,
+                          int m,
+                          int h,
+                          int w);
 
-        bool index_of_max(double m,
-                         double x,
-                         double y,
-                         double epsilon,
-                         std::default_random_engine &generator,
-                         std::uniform_real_distribution<double> &distribution,
-                         max_val_str &max_val,
-                         bool flag_RAM);
+        int index_of_max(double m,
+                          double x,
+                          double y,
+                          double epsilon,
+                          std::default_random_engine &generator,
+                          std::uniform_real_distribution<double> &distribution,
+                          max_val_str &max_val,
+                          bool flag_RAM);
 
         double max_of_three(double a,
                             double b,
@@ -280,14 +280,14 @@ namespace bpp {
                             double epsilon,
                             bool flag_RAM);
 
-        bool checkboundary(unsigned long up_corner_i,
-                           unsigned long up_corner_j,
-                           unsigned long bot_corner_i,
-                           unsigned long bot_corner_j,
-                           unsigned long h,
-                           unsigned long w);
+        bool checkboundary(int up_corner_i,
+                           int up_corner_j,
+                           int bot_corner_i,
+                           int bot_corner_j,
+                           int h,
+                           int w);
 
-        std::string createGapCol(unsigned long len);
+        std::string createGapCol(int len);
 
         void build_MSA(bpp::Node *node, std::string traceback_path);
 
@@ -297,11 +297,11 @@ namespace bpp {
 
         void setMSAleaves(bpp::Node *node,const std::string &sequence);
 
-        bpp::ColMatrix<double> fv_observed(MSAcolumn_t &s, unsigned long &idx);
+        bpp::ColMatrix<double> fv_observed(MSAcolumn_t &s, int &idx);
 
-        bpp::ColMatrix<double> computeFVrec(bpp::Node *node, MSAcolumn_t &s, unsigned long &idx, int catg);
+        bpp::ColMatrix<double> computeFVrec(bpp::Node *node, MSAcolumn_t &s, int &idx, int catg);
 
-        void allgaps(bpp::Node *node,MSAcolumn_t &s, unsigned long &idx,bool &flag);
+        void allgaps(bpp::Node *node,MSAcolumn_t &s, int &idx,bool &flag);
 
         double compute_lk_gap_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
@@ -313,11 +313,11 @@ namespace bpp {
         double compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
         double computeLK_MXY_local(double NU,
-                                       double valM,
-                                       double valX,
-                                       double valY,
-                                       double log_pr,
-                                       unsigned long m);
+                                   double valM,
+                                   double valX,
+                                   double valY,
+                                   double log_pr,
+                                   int m);
 
         double computeLK_M_local(double NU,
                                  double valM,
@@ -326,7 +326,7 @@ namespace bpp {
                                  bpp::Node *node,
                                  std::string &sL,
                                  std::string &sR,
-                                 unsigned long m,
+                                 int m,
                                  std::map<MSAcolumn_t, double> &lkM,
                                  std::vector< std::vector<double> > &lkM_pattern,
                                  bool flag_map,
@@ -349,7 +349,7 @@ namespace bpp {
                                  bpp::Node *node,
                                  MSAcolumn_t &sL,
                                  MSAcolumn_t &col_gap_R,
-                                 unsigned long m,
+                                 int m,
                                  std::map<MSAcolumn_t, double> &lkX,
                                  std::vector< std::vector<double> > &lkX_pattern,
                                  bool flag_map,
@@ -372,7 +372,7 @@ namespace bpp {
                                  bpp::Node *node,
                                  MSAcolumn_t &col_gap_L,
                                  MSAcolumn_t &sR,
-                                 unsigned long m,
+                                 int m,
                                  std::map<MSAcolumn_t, double> &lkY,
                                  std::vector< std::vector<double> > &lkY_pattern,
                                  bool flag_map,
