@@ -874,7 +874,7 @@ int main(int argc, char *argv[]) {
 
         // Export annotation file (tab separated values)
         std::string PAR_output_annotation_file = ApplicationTools::getAFilePath("output.annotation.file", jatiapp.getParams(), false, false, "", true, "", 1);
-        if (!(PAR_output_annotation_file.empty())) {
+        if (PAR_output_annotation_file.find("none") == std::string::npos) {
             ApplicationTools::displayResult("Output annotation to file", PAR_output_annotation_file);
             OutputUtils::writeTreeAnnotations2TSV(tree, PAR_output_annotation_file);
 
