@@ -558,7 +558,7 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
     // Calls the routine to compute the FV values
     computeTreeLikelihood();
 
-    computeInDelDispersionOnTree(*data_);
+    //computeInDelDispersionOnTree(*data_);
 
     minusLogLik_ = -getLogLikelihood();
 }
