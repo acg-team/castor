@@ -932,7 +932,7 @@ void OutputUtils::exportOutput(bpp::AbstractHomogeneousTreeLikelihood *tl,
     std::string estimate_filename = ApplicationTools::getAFilePath("output.estimates.file", params, false, false, "none", true);
     std::string estimate_format = ApplicationTools::getStringParameter("output.estimates.format", params, "json",  "", true, true);
 
-    if(!estimate_filename.empty()) {
+    if (estimate_filename.find("none") == std::string::npos) {
 
         size_t lastindex = estimate_filename.find_last_of(".");
         std::string rawname = estimate_filename.substr(0, lastindex);

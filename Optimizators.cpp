@@ -536,21 +536,39 @@ namespace bpp {
         } else if (finalMethod == "powell") {
             finalOptimizer = new PowellMultiDimensions(tl);
         } else if (finalMethod == "bfgs") {
+
             parametersToEstimate.matchParametersValues(tl->getParameters());
 
-            n = OptimizationTools::optimizeNumericalParameters(
-                    dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl),
-                    parametersToEstimate,
-                    backupListener.get(),
-                    nstep,
-                    tolerance / 10,
-                    nbEvalMax,
-                    messageHandler,
-                    profiler,
-                    reparam,
-                    optVerbose,
-                    optMethodDeriv,
-                    OptimizationTools::OPTIMIZATION_BFGS);
+            if ((optName == "D-Brent") || (optName == "D-BFGS")) {
+                n = OptimizationTools::optimizeNumericalParameters(
+                        dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl),
+                        parametersToEstimate,
+                        backupListener.get(),
+                        nstep,
+                        tolerance,
+                        nbEvalMax,
+                        messageHandler,
+                        profiler,
+                        reparam,
+                        optVerbose,
+                        optMethodDeriv,
+                        OptimizationTools::OPTIMIZATION_BFGS);
+            }else{
+                n = Optimizators::optimizeNumericalParametersUsingNumericalDerivatives(
+                        dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl), parametersToEstimate,
+                        backupListener.get(),
+                        nstep,
+                        tolerance,
+                        nbEvalMax,
+                        messageHandler,
+                        profiler,
+                        reparam,
+                        optVerbose,
+                        optMethodDeriv,
+                        OptimizationTools::OPTIMIZATION_BFGS);
+
+
+            }
 
         } else
             throw Exception("Unknown final optimization method: " + finalMethod);
@@ -847,6 +865,7 @@ namespace bpp {
         poptimizer->setMessageHandler(messageHandler);
         poptimizer->setMaximumNumberOfEvaluations(tlEvalMax);
         poptimizer->getStopCondition()->setTolerance(tolerance);
+        poptimizer->getDefaultStopCondition()->setTolerance(tolerance);
 
         // Optimize TreeLikelihood function:
         poptimizer->setConstraintPolicy(AutoParameter::CONSTRAINTS_AUTO);

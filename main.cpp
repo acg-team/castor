@@ -616,28 +616,6 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
-
-
-
-
-
-
-
-//            auto sequences = new bpp::VectorSequenceContainer(smodel->getAlphabet());
-//
-//            sequences->addSequence(*(new bpp::BasicSequence("s1", "ACGTATCG", smodel->getAlphabet())), true);
-//            sequences->addSequence(*(new bpp::BasicSequence("s2", "ACACACCT", smodel->getAlphabet())), true);
-//
-//            SiteContainer *sss=new bpp::VectorSiteContainer(*sequences);
-//
-//            SiteContainer * newSequences=bpp::PatternTools::shrinkSiteSet(*sss);
-//
-//
-//            auto idx = bpp::PatternTools::getIndexes(*sss,*newSequences);
-
-
-
-
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed());
 
             // Execute alignment on post-order node list
@@ -898,46 +876,6 @@ int main(int argc, char *argv[]) {
         // Write parameters to file (according to arguments)
         OutputUtils::exportOutput(tl, sites, jatiapp.getParams());
 
-        /*
-        string parametersFile = ApplicationTools::getAFilePath("output.estimates", jatiapp.getParams(), false, false, "none", true);
-        bool withAlias = ApplicationTools::getBooleanParameter("output.estimates.alias", jatiapp.getParams(), true, "", true, 0);
-
-        ApplicationTools::displayResult("Output estimates to file", parametersFile);
-
-
-        if (parametersFile != "none") {
-            StlOutputStream out(new ofstream(parametersFile.c_str(), ios::out));
-
-            int numParametersModel = 0;
-
-            numParametersModel += tree->getNumberOfNodes() - 1;
-
-            out << "# Log likelihood = ";
-            out.setPrecision(20) << (logL);
-            out.endLine();
-            out << "# Number of sites = ";
-            out.setPrecision(20) << sites->getNumberOfSites();
-            out.endLine();
-            out.endLine();
-            out << "# Substitution model parameters:";
-            out.endLine();
-
-            smodel->matchParametersValues(tl->getParameters());
-            numParametersModel += smodel->getNumberOfParameters();
-            PhylogeneticsApplicationTools::printParameters(smodel, out, 1, withAlias);
-
-            out.endLine();
-            (out << "# Rate distribution parameters:").endLine();
-            rDist->matchParametersValues(tl->getParameters());
-            numParametersModel += rDist->getNumberOfParameters();
-            PhylogeneticsApplicationTools::printParameters(rDist, out, withAlias);
-            out.endLine();
-            out << "# Total number of parameters: " << numParametersModel;
-            out.endLine();
-        }
-
-
-        */
 
         // Compute support measures
         std::string PAR_support = ApplicationTools::getStringParameter("support", jatiapp.getParams(), "", "", true, true);
