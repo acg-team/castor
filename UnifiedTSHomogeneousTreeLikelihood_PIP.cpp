@@ -190,6 +190,10 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(std::vecto
     // remap the virtual nodes to the bpp nodes
     std::vector<Node *> extractionNodes = UtreeBppUtils::remapNodeLists(listNodes, tree_, treemap_);
 
+    // Fire topology change
+    std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
+    fireTopologyChange(ponl);
+
     // Optimise branches involved in the tree rearrangement
     fireBranchOptimisation(extractionNodes);
 

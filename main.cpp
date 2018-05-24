@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
         } else {
             jatiapp.banner();
             jatiapp.startTimer();
-            LOG(INFO) << "Execution started!";
+            //LOG(INFO) << "Execution started!";
         };
 
         bpp::ApplicationTools::displayResult("Random seed set to", jatiapp.getSeed());

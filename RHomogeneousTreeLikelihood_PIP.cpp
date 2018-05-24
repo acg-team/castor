@@ -134,9 +134,6 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
 
     data_ = PatternTools::getSequenceSubset(sites, *tree_->getRootNode());
 
-    //tau_ = tree_->getTotalLength();
-    //computeNu();
-
     if (verbose_)
         ApplicationTools::displayTask("Initializing data structure");
 
@@ -183,24 +180,8 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
         indicatorFun_[node->getId()].resize(nbDistinctSites_);
     }
 
-    // Initialise vector of likelihood nodes
-    //likelihoodNodes_.clear();
-    //computePostOrderNodeList(tree_->getRootNode());
-
-    //tau_ = tree_->getTotalLength();
-    //computeNu();
-
-    // Set all iotas
-    //setAllIotas();
-
-    // Set all betas
-    //setAllBetas();
-
     // Initialise vectors for storing insertion histories values
     initialiseInsertionHistories();
-
-    // Set indicator function on leafs
-    //setIndicatorFunction(sites);
 
     // Set indicator function on leafs
     setIndicatorFunction(*data_);                                                 //TODO: indicator function must be computed on: topology changes
@@ -506,6 +487,7 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
 
     // Detect if the fireParameterChanged call was invoked during the branch-length optimisation requested during the tree-search
     bool onTopologyChange = false;
+
     if (params.size() != getParameters().size()) {
         onTopologyChange = true;
     }
@@ -545,13 +527,13 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
 
     if (onTopologyChange) {
         // Set the likelihoodNodeList to the postorder one
-        std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
-        setLikelihoodNodes(ponl);
+        //std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
+        //setLikelihoodNodes(ponl);
 
         //setIndicatorFunction(*data_);
 
         // Set ancestral histories
-        setInsertionHistories(*data_);
+        //setInsertionHistories(*data_);
 
     }
 
