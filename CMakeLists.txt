@@ -75,17 +75,17 @@ set(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wshadow -Weffc++ -O0 -g")
 SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g")
 
-SET(CMAKE_CXX_FLAGS_DEBUGINTEL "-O0 -g")
-SET(CMAKE_C_FLAGS_DEBUGINTEL "-Wall -Wshadow -O0 -g")
+SET(CMAKE_CXX_FLAGS_DEBUGINTEL "-O0 -g -xHost")
+SET(CMAKE_C_FLAGS_DEBUGINTEL "-Wall -Wshadow -O0 -g -xHost")
 
-SET(CMAKE_CXX_FLAGS_RELWITHINFOINTEL "-O3 -g -DNDEBUG")
-SET(CMAKE_C_FLAGS_RELWITHINFOINTEL "-O3 -g -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_RELWITHINFOINTEL "-O3 -g -xHost -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELWITHINFOINTEL "-O3 -g -xHost -DNDEBUG")
 
 SET(CMAKE_CXX_FLAGS_RELEASE "-O3  -g0 -DNDEBUG")
 SET(CMAKE_C_FLAGS_RELEASE "-O3  -g0 -DNDEBUG")
 
-SET(CMAKE_CXX_FLAGS_INTEL "-O3  -g0 -DNDEBUG")
-SET(CMAKE_C_FLAGS_INTEL "-O3  -g0 -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_INTEL "-O3  -g0 -xHost -DNDEBUG")
+SET(CMAKE_C_FLAGS_INTEL "-O3  -g0 -xHost -DNDEBUG")
 
 string(FIND "${CMAKE_BUILD_TYPE}" "static" STATIC)
 
@@ -124,7 +124,11 @@ if (${CMAKE_PREFIX_PATH})
     message(STATUS "Looking for headers in the following directory: ${CMAKE_PREFIX_PATH}/include")
 endif ()
 
-set(Boost_USE_STATIC_LIBS        OFF) # only find static libs
+if (STATIC GREATER 0)
+set(Boost_USE_STATIC_LIBS        ON) # only find static libs
+else ()
+set(Boost_USE_STATIC_LIBS        OFF) # only find dynamic libs
+endif()
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost REQUIRED COMPONENTS system filesystem)
