@@ -136,6 +136,15 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     message(STATUS "  static lib:  ${Boost_LIBRARY_DIRS}" )
     message(STATUS "  include dir: ${Boost_INCLUDE_DIRS}" )
+else ()
+
+if (STATIC GREATER 0)
+   message(STATUS "You have requested to link the static version of the Boost libraries.")
+   message(STATUS "However, no static version of the Boost libraries has been found. " )
+   message(STATUS "If you downloaded Boost source files, run the following command: " )
+   message(STATUS "./b2 release --link=static install " )
+endif()
+
 endif()
 
 #find_package(Eigen3 REQUIRED)
