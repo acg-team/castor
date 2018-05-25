@@ -3,5 +3,10 @@ data/*
 output/*
 cmake-build-*/*
 tests/lib/*
-
-
+*.cbp
+*.cmake
+*.*~
+Makefile
+CMakeFiles/*
+tests/CMakeFiles/*
+tests/unit_tests/CMakeFiles/*

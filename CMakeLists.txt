@@ -78,6 +78,9 @@ SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g")
 SET(CMAKE_CXX_FLAGS_DEBUGINTEL "-O0 -g")
 SET(CMAKE_C_FLAGS_DEBUGINTEL "-Wall -Wshadow -O0 -g")
 
+SET(CMAKE_CXX_FLAGS_RELWITHINFOINTEL "-O3 -g -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELWITHINFOINTEL "-O3 -g -DNDEBUG")
+
 SET(CMAKE_CXX_FLAGS_RELEASE "-O3  -g0 -DNDEBUG")
 SET(CMAKE_C_FLAGS_RELEASE "-O3  -g0 -DNDEBUG")
 
@@ -199,5 +202,5 @@ else ()
 endif ()
 
 # Test target
-enable_testing()
-add_subdirectory (tests)
+#enable_testing()
+#add_subdirectory (tests)
