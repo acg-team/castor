@@ -326,12 +326,12 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFv(Node *node) const {
     for (size_t c = 0; c < nbClasses_; c++) {
         VVdouble *pxy__node_c = &(*pxy__node)[c];
         for (size_t i = 0; i < nbDistinctSites_; i++) {
-            std::vector<double> tmp = (*_likelihoods_node)[i][c];
+            //std::vector<double> tmp = (*_likelihoods_node)[i][c];
             for (size_t x = 0; x < nbStates_; x++) {
 
                 val = 0.0;
                 for (size_t y = 0; y < nbStates_; y++) {
-                    val += (*pxy__node_c)[x][y] * tmp[y];
+                    val += (*pxy__node_c)[x][y] * (*_likelihoods_node)[i][c][y];
                 }
                 (*_likelihoods_node)[i][c][x] = val;
             }
@@ -350,12 +350,12 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFvEmpty(Node *node) const {
     double val;
     for (size_t c = 0; c < nbClasses_; c++) {
         VVdouble *pxy__node_c = &(*pxy__node)[c];
-        std::vector<double> tmp = (*_likelihoods_empty_node)[0][c];
+        //std::vector<double> tmp = (*_likelihoods_empty_node)[0][c];
         for (size_t x = 0; x < nbStates_; x++) {
 
             val = 0.0;
             for (size_t y = 0; y < nbStates_; y++) {
-                val += (*pxy__node_c)[x][y] * tmp[y];
+                val += (*pxy__node_c)[x][y] * (*_likelihoods_empty_node)[0][c][y];
             }
             (*_likelihoods_empty_node)[0][c][x] = val;
         }
@@ -1160,8 +1160,9 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
                     delete fv_sons;
 
                 } else {
-                    std::vector<double> *indFun = &indicatorFun_[nodeID][i];
-                    double partialLK = MatrixBppUtils::dotProd(indFun, &rootFreqs_);
+                    //std::vector<double> *indFun = &indicatorFun_[nodeID][i];
+                    //double partialLK = MatrixBppUtils::dotProd(indFun, &rootFreqs_);
+		    double partialLK = MatrixBppUtils::dotProd(&indicatorFun_[nodeID][i], &rootFreqs_);
                     fv_site += (iotasData_[nodeID] * betasData_[nodeID]) * partialLK;
                 }
 
