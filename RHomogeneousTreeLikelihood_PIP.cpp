@@ -589,16 +589,16 @@ void RHomogeneousTreeLikelihood_PIP::initialiseInsertionHistories() const {
 
             // Initialize vectors descCount_ and setA_ and indicatorFunctionVector
             std::vector<int> descCount_;
-            std::vector<bool> descGapCount_;
+            //std::vector<bool> descGapCount_;
             std::vector<bool> setA_;
             descCount_.resize(nbDistinctSites);
-            descGapCount_.resize(nbDistinctSites);
+            //descGapCount_.resize(nbDistinctSites);
 
             setA_.resize(nbDistinctSites);
             indicatorFun_[node->getId()].at(i).resize(nbStates);
 
             descCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
-            descGapCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
+            //descGapCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
             setAData_.insert(std::make_pair(node->getId(), std::make_pair(setA_, node->getId())));
         }
     }
@@ -625,7 +625,7 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
             if (node->isLeaf()) {
 
                 descCountData_[nodeID].first.at(i) = (sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode() ? 0 : 1);
-                descGapCountData_[nodeID].first.at(i) = sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode();
+                //descGapCountData_[nodeID].first.at(i) = sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode();
 
 
             } else {
@@ -641,14 +641,14 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
 
                 // Reset value stored at the internal node
                 descCountData_[nodeID].first.at(i) = 0;
-                descGapCountData_[nodeID].first.at(i) = true;
+                //descGapCountData_[nodeID].first.at(i) = true;
 
 
                 // Recompute it
                 for (size_t l = 0; l < nbNodes; l++) {
 
                     descCountData_[nodeID].first.at(i) += getNodeDescCountForASite(tree_->getNode(sonsIDs.at(l)), i);
-                    descGapCountData_[nodeID].first.at(i) = (descGapCountData_[nodeID].first.at(i) && descGapCountData_[sonsIDs.at(l)].first.at(i));
+                    //descGapCountData_[nodeID].first.at(i) = (descGapCountData_[nodeID].first.at(i) && descGapCountData_[sonsIDs.at(l)].first.at(i));
 
                 }
 
