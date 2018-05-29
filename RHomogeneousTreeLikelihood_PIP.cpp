@@ -175,19 +175,21 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     for (bpp::Node *node:tree_->getNodes()) {
         iotasData_.insert(std::make_pair(node->getId(), 0));
         betasData_.insert(std::make_pair(node->getId(), 0));
-        evolutionaryEvents_[node->getId()] = 0;
-        evolutionaryEventsWeighted_[node->getId()] = 0;
-        indicatorFun_[node->getId()].resize(nbDistinctSites_);
+        //evolutionaryEvents_[node->getId()] = 0;
+        //evolutionaryEventsWeighted_[node->getId()] = 0;
+        if(node->isLeaf()) {
+            indicatorFun_[node->getId()].resize(nbDistinctSites_);
+        }
     }
 
     // Initialise vectors for storing insertion histories values
     initialiseInsertionHistories();
 
     // Set indicator function on leafs
-    setIndicatorFunction(*data_);                                                 //TODO: indicator function must be computed on: topology changes
+    setIndicatorFunction(*data_);
 
     // Set the likelihoodNodeList to the postorder one
-    std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());  //TODO: post-order list must be computed on: topology changes
+    std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
     setLikelihoodNodes(ponl);
 
     // Set initial Insertion Histories
@@ -231,9 +233,9 @@ void RHomogeneousTreeLikelihood_PIP::_hadamardMultFvSons(Node *node) const {
     int nbNodes = sonsIDs.size();
 
     // Vectorization requires explicit loop sizes
-    int nbDistinctSites = nbDistinctSites_;
-    int nbClasses = nbClasses_;
-    int nbStates = nbStates_;
+    int nbDistinctSites = (int) nbDistinctSites_;
+    int nbClasses = (int) nbClasses_;
+    int nbStates = (int) nbStates_;
 
     double val;
     for (int i = 0; i < nbDistinctSites; i++) {
@@ -243,8 +245,6 @@ void RHomogeneousTreeLikelihood_PIP::_hadamardMultFvSons(Node *node) const {
                 for (int l = 0; l < nbNodes; l++) {
 
                     //VLOG(3) << "["<<i<<","<<c<<","<<x<<","<<l<<"]"<<std::endl;
-
-
                     //const Node *son = node->getSon(l);
                     //VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(son->getId());
 
@@ -276,9 +276,9 @@ void RHomogeneousTreeLikelihood_PIP::_hadamardMultFvEmptySons(Node *node) const 
     int nbNodes = sonsIDs.size();
 
     // Vectorization requires explicit loop sizes
-    int nbDistinctSites = nbDistinctSites_;
-    int nbClasses = nbClasses_;
-    int nbStates = nbStates_;
+    int nbDistinctSites = (int) nbDistinctSites_;
+    int nbClasses = (int) nbClasses_;
+    int nbStates = (int) nbStates_;
 
     double val;
     for (int c = 0; c < nbClasses; c++) {
@@ -312,9 +312,9 @@ void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvSons(Node 
     int nbSons = sonsIDs.size();
 
     // Vectorization requires explicit loop sizes
-    int nbDistinctSites = nbDistinctSites_;
-    int nbClasses = nbClasses_;
-    int nbStates = nbStates_;
+    int nbDistinctSites = (int) nbDistinctSites_;
+    int nbClasses = (int) nbClasses_;
+    int nbStates = (int) nbStates_;
 
     double val;
     for (int x = 0; x < nbStates; x++) {
@@ -327,6 +327,25 @@ void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvSons(Node 
         (*fv_out)[x] = val;
     }
 
+    // Add transition probabilities to the FV vector
+    if(node->hasFather()) {
+        VVVdouble *pxy__node = &pxy_[node->getId()];
+        // this vector stores the old values before recomputing them
+        std::vector<double> reference = (*fv_out);
+
+        for (int c = 0; c < nbClasses; c++) {
+
+            VVdouble *pxy__node_c = &(*pxy__node)[c];
+
+            for (int x = 0; x < nbStates; x++) {
+                val = 0.0;
+                for (int y = 0; y < nbStates; y++) {
+                    val += (*pxy__node_c)[x][y] * reference[y];
+                }
+                (*fv_out)[x] = val;
+            }
+        }
+    }
 
 }
 
@@ -337,20 +356,27 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFv(Node *node) const {
     VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
 
     // Vectorization requires explicit loop sizes
-    int nbDistinctSites = nbDistinctSites_;
-    int nbClasses = nbClasses_;
-    int nbStates = nbStates_;
+    int nbDistinctSites = (int) nbDistinctSites_;
+    int nbClasses = (int) nbClasses_;
+    int nbStates = (int) nbStates_;
 
     double val;
     for (int c = 0; c < nbClasses; c++) {
+
         VVdouble *pxy__node_c = &(*pxy__node)[c];
+
         for (int i = 0; i < nbDistinctSites; i++) {
-            //std::vector<double> tmp = (*_likelihoods_node)[i][c];
+
+            // this vector stores the old values before recomputing them
+            Vdouble reference = (*_likelihoods_node)[i][c];
+
             for (int x = 0; x < nbStates; x++) {
 
                 val = 0.0;
+
                 for (int y = 0; y < nbStates; y++) {
-                    val += (*pxy__node_c)[x][y] * (*_likelihoods_node)[i][c][y];
+                    //val += (*pxy__node_c)[x][y] * (*_likelihoods_node)[i][c][y];
+                    val += (*pxy__node_c)[x][y] * reference[y];
                 }
                 (*_likelihoods_node)[i][c][x] = val;
             }
@@ -366,19 +392,23 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFvEmpty(Node *node) const {
     VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
 
     // Vectorization requires explicit loop sizes
-    int nbDistinctSites = nbDistinctSites_;
-    int nbClasses = nbClasses_;
-    int nbStates = nbStates_;
+    int nbDistinctSites = (int) nbDistinctSites_;
+    int nbClasses = (int) nbClasses_;
+    int nbStates = (int) nbStates_;
 
     double val;
     for (int c = 0; c < nbClasses; c++) {
         VVdouble *pxy__node_c = &(*pxy__node)[c];
-        //std::vector<double> tmp = (*_likelihoods_empty_node)[0][c];
+
+        // this vector stores the old values before recomputing them
+        std::vector<double> reference = (*_likelihoods_empty_node)[0][c];
+
         for (int x = 0; x < nbStates; x++) {
 
             val = 0.0;
             for (int y = 0; y < nbStates; y++) {
-                val += (*pxy__node_c)[x][y] * (*_likelihoods_empty_node)[0][c][y];
+                //val += (*pxy__node_c)[x][y] * (*_likelihoods_empty_node)[0][c][y];
+                val += (*pxy__node_c)[x][y] * reference[y];
             }
             (*_likelihoods_empty_node)[0][c][x] = val;
         }
@@ -391,11 +421,11 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(Node *node) const 
 
     VVVdouble *pxy__node = &pxy_[node->getId()];
     VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
-    
+
     // Vectorization requires explicit loop sizes
-    int nbDistinctSites = nbDistinctSites_;
-    int nbClasses = nbClasses_;
-    int nbStates = nbStates_;
+    int nbDistinctSites = (int) nbDistinctSites_;
+    int nbClasses = (int) nbClasses_;
+    int nbStates = (int)  nbStates_;
 
     double val;
     for (int c = 0; c < nbClasses; c++) {
@@ -423,8 +453,8 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicatorEmpty(Node *node) c
     VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
 
     // Vectorization requires explicit loop sizes
-    int nbClasses = nbClasses_;
-    int nbStates = nbStates_;
+    int nbClasses = (int) nbClasses_;
+    int nbStates = (int)  nbStates_;
 
     //double val;
     for (int c = 0; c < nbClasses; c++) {
@@ -517,13 +547,6 @@ void RHomogeneousTreeLikelihood_PIP::displayLikelihood(const Node *node) {
 
 void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &params) {
 
-    // Detect if the fireParameterChanged call was invoked during the branch-length optimisation requested during the tree-search
-    bool onTopologyChange = false;
-
-    if (params.size() != getParameters().size()) {
-        onTopologyChange = true;
-    }
-
     applyParameters();
 
     if (rateDistribution_->getParameters().getCommonParametersWith(params).size() > 0
@@ -552,23 +575,6 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
     // Set all betas
     setAllBetas();                                      //TODO: betas must be computed when: branch lengths + mu
 
-    // Set indicator function on leafs
-    //setIndicatorFunction(*data_);                       //TODO: indicator function must be computed on: topology changes
-    //computePostOrderNodeList(tree_->getRootNode());     //TODO: post-order list must be computed on: topology changes
-
-
-    if (onTopologyChange) {
-        // Set the likelihoodNodeList to the postorder one
-        //std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
-        //setLikelihoodNodes(ponl);
-
-        //setIndicatorFunction(*data_);
-
-        // Set ancestral histories
-        //setInsertionHistories(*data_);
-
-    }
-
     // Calls the routine to compute the FV values
     computeTreeLikelihood();
 
@@ -581,8 +587,8 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
 void RHomogeneousTreeLikelihood_PIP::initialiseInsertionHistories() const {
 
     // Vectorization requires explicit loop sizes
-    int nbDistinctSites = nbDistinctSites_;
-    int nbStates = nbStates_;
+    int nbDistinctSites = (int) nbDistinctSites_;
+    int nbStates = (int) nbStates_;
 
     for (int i = 0; i < nbDistinctSites; i++) {
         for (auto &node:tree_->getNodes()) {
@@ -595,7 +601,9 @@ void RHomogeneousTreeLikelihood_PIP::initialiseInsertionHistories() const {
             //descGapCount_.resize(nbDistinctSites);
 
             setA_.resize(nbDistinctSites);
-            indicatorFun_[node->getId()].at(i).resize(nbStates);
+            if (node->isLeaf()) {
+                indicatorFun_[node->getId()].at(i).resize(nbStates);
+            }
 
             descCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
             //descGapCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
@@ -608,9 +616,9 @@ void RHomogeneousTreeLikelihood_PIP::initialiseInsertionHistories() const {
 void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &sites) const {
 
     // Vectorization requires explicit loop sizes
-    int nbDistinctSites = nbDistinctSites_;
-    int nbClasses = nbClasses_;
-    int nbStates = nbStates_;
+    int nbDistinctSites = (int)  nbDistinctSites_;
+    int nbClasses = (int)  nbClasses_;
+    int nbStates = (int)  nbStates_;
 
 
     for (int i = 0; i < nbDistinctSites; i++) {
@@ -789,7 +797,7 @@ double RHomogeneousTreeLikelihood_PIP::computePhi(double lkEmptyColumn) const {
 
     double p;
     double log_factorial_m;
-    int m = nbSites_;
+    int m = (int) nbSites_;
 
     log_factorial_m = 0;
     for (int i = 1; i <= m; i++) {
@@ -993,24 +1001,41 @@ void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvEmptySons(
     sonsIDs.push_back(treemap_.right.at(vnode_right));
 
     // Vectorization requires explicit loop sizes
-    int nbStates = nbStates_;
+    int nbDistinctSites = (int) nbDistinctSites_;
+    int nbClasses = (int) nbClasses_;
+    int nbStates = (int) nbStates_;
 
 
     double val;
     for (size_t x = 0; x < nbStates; x++) {
         val = 1.0;
+
         for (size_t l = 0; l < sonsIDs.size(); l++) {
-            //    const Node *son = node->getSon(l);
+
             VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
             val *= (*_likelihoods_empty_son)[0][rate][x];
         }
-        //VVVdouble *_likelihoods_empty_son_left = &likelihoodEmptyData_->getLikelihoodArray(son_leftID);
-        //VVVdouble *_likelihoods_empty_son_right = &likelihoodEmptyData_->getLikelihoodArray(son_rightID);
-
-        //val *= (*_likelihoods_empty_son_left)[0][rate][x];
-        //val *= (*_likelihoods_empty_son_right)[0][rate][x];
 
         (*fv_out)[x] = val;
+    }
+
+    // Add transition probabilities to the FV vector
+    if(node->hasFather()) {
+        VVVdouble *pxy__node = &pxy_[node->getId()];
+        // this vector stores the old values before recomputing them
+        std::vector<double> reference = (*fv_out);
+
+        for (int c = 0; c < nbClasses; c++) {
+            VVdouble *pxy__node_c = &(*pxy__node)[c];
+
+            for (int x = 0; x < nbStates; x++) {
+                val = 0.0;
+                for (int y = 0; y < nbStates; y++) {
+                    val += (*pxy__node_c)[x][y] * reference[y];
+                }
+                (*fv_out)[x] = val;
+            }
+        }
     }
 
 }
@@ -1018,7 +1043,7 @@ void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvEmptySons(
 
 void RHomogeneousTreeLikelihood_PIP::setIndicatorFunction(const SiteContainer &sites) const {
     // Vectorization requires explicit loop sizes
-    int nbDistinctSites = nbDistinctSites_;
+    int nbDistinctSites = (int) nbDistinctSites_;
 
 
     for (int i = 0; i < nbDistinctSites; i++) {
@@ -1038,20 +1063,13 @@ void RHomogeneousTreeLikelihood_PIP::setIndicatorFunction(const SiteContainer &s
 /********************************************************************************************************************************************/
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood() {
-    //LOG(INFO) <<"RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood()";
-    //likelihoodNodes_.clear();
-    //computePostOrderNodeList(tree_->getRootNode());
-
-    // Set insertion histories
-    //setInsertionHistories(*data_);
 
     computeSubtreeLikelihood();
-
 }
 
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood(std::vector<int> nodeList) {
-    //LOG(INFO) << "RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood(std::vector<Node *> nodeList)";
+
     likelihoodNodes_ = nodeList;
 
     // Set insertion histories
@@ -1143,8 +1161,8 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
     //setLikelihoodNodes(ponl);
 
     // Vectorization requires explicit loop sizes
-    int nbClasses = nbClasses_;
-    int nbStates = nbStates_;
+    int nbClasses = (int) nbClasses_;
+    int nbStates = (int)  nbStates_;
 
     // Add iota and beta quantities on nodes with actived SetA for empty column
     double lk_site_empty = 0;
@@ -1170,11 +1188,13 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
                 delete fv_sons;
 
             } else {
+
                 fv_site += iotasData_[nodeID] * (1 - betasData_[nodeID]);
+
             }
 
 
-            DVLOG(3) << "lk empty at node[" << node->getName() << "] -> " << fv_site << std::endl;
+            DVLOG(3) << "lk empty at node[" << node->getName() << "] -> " << std::setprecision(18) <<  fv_site << std::endl;
 
 
             double li = fv_site * rateDistribution_->getProbability(c);
@@ -1192,11 +1212,11 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
 
 double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int> &likelihoodNodes, size_t i) const {
     double lk_site = 0;
-    
+
     // Vectorization requires explicit loop sizes
-    int nbDistinctSites = nbDistinctSites_;
-    int nbClasses = nbClasses_;
-    int nbStates = nbStates_;
+    int nbDistinctSites = (int) nbDistinctSites_;
+    int nbClasses = (int) nbClasses_;
+    int nbStates = (int)  nbStates_;
 
     for (auto &nodeID:likelihoodNodes) {
         Node *node = tree_->getNode(nodeID);
@@ -1204,7 +1224,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
         double fv_site = 0;
 
         for (size_t c = 0; c < nbClasses; c++) {
-            //setAData_[treemap_.left.at(node->getId())].first.at(site)
+
             if (setAData_[nodeID].first.at(i)) {
                 DVLOG(3) << "[BPP] Likelihood for setA (" << i << ") @node " << node->getName();
                 if (!node->isLeaf()) {
@@ -1218,9 +1238,8 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
                     delete fv_sons;
 
                 } else {
-                    //std::vector<double> *indFun = &indicatorFun_[nodeID][i];
-                    //double partialLK = MatrixBppUtils::dotProd(indFun, &rootFreqs_);
-		    double partialLK = MatrixBppUtils::dotProd(&indicatorFun_[nodeID][i], &rootFreqs_);
+
+                    double partialLK = MatrixBppUtils::dotProd(&indicatorFun_[nodeID][i], &rootFreqs_);
                     fv_site += (iotasData_[nodeID] * betasData_[nodeID]) * partialLK;
                 }
 
@@ -1239,8 +1258,9 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
 /********************************************************************************************************************************************/
 
 double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
+    // Get number of sites to use for the likelihood computation
+    int nbDistinctSites = (int)  nbDistinctSites_;
 
-    //likelihoodNodes_.clear();
     // Set the likelihoodNodeList to the postorder one
     std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
     setLikelihoodNodes(ponl);
@@ -1258,12 +1278,10 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
 
     const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
 
-    //size_t i;
-    int nbDistinctSites = nbDistinctSites_;
+
+    // For each site in the alignment
     for (int i = 0; i < nbDistinctSites; i++) {
-        // For each site in the alignment
-        //int tid = omp_get_thread_num();
-        //printf("site%d@thread_%d\n",i,tid);
+
         double lk_site = computeLikelihoodForASite(listNodes, i);
 
         lk_sites[i] = log(lk_site) * rootWeights->at(i);
@@ -1276,7 +1294,7 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
 
     // compute PHi
     double log_phi_value = computePhi(lk_site_empty);
-    DVLOG(2) << "PHI [BPP] " << std::setprecision(18) << log_phi_value;
+    DVLOG(2) << "Log PHI [BPP] " << std::setprecision(18) << log_phi_value;
 
     // Add phi to site likelihood
     logLK += log_phi_value;
