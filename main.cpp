@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
 
         try {
 
-            ApplicationTools::displayBooleanResult("Aligned sequences", PAR_alignment);
+            ApplicationTools::displayBooleanResult("Aligned sequences", !PAR_alignment);
 
             if (PAR_alignment) {
 
@@ -651,7 +651,6 @@ int main(int argc, char *argv[]) {
                 seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
             }
 
-            // Get profiling statistics TODO: export this stats on XML file
             double score;
             score = alignment->getScore(alignment->getRootNode());
 
@@ -661,7 +660,7 @@ int main(int argc, char *argv[]) {
             lkFile << score;
             lkFile.close();
 
-            ApplicationTools::displayResult("\nLog likelihood", TextTools::toString(score, 15));
+            ApplicationTools::displayResult("Alignment log likelihood", TextTools::toString(score, 15));
 
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
 
@@ -735,7 +734,7 @@ int main(int argc, char *argv[]) {
                 if (pl[i].getValue() < 0.000001) pl[i].setValue(0.000001);
             }
             tl->matchParametersValues(pl);
-            logL = tl->getValue();
+            logL = tl->getLogLikelihood();
         }
         ApplicationTools::displayResult("Initial log likelihood", TextTools::toString(-logL, 15));
         if (std::isinf(logL)) {
