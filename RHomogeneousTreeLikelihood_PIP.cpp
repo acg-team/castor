@@ -1239,12 +1239,13 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
 
     for (auto &nodeID:likelihoodNodes) {
         Node *node = tree_->getNode(nodeID);
-
+	std::vector<bool> *setA__node = &setAData_[nodeID].first;
         double fv_site = 0;
 
         for (size_t c = 0; c < nbClasses; c++) {
 
-            if (setAData_[nodeID].first.at(i)) {
+            //if (setAData_[nodeID].first.at(i)) {
+            if ((*setA__node)[i]) {
                 DVLOG(3) << "[BPP] Likelihood for setA (" << i << ") @node " << node->getName();
                 if (!node->isLeaf()) {
 
