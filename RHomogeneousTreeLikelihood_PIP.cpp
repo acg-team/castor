@@ -421,6 +421,7 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(Node *node) const 
 
     VVVdouble *pxy__node = &pxy_[node->getId()];
     VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
+    std::vector<std::vector<double>> *indicator_node = &indicatorFun_[node->getId()];
 
     // Vectorization requires explicit loop sizes
     int nbDistinctSites = (int) nbDistinctSites_;
@@ -431,10 +432,11 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(Node *node) const 
     for (int c = 0; c < nbClasses; c++) {
         VVdouble *pxy__node_c = &(*pxy__node)[c];
         for (int i = 0; i < nbDistinctSites; i++) {
+            //std::vector<double> *indicator_node_site = &(*indicator_node)[i];
             for (int x = 0; x < nbStates; x++) {
                 val = 0.0;
                 for (int y = 0; y < nbStates; y++) {
-                    val += (*pxy__node_c)[x][y] * indicatorFun_[node->getId()][i][y];
+                    val += (*pxy__node_c)[x][y] * (*indicator_node)[i][y];
                 }
                 // Store value
                 (*_likelihoods_node)[i][c][x] = val;
