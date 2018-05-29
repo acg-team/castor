@@ -218,7 +218,6 @@ throw(Exception) {
 
 
 void RHomogeneousTreeLikelihood_PIP::_hadamardMultFvSons(Node *node) const {
-
     VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
 
     //size_t nbNodes = node->getNumberOfSons();
@@ -237,6 +236,12 @@ void RHomogeneousTreeLikelihood_PIP::_hadamardMultFvSons(Node *node) const {
     int nbClasses = (int) nbClasses_;
     int nbStates = (int) nbStates_;
 
+    std::map<int, VVVdouble*> lk_sons;
+    for (int l = 0; l < nbNodes; l++) {
+        lk_sons[l] = &likelihoodData_->getLikelihoodArray(sonsIDs.at(l));
+    }
+
+
     double val;
     for (int i = 0; i < nbDistinctSites; i++) {
         for (int c = 0; c < nbClasses; c++) {
@@ -244,13 +249,9 @@ void RHomogeneousTreeLikelihood_PIP::_hadamardMultFvSons(Node *node) const {
                 val = 1.0;
                 for (int l = 0; l < nbNodes; l++) {
 
-                    //VLOG(3) << "["<<i<<","<<c<<","<<x<<","<<l<<"]"<<std::endl;
-                    //const Node *son = node->getSon(l);
-                    //VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(son->getId());
-
-                    VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(sonsIDs.at(l));
-                    val *= (*_likelihoods_son)[i][c][x];
-                    //val *= (*LikelihoodArraySonsPtr.at(l))[i][c][x];
+                    //VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(sonsIDs.at(l));
+                    //val *= (*_likelihoods_son)[i][c][x];
+                    val *= (*lk_sons[l])[i][c][x];
                 }
                 (*_likelihoods_node)[i][c][x] = val;
             }
@@ -280,19 +281,23 @@ void RHomogeneousTreeLikelihood_PIP::_hadamardMultFvEmptySons(Node *node) const 
     int nbClasses = (int) nbClasses_;
     int nbStates = (int) nbStates_;
 
+    std::map<int, VVVdouble*> lk_sons;
+    for (int l = 0; l < nbNodes; l++) {
+        lk_sons[l] = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
+    }
+
     double val;
     for (int c = 0; c < nbClasses; c++) {
         for (int x = 0; x < nbStates; x++) {
             val = 1.0;
             for (int l = 0; l < nbNodes; l++) {
-                //const Node *son = node->getSon(l);
-                VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
 
-                //VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(son->getId());
-                val *= (*_likelihoods_empty_son)[0][c][x];
+                //VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
+                //val *= (*_likelihoods_empty_son)[0][c][x];
 
-                //val *= LikelihoodArrayEmptySonsPtr.at(l)->[0][c][x];
+                val *= (*lk_sons[l])[0][c][x];
             }
+
             (*_likelihoods_empty_node)[0][c][x] = val;
         }
     }
@@ -316,12 +321,19 @@ void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvSons(Node 
     int nbClasses = (int) nbClasses_;
     int nbStates = (int) nbStates_;
 
+    std::map<int, VVVdouble*> lk_sons;
+    for (int l = 0; l < nbSons; l++) {
+        lk_sons[l] = &likelihoodData_->getLikelihoodArray(sonsIDs.at(l));
+    }
+
+
     double val;
     for (int x = 0; x < nbStates; x++) {
         val = 1.0;
         for (int l = 0; l < nbSons; l++) {
-            VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(sonsIDs.at(l));
-            val *= (*_likelihoods_son)[site][rate][x];
+            //VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(sonsIDs.at(l));
+            //val *= (*_likelihoods_son)[site][rate][x];
+            val *= (*lk_sons[l])[site][rate][x];
         }
 
         (*fv_out)[x] = val;
@@ -1001,21 +1013,26 @@ void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvEmptySons(
 
     sonsIDs.push_back(treemap_.right.at(vnode_left));
     sonsIDs.push_back(treemap_.right.at(vnode_right));
-
+    int nbSons = sonsIDs.size();
     // Vectorization requires explicit loop sizes
     int nbDistinctSites = (int) nbDistinctSites_;
     int nbClasses = (int) nbClasses_;
     int nbStates = (int) nbStates_;
 
+    std::map<int, VVVdouble*> lk_sons;
+    for (int l = 0; l < nbSons; l++) {
+        lk_sons[l] = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
+    }
 
     double val;
     for (size_t x = 0; x < nbStates; x++) {
         val = 1.0;
 
-        for (size_t l = 0; l < sonsIDs.size(); l++) {
+        for (size_t l = 0; l < nbSons; l++) {
 
-            VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
-            val *= (*_likelihoods_empty_son)[0][rate][x];
+            //VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
+            //val *= (*_likelihoods_empty_son)[0][rate][x];
+            val *= (*lk_sons[l])[0][rate][x];
         }
 
         (*fv_out)[x] = val;
