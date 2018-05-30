@@ -9,4 +9,4 @@ rate_distribution=Constant
 optimization=None
 output.msa.file=./out_core_pip_lkfunc.alignment.fa
 output.tree.file=./out_core_pip_lkfunc.tree.nwk
-output.estimates=./out_core_pip_lkfunc.estimates.log
+output.estimates.file=./out_core_pip_lkfunc.estimates.log
