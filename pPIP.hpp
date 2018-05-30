@@ -57,13 +57,6 @@
 
 namespace bpp {
 
-    struct max_val_str
-    {
-        double val;
-        int index;
-    };
-
-
     class pPIP {
 
     public:
@@ -272,7 +265,6 @@ namespace bpp {
                           double epsilon,
                           std::default_random_engine &generator,
                           std::uniform_real_distribution<double> &distribution,
-                          max_val_str &max_val,
                           bool flag_RAM,
                           int &index,
                           double &val);
@@ -322,7 +314,7 @@ namespace bpp {
 
         double compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg);
 
-        double computeLK_MXY_local(double NU,
+        double computeLK_MXY_local(double log_phi_gamma,
                                    double valM,
                                    double valX,
                                    double valY,
@@ -346,8 +338,6 @@ namespace bpp {
         double computeLK_M_local(int nodeID,
                                  int sonLeftID,
                                  int sonRightID,
-                                 MSAcolumn_t &sL,
-                                 MSAcolumn_t &sR,
                                  std::vector< bpp::ColMatrix<double> > &fvL,
                                  std::vector< bpp::ColMatrix<double> > &fvR,
                                  std::vector< bpp::ColMatrix<double> > &Fv_M_ij);
@@ -369,8 +359,6 @@ namespace bpp {
         double computeLK_X_local(int nodeID,
                                  int sonLeftID,
                                  int sonRightID,
-                                 MSAcolumn_t &sL,
-                                 MSAcolumn_t &col_gap_R,
                                  std::vector< bpp::ColMatrix<double> > &fvL,
                                  std::vector< bpp::ColMatrix<double> > &fvR,
                                  std::vector< bpp::ColMatrix<double> > &Fv_X_ij);
@@ -393,8 +381,6 @@ namespace bpp {
         double computeLK_Y_local(int nodeID,
                                  int sonLeftID,
                                  int sonRightID,
-                                 MSAcolumn_t &col_gap_L,
-                                 MSAcolumn_t &sR,
                                  std::vector< bpp::ColMatrix<double> > &fvL,
                                  std::vector< bpp::ColMatrix<double> > &fvR,
                                  std::vector< bpp::ColMatrix<double> > &Fv_Y_ij);

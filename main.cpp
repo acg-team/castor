@@ -624,9 +624,9 @@ int main(int argc, char *argv[]) {
             // Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_local = true;
             bool flag_RAM = false;
-            bool flag_map = false;
+            bool flag_map = true;
             bool flag_pattern = false;
-            bool flag_fv = true;
+            bool flag_fv = false;
 
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
@@ -637,9 +637,9 @@ int main(int argc, char *argv[]) {
 
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
 
-            VLOG(1) << "[TSH Cycle] Elapsed time: " << duration << " microseconds" << std::endl;
+            std::cout << "[TSH Cycle] Elapsed time: " << duration << " microseconds" << std::endl;
 
-            LOG(INFO) << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
+            std::cout << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
 
             // Convert PIP Aligner into bpp::sites
             sites = pPIPUtils::pPIPmsa2Sites(alignment);

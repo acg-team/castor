@@ -7,7 +7,6 @@ project(${MINIJATI_SOFTWARENAME}
         DESCRIPTION ${MINIJATI_DESCRIPTION}
         LANGUAGES "CXX")
 
-
 ## Store the git hash of the current head
 if(EXISTS "${PROJECT_SOURCE_DIR}/.git/HEAD")
     file(READ "${PROJECT_SOURCE_DIR}/.git/HEAD"
