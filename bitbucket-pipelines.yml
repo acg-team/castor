@@ -27,10 +27,13 @@ pipelines:
               - miniJATI
           - step:
               script:
+              - ./miniJATI version=true
+              - ./miniJATI params=./tests/param_files/CORE/pip_likelihoodfunction.txt | bash ./tests/scripts/test_core_pip_lkfunc.sh
               - ./miniJATI params=./tests/param_files/GTR/nt_real_aligned_optall.txt
               - ./miniJATI params=./tests/param_files/GTR_F/nt_real_aligned_optall.txt
               - ./miniJATI params=./tests/param_files/GTR_PIP/nt_real_aligned_optall.txt
               - ./miniJATI params=./tests/param_files/GTR_PIP_F/nt_real_aligned_optall.txt
+
       develop:
           - step:
               script: # Modify the commands below to build your repository.
@@ -41,6 +44,7 @@ pipelines:
           - step:
               script:
               - ./miniJATI version=true
+              - ./miniJATI params=./tests/param_files/CORE/pip_likelihoodfunction.txt | bash ./tests/scripts/test_core_pip_lkfunc.sh
       feature/*:
           - step:
               script: # Modify the commands below to build your repository.
@@ -60,6 +64,8 @@ pipelines:
               - miniJATI
           - step:
               script:
+              - ./miniJATI version=true
+              - ./miniJATI params=./tests/param_files/CORE/pip_likelihoodfunction.txt | bash ./tests/scripts/test_core_pip_lkfunc.sh
               - ./miniJATI params=./tests/param_files/GTR/nt_real_aligned_optall.txt
               - ./miniJATI params=./tests/param_files/GTR_F/nt_real_aligned_optall.txt
               - ./miniJATI params=./tests/param_files/GTR_PIP/nt_real_aligned_optall.txt
