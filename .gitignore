@@ -3,6 +3,7 @@ data/*
 output/*
 cmake-build-*/*
 tests/lib/*
+tests/results/*
 *.cbp
 *.cmake
 *.*~
