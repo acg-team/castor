@@ -119,9 +119,17 @@ namespace bpp {
         bpp::SequenceContainer *sequences_;      // un-aligned input sequences
         bpp::DiscreteDistribution *rDist_;       // distribution for rate variation among sites
 
+        /*
         std::map<int, std::vector<double>> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
         std::map<int, std::vector<double>> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
         std::map<int, std::vector<bpp::RowMatrix<double> > >prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
+        */
+
+        std::vector<std::vector<double>> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
+        std::vector<std::vector<double>> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
+        std::vector<std::vector<bpp::RowMatrix<double> > >prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
+
+
         std::vector<std::vector<std::string> > seqNames_;          // vector[nodeId] of sequence names (MSAs seq. names at each internal node) node
         std::vector<MSA_t> MSA_;                                   // vector[nodeId] MSA at each node
         std::vector<MSAensemble_t> MSAensemble_;                   // MSA ensemble at each node (for SB)
@@ -129,8 +137,8 @@ namespace bpp {
         std::vector<TracebackEnsemble_t> traceback_path_ensemble_; // traceback path ensemble at each internal node (for SB)
         std::vector<double> score_;                                // vector[nodeId] of likelihood score
         std::vector<vector<double >> score_ensemble_;              // set of likelihoods at each internal node (for SB)
-        double lambda0;                                            // original lambda (no Gamma distribution)
-        double mu0;                                                // original mu (no Gamma distribution)
+        double lambda0_;                                            // original lambda (no Gamma distribution)
+        double mu0_;                                                // original mu (no Gamma distribution)
         std::vector<double> lambda_;                               // vector[rate] of lambda rate with Gamma distribution
         std::vector<double> mu_;                                   // vector[rate] of mu rate with Gamma distribution
         std::vector<double> nu_;                                   // vector[rate] of nu (normalizing constant) with Gamma distribution
@@ -318,8 +326,7 @@ namespace bpp {
                                    double valM,
                                    double valX,
                                    double valY,
-                                   double log_pr,
-                                   int m);
+                                   double log_pr);
 
         double computeLK_M_local(double NU,
                                  double valM,
