@@ -636,8 +636,8 @@ int main(int argc, char *argv[]) {
             bool flag_pattern = true;
             bool flag_fv = true;
             */
-            std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
+            std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
             alignment->PIPAligner(ftn, flag_local, flag_RAM, flag_map, flag_pattern, flag_fv);
 

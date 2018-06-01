@@ -86,8 +86,11 @@ namespace bpp {
                         bool flag_fv);
 
         std::vector< std::string > getMSA(bpp::Node *node);
+
         double getScore(bpp::Node *node);
+
         std::vector< std::string > getSeqnames(bpp::Node *node);
+
         bpp::Node *getRootNode();
 
         const Alphabet *getAlphabet() const;
@@ -95,14 +98,6 @@ namespace bpp {
         void setSubstModel(bpp::SubstitutionModel *smodel);
 
         void setTree(const Tree *tree);
-
-        void setFVleaf(bpp::Node *node);
-
-        void set_lk_leaf(bpp::Node *node);
-
-        void set_lk_empty_leaf(bpp::Node *node);
-
-        void compressMSA(bpp::Node *node);
 
     protected:
 
@@ -144,8 +139,8 @@ namespace bpp {
         std::vector<double> nu_;                                   // vector[rate] of nu (normalizing constant) with Gamma distribution
         double tau_;                                               // total tree length
 
-        std::vector< vector<double> > lk_down_;                      //each node a vector of lk
-        std::vector< vector<double> > lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
+        std::vector< vector<double> > log_lk_down_;                      //each node a vector of lk
+        std::vector< vector<double> > log_lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
         std::vector< vector< vector< bpp::ColMatrix<double> > > > fv_data_; // [node][column][catg][fv]
         std::vector< vector< bpp::ColMatrix<double> > > fv_empty_data_; // [node][catg][fv]
         std::vector< vector<int> > map_compressed_seqs_; // [node][idx]
@@ -180,6 +175,20 @@ namespace bpp {
         void _setAllBetas(bpp::Node *node,bool local_root);
 
         void _getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNodes);
+
+
+        void setFVleaf(bpp::Node *node);
+
+        void set_lk_leaf(bpp::Node *node);
+
+        void set_lk_empty_leaf(bpp::Node *node);
+
+        void compressMSA(bpp::Node *node);
+
+        void compress_lk_components(bpp::Node *node,
+                                    std::vector<double> &lk_down_not_compressed,
+                                    std::vector< vector< bpp::ColMatrix<double> > > &fv_data_not_compressed);
+
 
         bool is_inside(int x0,
                        int y0,
