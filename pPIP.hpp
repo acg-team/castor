@@ -145,10 +145,8 @@ namespace bpp {
         double tau_;                                               // total tree length
 
 
-#ifdef LK_DOWN
         std::vector< vector<double> > log_lk_down_;                      //each node a vector of lk
         std::vector< vector<double> > log_lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
-#endif
 
 
         std::vector< vector< vector< bpp::ColMatrix<double> > > > fv_data_; // [node][column][catg][fv]
@@ -159,8 +157,8 @@ namespace bpp {
 
 
 
-        std::vector< std::vector< std::vector<double> > > fv_sigma_;
-        std::vector< std::vector<double> > fv_empty_sigma_;
+        std::vector< std::vector< std::vector<double> > > fv_sigma_; // [node][site][catg]
+        std::vector< std::vector<double> > fv_empty_sigma_; // [node][catg]
 
 
 
@@ -196,6 +194,8 @@ namespace bpp {
         void _getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNodes);
 
         void _setFVleaf(bpp::Node *node);
+
+        void _setFVsigmaEmptyLeaf(bpp::Node *node);
 
         void _setFVsigmaLeaf(bpp::Node *node);
 
@@ -354,12 +354,25 @@ namespace bpp {
                                                       std::vector< bpp::ColMatrix<double> > &fvR,
                                                       std::vector< bpp::ColMatrix<double> > &Fv_gap);
 
+        std::vector<double> computeLK_GapColumn_local(int nodeID,
+                                                            int sonLeftID,
+                                                            int sonRightID,
+                                                            std::vector< bpp::ColMatrix<double> > &fvL,
+                                                            std::vector< bpp::ColMatrix<double> > &fvR,
+                                                            std::vector< bpp::ColMatrix<double> > &Fv_gap,
+                                                            std::vector<double> &fv_empty_sigma_,
+                                                            std::vector<double> &lk_empty_down_L,
+                                                            std::vector<double> &lk_empty_down_R);
+
+        void _compute_lk_empty_down_rec(bpp::Node *node,std::vector<double> &lk);
+
+        std::vector<double> _compute_lk_empty_down(bpp::Node *node);
 
         double _compute_lk_down_rec(bpp::Node *node,int idx,double lk);
 
-        std::vector<double> compute_lk_down(bpp::Node *node);
+        std::vector<double> _compute_lk_down(bpp::Node *node);
 
-        double compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg);
+        double _compute_lk_down(bpp::Node *node, MSAcolumn_t &s, int catg);
 
         double computeLK_MXY_local(double log_phi_gamma,
                                    double valM,

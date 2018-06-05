@@ -95,12 +95,7 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     // traceback path at each node
     traceback_path_.resize(numNodes); // vector of strings with the traceback to the path that generates the best MSA
 
-
-
     traceback_map_.resize(numNodes);
-
-
-
 
     // sequence names in the MSA at each node
     seqNames_.resize(numNodes); // it stores the order of the sequences added to the MSA at each node
@@ -117,10 +112,11 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     // normalizing constant with rate variation (gamma)
     nu_.resize(numCatg);
 
-#ifdef LK_DOWN
+    //-------------------------------------
+    // only for version "SLOW"
     log_lk_down_.resize(numNodes);
     log_lk_empty_down_.resize(numNodes);
-#endif
+    //-------------------------------------
 
     fv_data_.resize(numNodes);
 
@@ -129,9 +125,14 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
         fv_empty_data_[i].resize(numCatg);
     }
 
+    //-------------------------------------
     // pi dotprod fv
     fv_sigma_.resize(numNodes);
     fv_empty_sigma_.resize(numNodes);
+    for(int i = 0; i < numNodes; i++){
+        fv_empty_sigma_[i].resize(numCatg);
+    }
+    //-------------------------------------
 
     map_compressed_seqs_.resize(numNodes);
     rev_map_compressed_seqs_.resize(numNodes);
@@ -1080,6 +1081,37 @@ void pPIP::allgaps(bpp::Node *node, std::string &s, int &idx, bool &flag) {
 
 }
 
+void pPIP::_compute_lk_empty_down_rec(bpp::Node *node,std::vector<double> &lk){
+
+    int nodeID = node->getId();
+
+    int num_gamma_categories = rDist_->getNumberOfCategories();
+
+    for (int catg=0; catg<num_gamma_categories; catg++) {
+        lk.at(catg) = lk.at(catg) + rDist_->getProbability((size_t) catg) * \
+            (iotasNode_.at(nodeID).at(catg) - \
+            iotasNode_.at(nodeID).at(catg) * betasNode_.at(nodeID).at(catg) + \
+            iotasNode_.at(nodeID).at(catg) * betasNode_.at(nodeID).at(catg) * \
+            fv_empty_sigma_.at(nodeID).at(catg));
+    }
+
+    if (!node->isLeaf()) {
+
+        tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
+        int sonLeftID = treemap_.right.at(vnode_left);
+        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+        tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
+        int sonRightID = treemap_.right.at(vnode_right);
+        bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+        _compute_lk_empty_down_rec(sonLeft,lk);
+        _compute_lk_empty_down_rec(sonRight,lk);
+
+    }
+
+}
+
 double pPIP::_compute_lk_down_rec(bpp::Node *node,int idx,double lk){
 
     int nodeID = node->getId();
@@ -1130,7 +1162,24 @@ double pPIP::_compute_lk_down_rec(bpp::Node *node,int idx,double lk){
     return lk;
 }
 
-std::vector<double> pPIP::compute_lk_down(bpp::Node *node){
+std::vector<double> pPIP::_compute_lk_empty_down(bpp::Node *node){
+
+    int nodeID = node->getId();
+
+    int num_gamma_categories = rDist_->getNumberOfCategories();
+
+    std::vector<double> lk_empty_down;
+
+    lk_empty_down.resize(num_gamma_categories);
+
+    std::fill(lk_empty_down.begin(),lk_empty_down.end(),0.0);
+
+    _compute_lk_empty_down_rec(node,lk_empty_down);
+
+    return lk_empty_down;
+}
+
+std::vector<double> pPIP::_compute_lk_down(bpp::Node *node){
 
     int nodeID = node->getId();
 
@@ -1216,7 +1265,7 @@ double pPIP::compute_lk_gap_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
     return pr + pL + pR;
 }
 
-double pPIP::compute_lk_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
+double pPIP::_compute_lk_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
 
     int idx;
     //bpp::ColMatrix<double> fvL;
@@ -1267,13 +1316,13 @@ double pPIP::compute_lk_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
         std::string sL;
         len = ixx;
         sL = s.substr(0, len);
-        return pr + compute_lk_down(sonLeft, sL, catg);
+        return pr + _compute_lk_down(sonLeft, sL, catg);
     }
 
     if (flagL) {
         std::string sR;
         sR = s.substr(ixx);
-        return pr + compute_lk_down(sonRight, sR, catg);
+        return pr + _compute_lk_down(sonRight, sR, catg);
     }
 
     return pr;
@@ -1319,11 +1368,63 @@ std::vector<double> pPIP::computeLK_GapColumn_local(int nodeID,
         // lk at the actual node (considered as root node => beta = 1.0)
         p0 = iotasNode_[nodeID][catg] * fv0;
 
-#ifdef LK_DOWN
         pL=log_lk_empty_down_[sonLeftID][catg];
 
         pR=log_lk_empty_down_[sonRightID][catg];
-#endif
+
+        pc0.at(catg) = p0 + pL + pR;
+    }
+
+    return pc0;
+}
+
+std::vector<double> pPIP::computeLK_GapColumn_local(int nodeID,
+                                                    int sonLeftID,
+                                                    int sonRightID,
+                                                    std::vector< bpp::ColMatrix<double> > &fvL,
+                                                    std::vector< bpp::ColMatrix<double> > &fvR,
+                                                    std::vector< bpp::ColMatrix<double> > &Fv_gap,
+                                                    std::vector<double> &fv_empty_sigma_,
+                                                    std::vector<double> &lk_empty_down_L,
+                                                    std::vector<double> &lk_empty_down_R) {
+
+    // number of discrete gamma categories
+    int num_gamma_categories = rDist_->getNumberOfCategories();
+
+    double fv0;
+    double p0;
+    double pL,pR;
+
+    // array of lk (for each gamma rate) of a single column full of gaps
+    std::vector<double> pc0;
+    pc0.resize(num_gamma_categories);
+
+    for (int catg = 0; catg < num_gamma_categories; catg++) {
+
+        // PrfvL = Pr_L * fv_L
+        bpp::ColMatrix<double> PrfvL;
+        bpp::MatrixTools::mult(prNode_[sonLeftID].at(catg), fvL.at(catg), PrfvL);
+
+        // PrfvR = Pr_R * fv_R
+        bpp::ColMatrix<double> PrfvR;
+        bpp::MatrixTools::mult(prNode_[sonRightID].at(catg), fvR.at(catg), PrfvR);
+
+        // fv = PrfvL * PrfvR
+        bpp::ColMatrix<double> fv;
+        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+        Fv_gap.at(catg) = fv;
+
+        // fv0 = pi * fv
+        fv0 = MatrixBppUtils::dotProd(fv, pi_);
+
+        fv_empty_sigma_.at(catg) = fv0;
+
+        // lk at the actual node (considered as root node => beta = 1.0)
+        p0 = iotasNode_[nodeID][catg] * fv0;
+
+        pL = lk_empty_down_L.at(catg);
+        pR = lk_empty_down_R.at(catg);
 
         pc0.at(catg) = p0 + pL + pR;
     }
@@ -1389,18 +1490,14 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
             if(sonLeft->isLeaf()){
                 pL = compute_lk_gap_down(sonLeft, sL, catg);
             }else{
-#ifdef LK_DOWN
                 pL=log_lk_empty_down_[sonLeftID][catg];
-#endif
             }
 
 
             if(sonRight->isLeaf()){
                 pR = compute_lk_gap_down(sonRight, sR, catg);
             }else{
-#ifdef LK_DOWN
                 pR=log_lk_empty_down_[sonRightID][catg];
-#endif
             }
         }else{
             pL = compute_lk_gap_down(sonLeft, sL, catg);
@@ -1707,15 +1804,13 @@ double pPIP::computeLK_X_local(double NU,
 
                 if (flag_RAM) {
                     if (sonLeft->isLeaf()) {
-                        pL += compute_lk_down(sonLeft, sL, catg);
+                        pL += _compute_lk_down(sonLeft, sL, catg);
                     } else {
-#ifdef LK_DOWN
                         pL = log_lk_down_.at(sonLeftID).at(idx);
-#endif
                         pL = exp(pL);
                     }
                 } else {
-                    pL = compute_lk_down(sonLeft, sL, catg);
+                    pL = _compute_lk_down(sonLeft, sL, catg);
                 }
 
                 pr += p0 + pL;
@@ -1880,15 +1975,13 @@ double pPIP::computeLK_Y_local(double NU,
 
                 if (flag_RAM) {
                     if(sonRight->isLeaf()){
-                        pR = compute_lk_down(sonRight, sR, catg);
+                        pR = _compute_lk_down(sonRight, sR, catg);
                     }else{
-#ifdef LK_DOWN
                         pR = log_lk_down_.at(sonRightID).at(idx);
-#endif
                         pR = exp(pR);
                     }
                 } else {
-                    pR = compute_lk_down(sonRight, sR, catg);
+                    pR = _compute_lk_down(sonRight, sR, catg);
                 }
 
                 pr += p0 + pR;
@@ -2575,18 +2668,18 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
  //   if(vnode_left->isTerminalNode()) {
 //        _compressMSA(sonLeft);
 //        _setFVleaf(sonLeft);
-#ifdef LK_DOWN
-        _set_lk_leaf(sonLeft);
-        _set_lk_empty_leaf(sonLeft);
-#endif
-//    }
-//    if(vnode_right->isTerminalNode()) {
-//        _compressMSA(sonRight);
-//        _setFVleaf(sonRight);
-#ifdef LK_DOWN
-        _set_lk_leaf(sonRight);
-        _set_lk_empty_leaf(sonRight);
-#endif
+//#ifdef LK_DOWN
+//        _set_lk_leaf(sonLeft);
+//        _set_lk_empty_leaf(sonLeft);
+//#endif
+////    }
+////    if(vnode_right->isTerminalNode()) {
+////        _compressMSA(sonRight);
+////        _setFVleaf(sonRight);
+//#ifdef LK_DOWN
+//        _set_lk_leaf(sonRight);
+//        _set_lk_empty_leaf(sonRight);
+//#endif
  //   }
     //***************************************************************************************
     // DP SIZES
@@ -2701,20 +2794,19 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //***************************************************************************************
     // lk of a single empty column (full of gaps) with rate variation (gamma distribution)
     // compute the lk of a column full of gaps
+
+    std::vector<double> lk_empty_down_L = _compute_lk_empty_down(sonLeft);
+    std::vector<double> lk_empty_down_R = _compute_lk_empty_down(sonRight);
+
     std::vector<double> pc0 = computeLK_GapColumn_local(nodeID,
                                     nodeID_L,
                                     nodeID_R,
                                     fv_empty_data_[nodeID_L],
                                     fv_empty_data_[nodeID_R],
-                                    fv_empty_data_[nodeID]);
-
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //TODO:log_lk_empty_down_
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-#ifdef LK_DOWN
-    log_lk_empty_down_[nodeID]=pc0;
-#endif
+                                    fv_empty_data_[nodeID],
+                                    fv_empty_sigma_[nodeID],
+                                    lk_empty_down_L,
+                                    lk_empty_down_R);
     //***************************************************************************************
     // COMPUTES LOG(PHI(0))
     //***************************************************************************************
@@ -2744,8 +2836,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     // 2D LK COMPUTATION
     //***************************************************************************************
 
-    std::vector<double> lk_down_L = compute_lk_down(sonLeft);
-    std::vector<double> lk_down_R = compute_lk_down(sonRight);
+    std::vector<double> lk_down_L = _compute_lk_down(sonLeft);
+    std::vector<double> lk_down_R = _compute_lk_down(sonRight);
 
     // MATCH2D
     for (i = 0; i < h_compr; i++) {
@@ -3113,16 +3205,15 @@ void pPIP::_compress_lk_components(bpp::Node *node, std::vector<double> &lk_down
 
     int id_map;
 
-#ifdef LK_DOWN
     log_lk_down_[nodeID].resize(comprMSAlen);
-#endif
+
     fv_data_[nodeID].resize(comprMSAlen);
 
     for(int i=0;i<comprMSAlen;i++){
         id_map=rev_map_compressed_seqs_.at(nodeID).at(i);
-#ifdef LK_DOWN
+
         log_lk_down_[nodeID].at(i)=lk_down_not_compressed.at(id_map);
-#endif
+
         fv_data_[nodeID].at(i)=fv_data_not_compressed.at(id_map);
     }
 
@@ -3237,13 +3328,6 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
     col_gap_Ls = createGapCol(numLeavesLeft); // create column of gaps for the left sub-tree
     col_gap_Rs = createGapCol(numLeavesRight); // create column of gaps for the right sub-tree
-
-//    signed long seed;
-//    if (randomSeed) {
-//        seed = std::chrono::system_clock::now().time_since_epoch().count(); // "random" seed
-//    } else {
-//        seed = 0; // fixed seed
-//    }
 
     std::default_random_engine generator(seed_);                   // jatiapp seed
     std::uniform_real_distribution<double> distribution(0.0, 1.0); // Uniform distribution for the selection of lks with the same value
@@ -5275,6 +5359,25 @@ void pPIP::setTree(const Tree *tree) {
     tree_ = new TreeTemplate<Node>(*tree);
 }
 
+void pPIP::_setFVsigmaEmptyLeaf(bpp::Node *node) {
+
+    int nodeID = node->getId();
+
+    size_t num_gamma_categories = rDist_->getNumberOfCategories();
+
+    fv_empty_sigma_.at(nodeID).resize(num_gamma_categories);
+
+    double fv0;
+
+    for(int catg = 0; catg < num_gamma_categories; catg++) {
+
+        fv0 = MatrixBppUtils::dotProd(fv_empty_data_.at(nodeID).at(catg), pi_);
+
+        fv_empty_sigma_.at(nodeID).at(catg) = fv0;
+    }
+
+}
+
 void pPIP::_setFVsigmaLeaf(bpp::Node *node) {
 
     int nodeID = node->getId();
@@ -5360,9 +5463,9 @@ void pPIP::_set_lk_leaf(bpp::Node *node) {
     size_t num_gamma_categories = rDist_->getNumberOfCategories();
 
     int len_seq_comp = rev_map_compressed_seqs_.at(nodeID).size();
-#ifdef LK_DOWN
+
     log_lk_down_.at(nodeID).resize(len_seq_comp);
-#endif
+
     for(int i = 0; i < len_seq_comp; i++) {
 
         double p = 0.0;
@@ -5375,9 +5478,9 @@ void pPIP::_set_lk_leaf(bpp::Node *node) {
                        betasNode_[nodeID][catg] * \
                        fv0;
         }
-#ifdef LK_DOWN
+
         log_lk_down_.at(nodeID).at(i) = log(p);
-#endif
+
     }
 
 }
@@ -5387,9 +5490,9 @@ void pPIP::_set_lk_empty_leaf(bpp::Node *node) {
     int nodeID = node->getId();
 
     size_t num_gamma_categories = rDist_->getNumberOfCategories();
-#ifdef LK_DOWN
+
     log_lk_empty_down_.at(nodeID).resize(num_gamma_categories);
-#endif
+
     double p;
     for (int catg = 0; catg < num_gamma_categories; catg++) {
 
@@ -5398,9 +5501,9 @@ void pPIP::_set_lk_empty_leaf(bpp::Node *node) {
         p = rDist_->getProbability((size_t) catg) * (iotasNode_[nodeID][catg] - \
                    iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] + \
                    iotasNode_[nodeID][catg] * betasNode_[nodeID][catg] * fv0);
-#ifdef LK_DOWN
+
         log_lk_empty_down_.at(nodeID).at(catg) = log(p);
-#endif
+
     }
 
 }
@@ -5503,6 +5606,8 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
             _setFVleaf(node);
 
             _setFVsigmaLeaf(node);
+
+            _setFVsigmaEmptyLeaf(node);
 
             _setTracebackPathleaves(node);
             //*******************************************************************************
