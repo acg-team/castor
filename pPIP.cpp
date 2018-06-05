@@ -2593,7 +2593,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
 
 void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
-    std::cout<<"\n"<<node->getName()<<"\n\n";
+    //std::cout<<"\n"<<node->getName()<<"\n\n";
 
     // four levels of optimization:
     // 1) to pre-compute DP 2D
@@ -2813,17 +2813,21 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     // marginal likelihood for all empty columns with rate variation (gamma distribution)
     // phi(m,pc0,r) depends on the MSA length m
     // marginal phi marginalized over gamma categories
-    double PC0 = 0.0;
-    double NU = 0.0;
+    //double PC0 = 0.0;
+    //double NU = 0.0;
+    double log_phi_gamma = 0.0;
     for (int catg = 0; catg < num_gamma_categories; catg++) {
         // log( P_gamma(r) * phi(0,pc0(r),r) ): marginal lk for all empty columns of an alignment of size 0
         // PHI[0][catg] = log(rDist_->getProbability((size_t)catg)) + (nu_.at(catg) * (pc0.at(catg) - 1.0));
-        PC0 += rDist_->getProbability((size_t) catg) * pc0.at(catg);
-        NU += rDist_->getProbability((size_t) catg) * nu_.at(catg);
+        //PC0 += rDist_->getProbability((size_t) catg) * pc0.at(catg);
+        //NU += rDist_->getProbability((size_t) catg) * nu_.at(catg);
+        log_phi_gamma += rDist_->getProbability((size_t) catg) * (nu_.at(catg) * (pc0.at(catg)-1));
+        PHI[0][catg] =  0.0;
+        //rDist_->getProbability((size_t) catg) * (nu_.at(catg) * (pc0.at(catg)-1));
     }
 
     // computes the marginal phi marginalized over all the gamma categories
-    double log_phi_gamma = NU * (PC0 - 1);
+    //double log_phi_gamma = NU * (PC0 - 1);
     //***************************************************************************************
 
     //***************************************************************************************
@@ -2914,7 +2918,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
             // computes the marginal phi(m,pc0(r),r) with gamma by multiplying the starting value
             // phi(0,pco(r),r) = log( P_gamma(r) * exp( nu(r) * (pc0(r)-1) ) ) with
             // 1/m * nu(r) at each new layer
-            PHI[m][catg] = PHI[m - 1][catg] - log((long double) m) + log((long double) nu_.at(catg));
+            PHI[m][catg] = - log((long double) m) + log((long double) nu_.at(catg)); //PHI[m - 1][catg]
         }
 
         // computes the marginal phi marginalized over all the gamma categories
