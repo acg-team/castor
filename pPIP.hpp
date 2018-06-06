@@ -144,6 +144,9 @@ namespace bpp {
         std::vector<double> nu_;                                   // vector[rate] of nu (normalizing constant) with Gamma distribution
         double tau_;                                               // total tree length
 
+        std::vector<double> taus_;
+
+        std::vector< std::vector<double> > nus_;
 
         std::vector< vector<double> > log_lk_down_;                      //each node a vector of lk
         std::vector< vector<double> > log_lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
@@ -173,7 +176,9 @@ namespace bpp {
 
         void _reserve(std::vector<tshlib::VirtualNode *> &nodeList);
 
-        void _setNu();
+        std::vector<double> _computeNu();
+
+        void _computeNus();
 
         void _setTree(const Tree *tree);
 
@@ -183,9 +188,11 @@ namespace bpp {
 
         void _setPi(const Vdouble &pi);
 
-        double _setTauRecursive(tshlib::VirtualNode *vnode);
+        double _computeTauRecursive(tshlib::VirtualNode *vnode);
 
-        void _setTau(tshlib::VirtualNode *vnode);
+        double _computeTau(tshlib::VirtualNode *vnode);
+
+        void _computeTaus(std::vector<tshlib::VirtualNode *> &nodeList);
 
         void _setAllIotas(bpp::Node *node,bool local_root);
 

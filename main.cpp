@@ -628,7 +628,7 @@ int main(int argc, char *argv[]) {
             bool flag_map = true;
             bool flag_pattern = false;
             bool flag_fv = false;
-            */
+            //*/
             ///*
             bool flag_local = true;
             bool flag_RAM = true;

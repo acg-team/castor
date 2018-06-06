@@ -134,6 +134,10 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     }
     //-------------------------------------
 
+    taus_.resize(numNodes);
+
+    nus_.resize(numNodes);
+
     map_compressed_seqs_.resize(numNodes);
     rev_map_compressed_seqs_.resize(numNodes);
 
@@ -764,7 +768,13 @@ void pPIP::_setTracebackPathleaves(bpp::Node *node) {
 
 }
 
-void pPIP::_setNu() {
+std::vector<double> pPIP::_computeNu() {
+
+    int numCategories = rDist_->getNumberOfCategories();
+
+    std::vector<double> nu;
+
+    nu.resize(numCategories);
 
     for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
         // computes the normalizing constant with discrete rate variation (gamma distribution)
@@ -772,6 +782,7 @@ void pPIP::_setNu() {
         nu_.at(i) = lambda_.at(i) * (tau_ + 1 / mu_.at(i));
     }
 
+    return nu;
 }
 
 void pPIP::_setLambda(double lambda) {
@@ -816,15 +827,15 @@ void pPIP::_setPi(const Vdouble &pi) {
 
 }
 
-double pPIP::_setTauRecursive(tshlib::VirtualNode *vnode) {
+double pPIP::_computeTauRecursive(tshlib::VirtualNode *vnode) {
 
     if (vnode->isTerminalNode()) {
         // return the branch length
         return tree_->getNode(treemap_.right.at(vnode), false)->getDistanceToFather();
     } else {
         // recursive call
-        double bl = _setTauRecursive(vnode->getNodeLeft());
-        double br = _setTauRecursive(vnode->getNodeRight());
+        double bl = _computeTauRecursive(vnode->getNodeLeft());
+        double br = _computeTauRecursive(vnode->getNodeRight());
 
         // actual branch length (at the given node)
         double b0 = tree_->getNode(treemap_.right.at(vnode), false)->getDistanceToFather();
@@ -835,10 +846,10 @@ double pPIP::_setTauRecursive(tshlib::VirtualNode *vnode) {
 
 }
 
-void pPIP::_setTau(tshlib::VirtualNode *vnode) {
+double pPIP::_computeTau(tshlib::VirtualNode *vnode) {
 
     // computes the total tree length of the subtree rooted at vnode
-    tau_ = _setTauRecursive(vnode->getNodeLeft()) + _setTauRecursive(vnode->getNodeRight());
+    return _computeTauRecursive(vnode->getNodeLeft()) + _computeTauRecursive(vnode->getNodeRight());
 
 }
 
@@ -2025,7 +2036,7 @@ void pPIP::DP3D_PIP_RAM(bpp::Node *node,
         _setTau(treemap_.left.at(node->getId()));
 
         // recompute the normalizing factor nu for the local tree
-        _setNu();
+        _computeNu();
 
         // recompute lambdas with the new normalizing factor (local tree), flag true = tree rooted here
         _setAllIotas(node, true);
@@ -2648,11 +2659,11 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //***************************************************************************************
     // SET LOCAL TREE VARIABLES
     //***************************************************************************************
-    // recompute local tau, total tree length of a tree root at the given node
-    _setTau(treemap_.left.at(nodeID));
+    // set local tau, total tree length of a tree root at the given node
+    tau_ = taus_.at(nodeID);
 
-    // recompute the normalizing factor nu for the local tree
-    _setNu();
+    // set the normalizing factor nu for the local tree
+    nu_ = nus_.at(nodeID);
 
     // recompute lambdas with the new normalizing factor (local tree), flag true = tree rooted here
     _setAllIotas(node, true);
@@ -2702,7 +2713,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     std::vector< vector< vector<double> > > Log3DY;   // DP sparse matrix for GAPY case (only 2 layer are needed)
     std::vector< vector< vector<int> > > TR;        // 3D traceback matrix
     //std::vector< vector< vector<double> > > LK3D;     // 3D LK matrix, stores best lk at each position
-    std::vector< vector<double> > PHI;
+    //std::vector<double> PHI;
     std::vector< vector<double> > Log2DM;
     std::vector<double> Log2DX;
     std::vector<double> Log2DY;
@@ -2746,10 +2757,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         }
     }
     //*************************
-    PHI.resize(d);
-    for (i = 0; i < d; i++) {
-        PHI[i].resize(num_gamma_categories);
-    }
+    //PHI.resize(num_gamma_categories);
     //*************************
     Log2DM.resize(h_compr);
     Log2DX.resize(h_compr);
@@ -2814,20 +2822,21 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     // phi(m,pc0,r) depends on the MSA length m
     // marginal phi marginalized over gamma categories
     //double PC0 = 0.0;
-    //double NU = 0.0;
+    double nu_gamma = 0.0;
     double log_phi_gamma = 0.0;
     for (int catg = 0; catg < num_gamma_categories; catg++) {
         // log( P_gamma(r) * phi(0,pc0(r),r) ): marginal lk for all empty columns of an alignment of size 0
         // PHI[0][catg] = log(rDist_->getProbability((size_t)catg)) + (nu_.at(catg) * (pc0.at(catg) - 1.0));
         //PC0 += rDist_->getProbability((size_t) catg) * pc0.at(catg);
-        //NU += rDist_->getProbability((size_t) catg) * nu_.at(catg);
+        nu_gamma += rDist_->getProbability((size_t) catg) * nu_.at(catg);
         log_phi_gamma += rDist_->getProbability((size_t) catg) * (nu_.at(catg) * (pc0.at(catg)-1));
-        PHI[0][catg] =  0.0;
+        //PHI[catg] =  0.0;
         //rDist_->getProbability((size_t) catg) * (nu_.at(catg) * (pc0.at(catg)-1));
     }
 
+    double log_nu_gamma = log(nu_gamma);
     // computes the marginal phi marginalized over all the gamma categories
-    //double log_phi_gamma = NU * (PC0 - 1);
+    //double log_phi_gamma = nu_gamma * (PC0 - 1);
     //***************************************************************************************
 
     //***************************************************************************************
@@ -2914,18 +2923,21 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
         //***********************************************************************************
 
         //***********************************************************************************
-        for (int catg = 0; catg < num_gamma_categories; catg++) {
-            // computes the marginal phi(m,pc0(r),r) with gamma by multiplying the starting value
-            // phi(0,pco(r),r) = log( P_gamma(r) * exp( nu(r) * (pc0(r)-1) ) ) with
-            // 1/m * nu(r) at each new layer
-            PHI[m][catg] = - log((long double) m) + log((long double) nu_.at(catg)); //PHI[m - 1][catg]
-        }
+//        for (int catg = 0; catg < num_gamma_categories; catg++) {
+//            // computes the marginal phi(m,pc0(r),r) with gamma by multiplying the starting value
+//            // phi(0,pco(r),r) = log( P_gamma(r) * exp( nu(r) * (pc0(r)-1) ) ) with
+//            // 1/m * nu(r) at each new layer
+//            PHI[catg] = - log((long double) m) + log((long double) nu_.at(catg)); //PHI[m - 1][catg]
+//            - log((long double) m) + log_nu_gamma
+//        }
+//
+//        // computes the marginal phi marginalized over all the gamma categories
+//        log_phi_gamma = PHI[0];
+//        for (int catg = 1; catg < num_gamma_categories; catg++) {
+//            log_phi_gamma = pPIPUtils::add_lns(log_phi_gamma, PHI[catg]);
+//        }
 
-        // computes the marginal phi marginalized over all the gamma categories
-        log_phi_gamma = PHI[m][0];
-        for (int catg = 1; catg < num_gamma_categories; catg++) {
-            log_phi_gamma = pPIPUtils::add_lns(log_phi_gamma, PHI[m][catg]);
-        }
+        log_phi_gamma = - log((long double) m) + log_nu_gamma;
         //***********************************************************************************
 
         //***************************************************************************
@@ -3278,15 +3290,22 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
     //bool randomSeed = true;
 
+    // Get the IDs of the sons nodes given the current node
+    int nodeID = node->getId();
+
     // number of discrete gamma categories
     size_t num_gamma_categories = rDist_->getNumberOfCategories();
 
     if (local) {
         // recompute local tau, total tree length of a tree root at the given node
-        _setTau(treemap_.left.at(node->getId()));
+        //tau_ = _computeTau(treemap_.left.at(node->getId()));
 
         // recompute the normalizing factor nu for the local tree
-        _setNu();
+        //_setNu();
+
+        tau_ = taus_.at(nodeID);
+
+        nu_ = nus_.at(nodeID);
 
         // recompute lambdas with the new normalizing factor (local tree), flag true = tree rooted here
         _setAllIotas(node, true);
@@ -3304,8 +3323,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
     int tr;
 
-    // Get the IDs of the sons nodes given the current node
-    int nodeID = node->getId();
+
 
     tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
     tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
@@ -4087,7 +4105,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 //        _setTau(treemap_.left.at(node->getId()));
 //
 //        // recompute the normalizing factor nu for the local tree
-//        _setNu();
+//        _computeNu();
 //
 //        // recompute lambdas with the new normalizing factor (local tree), flag true = tree rooted here
 //        _setAllIotas(node, true);
@@ -4891,7 +4909,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 //
 //    if(local){
 //        _setTau(node);
-//        _setNu();
+//        _computeNu();
 //        _setAllIotas(node,true);
 //        _setAllBetas(node,true);
 //    }else{
@@ -5540,6 +5558,29 @@ void pPIP::_compressMSA(bpp::Node *node) {
 
 }
 
+void pPIP::_computeTaus(std::vector<tshlib::VirtualNode *> &nodeList) {
+
+    int nodeID;
+
+    for (auto &vnode:nodeList) {
+
+        auto node = tree_->getNode(treemap_.right.at(vnode), false);
+
+        nodeID = node->getId();
+
+        taus_.at(nodeID) = _computeTau(vnode);
+    }
+
+}
+
+void pPIP::_computeNus() {
+
+    for(int i = 0;i<taus_.size(); i++){
+        nus_.at(i) = _computeNu();
+    }
+
+}
+
 void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
                       bool local,
                       bool flag_RAM,
@@ -5555,6 +5596,12 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
     //***************************************************************************************
     // resize vectors
     _reserve(list_vnode_to_root);
+    //***************************************************************************************
+    // COMPUTE ALL LOCAL TREE LENGHTS
+    //***************************************************************************************
+    _computeTaus(list_vnode_to_root);
+
+    _computeNus();
     //***************************************************************************************
     // COMPUTES LAMBDA AND MU WITH GAMMA
     //***************************************************************************************
@@ -5575,7 +5622,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
         utree_->addVirtualRootNode();
         _setTau(utree_->rootnode);
         utree_->removeVirtualRootNode();
-        _setNu();
+        _computeNu();
         _setAllIotas(list_vnode_to_root);
         _setAllBetas(list_vnode_to_root);
     }
