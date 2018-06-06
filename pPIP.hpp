@@ -61,12 +61,10 @@ namespace bpp {
 
     public:
 
-        // TODO: is it really necessary to redefine std::string? and vectors of strings?
         typedef std::string MSAcolumn_t;           // MSA column type
         typedef std::vector<MSAcolumn_t> MSA_t;    // MSA as vector of columns
         typedef std::vector<MSA_t> MSAensemble_t;  // for SB: set (vector) of MSAs
         typedef std::string TracebackPath_t;       // traceback path type
-        //typedef std::vector<int> TracebackPath_t;
         typedef std::vector<TracebackPath_t> TracebackEnsemble_t; //for SB: set (vector) of traceback paths
 
         pPIP(tshlib::Utree *utree,              // tshlib:: tree
@@ -115,21 +113,13 @@ namespace bpp {
         bpp::SequenceContainer *sequences_;      // un-aligned input sequences
         bpp::DiscreteDistribution *rDist_;       // distribution for rate variation among sites
 
-        /*
-        std::map<int, std::vector<double>> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
-        std::map<int, std::vector<double>> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
-        std::map<int, std::vector<bpp::RowMatrix<double> > >prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
-        */
-
         std::vector<std::vector<double>> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
         std::vector<std::vector<double>> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
         std::vector<std::vector<bpp::RowMatrix<double> > >prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
 
-
         std::vector<std::vector<std::string> > seqNames_;          // vector[nodeId] of sequence names (MSAs seq. names at each internal node) node
         std::vector<MSA_t> MSA_;                                   // vector[nodeId] MSA at each node
         std::vector<MSAensemble_t> MSAensemble_;                   // MSA ensemble at each node (for SB)
-        //std::vector<TracebackPath_t> traceback_path_;              // vector[nodeId] of traceback paths (1 at each internal node)
         std::vector<vector<int>> traceback_path_;              // vector[nodeId] of traceback paths (1 at each internal node)
 
         std::vector< vector< vector<int> > > traceback_map_;
@@ -151,24 +141,17 @@ namespace bpp {
         std::vector< vector<double> > log_lk_down_;                      //each node a vector of lk
         std::vector< vector<double> > log_lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
 
-
         std::vector< vector< vector< bpp::ColMatrix<double> > > > fv_data_; // [node][column][catg][fv]
         std::vector< vector< bpp::ColMatrix<double> > > fv_empty_data_; // [node][catg][fv]
         std::vector< vector<int> > map_compressed_seqs_; // [node][idx]
         std::vector< vector<int> > rev_map_compressed_seqs_; // [node][idx]
 
-
-
-
         std::vector< std::vector< std::vector<double> > > fv_sigma_; // [node][site][catg]
         std::vector< std::vector<double> > fv_empty_sigma_; // [node][catg]
 
-
-
-
         bpp::ColMatrix<double> pi_;                                // steady state base frequencies
 
-        const bpp::Alphabet *alphabet_;                            // extended alphabet (alphabet U {'-'}
+        const bpp::Alphabet *alphabet_;                            // extended alphabet (alphabet U {'-'})
 
         long alphabetSize_;                                        // original alphabet size
 
@@ -201,6 +184,8 @@ namespace bpp {
         void _getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNodes);
 
         void _setFVleaf(bpp::Node *node);
+
+        void _setFVemptyLeaf(bpp::Node *node);
 
         void _setFVsigmaEmptyLeaf(bpp::Node *node);
 
@@ -335,15 +320,20 @@ namespace bpp {
 
         void _setMSAsequenceNames(bpp::Node *node);
 
-        void _setMSAsequenceNames(bpp::Node *node, std::string seqname);
+        void _setMSAsequenceNames(bpp::Node *node,
+                                  std::string seqname);
 
-        void _setMSAleaves(bpp::Node *node, const std::string &sequence);
+        void _setMSAleaves(bpp::Node *node,
+                           const std::string &sequence);
 
         void _setTracebackPathleaves(bpp::Node *node);
 
         bpp::ColMatrix<double> fv_observed(MSAcolumn_t &s, int &idx);
 
-        bpp::ColMatrix<double> computeFVrec(bpp::Node *node, MSAcolumn_t &s, int &idx, int catg);
+        bpp::ColMatrix<double> computeFVrec(bpp::Node *node,
+                                            MSAcolumn_t &s,
+                                            int &idx,
+                                            int catg);
 
         void allgaps(bpp::Node *node,MSAcolumn_t &s, int &idx,bool &flag);
 
@@ -465,8 +455,12 @@ namespace bpp {
 
         void DP3D_PIP_RAM_FAST(bpp::Node *node);
 
-        void DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,
-                         double temperature,int num_SB);
+        void DP3D_PIP_SB(bpp::Node *node,
+                         UtreeBppUtils::treemap *tm,
+                         double gamma_rate,
+                         bool local,
+                         double temperature,
+                         int num_SB);
 
     };
 

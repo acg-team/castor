@@ -613,7 +613,6 @@ int main(int argc, char *argv[]) {
             ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
             ApplicationTools::displayResult("\nProportion gappy sites", TextTools::toString(PAR_proportion, 4));
 
-
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed());
