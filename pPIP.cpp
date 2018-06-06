@@ -470,6 +470,9 @@ bool pPIP::_index_of_max(double m,
             val = -std::numeric_limits<double>::infinity();
             return true;
         } else {
+
+            int xxxx;
+
             LOG(FATAL)
                     << "\nSomething went wrong during the comparison of m,x,y variables in function pPIP::_index_of_max. Check call stack below. ";
             return false;
@@ -765,7 +768,7 @@ void pPIP::_setTracebackPathleaves(bpp::Node *node) {
 
 }
 
-std::vector<double> pPIP::_computeNu() {
+std::vector<double> pPIP::_computeNu(int nodeID) {
 
     int numCategories = rDist_->getNumberOfCategories();
 
@@ -773,10 +776,10 @@ std::vector<double> pPIP::_computeNu() {
 
     nu.resize(numCategories);
 
-    for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
+    for (int catg = 0; catg < numCategories; catg++) {
         // computes the normalizing constant with discrete rate variation (gamma distribution)
         // nu(r) = lambda * r * (tau + 1/(mu *r))
-        nu_.at(i) = lambda_.at(i) * (tau_ + 1 / mu_.at(i));
+        nu_[catg] = lambda_.at(catg) * (taus_.at(nodeID) + 1 / mu_.at(catg));
     }
 
     return nu;
@@ -826,16 +829,26 @@ void pPIP::_setPi(const Vdouble &pi) {
 
 double pPIP::_computeTauRecursive(tshlib::VirtualNode *vnode) {
 
+    double b0;
+
     if (vnode->isTerminalNode()) {
         // return the branch length
-        return tree_->getNode(treemap_.right.at(vnode), false)->getDistanceToFather();
+        return 0.0;//tree_->getNode(treemap_.right.at(vnode), false)->getDistanceToFather();
     } else {
         // recursive call
         double bl = _computeTauRecursive(vnode->getNodeLeft());
         double br = _computeTauRecursive(vnode->getNodeRight());
 
-        // actual branch length (at the given node)
-        double b0 = tree_->getNode(treemap_.right.at(vnode), false)->getDistanceToFather();
+//        if(!vnode->isRootNode()) {
+//            // actual branch length (at the given node)
+//            b0 = tree_->getNode(treemap_.right.at(vnode), false)->getDistanceToFather();
+//            _computeTauRecursive(vnode->getNodeLeft()) + _computeTauRecursive(vnode->getNodeRight());
+//        }else{
+//            b0=0.0;
+//        }
+
+        b0 = tree_->getNode(treemap_.right.at(vnode->getNodeLeft()), false)->getDistanceToFather() +\
+                tree_->getNode(treemap_.right.at(vnode->getNodeRight()), false)->getDistanceToFather();
 
         // sum of actual branch length + total branch length of left subtree + total branch length right subtree
         return b0 + bl + br;
@@ -846,7 +859,8 @@ double pPIP::_computeTauRecursive(tshlib::VirtualNode *vnode) {
 double pPIP::_computeTau(tshlib::VirtualNode *vnode) {
 
     // computes the total tree length of the subtree rooted at vnode
-    return _computeTauRecursive(vnode->getNodeLeft()) + _computeTauRecursive(vnode->getNodeRight());
+    //return _computeTauRecursive(vnode->getNodeLeft()) + _computeTauRecursive(vnode->getNodeRight());
+    return _computeTauRecursive(vnode);
 
 }
 
@@ -2693,10 +2707,26 @@ void pPIP::_computeTaus(std::vector<tshlib::VirtualNode *> &nodeList) {
 
 }
 
-void pPIP::_computeNus() {
+void pPIP::_computeNus(std::vector<tshlib::VirtualNode *> &nodeList) {
 
-    for(int i = 0;i<taus_.size(); i++){
-        nus_.at(i) = _computeNu();
+    int nodeID;
+
+    int numCategories = rDist_->getNumberOfCategories();
+
+    for (auto &vnode:nodeList) {
+
+        auto node = tree_->getNode(treemap_.right.at(vnode), false);
+
+        nodeID = node->getId();
+
+        nus_.at(nodeID).resize(numCategories);
+
+        for (int catg = 0; catg < numCategories; catg++) {
+            // computes the normalizing constant with discrete rate variation (gamma distribution)
+            // nu(r) = lambda * r * (tau + 1/(mu *r))
+            nus_.at(nodeID).at(catg) = lambda_.at(catg) * (taus_.at(nodeID) + 1 / mu_.at(catg));
+        }
+
     }
 
 }
@@ -3118,7 +3148,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
                 TR[m][i][j] = tr_index; //max_val_index.index;
 
                 // If we reached the corner of the 3D cube, then:
-                if ( (m>=h) && (m>=w) && (i == (h - 1)) && (j == (w - 1))  ) {
+                if ( (m>=(h-1)) && (m>=(w-1)) && (i == (h - 1)) && (j == (w - 1))  ) {
                     // the algorithm is filling the last column of 3D DP matrix where
                     // all the characters are in the MSA
 
@@ -4069,18 +4099,20 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
     // resize vectors
     _reserve(list_vnode_to_root);
     //***************************************************************************************
-    // COMPUTE ALL LOCAL TREE LENGHTS
-    //***************************************************************************************
-    _computeTaus(list_vnode_to_root);
-
-    _computeNus();
-    //***************************************************************************************
     // COMPUTES LAMBDA AND MU WITH GAMMA
     //***************************************************************************************
     // set lambdas with rate variation (gamma distribution)
     _setLambda(substModel_->getParameter("lambda").getValue());
     // set mus with rate variation (gamma distribution)
     _setMu(substModel_->getParameter("mu").getValue());
+    //***************************************************************************************
+    // COMPUTE ALL LOCAL TREE LENGHTS
+    //***************************************************************************************
+    _computeTaus(list_vnode_to_root);
+    //***************************************************************************************
+    // COMPUTE ALL LOCAL POISSON NORMALIZING CONSTANTS
+    //***************************************************************************************
+    _computeNus(list_vnode_to_root);
     //***************************************************************************************
     // SET PI AND PR(t*Q)
     //***************************************************************************************

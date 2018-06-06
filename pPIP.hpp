@@ -159,9 +159,9 @@ namespace bpp {
 
         void _reserve(std::vector<tshlib::VirtualNode *> &nodeList);
 
-        std::vector<double> _computeNu();
+        std::vector<double> _computeNu(int nodeID);
 
-        void _computeNus();
+        void _computeNus(std::vector<tshlib::VirtualNode *> &nodeList);
 
         void _setTree(const Tree *tree);
 
