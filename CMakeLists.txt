@@ -40,7 +40,7 @@ if(WIN32)
     execute_process(COMMAND git describe --abbrev=0 --tags
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             OUTPUT_VARIABLE GIT_TAG_VERSION)
-    string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED ${GIT_TAG_VERSION})
+    string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED "${GIT_TAG_VERSION}")
 else()
     execute_process(COMMAND "date" "+%d %b %Y/%H:%M:%S"
             OUTPUT_VARIABLE DATE_TIME)
@@ -51,7 +51,7 @@ else()
     execute_process(COMMAND git describe --abbrev=0 --tags
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             OUTPUT_VARIABLE GIT_TAG_VERSION)
-    string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED ${GIT_TAG_VERSION})
+    string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED "${GIT_TAG_VERSION}")
 endif()
 
 set(MINIJATI_RELTIME ${PROJECT_BUILD_TIME})
