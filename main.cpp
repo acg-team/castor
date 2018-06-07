@@ -610,8 +610,11 @@ int main(int argc, char *argv[]) {
         // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
         pPIP *alignment = nullptr;
         if (PAR_alignment) {
+            std::string PAR_alignment_version = ApplicationTools::getStringParameter("alignment.version", jatiapp.getParams(), "cpu", "", true, 0);
             ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
             ApplicationTools::displayResult("\nProportion gappy sites", TextTools::toString(PAR_proportion, 4));
+            ApplicationTools::displayResult("\nAligner version:", PAR_alignment_version);
+
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
@@ -623,23 +626,29 @@ int main(int argc, char *argv[]) {
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
-            /*
-            bool flag_local = true;
+            bool flag_local = false;
             bool flag_RAM = false;
-            bool flag_map = true;
+            bool flag_map = false;
             bool flag_pattern = false;
             bool flag_fv = false;
-            //*/
-            ///*
-            bool flag_local = true;
-            bool flag_RAM = true;
-            bool flag_map = false;
-            bool flag_pattern = true;
-            bool flag_fv = true;
 
+            if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
+                 flag_local = true;
+                 flag_RAM = false;
+                 flag_map = true;
+                 flag_pattern = false;
+                 flag_fv = false;
 
-            //*/
+            }else if (PAR_alignment_version.find("ram") != std::string::npos) {
+
+                 flag_local = true;
+                 flag_RAM = true;
+                 flag_map = false;
+                 flag_pattern = true;
+                 flag_fv = true;
+
+            }
 
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
@@ -648,10 +657,9 @@ int main(int argc, char *argv[]) {
             std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-
-            std::cout << "[TSH Cycle] Elapsed time: " << duration << " microseconds" << std::endl;
-
-            std::cout << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
+            std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
+            //ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
+            //ApplicationTools::displayResult("[Alignment sequences] MSA_t inference using Pro-PIP", "terminated successfully");
 
             // Convert PIP Aligner into bpp::sites
             sites = pPIPUtils::pPIPmsa2Sites(alignment,0);
