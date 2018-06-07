@@ -7,7 +7,6 @@ project(${MINIJATI_SOFTWARENAME}
         DESCRIPTION ${MINIJATI_DESCRIPTION}
         LANGUAGES "CXX")
 
-
 ## Store the git hash of the current head
 if(EXISTS "${PROJECT_SOURCE_DIR}/.git/HEAD")
     file(READ "${PROJECT_SOURCE_DIR}/.git/HEAD"
@@ -41,7 +40,7 @@ if(WIN32)
     execute_process(COMMAND git describe --abbrev=0 --tags
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             OUTPUT_VARIABLE GIT_TAG_VERSION)
-    string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED ${GIT_TAG_VERSION})
+    string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED "${GIT_TAG_VERSION}")
 else()
     execute_process(COMMAND "date" "+%d %b %Y/%H:%M:%S"
             OUTPUT_VARIABLE DATE_TIME)
@@ -52,7 +51,7 @@ else()
     execute_process(COMMAND git describe --abbrev=0 --tags
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             OUTPUT_VARIABLE GIT_TAG_VERSION)
-    string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED ${GIT_TAG_VERSION})
+    string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED "${GIT_TAG_VERSION}")
 endif()
 
 set(MINIJATI_RELTIME ${PROJECT_BUILD_TIME})
@@ -75,14 +74,17 @@ set(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wshadow -Weffc++ -O0 -g")
 SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g")
 
-SET(CMAKE_CXX_FLAGS_DEBUGINTEL "-O0 -g")
-SET(CMAKE_C_FLAGS_DEBUGINTEL "-Wall -Wshadow -O0 -g")
+SET(CMAKE_CXX_FLAGS_DEBUGINTEL "-O0 -g -xHost")
+SET(CMAKE_C_FLAGS_DEBUGINTEL "-Wall -Wshadow -O0 -g -xHost")
+
+SET(CMAKE_CXX_FLAGS_RELWITHINFOINTEL "-O3 -g -xHost -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELWITHINFOINTEL "-O3 -g -xHost -DNDEBUG")
 
 SET(CMAKE_CXX_FLAGS_RELEASE "-O3  -g0 -DNDEBUG")
 SET(CMAKE_C_FLAGS_RELEASE "-O3  -g0 -DNDEBUG")
 
-SET(CMAKE_CXX_FLAGS_INTEL "-O3  -g0 -DNDEBUG")
-SET(CMAKE_C_FLAGS_INTEL "-O3  -g0 -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_INTEL "-O3  -g0 -xHost -DNDEBUG")
+SET(CMAKE_C_FLAGS_INTEL "-O3  -g0 -xHost -DNDEBUG")
 
 string(FIND "${CMAKE_BUILD_TYPE}" "static" STATIC)
 
@@ -121,7 +123,11 @@ if (${CMAKE_PREFIX_PATH})
     message(STATUS "Looking for headers in the following directory: ${CMAKE_PREFIX_PATH}/include")
 endif ()
 
-set(Boost_USE_STATIC_LIBS        OFF) # only find static libs
+if (STATIC GREATER 0)
+set(Boost_USE_STATIC_LIBS        ON) # only find static libs
+else ()
+set(Boost_USE_STATIC_LIBS        OFF) # only find dynamic libs
+endif()
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost REQUIRED COMPONENTS system filesystem)
@@ -129,6 +135,15 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     message(STATUS "  static lib:  ${Boost_LIBRARY_DIRS}" )
     message(STATUS "  include dir: ${Boost_INCLUDE_DIRS}" )
+else ()
+
+if (STATIC GREATER 0)
+   message(STATUS "You have requested to link the static version of the Boost libraries.")
+   message(STATUS "However, no static version of the Boost libraries has been found. " )
+   message(STATUS "If you downloaded Boost source files, run the following command: " )
+   message(STATUS "./b2 release --link=static install " )
+endif()
+
 endif()
 
 #find_package(Eigen3 REQUIRED)
@@ -199,5 +214,5 @@ else ()
 endif ()
 
 # Test target
-enable_testing()
-add_subdirectory (tests)
+#enable_testing()
+#add_subdirectory (tests)

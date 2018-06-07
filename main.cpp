@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
         } else {
             jatiapp.banner();
             jatiapp.startTimer();
-            LOG(INFO) << "Execution started!";
+            //LOG(INFO) << "Execution started!";
         };
 
         bpp::ApplicationTools::displayResult("Random seed set to", jatiapp.getSeed());
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
 
         try {
 
-            ApplicationTools::displayBooleanResult("Aligned sequences", PAR_alignment);
+            ApplicationTools::displayBooleanResult("Aligned sequences", !PAR_alignment);
 
             if (PAR_alignment) {
 
@@ -610,33 +610,13 @@ int main(int argc, char *argv[]) {
         // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
         pPIP *alignment = nullptr;
         if (PAR_alignment) {
+            std::string PAR_alignment_version = ApplicationTools::getStringParameter("alignment.version", jatiapp.getParams(), "cpu", "", true, 0);
             ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
             ApplicationTools::displayResult("\nProportion gappy sites", TextTools::toString(PAR_proportion, 4));
+            ApplicationTools::displayResult("\nAligner version:", PAR_alignment_version);
 
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
-
-
-
-
-
-
-
-
-//            auto sequences = new bpp::VectorSequenceContainer(smodel->getAlphabet());
-//
-//            sequences->addSequence(*(new bpp::BasicSequence("s1", "ACGTATCG", smodel->getAlphabet())), true);
-//            sequences->addSequence(*(new bpp::BasicSequence("s2", "ACACACCT", smodel->getAlphabet())), true);
-//
-//            SiteContainer *sss=new bpp::VectorSiteContainer(*sequences);
-//
-//            SiteContainer * newSequences=bpp::PatternTools::shrinkSiteSet(*sss);
-//
-//
-//            auto idx = bpp::PatternTools::getIndexes(*sss,*newSequences);
-
-
-
 
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed());
 
@@ -644,24 +624,40 @@ int main(int argc, char *argv[]) {
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
-            bool flag_local = true;
+            bool flag_local = false;
             bool flag_RAM = false;
             bool flag_map = true;
             bool flag_pattern = false;
             bool flag_fv = false;
 
-            std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+            if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
+                 flag_local = true;
+                 flag_RAM = false;
+                 flag_map = true;
+                 flag_pattern = false;
+                 flag_fv = false;
+
+            }else if (PAR_alignment_version.find("ram") != std::string::npos) {
+
+                 flag_local = true;
+                 flag_RAM = true;
+                 flag_map = false;
+                 flag_pattern = true;
+                 flag_fv = true;
+
+            }
+
+            std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
             alignment->PIPAligner(ftn, flag_local, flag_RAM, flag_map, flag_pattern, flag_fv);
 
             std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-
-            VLOG(1) << "[TSH Cycle] Elapsed time: " << duration << " microseconds" << std::endl;
-
-            LOG(INFO) << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
+            std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
+            //ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
+            //ApplicationTools::displayResult("[Alignment sequences] MSA_t inference using Pro-PIP", "terminated successfully");
 
             // Convert PIP Aligner into bpp::sites
             sites = pPIPUtils::pPIPmsa2Sites(alignment);
@@ -673,7 +669,6 @@ int main(int argc, char *argv[]) {
                 seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
             }
 
-            // Get profiling statistics TODO: export this stats on XML file
             double score;
             score = alignment->getScore(alignment->getRootNode());
 
@@ -683,7 +678,7 @@ int main(int argc, char *argv[]) {
             lkFile << score;
             lkFile.close();
 
-            ApplicationTools::displayResult("\nLog likelihood", TextTools::toString(score, 15));
+            ApplicationTools::displayResult("Alignment log likelihood", TextTools::toString(score, 15));
 
             LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
 
@@ -757,7 +752,7 @@ int main(int argc, char *argv[]) {
                 if (pl[i].getValue() < 0.000001) pl[i].setValue(0.000001);
             }
             tl->matchParametersValues(pl);
-            logL = tl->getValue();
+            logL = tl->getLogLikelihood();
         }
         ApplicationTools::displayResult("Initial log likelihood", TextTools::toString(-logL, 15));
         if (std::isinf(logL)) {
@@ -874,7 +869,7 @@ int main(int argc, char *argv[]) {
 
         // Export annotation file (tab separated values)
         std::string PAR_output_annotation_file = ApplicationTools::getAFilePath("output.annotation.file", jatiapp.getParams(), false, false, "", true, "", 1);
-        if (!(PAR_output_annotation_file.empty())) {
+        if (PAR_output_annotation_file.find("none") == std::string::npos) {
             ApplicationTools::displayResult("Output annotation to file", PAR_output_annotation_file);
             OutputUtils::writeTreeAnnotations2TSV(tree, PAR_output_annotation_file);
 
@@ -898,46 +893,6 @@ int main(int argc, char *argv[]) {
         // Write parameters to file (according to arguments)
         OutputUtils::exportOutput(tl, sites, jatiapp.getParams());
 
-        /*
-        string parametersFile = ApplicationTools::getAFilePath("output.estimates", jatiapp.getParams(), false, false, "none", true);
-        bool withAlias = ApplicationTools::getBooleanParameter("output.estimates.alias", jatiapp.getParams(), true, "", true, 0);
-
-        ApplicationTools::displayResult("Output estimates to file", parametersFile);
-
-
-        if (parametersFile != "none") {
-            StlOutputStream out(new ofstream(parametersFile.c_str(), ios::out));
-
-            int numParametersModel = 0;
-
-            numParametersModel += tree->getNumberOfNodes() - 1;
-
-            out << "# Log likelihood = ";
-            out.setPrecision(20) << (logL);
-            out.endLine();
-            out << "# Number of sites = ";
-            out.setPrecision(20) << sites->getNumberOfSites();
-            out.endLine();
-            out.endLine();
-            out << "# Substitution model parameters:";
-            out.endLine();
-
-            smodel->matchParametersValues(tl->getParameters());
-            numParametersModel += smodel->getNumberOfParameters();
-            PhylogeneticsApplicationTools::printParameters(smodel, out, 1, withAlias);
-
-            out.endLine();
-            (out << "# Rate distribution parameters:").endLine();
-            rDist->matchParametersValues(tl->getParameters());
-            numParametersModel += rDist->getNumberOfParameters();
-            PhylogeneticsApplicationTools::printParameters(rDist, out, withAlias);
-            out.endLine();
-            out << "# Total number of parameters: " << numParametersModel;
-            out.endLine();
-        }
-
-
-        */
 
         // Compute support measures
         std::string PAR_support = ApplicationTools::getStringParameter("support", jatiapp.getParams(), "", "", true, true);

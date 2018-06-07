@@ -57,18 +57,10 @@
 
 namespace bpp {
 
-    struct max_val_str
-    {
-        double val;
-        int index;
-    };
-
-
     class pPIP {
 
     public:
 
-        // TODO: is it really necessary to redefine std::string? and vectors of strings?
         typedef std::string MSAcolumn_t;           // MSA column type
         typedef std::vector<MSAcolumn_t> MSA_t;    // MSA as vector of columns
         typedef std::vector<MSA_t> MSAensemble_t;  // for SB: set (vector) of MSAs
@@ -93,8 +85,11 @@ namespace bpp {
                         bool flag_fv);
 
         std::vector< std::string > getMSA(bpp::Node *node);
+
         double getScore(bpp::Node *node);
+
         std::vector< std::string > getSeqnames(bpp::Node *node);
+
         bpp::Node *getRootNode();
 
         const Alphabet *getAlphabet() const;
@@ -102,14 +97,6 @@ namespace bpp {
         void setSubstModel(bpp::SubstitutionModel *smodel);
 
         void setTree(const Tree *tree);
-
-        void setFVleaf(bpp::Node *node);
-
-        void set_lk_leaf(bpp::Node *node);
-
-        void set_lk_empty_leaf(bpp::Node *node);
-
-        void setRevMapComprSeqsleaf(bpp::Node *node);
 
     protected:
 
@@ -126,32 +113,45 @@ namespace bpp {
         bpp::SequenceContainer *sequences_;      // un-aligned input sequences
         bpp::DiscreteDistribution *rDist_;       // distribution for rate variation among sites
 
-        std::map<int, std::vector<double>> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
-        std::map<int, std::vector<double>> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
-        std::map<int, std::vector<bpp::RowMatrix<double> > >prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
+        std::vector<std::vector<double>> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
+        std::vector<std::vector<double>> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
+        std::vector<std::vector<bpp::RowMatrix<double> > >prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
+
         std::vector<std::vector<std::string> > seqNames_;          // vector[nodeId] of sequence names (MSAs seq. names at each internal node) node
         std::vector<MSA_t> MSA_;                                   // vector[nodeId] MSA at each node
         std::vector<MSAensemble_t> MSAensemble_;                   // MSA ensemble at each node (for SB)
-        std::vector<TracebackPath_t> traceback_path_;              // vector[nodeId] of traceback paths (1 at each internal node)
+        std::vector<vector<int>> traceback_path_;              // vector[nodeId] of traceback paths (1 at each internal node)
+
+        std::vector< vector< vector<int> > > traceback_map_;
+
         std::vector<TracebackEnsemble_t> traceback_path_ensemble_; // traceback path ensemble at each internal node (for SB)
         std::vector<double> score_;                                // vector[nodeId] of likelihood score
         std::vector<vector<double >> score_ensemble_;              // set of likelihoods at each internal node (for SB)
-        double lambda0;                                            // original lambda (no Gamma distribution)
-        double mu0;                                                // original mu (no Gamma distribution)
+        double lambda0_;                                            // original lambda (no Gamma distribution)
+        double mu0_;                                                // original mu (no Gamma distribution)
         std::vector<double> lambda_;                               // vector[rate] of lambda rate with Gamma distribution
         std::vector<double> mu_;                                   // vector[rate] of mu rate with Gamma distribution
         std::vector<double> nu_;                                   // vector[rate] of nu (normalizing constant) with Gamma distribution
         double tau_;                                               // total tree length
 
-        std::vector< vector<double> > lk_down_;                      //each node a vector of lk
-        std::vector< vector<double> > lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
+        std::vector<double> taus_;
+
+        std::vector< std::vector<double> > nus_;
+
+        std::vector< vector<double> > log_lk_down_;                      //each node a vector of lk
+        std::vector< vector<double> > log_lk_empty_down_;                //each node a vector of lk_empty (for each gamma category)
+
         std::vector< vector< vector< bpp::ColMatrix<double> > > > fv_data_; // [node][column][catg][fv]
         std::vector< vector< bpp::ColMatrix<double> > > fv_empty_data_; // [node][catg][fv]
+        std::vector< vector<int> > map_compressed_seqs_; // [node][idx]
         std::vector< vector<int> > rev_map_compressed_seqs_; // [node][idx]
+
+        std::vector< std::vector< std::vector<double> > > fv_sigma_; // [node][site][catg]
+        std::vector< std::vector<double> > fv_empty_sigma_; // [node][catg]
 
         bpp::ColMatrix<double> pi_;                                // steady state base frequencies
 
-        const bpp::Alphabet *alphabet_;                            // extended alphabet (alphabet U {'-'}
+        const bpp::Alphabet *alphabet_;                            // extended alphabet (alphabet U {'-'})
 
         long alphabetSize_;                                        // original alphabet size
 
@@ -159,7 +159,9 @@ namespace bpp {
 
         void _reserve(std::vector<tshlib::VirtualNode *> &nodeList);
 
-        void _setNu();
+        std::vector<double> _computeNu(int nodeID);
+
+        void _computeNus(std::vector<tshlib::VirtualNode *> &nodeList);
 
         void _setTree(const Tree *tree);
 
@@ -169,15 +171,39 @@ namespace bpp {
 
         void _setPi(const Vdouble &pi);
 
-        double _setTauRecursive(tshlib::VirtualNode *vnode);
+        double _computeTauRecursive(tshlib::VirtualNode *vnode);
 
-        void _setTau(tshlib::VirtualNode *vnode);
+        double _computeTau(tshlib::VirtualNode *vnode);
+
+        void _computeTaus(std::vector<tshlib::VirtualNode *> &nodeList);
 
         void _setAllIotas(bpp::Node *node,bool local_root);
 
         void _setAllBetas(bpp::Node *node,bool local_root);
 
         void _getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNodes);
+
+        void _setFVleaf(bpp::Node *node);
+
+        void _setFVemptyLeaf(bpp::Node *node);
+
+        void _setFVsigmaEmptyLeaf(bpp::Node *node);
+
+        void _setFVsigmaLeaf(bpp::Node *node);
+
+        void _set_lk_leaf(bpp::Node *node);
+
+        void _set_lk_empty_leaf(bpp::Node *node);
+
+        void _compressMSA(bpp::Node *node);
+
+        void _compress_lk_components(bpp::Node *node,
+                                     std::vector<double> &lk_down_not_compressed,
+                                     std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
+
+        void _compress_Fv(bpp::Node *node,
+                                std::vector<std::vector<double>> &fv_sigma_not_compressed,
+                                std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
 
         bool is_inside(int x0,
                        int y0,
@@ -265,14 +291,15 @@ namespace bpp {
                           int h,
                           int w);
 
-        int index_of_max(double m,
-                          double x,
-                          double y,
-                          double epsilon,
-                          std::default_random_engine &generator,
-                          std::uniform_real_distribution<double> &distribution,
-                          max_val_str &max_val,
-                          bool flag_RAM);
+        bool _index_of_max(double m,
+                           double x,
+                           double y,
+                           double epsilon,
+                           std::default_random_engine &generator,
+                           std::uniform_real_distribution<double> &distribution,
+                           bool flag_RAM,
+                           int &index,
+                           double &val);
 
         double max_of_three(double a,
                             double b,
@@ -289,17 +316,24 @@ namespace bpp {
 
         std::string createGapCol(int len);
 
-        void build_MSA(bpp::Node *node, std::string traceback_path);
+        void _build_MSA(bpp::Node *node);
 
-        void setMSAsequenceNames(bpp::Node *node);
+        void _setMSAsequenceNames(bpp::Node *node);
 
-        void setMSAsequenceNames(bpp::Node *node,std::string seqname);
+        void _setMSAsequenceNames(bpp::Node *node,
+                                  std::string seqname);
 
-        void setMSAleaves(bpp::Node *node,const std::string &sequence);
+        void _setMSAleaves(bpp::Node *node,
+                           const std::string &sequence);
+
+        void _setTracebackPathleaves(bpp::Node *node);
 
         bpp::ColMatrix<double> fv_observed(MSAcolumn_t &s, int &idx);
 
-        bpp::ColMatrix<double> computeFVrec(bpp::Node *node, MSAcolumn_t &s, int &idx, int catg);
+        bpp::ColMatrix<double> computeFVrec(bpp::Node *node,
+                                            MSAcolumn_t &s,
+                                            int &idx,
+                                            int catg);
 
         void allgaps(bpp::Node *node,MSAcolumn_t &s, int &idx,bool &flag);
 
@@ -310,14 +344,38 @@ namespace bpp {
                                                       MSAcolumn_t &sR,
                                                       bool flag_RAM);
 
-        double compute_lk_down(bpp::Node *node,MSAcolumn_t &s,int catg);
+        std::vector<double> computeLK_GapColumn_local(int nodeID,
+                                                      int sonLeftID,
+                                                      int sonRightID,
+                                                      std::vector< bpp::ColMatrix<double> > &fvL,
+                                                      std::vector< bpp::ColMatrix<double> > &fvR,
+                                                      std::vector< bpp::ColMatrix<double> > &Fv_gap);
 
-        double computeLK_MXY_local(double NU,
+        std::vector<double> computeLK_GapColumn_local(int nodeID,
+                                                            int sonLeftID,
+                                                            int sonRightID,
+                                                            std::vector< bpp::ColMatrix<double> > &fvL,
+                                                            std::vector< bpp::ColMatrix<double> > &fvR,
+                                                            std::vector< bpp::ColMatrix<double> > &Fv_gap,
+                                                            std::vector<double> &fv_empty_sigma_,
+                                                            std::vector<double> &lk_empty_down_L,
+                                                            std::vector<double> &lk_empty_down_R);
+
+        void _compute_lk_empty_down_rec(bpp::Node *node,std::vector<double> &lk);
+
+        std::vector<double> _compute_lk_empty_down(bpp::Node *node);
+
+        double _compute_lk_down_rec(bpp::Node *node,int idx,double lk);
+
+        std::vector<double> _compute_lk_down(bpp::Node *node);
+
+        double _compute_lk_down(bpp::Node *node, MSAcolumn_t &s, int catg);
+
+        double computeLK_MXY_local(double log_phi_gamma,
                                    double valM,
                                    double valX,
                                    double valY,
-                                   double log_pr,
-                                   int m);
+                                   double log_pr);
 
         double computeLK_M_local(double NU,
                                  double valM,
@@ -336,11 +394,10 @@ namespace bpp {
         double computeLK_M_local(int nodeID,
                                  int sonLeftID,
                                  int sonRightID,
-                                 MSAcolumn_t &sL,
-                                 MSAcolumn_t &sR,
                                  std::vector< bpp::ColMatrix<double> > &fvL,
                                  std::vector< bpp::ColMatrix<double> > &fvR,
-                                 std::vector< bpp::ColMatrix<double> > &Fv_M_ij);
+                                 std::vector< bpp::ColMatrix<double> > &Fv_M_ij,
+                                 std::vector<double> &Fv_sigma_M_ij);
 
         double computeLK_X_local(double NU,
                                  double valM,
@@ -359,11 +416,10 @@ namespace bpp {
         double computeLK_X_local(int nodeID,
                                  int sonLeftID,
                                  int sonRightID,
-                                 MSAcolumn_t &sL,
-                                 MSAcolumn_t &col_gap_R,
                                  std::vector< bpp::ColMatrix<double> > &fvL,
                                  std::vector< bpp::ColMatrix<double> > &fvR,
-                                 std::vector< bpp::ColMatrix<double> > &Fv_X_ij);
+                                 std::vector< bpp::ColMatrix<double> > &Fv_X_ij,
+                                 std::vector<double> &Fv_sigma_X_ij);
 
         double computeLK_Y_local(double NU,
                                  double valM,
@@ -383,13 +439,14 @@ namespace bpp {
         double computeLK_Y_local(int nodeID,
                                  int sonLeftID,
                                  int sonRightID,
-                                 MSAcolumn_t &col_gap_L,
-                                 MSAcolumn_t &sR,
                                  std::vector< bpp::ColMatrix<double> > &fvL,
                                  std::vector< bpp::ColMatrix<double> > &fvR,
-                                 std::vector< bpp::ColMatrix<double> > &Fv_Y_ij);
+                                 std::vector< bpp::ColMatrix<double> > &Fv_Y_ij,
+                                 std::vector<double> &Fv_sigma_Y_ij);
 
         void DP3D_PIP(bpp::Node *node, bool local,bool flag_map);
+
+        //void DP3D_PIP_no_gamma(bpp::Node *node, bool local,bool flag_map);
 
         void DP3D_PIP_RAM(bpp::Node *node,
                           bool local,
@@ -398,8 +455,12 @@ namespace bpp {
 
         void DP3D_PIP_RAM_FAST(bpp::Node *node);
 
-        void DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,
-                         double temperature,int num_SB);
+        void DP3D_PIP_SB(bpp::Node *node,
+                         UtreeBppUtils::treemap *tm,
+                         double gamma_rate,
+                         bool local,
+                         double temperature,
+                         int num_SB);
 
     };
 
