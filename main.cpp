@@ -615,7 +615,9 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
-            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed());
+            int num_sb = 1;
+
+            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),num_sb);
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
@@ -634,6 +636,9 @@ int main(int argc, char *argv[]) {
             bool flag_map = false;
             bool flag_pattern = true;
             bool flag_fv = true;
+
+
+
             //*/
 
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
@@ -649,7 +654,7 @@ int main(int argc, char *argv[]) {
             std::cout << "[Alignment sequences] MSA_t inference using Pro-PIP terminated successfully!";
 
             // Convert PIP Aligner into bpp::sites
-            sites = pPIPUtils::pPIPmsa2Sites(alignment);
+            sites = pPIPUtils::pPIPmsa2Sites(alignment,0);
 
             // Export alignment to file
             if (PAR_output_file_msa.find("none") == std::string::npos) {
@@ -659,7 +664,7 @@ int main(int argc, char *argv[]) {
             }
 
             double score;
-            score = alignment->getScore(alignment->getRootNode());
+            score = alignment->getScore(alignment->getRootNode()).at(0);
 
             std::ofstream lkFile;
             lkFile << std::setprecision(18);
@@ -813,8 +818,8 @@ int main(int argc, char *argv[]) {
 
         // Overwrite the initial alignment with the optimised one  | TODO: the likelihood function should not be reimplemented here.
         if (PAR_alignment && PAR_align_optim) {
-            sites = pPIPUtils::pPIPmsa2Sites(alignment);
-            logL = alignment->getScore(alignment->getRootNode());
+            sites = pPIPUtils::pPIPmsa2Sites(alignment,0);
+            logL = alignment->getScore(alignment->getRootNode()).at(0);
 
             const Tree &tmpTree = tl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
 

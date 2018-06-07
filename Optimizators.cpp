@@ -634,7 +634,7 @@ namespace bpp {
             // TODO: flag_RAM, flag_map
             pAlignment->PIPAligner(ftn, true,true,true,false,true);
 
-            double score = pAlignment->getScore(pAlignment->getRootNode());
+            double score = pAlignment->getScore(pAlignment->getRootNode()).at(0);
             ApplicationTools::displayResult("\nLog likelihood after MSA optimisation", TextTools::toString(score, 15));
             LOG(INFO) << "[Alignment optimisation] Alignment has a new lk=" << score;
 
