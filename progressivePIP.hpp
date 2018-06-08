@@ -125,7 +125,6 @@ namespace bpp {
         int getId(){ return nodeID_; }; // concrete
         tshlib::VirtualNode *getVnode(){ return vnode_; };
         bpp:: Node *getBnode(){ return bnode_; };
-        void PIPalignNode();
         std::vector< std::vector<std::string> > getMSA();
         void _compressMSA(int idx_sb);
         void _setFVemptyLeaf();
@@ -139,7 +138,94 @@ namespace bpp {
         void _computeLocalTau();
         void _computeLocalNu(int numCatg);
         void _getPrFromSubstutionModel();
+
+        void PIPalignNode();
+        //virtual void DP3D_PIP() = 0;
         //***************************************************************************************
+    };
+    //*****************************************************
+    class PIPnodeCPUinterface {
+
+    public:
+        PIPnodeCPUinterface() {}
+        //virtual void DP3D_PIP() = 0;
+        void PIPalignNodeNEW();
+        void DP3D_PIP();
+    };
+
+    class PIPnodeCPU : public PIPnodeCPUinterface {
+    public:
+        void DP3D_PIP();
+    };
+
+    class PIPnodeRAM : public PIPnodeCPUinterface {
+    public:
+        void DP3D_PIP();
+    };
+
+//    class FactoryPIP {
+//    public:
+//        virtual PIPnodeCPUinterface* createPIPnode() = 0;
+//    };
+//
+//    class PIPnodeCPUFactory : public FactoryPIP {
+//    public:
+//        PIPnodeCPUinterface* createPIPnode() {
+//            return new PIPnodeCPU;
+//        }
+//    };
+//
+//    class PIPnodeRAMFactory : public FactoryPIP {
+//    public:
+//        PIPnodeCPUinterface* createPIPnode()   {
+//            return new PIPnodeRAM;
+//        }
+//    };
+
+    class PIPnodeCPUFactory : public PIPnodeCPUinterface {
+    public:
+        PIPnodeCPUinterface* createPIPnode() {
+            return new PIPnodeCPU;
+        }
+    };
+
+    class PIPnodeRAMFactory : public PIPnodeCPUinterface {
+    public:
+        PIPnodeCPUinterface* createPIPnode()   {
+            return new PIPnodeRAM;
+        }
+    };
+
+    class PIPcomponentNEW {
+
+    public:
+
+    };
+
+    class CompositePIPalignerNEW : public PIPcomponentNEW{
+
+    private:
+
+    public:
+
+        std::vector<PIPnodeCPUinterface *> pip_nodes_;
+
+        CompositePIPalignerNEW(int n){
+            pip_nodes_.resize(n);
+        };
+
+        void addPIPcomponent(PIPnodeCPUinterface *pip_node,int i){
+            pip_nodes_.at(i) = pip_node;
+        };
+
+        void PIPalignNEW(){
+
+            for (int k = 0; k < 7; k++) {
+                pip_nodes_[k]->PIPalignNodeNEW();
+            }
+
+        }
+
     };
     //*****************************************************
     class CompositePIPaligner : public PIPcomponent{
@@ -215,6 +301,9 @@ namespace bpp {
         //std::vector<double> nu_; // vector[rate] of nu (normalizing constant) with Gamma distribution
         double tau_; // total tree length
         CompositePIPaligner *compositePIPaligner_;
+
+
+        CompositePIPalignerNEW *compositePIPalignerNEW_;
         //***************************************************************************************
         // METHODS
         //***************************************************************************************

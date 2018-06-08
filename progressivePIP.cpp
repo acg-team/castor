@@ -61,6 +61,24 @@
 using namespace bpp;
 
 //***************************************************************************************
+void PIPnodeCPU:: DP3D_PIP() {
+    std::cout<<"\n aligning with PIPnodeCPU\n";
+};
+
+void PIPnodeRAM:: DP3D_PIP() {
+    std::cout<<"\n aligning with PIPnodeRAM\n";
+};
+
+void PIPnodeCPUinterface:: DP3D_PIP() {
+
+};
+
+void PIPnodeCPUinterface::PIPalignNodeNEW() {
+
+    DP3D_PIP();
+
+}
+//***************************************************************************************
 void CompositePIPaligner::PIPalignNode(){
 
 }
@@ -440,11 +458,26 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
 
     compositePIPaligner_ = new CompositePIPaligner(numNodes);
 
+
+    compositePIPalignerNEW_ = new CompositePIPalignerNEW(7);
+
+    int kkk = 0;
+
     for (auto &vnode:list_vnode_to_root) {
 
         auto bnode = tree_->getNode(treemap_.right.at(vnode), false);
 
         PIPnode * pip_node = new PIPnode(this,vnode,bnode);
+
+        int PIPtype=1;
+        //FactoryPIP *factory;
+        PIPnodeCPUinterface *factory;
+        if(PIPtype==1){
+            factory = new PIPnodeCPUFactory;
+        }else{
+            factory = new PIPnodeRAMFactory;
+        }
+
 
         pip_node->_reserve(numCatg);
 
@@ -464,10 +497,17 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
         //***************************************************************************************
 
         compositePIPaligner_->addPIPcomponent(pip_node);
+
+
+        compositePIPalignerNEW_->addPIPcomponent(factory,kkk); kkk++;
+
     }
     //***************************************************************************************
 
-    compositePIPaligner_->PIPalign();
+    //compositePIPaligner_->PIPalign();
+
+    compositePIPalignerNEW_->PIPalignNEW();
+
 
 }
 
