@@ -110,6 +110,7 @@ using namespace tshlib;
 #include "Optimizators.hpp"
 #include "SupportMeasures.hpp"
 
+#include "progressivePIP.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -618,6 +619,7 @@ int main(int argc, char *argv[]) {
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
+
             int num_sb = 1;
 
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),num_sb);
@@ -651,6 +653,20 @@ int main(int argc, char *argv[]) {
             }
 
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
+            /*
+            //TEST
+            progressivePIP *PIPmsa = new bpp::progressivePIP(utree,
+                                                   tree,
+                                                   smodel,
+                                                   tm,
+                                                   sequences,
+                                                   rDist,
+                                                   jatiapp.getSeed());
+
+            PIPmsa->initializePIP(ftn, num_sb);
+
+            */
 
             alignment->PIPAligner(ftn, flag_local, flag_RAM, flag_map, flag_pattern, flag_fv);
 

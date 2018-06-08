@@ -194,7 +194,9 @@ set(SOURCES
         RHomogeneousTreeLikelihood_Generic.cpp
         RHomogeneousTreeLikelihood_Generic.hpp
         SupportMeasures.cpp
-        SupportMeasures.hpp )
+        SupportMeasures.hpp
+        progressivePIP.hpp
+        progressivePIP.cpp)
 
 
 if (STATIC GREATER 0)

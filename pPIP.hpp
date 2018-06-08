@@ -451,19 +451,21 @@ namespace bpp {
 
         //void DP3D_PIP_no_gamma(bpp::Node *node, bool local,bool flag_map);
 
-        void DP3D_PIP_RAM(bpp::Node *node,
-                          bool local,
-                          bool flag_map,
-                          bool flag_pattern);
+//        void DP3D_PIP_RAM(bpp::Node *node,
+//                          bool local,
+//                          bool flag_map,
+//                          bool flag_pattern);
 
         void DP3D_PIP_RAM_FAST(bpp::Node *node);
 
-        void DP3D_PIP_SB(bpp::Node *node,
-                         UtreeBppUtils::treemap *tm,
-                         double gamma_rate,
-                         bool local,
-                         double temperature,
-                         int num_SB);
+        void DP3D_PIP_RAM_FAST_SB(bpp::Node *node);
+
+//        void DP3D_PIP_SB(bpp::Node *node,
+//                         UtreeBppUtils::treemap *tm,
+//                         double gamma_rate,
+//                         bool local,
+//                         double temperature,
+//                         int num_SB);
 
     };
 
