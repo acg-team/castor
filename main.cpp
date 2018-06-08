@@ -630,7 +630,7 @@ int main(int argc, char *argv[]) {
             // Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_local = false;
             bool flag_RAM = false;
-            bool flag_map = false;
+            bool flag_map = true;
             bool flag_pattern = false;
             bool flag_fv = false;
 
