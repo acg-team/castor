@@ -458,49 +458,35 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
     _setPi(substModel_->getFrequencies());
     //***************************************************************************************
 
-    //compositePIPaligner_ = new CompositePIPaligner(numNodes);
+    compositePIPaligner_ = new CompositePIPaligner(numNodes);
 
 
-    //compositePIPalignerNEW_ = new CompositePIPalignerNEW(7);
 
-//    nodeInterface* a = new nodeRAM(5);
-//    nodeInterface* b = new nodeRAM(6);
-//    nodeInterface* c = new nodeRAM(7);
-//    IComposite* clientComposite = new Composite(3);
-//    clientComposite->Add(a);
-//    clientComposite->Add(b);
-//    clientComposite->Add(c);
-//    clientComposite->Align();
+
 
     nodeFactory *nodeFactory = new bpp::nodeFactory();
 
-    /*Factory instantiating an object of type ROCK*/
-    nodeInterface *node1 = nodeFactory->getNode(RAM,1);
-    nodeInterface *node2 = nodeFactory->getNode(RAM,2);
+    nodeInterface *node1 = nodeFactory->getNode(CPU,1);
+    nodeInterface *node2 = nodeFactory->getNode(CPU,2);
     nodeInterface *node3 = nodeFactory->getNode(RAM,3);
-    IComposite* clientComposite = new Composite(3);
+
+    CompositeInterface* clientComposite = new Composite(3);
+
     clientComposite->Add(node1,0);
     clientComposite->Add(node2,1);
     clientComposite->Add(node3,2);
+
     clientComposite->Align();
 
-    int kkk = 0;
+
+
+
 
     for (auto &vnode:list_vnode_to_root) {
 
         auto bnode = tree_->getNode(treemap_.right.at(vnode), false);
 
         PIPnode * pip_node = new PIPnode(this,vnode,bnode);
-
-/*        int PIPtype=1;
-        //FactoryPIP *factory;
-        PIPnodeInterface *factory;
-        if(PIPtype==1){
-            factory = new PIPnodeCPUFactory;
-        }else{
-            factory = new PIPnodeRAMFactory;
-        }*/
-
 
         pip_node->_reserve(numCatg);
 
@@ -520,9 +506,6 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
         //***************************************************************************************
 
         compositePIPaligner_->addPIPcomponent(pip_node);
-
-
-        //compositePIPalignerNEW_->addPIPcomponent(factory,kkk); kkk++;
 
     }
     //***************************************************************************************

@@ -140,144 +140,104 @@ namespace bpp {
         void _getPrFromSubstutionModel();
 
         void PIPalignNode();
-        //virtual void DP3D_PIP() = 0;
         //***************************************************************************************
     };
     //*****************************************************
-/*
-    class PIPnodeInterface {
 
+    //*************************
+    class msa {
+        double score;
     public:
-        PIPnodeInterface() {}
-        //virtual void DP3D_PIP() = 0;
-        //void PIPalignNodeNEW();
-        virtual void DP3D_PIP();
+        double getScore(){ return score; };
     };
-
-    class PIPnodeCPU : public PIPnodeInterface {
+    //*************************
+    class CompositeMSA : public msa {
+        vector<msa*> elems;
     public:
-        void DP3D_PIP();
-    };
 
-    class PIPnodeRAM : public PIPnodeInterface {
-    public:
-        void DP3D_PIP();
-    };
-
-//    class FactoryPIP {
-//    public:
-//        virtual PIPnodeInterface* createPIPnode() = 0;
-//    };
-//
-//    class PIPnodeCPUFactory : public FactoryPIP {
-//    public:
-//        PIPnodeInterface* createPIPnode() {
-//            return new PIPnodeCPU;
-//        }
-//    };
-//
-//    class PIPnodeRAMFactory : public FactoryPIP {
-//    public:
-//        PIPnodeInterface* createPIPnode()   {
-//            return new PIPnodeRAM;
-//        }
-//    };
-
-    class PIPnodeCPUFactory : public PIPnodeInterface {
-    public:
-        PIPnodeInterface* createPIPnode() {
-            return new PIPnodeCPU;
+        CompositeMSA(int n){
+            elems.resize(n);
         }
-    };
 
-    class PIPnodeRAMFactory : public PIPnodeInterface {
-    public:
-        PIPnodeInterface* createPIPnode()   {
-            return new PIPnodeRAM;
+        void Add(msa* elem,int idx) {
+            elems.at(idx) = elem;
         }
-    };
 
-    class PIPcomponentNEW {
-
-    public:
-
-    };
-
-    class CompositePIPalignerNEW : public PIPcomponentNEW{
-
-    private:
-
-    public:
-
-        std::vector<PIPnodeInterface *> pip_nodes_;
-
-        CompositePIPalignerNEW(int n){
-            pip_nodes_.resize(n);
-        };
-
-        void addPIPcomponent(PIPnodeInterface *pip_node,int i){
-            pip_nodes_.at(i) = pip_node;
-        };
-
-        void PIPalignNEW(){
-
-            for (int k = 0; k < 7; k++) {
-                pip_nodes_[k]->PIPalignNodeNEW();
+        ~CompositeMSA() {
+            for (vector<msa*>::const_iterator iter = elems.begin(); iter != elems.end(); ++iter) {
+                delete *iter;
             }
-
         }
-
     };
-*/
-    //*****************************************************
-    //*****************************************************
-    //*****************************************************
-
-//    class PIPnodeInterface {
-//
-//    public:
-//        PIPnodeInterface() {}
-//        //virtual void DP3D_PIP() = 0;
-//        //void PIPalignNodeNEW();
-//        virtual void DP3D_PIP();
-//    };
-//
-//    class PIPnodeCPU : public PIPnodeInterface {
-//    public:
-//        void DP3D_PIP();
-//    };
     //*************************
     class nodeInterface {
         int val;
+        int val1;
     public:
         virtual void DP3D_PIP() = 0;
+
+        int getVal(){
+            return val;
+        };
+
+        void setVal(int x){
+            val = x;
+        };
+
+        CompositeMSA* clientCompositeMSA;
+
     };
     //*************************
     class nodeCPU : public nodeInterface {
         int val;
+        int val1;
     public:
+
         nodeCPU(int x){ val=x;}
+
+        int getVal(){
+            return val;
+        };
+
+        void setVal(int x){
+            val = x;
+        };
+
         void DP3D_PIP() {
             std::cout<<"align nodeCPU: "<<val<<"\n";
+            setVal(getVal()*20);
+            clientCompositeMSA = new CompositeMSA(10);
         }
     };
     //*************************
     class nodeRAM : public nodeInterface {
         int val;
+        int val1;
     public:
         nodeRAM(int x){ val=x;}
+
+        int getVal(){
+            return val;
+        };
+
+        void setVal(int x){
+            val = x;
+        };
+
         void DP3D_PIP() {
             std::cout<<"align nodeRAM: "<<val<<"\n";
+            setVal(getVal()*2);
+            clientCompositeMSA = new CompositeMSA(5);
         }
     };
     //*************************
-    class IComposite {
+    class CompositeInterface {
     public:
         virtual void Align(void) = 0;
         virtual void Add(nodeInterface* elem,int idx){}
     };
     //*************************
-    class Composite : public IComposite {
+    class Composite : public CompositeInterface {
         vector<nodeInterface*> elems;
     public:
 
