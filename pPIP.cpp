@@ -2786,6 +2786,9 @@ void pPIP::_compress_Fv(bpp::Node *node,
 
 void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
 
+
+    double temperature = 1.0;
+
     //***************************************************************************************
     // NODE VARIABLES
     //***************************************************************************************
@@ -3206,303 +3209,311 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
     // STORE THE SCORE
     //***************************************************************************************
     // level (k position) in the DP matrix that contains the highest lk value
-    score_.at(nodeID).resize(num_sb_);
-    score_.at(nodeID).at(0) = curr_best_score;
+//    score_.at(nodeID).resize(num_sb_);
+//    score_.at(nodeID).at(0) = curr_best_score;
     //***************************************************************************************
     // TRACEBACK ALGORITHM
     //***************************************************************************************
+//    std::vector< vector< bpp::ColMatrix<double> > > fv_data_not_compressed;
+//    fv_data_not_compressed.resize(level_max_lk);
+//
+//    std::vector<std::vector<double>> fv_sigma_not_compressed;
+//
+//    fv_sigma_not_compressed.resize(level_max_lk);
+//
+//    // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
+//    traceback_path_.at(nodeID).resize(num_sb_);
+//    traceback_path_.at(nodeID).at(0).resize(level_max_lk);
+//
+//    traceback_map_.at(nodeID).resize(num_sb_);
+//    traceback_map_.at(nodeID).at(0).resize(2);
+//    traceback_map_.at(nodeID).at(0).at(LEFT).resize(level_max_lk);
+//    traceback_map_.at(nodeID).at(0).at(RIGHT).resize(level_max_lk);
+//    i = h - 1;
+//    j = w - 1;
+//    int idmL,idmR;
+//    int state;
+//    for (int lev = level_max_lk; lev > 0; lev--) {
+//        //state = TR[lev][i][j];
+//        switch (state) {
+//            case MATCH_STATE:
+//
+//                idmL = map_compressed_seqs_.at(nodeID_L).at(0).at(i-1);
+//                idmR = map_compressed_seqs_.at(nodeID_R).at(0).at(j-1);
+//
+//                fv_data_not_compressed.at(lev - 1) = Fv_M[idmL][idmR];
+//
+//                fv_sigma_not_compressed.at(lev -1) = Fv_sigma_M[idmL][idmR];
+//
+//                i = i - 1;
+//                j = j - 1;
+//
+//                traceback_path_.at(nodeID).at(0).at(lev - 1) = (int)MATCH_STATE;
+//
+//                traceback_map_.at(nodeID).at(0).at(LEFT).at(lev -1) = i;
+//                traceback_map_.at(nodeID).at(0).at(RIGHT).at(lev -1) = j;
+//
+//                break;
+//            case GAP_X_STATE:
+//
+//                idmL = map_compressed_seqs_.at(nodeID_L).at(0).at(i-1);
+//
+//                fv_data_not_compressed.at(lev - 1) = Fv_X[idmL];
+//
+//                fv_sigma_not_compressed.at(lev -1) = Fv_sigma_X[idmL];
+//
+//                i = i - 1;
+//
+//                traceback_path_.at(nodeID).at(0).at(lev - 1) = (int)GAP_X_STATE;
+//
+//                traceback_map_.at(nodeID).at(0).at(LEFT).at(lev -1) = i;
+//                traceback_map_.at(nodeID).at(0).at(RIGHT).at(lev -1) = -1;
+//
+//                break;
+//            case GAP_Y_STATE:
+//
+//                idmR = map_compressed_seqs_.at(nodeID_R).at(0).at(j-1);
+//
+//                fv_data_not_compressed.at(lev - 1) = Fv_Y[idmR];
+//
+//                fv_sigma_not_compressed.at(lev -1) = Fv_sigma_Y[idmR];
+//
+//                j = j - 1;
+//
+//                traceback_path_.at(nodeID).at(0).at(lev - 1) = (int)GAP_Y_STATE;
+//
+//                traceback_map_.at(nodeID).at(0).at(LEFT).at(lev -1) = -1;
+//                traceback_map_.at(nodeID).at(0).at(RIGHT).at(lev -1) = j;
+//
+//                break;
+//            default:
+//                LOG(FATAL) << "\nSomething went wrong during the alignment reconstruction in function pPIP::DP3D_PIP. Check call stack below.";
+//        }
+//    }
+    //***************************************************************************************
+    int m,x,y;
+    double score;
+    double pm;
+    double pmn;
+    double log_pm;
+    double px;
+    double pxn;
+    double log_px;
+    double py;
+    double pyn;
+    double log_py;
+    double z;
+    double lk;
+    double p0;
+    double random_number;
+    double log_P;
+    int T;
+    double max_M,max_X,max_Y;
+    int idx_M,idx_X,idx_Y;
+    int idxMax;
+
+    //TODO: assign fv_data_not_compressed
     std::vector< vector< bpp::ColMatrix<double> > > fv_data_not_compressed;
     fv_data_not_compressed.resize(level_max_lk);
 
+    //TODO: assign fv_sigma_not_compressed
     std::vector<std::vector<double>> fv_sigma_not_compressed;
-
     fv_sigma_not_compressed.resize(level_max_lk);
 
-    // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
-    traceback_path_.at(nodeID).resize(num_sb_);
-    traceback_path_.at(nodeID).at(0).resize(level_max_lk);
 
-    traceback_map_.at(nodeID).resize(num_sb_);
-    traceback_map_.at(nodeID).at(0).resize(2);
-    traceback_map_.at(nodeID).at(0).at(LEFT).resize(level_max_lk);
-    traceback_map_.at(nodeID).at(0).at(RIGHT).resize(level_max_lk);
-    i = h - 1;
-    j = w - 1;
-    int idmL,idmR;
-    int state;
-    for (int lev = level_max_lk; lev > 0; lev--) {
-        //state = TR[lev][i][j];
-        switch (state) {
+    for(int sb=0;sb<num_sb_;sb++) {
+
+        pPIPUtils::max_val_in_column(Log3DM, d, h, w, max_M, idx_M);
+        pPIPUtils::max_val_in_column(Log3DX, d, h, w, max_X, idx_X);
+        pPIPUtils::max_val_in_column(Log3DY, d, h, w, max_Y, idx_Y);
+
+        _index_of_max(max_M, max_X, max_Y, epsilon, generator, distribution, true, idxMax, score);
+
+        switch (idxMax) {
             case MATCH_STATE:
-
-                idmL = map_compressed_seqs_.at(nodeID_L).at(0).at(i-1);
-                idmR = map_compressed_seqs_.at(nodeID_R).at(0).at(j-1);
-
-                fv_data_not_compressed.at(lev - 1) = Fv_M[idmL][idmR];
-
-                fv_sigma_not_compressed.at(lev -1) = Fv_sigma_M[idmL][idmR];
-
-                i = i - 1;
-                j = j - 1;
-
-                traceback_path_.at(nodeID).at(0).at(lev - 1) = (int)MATCH_STATE;
-
-                traceback_map_.at(nodeID).at(0).at(LEFT).at(lev -1) = i;
-                traceback_map_.at(nodeID).at(0).at(RIGHT).at(lev -1) = j;
-
+                T = (int) MATCH_STATE;
+                score = max_M;
+                m = idx_M;
                 break;
             case GAP_X_STATE:
-
-                idmL = map_compressed_seqs_.at(nodeID_L).at(0).at(i-1);
-
-                fv_data_not_compressed.at(lev - 1) = Fv_X[idmL];
-
-                fv_sigma_not_compressed.at(lev -1) = Fv_sigma_X[idmL];
-
-                i = i - 1;
-
-                traceback_path_.at(nodeID).at(0).at(lev - 1) = (int)GAP_X_STATE;
-
-                traceback_map_.at(nodeID).at(0).at(LEFT).at(lev -1) = i;
-                traceback_map_.at(nodeID).at(0).at(RIGHT).at(lev -1) = -1;
-
+                T = (int) GAP_X_STATE;
+                score = max_X;
+                m = idx_X;
                 break;
             case GAP_Y_STATE:
-
-                idmR = map_compressed_seqs_.at(nodeID_R).at(0).at(j-1);
-
-                fv_data_not_compressed.at(lev - 1) = Fv_Y[idmR];
-
-                fv_sigma_not_compressed.at(lev -1) = Fv_sigma_Y[idmR];
-
-                j = j - 1;
-
-                traceback_path_.at(nodeID).at(0).at(lev - 1) = (int)GAP_Y_STATE;
-
-                traceback_map_.at(nodeID).at(0).at(LEFT).at(lev -1) = -1;
-                traceback_map_.at(nodeID).at(0).at(RIGHT).at(lev -1) = j;
-
+                T = (int) GAP_Y_STATE;
+                score = max_Y;
+                m = idx_Y;
                 break;
             default:
-                LOG(FATAL) << "\nSomething went wrong during the alignment reconstruction in function pPIP::DP3D_PIP. Check call stack below.";
+                perror("state not recognized");
         }
+
+        i = h;
+        j = w;
+
+
+        double log_Zm = Log3DM[m][i][j];
+        double log_Zx = Log3DX[m][i][j];
+        double log_Zy = Log3DY[m][i][j];
+
+        if (isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)) {
+            perror("ERROR 1: Zm, Zx and Zy are inf");
+        }
+
+        double log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
+        double log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
+
+        if (isinf(log_Z)) {
+            perror("ERROR 2 Z: is inf");
+        }
+
+        if (isinf(log_Zm)) {
+            pm = 0;
+            pmn = 0;
+        } else {
+            log_pm = log_Zm - log_Z;
+            pm = exp(log_pm);
+            pmn = exp(-(1 - pm) / temperature);
+        }
+
+        if (isinf(log_Zx)) {
+            px = 0;
+            pxn = 0;
+        } else {
+            log_px = log_Zx - log_Z;
+            px = exp(log_px);
+            pxn = exp(-(1 - px) / temperature);
+        }
+
+        if (isinf(log_Zy)) {
+            py = 0;
+            pyn = 0;
+        } else {
+            log_py = log_Zy - log_Z;
+            py = exp(log_py);
+            pyn = exp(-(1 - py) / temperature);
+        }
+
+        z = pmn + pxn + pyn;
+        pm = pmn / z;
+        px = pxn / z;
+        py = pyn / z;
+
+        std::vector<int> traceback;
+
+        m = 1;
+        lk = -log(m) + log(nu_.at(nodeID)) + p0;
+
+        while (i > 1 || j > 1 || m > 1) {
+
+            random_number = distribution(generator);
+
+            if (random_number < pm) {
+                log_P = Log2DM[i][j];
+                i = i - 1;
+                j = j - 1;
+                m = m - 1;
+                T = (int) MATCH_STATE;
+            } else if (random_number < (pm + px)) {
+                log_P = Log2DX[i];
+                i = i - 1;
+                m = m - 1;
+                T = (int) GAP_X_STATE;
+            } else {
+                log_P = Log2DY[j];
+                j = j - 1;
+                m = m - 1;
+                T = (int) GAP_Y_STATE;
+            }
+
+            if (isinf(log_P)) {
+                perror("ERROR 3: P inf");
+            }
+
+            lk = lk + log_P;
+
+            traceback.push_back(T);
+
+            log_Zm = Log3DM[m][i][j];
+            log_Zx = Log3DX[m][i][j];
+            log_Zy = Log3DY[m][i][j];
+
+            if (isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)) {
+                perror("ERROR 1: Zm, Zx and Zy are inf");
+            }
+
+            log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
+            log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
+
+            if (isinf(log_Z)) {
+                perror("ERROR 2 Z: is inf");
+            }
+
+            if (isinf(log_Zm)) {
+                pm = 0;
+                pmn = 0;
+            } else {
+                log_pm = log_Zm - log_Z;
+                pm = exp(log_pm);
+                pmn = exp(-(1 - pm) / temperature);
+            }
+
+            if (isinf(log_Zx)) {
+                px = 0;
+                pxn = 0;
+            } else {
+                log_px = log_Zx - log_Z;
+                px = exp(log_px);
+                pxn = exp(-(1 - px) / temperature);
+            }
+
+            if (isinf(log_Zy)) {
+                py = 0;
+                pyn = 0;
+            } else {
+                log_py = log_Zy - log_Z;
+                py = exp(log_py);
+                pyn = exp(-(1 - py) / temperature);
+            }
+
+            z = pmn + pxn + pyn;
+            pm = pmn / z;
+            px = pxn / z;
+            py = pyn / z;
+
+        }
+
+        reverse(traceback.begin(), traceback.end());
+
+        traceback_path_.at(nodeID).at(sb) = traceback;
+
+        score_.at(nodeID).at(sb) = score;
+
+        //***************************************************************************************
+        // BUILD NEW MSA
+        //***************************************************************************************
+        // converts traceback path into an MSA
+        _build_MSA(node, sb);
+
+        //***************************************************************************************
+        // COMPRESS INFO
+        //***************************************************************************************
+        // compress the MSA
+        _compressMSA(node, sb);
+
+        // compress fv values and lk_down
+        //_compress_lk_components(nodeInterface, lk_down_not_compressed, fv_data_not_compressed);
+        _compress_Fv(node,
+                     fv_sigma_not_compressed,
+                     fv_data_not_compressed,
+                     sb);
+        //***************************************************************************************
+
     }
-    //***************************************************************************************
-    //    double pm;
-//    double pmn;
-//    double log_pm;
-//    double px;
-//    double pxn;
-//    double log_px;
-//    double py;
-//    double pyn;
-//    double log_py;
-//    double z;
-//    double lk;
-//    double p0;
-//    double random_number;
-//    double log_P;
-//    char T;
-//    double max_M,max_X,max_Y;
-//    int idx_M,idx_X,idx_Y;
-//    int idxMax;
-//    for(int sb=0;sb<num_SB;sb++) {
-//
-//        pPIPUtils::max_val_in_column(LogM,d,h,w,max_M,idx_M);
-//        pPIPUtils::max_val_in_column(LogX,d,h,w,max_X,idx_X);
-//        pPIPUtils::max_val_in_column(LogY,d,h,w,max_Y,idx_Y);
-//
-//        score=max_of_three(max_M,max_X,max_Y,epsilon);
-//
-//        idxMax = _index_of_max(max_M,max_X,max_Y,epsilon,generator,distribution);
-//        switch(idxMax){
-//            case MATCH_STATE:
-//                T = MATCH_CHAR;
-//                score = max_M;
-//                m = idx_M;
-//                break;
-//            case GAP_X_STATE:
-//                T = GAP_X_STATE;
-//                score = max_X;
-//                m = idx_X;
-//                break;
-//            case GAP_Y_STATE:
-//                T = GAP_Y_CHAR;
-//                score = max_Y;
-//                m = idx_Y;
-//                break;
-//            default:
-//                perror("state not recognized");
-//        }
-//
-//        i = h;
-//        j = w;
-//
-//
-//        double log_Zm = LogM[m][i][j];
-//        double log_Zx = LogX[m][i][j];
-//        double log_Zy = LogY[m][i][j];
-//
-//        if(isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)){
-//            perror("ERROR 1: Zm, Zx and Zy are inf");
-//        }
-//
-//        double log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
-//        double log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
-//
-//        if(isinf(log_Z)){
-//            perror("ERROR 2 Z: is inf");
-//        }
-//
-//        if(isinf(log_Zm)){
-//            pm = 0;
-//            pmn = 0;
-//        }else{
-//            log_pm = log_Zm - log_Z;
-//            pm = exp(log_pm);
-//            pmn = exp(-(1 - pm) / temperature);
-//        }
-//
-//        if(isinf(log_Zx)){
-//            px = 0;
-//            pxn = 0;
-//        }else{
-//            log_px = log_Zx - log_Z;
-//            px = exp(log_px);
-//            pxn = exp(-(1 - px) / temperature);
-//        }
-//
-//        if(isinf(log_Zy)){
-//            py = 0;
-//            pyn = 0;
-//        }else{
-//            log_py = log_Zy - log_Z;
-//            py = exp(log_py);
-//            pyn = exp(-(1 - py) / temperature);
-//        }
-//
-//        z = pmn + pxn + pyn;
-//        pm = pmn/z;
-//        px = pxn/z;
-//        py = pyn/z;
-//
-//        TracebackPath_t traceback;
-//
-//        m = 1;
-//        lk = -log(m) + log(nu_) + p0;
-//
-//        while (i > 1 || j > 1 || m > 1) {
-//
-//            random_number  = distribution(generator);
-//
-//            if (random_number < pm) {
-//                log_P = Mp[m][i][j];
-//                i = i - 1;
-//                j = j - 1;
-//                m = m - 1;
-//                T = MATCH_CHAR;
-//            }else if(random_number < (pm + px)){
-//                log_P = Xp[m][i][j];
-//                i = i - 1;
-//                m = m - 1;
-//                T = GAP_X_CHAR;
-//            }else{
-//                log_P = Yp[m][i][j];
-//                j = j - 1;
-//                m = m - 1;
-//                T = GAP_Y_CHAR;
-//            }
-//
-//            if(isinf(log_P)){
-//                perror("ERROR 3: P inf");
-//            }
-//
-//            lk = lk + log_P;
-//
-//            traceback.append(&T);
-//
-//            log_Zm = LogM[m][i][j];
-//            log_Zx = LogX[m][i][j];
-//            log_Zy = LogY[m][i][j];
-//
-//            if (isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)) {
-//                perror("ERROR 1: Zm, Zx and Zy are inf");
-//            }
-//
-//            log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
-//            log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
-//
-//            if(isinf(log_Z)){
-//                perror("ERROR 2 Z: is inf");
-//            }
-//
-//            if(isinf(log_Zm)) {
-//                pm = 0;
-//                pmn = 0;
-//            }else {
-//                log_pm = log_Zm - log_Z;
-//                pm = exp(log_pm);
-//                pmn = exp(-(1 - pm) / temperature);
-//            }
-//
-//            if(isinf(log_Zx)){
-//                px = 0;
-//                pxn = 0;
-//            }else {
-//                log_px = log_Zx - log_Z;
-//                px = exp(log_px);
-//                pxn = exp(-(1 - px) / temperature);
-//            }
-//
-//            if(isinf(log_Zy)) {
-//                py = 0;
-//                pyn = 0;
-//            }else {
-//                log_py = log_Zy - log_Z;
-//                py = exp(log_py);
-//                pyn = exp(-(1 - py) / temperature);
-//            }
-//
-//            z = pmn + pxn + pyn;
-//            pm = pmn/z;
-//            px = pxn/z;
-//            py = pyn/z;
-//
-//        }
-//
-//        reverse(traceback.begin(),traceback.end());
-//
-//        traceback_path_ensemble_.at(nodeID).push_back(traceback);
-//
-//        score_ensemble_.at(nodeID).push_back(score);
-
-
-
-
-
-
-
-    //***************************************************************************************
-    // BUILD NEW MSA
-    //***************************************************************************************
-    // converts traceback path into an MSA
-    _build_MSA(node,0);
 
     // assigns the sequence names of the new alligned sequences to the current MSA
     _setMSAsequenceNames(node);
-    //***************************************************************************************
-    // COMPRESS INFO
-    //***************************************************************************************
-    // compress the MSA
-    _compressMSA(node,0);
-
-    // compress fv values and lk_down
-    //_compress_lk_components(nodeInterface, lk_down_not_compressed, fv_data_not_compressed);
-    _compress_Fv(node,
-                 fv_sigma_not_compressed,
-                 fv_data_not_compressed,
-                 0);
-    //***************************************************************************************
 
 }
 
@@ -4976,7 +4987,7 @@ double pPIPUtils::add_lns(double a_ln, double b_ln) {
     return R;
 }
 
-void pPIPUtils::max_val_in_column(double ***M, int depth, int height, int width, double &val, int &level) {
+void pPIPUtils::max_val_in_column(std::vector<std::vector<std::vector<double>>> &M, int depth, int height, int width, double &val, int &level) {
 
     val = -std::numeric_limits<double>::infinity();
     level = 0;

@@ -64,8 +64,8 @@ namespace bpp {
         typedef std::string MSAcolumn_t;           // MSA column type
         typedef std::vector<MSAcolumn_t> MSA_t;    // MSA as vector of columns
         typedef std::vector<MSA_t> MSAensemble_t;  // for SB: set (vector) of MSAs
-        typedef std::string TracebackPath_t;       // traceback path type
-        typedef std::vector<TracebackPath_t> TracebackEnsemble_t; //for SB: set (vector) of traceback paths
+        //typedef std::string TracebackPath_t;       // traceback path type
+        //typedef std::vector<TracebackPath_t> TracebackEnsemble_t; //for SB: set (vector) of traceback paths
 
         pPIP(tshlib::Utree *utree,              // tshlib:: tree
              bpp::Tree *tree,                   // bpp::tree
@@ -479,7 +479,7 @@ namespace pPIPUtils {
     // sum of logs
     double add_lns(double a_ln,double b_ln);
 
-    void max_val_in_column(double ***M,int depth, int height, int width, double &val, int &level);
+    void max_val_in_column(std::vector<std::vector<std::vector<double>>> &M,int depth, int height, int width, double &val, int &level);
 
     std::vector<std::string> siteContainer_2_sequence_vector(std::vector<bpp::pPIP::MSAcolumn_t> &MSA);
 
