@@ -123,7 +123,7 @@ void UnifiedTSHSearchable::setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
 void UnifiedTSHSearchable::fireBranchOptimisation(std::vector<bpp::Node *> extractionNodes) {
 
     ParameterList parameters;
-    // For each node involved in the move, get the corrisponding branch parameter (no root)
+    // For each nodeInterface involved in the move, get the corrisponding branch parameter (no root)
     for (auto &bnode:extractionNodes) {
         if (bnode->hasFather()) {
             Parameter brLen = lk_->getParameter("BrLen" + TextTools::toString(bnode->getId()));

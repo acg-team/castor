@@ -615,7 +615,7 @@ namespace bpp {
                       << PAR_align_algorithm_tolerance << "," << PAR_align_algorithm_maxeval <<
                       ")";
 
-            // Execute alignment on post-order node list
+            // Execute alignment on post-order nodeInterface list
             tshlib::Utree *utree_;
 
             if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(tl)) {

@@ -77,7 +77,7 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves() {
 
         case tshlib::TreeRearrangmentOperations::classic_Mixed:
             min_radius = 3;  // Minimum radius for an NNI move is 3 nodes
-            max_radius = utree_->getMaxNodeDistance(); // Full tree traversing from any node of the tree
+            max_radius = utree_->getMaxNodeDistance(); // Full tree traversing from any nodeInterface of the tree
             break;
 
     }
@@ -93,12 +93,12 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves() {
         case tshlib::TreeSearchHeuristics::greedy:
             // Generate candidate list of possible moves given the tree topology and the rearrangement operation type
             for (auto &node:utree_->listVNodes) {
-                // Print node description with neighbors
+                // Print nodeInterface description with neighbors
                 //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
                 candidateMoveSet->setSourceNode(node);
-                // Get all the target nodes with distance == radius from the source node
-                // excluding the starting node (false)
+                // Get all the target nodes with distance == radius from the source nodeInterface
+                // excluding the starting nodeInterface (false)
                 // do not duplicate moves in the list
                 candidateMoveSet->defineMoves(false, false);
 
@@ -119,17 +119,17 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves() {
             std::vector<tshlib::VirtualNode *> pickedNodes((int)search_startingnodes);
             RandomTools::getSample(utree_->listVNodes,pickedNodes);
 
-            // Generate candidate list of possible moves given the node topology and the rearrangement operation type
+            // Generate candidate list of possible moves given the nodeInterface topology and the rearrangement operation type
             //for (int i = 0; i < search_startingnodes; i++) {
             for(auto &node:pickedNodes){
-                //VirtualNode *node = utree_->listVNodes.at(node_ids.at(i));
+                //VirtualNode *nodeInterface = utree_->listVNodes.at(node_ids.at(i));
 
-                // Print node description with neighbors
+                // Print nodeInterface description with neighbors
                 //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
                 candidateMoveSet->setSourceNode(node);
-                // Get all the target nodes with distance == radius from the source node
-                // excluding the starting node (false)
+                // Get all the target nodes with distance == radius from the source nodeInterface
+                // excluding the starting nodeInterface (false)
                 // do not duplicate moves in the list
                 candidateMoveSet->defineMoves(false, false);
 
@@ -138,7 +138,7 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves() {
             break;
     }
 
-    // Print the list of moves for the current P node (source node)
+    // Print the list of moves for the current P nodeInterface (source nodeInterface)
     //rearrangmentList.printMoves();
 
     return candidateMoveSet;
@@ -225,7 +225,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
 
 
     for (unsigned long i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
-        ApplicationTools::displayGauge(i + 1, candidateMoves->getNumberOfMoves(), '>', std::string("node " + candidateMoves->getMove(i)->getSourceNode()->vnode_name));
+        ApplicationTools::displayGauge(i + 1, candidateMoves->getNumberOfMoves(), '>', std::string("nodeInterface " + candidateMoves->getMove(i)->getSourceNode()->vnode_name));
 
         std::vector < tshlib::VirtualNode * > listNodesWithinPath, updatedNodesWithinPath;
         double moveLogLK = 0;
@@ -250,7 +250,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         VLOG(1) << "[TSH Cycle - Topology] [A] MOVE#" << candidateMoves->getMove(i)->move_id << " | " << utree_->printTreeNewick(true);
 
         // ------------------------------------
-        // Print root reachability from every node (includes rotations)
+        // Print root reachability from every nodeInterface (includes rotations)
         // inputTree->_testReachingPseudoRoot();
 
         // ------------------------------------
@@ -272,7 +272,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
             for (auto &node:updatedNodesWithinPath) {
                 nodepath << node->getNodeName() << ">";
             }
-            LOG_IF(ERROR, std::isinf(moveLogLK)) << "llk[Move] is -inf for move " << candidateMoves->getMove(i)->move_id << " node-path:" << nodepath.str();
+            LOG_IF(ERROR, std::isinf(moveLogLK)) << "llk[Move] is -inf for move " << candidateMoves->getMove(i)->move_id << " nodeInterface-path:" << nodepath.str();
         }
         // ------------------------------------
         // Store likelihood of the move
@@ -305,7 +305,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
             for (auto &node:listNodesWithinPath) {
                 nodepath << node->getNodeName() << ">";
             }
-            LOG_IF(ERROR, std::isinf(moveLogLK_return)) << "llk[Return] value is -inf for move " << candidateMoves->getMove(i)->move_id << " node-path:" << nodepath.str();
+            LOG_IF(ERROR, std::isinf(moveLogLK_return)) << "llk[Return] value is -inf for move " << candidateMoves->getMove(i)->move_id << " nodeInterface-path:" << nodepath.str();
         }
 
         //candidateMoves->displayRearrangmentStatus(i, true);

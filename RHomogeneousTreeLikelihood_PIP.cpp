@@ -175,8 +175,8 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     for (bpp::Node *node:tree_->getNodes()) {
         iotasData_.insert(std::make_pair(node->getId(), 0));
         betasData_.insert(std::make_pair(node->getId(), 0));
-        //evolutionaryEvents_[node->getId()] = 0;
-        //evolutionaryEventsWeighted_[node->getId()] = 0;
+        //evolutionaryEvents_[nodeInterface->getId()] = 0;
+        //evolutionaryEventsWeighted_[nodeInterface->getId()] = 0;
         if(node->isLeaf()) {
             indicatorFun_[node->getId()].resize(nbDistinctSites_);
         }
@@ -220,9 +220,9 @@ throw(Exception) {
 void RHomogeneousTreeLikelihood_PIP::_hadamardMultFvSons(Node *node) const {
     VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
 
-    //size_t nbNodes = node->getNumberOfSons();
+    //size_t nbNodes = nodeInterface->getNumberOfSons();
 
-    // Get mapped node on Utree
+    // Get mapped nodeInterface on Utree
     std::vector<int> sonsIDs;
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -265,9 +265,9 @@ void RHomogeneousTreeLikelihood_PIP::_hadamardMultFvEmptySons(Node *node) const 
 
     VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
 
-    //size_t nbNodes = node->getNumberOfSons();
+    //size_t nbNodes = nodeInterface->getNumberOfSons();
 
-    // Get mapped node on Utree
+    // Get mapped nodeInterface on Utree
     std::vector<int> sonsIDs;
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -307,7 +307,7 @@ void RHomogeneousTreeLikelihood_PIP::_hadamardMultFvEmptySons(Node *node) const 
 
 void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvSons(Node *node, unsigned long site, unsigned long rate, Vdouble *fv_out) const {
 
-    // Get mapped node on Utree
+    // Get mapped nodeInterface on Utree
     std::vector<int> sonsIDs;
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -489,28 +489,28 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
     for (auto &nodeID:likelihoodNodes_) {
         Node *node = tree_->getNode(nodeID);
         if (!node->isLeaf()) {
-            // Internal node
+            // Internal nodeInterface
             _hadamardMultFvSons(node);
             _hadamardMultFvEmptySons(node);
 
             if (node->hasFather()) {
-                // Root --> special case for internal node
+                // Root --> special case for internal nodeInterface
                 _computePrTimesFv(node);
                 _computePrTimesFvEmpty(node);
             }
 
         } else {
-            // Leaf node
+            // Leaf nodeInterface
             _computePrTimesIndicator(node);
             _computePrTimesIndicatorEmpty(node);
         }
 
         //--------------------------------------------------------------------------------------------
         // Debug ** array fetching + printing **
-        //VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
-        //VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
-        //_printFV(node, _likelihoods_node);
-        //_printFV(node, _likelihoods_empty_node);
+        //VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(nodeInterface->getId());
+        //VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(nodeInterface->getId());
+        //_printFV(nodeInterface, _likelihoods_node);
+        //_printFV(nodeInterface, _likelihoods_empty_node);
         //--------------------------------------------------------------------------------------------
 
     }
@@ -523,28 +523,28 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() const {
     for (auto &nodeID:likelihoodNodes_) {
         Node *node = tree_->getNode(nodeID);
         if (!node->isLeaf()) {
-            // Internal node
+            // Internal nodeInterface
             _hadamardMultFvSons(node);
             _hadamardMultFvEmptySons(node);
 
             if (node->hasFather()) {
-                // Root --> special case for internal node
+                // Root --> special case for internal nodeInterface
                 _computePrTimesFv(node);
                 _computePrTimesFvEmpty(node);
             }
 
         } else {
-            // Leaf node
+            // Leaf nodeInterface
             _computePrTimesIndicator(node);
             _computePrTimesIndicatorEmpty(node);
         }
 
         //--------------------------------------------------------------------------------------------
         // Debug ** array fetching + printing **
-        //VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(node->getId());
-        //VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(node->getId());
-        //_printFV(node, _likelihoods_node);
-        //_printFV(node, _likelihoods_empty_node);
+        //VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(nodeInterface->getId());
+        //VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(nodeInterface->getId());
+        //_printFV(nodeInterface, _likelihoods_node);
+        //_printFV(nodeInterface, _likelihoods_empty_node);
         //--------------------------------------------------------------------------------------------
 
     }
@@ -553,7 +553,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() const {
 
 
 void RHomogeneousTreeLikelihood_PIP::displayLikelihood(const Node *node) {
-    VLOG(2) << "Likelihoods at node " << node->getName() << ": ";
+    VLOG(2) << "Likelihoods at nodeInterface " << node->getName() << ": ";
     displayLikelihoodArray(likelihoodData_->getLikelihoodArray(node->getId()));
     VLOG(2) << "                                         ***";
 }
@@ -620,7 +620,7 @@ void RHomogeneousTreeLikelihood_PIP::initialiseInsertionHistories() const {
             }
 
             descCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
-            //descGapCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
+            //descGapCountData_.insert(std::make_pair(nodeInterface->getId(), std::make_pair(descCount_, nodeInterface->getId())));
             setAData_.insert(std::make_pair(node->getId(), std::make_pair(setA_, node->getId())));
         }
     }
@@ -647,12 +647,12 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
             if (node->isLeaf()) {
 
                 descCountData_[nodeID].first.at(i) = (sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode() ? 0 : 1);
-                //descGapCountData_[nodeID].first.at(i) = sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode();
+                //descGapCountData_[nodeID].first.at(i) = sites.getSequence(nodeInterface->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode();
 
 
             } else {
 
-                // Get the left and right son of the current node (mapped on the utree structure which can differ from tree_).
+                // Get the left and right son of the current nodeInterface (mapped on the utree structure which can differ from tree_).
                 std::vector<int> sonsIDs;
                 tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
                 tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
@@ -661,7 +661,7 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
                 sonsIDs.push_back(treemap_.right.at(vnode_right));
                 size_t nbNodes = sonsIDs.size();
 
-                // Reset value stored at the internal node
+                // Reset value stored at the internal nodeInterface
                 descCountData_[nodeID].first.at(i) = 0;
                 //descGapCountData_[nodeID].first.at(i) = true;
 
@@ -678,10 +678,10 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
 
             // Activate or deactivate set A
             setAData_[nodeID].first.at(i) = (getNodeDescCountForASite(node, i) == nonGaps_);
-            DVLOG(3) << "setInsertionHistories [setA] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t" << setAData_[nodeID].first.at(i);
+            DVLOG(3) << "setInsertionHistories [setA] (" << std::setfill('0') << std::setw(3) << i << ") @nodeInterface " << node->getName() << "\t" << setAData_[nodeID].first.at(i);
 
             /*
-            // Set attributes on the node
+            // Set attributes on the nodeInterface
             if (i == (nbDistinctSites_ - 1)) {
 
                 evolutionaryEvents_[nodeID] = 0;
@@ -701,9 +701,9 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
 
                 double insertions_weighted_branch = (double) evolutionaryEvents_[nodeID] / distanceToFather;
 
-                node->setBranchProperty("insertions", *unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEvents_[nodeID]))));
-                node->setBranchProperty("insertions_weighted", *unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEventsWeighted_[nodeID]))));
-                node->setBranchProperty("insertions_weighted_branch", *unique_ptr<Clonable>(new BppString(std::to_string(insertions_weighted_branch))));
+                nodeInterface->setBranchProperty("insertions", *unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEvents_[nodeID]))));
+                nodeInterface->setBranchProperty("insertions_weighted", *unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEventsWeighted_[nodeID]))));
+                nodeInterface->setBranchProperty("insertions_weighted_branch", *unique_ptr<Clonable>(new BppString(std::to_string(insertions_weighted_branch))));
 
 
                 std::for_each(descGapCountData_[nodeID].first.begin(), descGapCountData_[nodeID].first.end(), [&](int n) {
@@ -714,9 +714,9 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
 
                 double indels_weighted_branch = (double) evolutionaryEvents_[nodeID] / distanceToFather;
 
-                node->setBranchProperty("indels", *unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEvents_[nodeID]))));
-                node->setBranchProperty("indels_weighted", *unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEventsWeighted_[nodeID]))));
-                node->setBranchProperty("indels_weighted_branch", *unique_ptr<Clonable>(new BppString(std::to_string(indels_weighted_branch))));
+                nodeInterface->setBranchProperty("indels", *unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEvents_[nodeID]))));
+                nodeInterface->setBranchProperty("indels_weighted", *unique_ptr<Clonable>(new BppString(std::to_string(evolutionaryEventsWeighted_[nodeID]))));
+                nodeInterface->setBranchProperty("indels_weighted_branch", *unique_ptr<Clonable>(new BppString(std::to_string(indels_weighted_branch))));
 
             }
 
@@ -799,7 +799,7 @@ void RHomogeneousTreeLikelihood_PIP::setAllBetas() {
 
         } else {
             betasData_[node->getId()] = (1.0 - exp(-mu_.getValue() * node->getDistanceToFather())) / (mu_.getValue() * node->getDistanceToFather());
-            //node->vnode_beta = (1.0 - exp(-this->mu * vnode->vnode_branchlength)) / (this->mu * vnode->vnode_branchlength);
+            //nodeInterface->vnode_beta = (1.0 - exp(-this->mu * vnode->vnode_branchlength)) / (this->mu * vnode->vnode_branchlength);
         }
 
     }
@@ -960,7 +960,7 @@ void RHomogeneousTreeLikelihood_PIP::_extendNodeListOnSetA(int qnodeID, std::vec
 void RHomogeneousTreeLikelihood_PIP::_extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<int> &listNodes, unsigned long site) const {
 
     tshlib::VirtualNode *temp = qnode;
-    // Get the corresponding node on the BPP tree
+    // Get the corresponding nodeInterface on the BPP tree
     Node *node = tree_->getNode(treemap_.right.at(temp));
     listNodes.push_back(node->getId());
 
@@ -1175,7 +1175,7 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTopologyChange() const 
 
 
 double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColumn() const {
-    // Compute the likelihood on the postorder node list
+    // Compute the likelihood on the postorder nodeInterface list
     std::vector<int> postOrderNodeList = getNodeListPostOrder(tree_->getRootNode()->getId());
     //setLikelihoodNodes(ponl);
 
@@ -1213,7 +1213,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
             }
 
 
-            DVLOG(3) << "lk empty at node[" << node->getName() << "] -> " << std::setprecision(18) <<  fv_site << std::endl;
+            DVLOG(3) << "lk empty at nodeInterface[" << node->getName() << "] -> " << std::setprecision(18) <<  fv_site << std::endl;
 
 
             double li = fv_site * rateDistribution_->getProbability(c);
@@ -1246,7 +1246,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
 
             //if (setAData_[nodeID].first.at(i)) {
             if ((*setA__node)[i]) {
-                DVLOG(3) << "[BPP] Likelihood for setA (" << i << ") @node " << node->getName();
+                DVLOG(3) << "[BPP] Likelihood for setA (" << i << ") @nodeInterface " << node->getName();
                 if (!node->isLeaf()) {
 
                     auto fv_sons = new Vdouble(nbStates);
@@ -1363,13 +1363,13 @@ double RHomogeneousTreeLikelihood_PIP::getDLogLikelihood() const {
 }
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeDLikelihood(const std::string &variable) {
-    // Get the node with the branch whose length must be derivated:
+    // Get the nodeInterface with the branch whose length must be derivated:
     size_t brI = TextTools::to<size_t>(variable.substr(5));
     const Node *branch = nodes_[brI];
     const Node *father = branch->getFather();
     VVVdouble *_dLikelihoods_father = &likelihoodData_->getDLikelihoodArray(father->getId());
 
-    // Compute dLikelihoods array for the father node.
+    // Compute dLikelihoods array for the father nodeInterface.
     // Fist initialize to 1:
     size_t nbSites = _dLikelihoods_father->size();
     for (size_t i = 0; i < nbSites; i++) {
@@ -1430,17 +1430,17 @@ void RHomogeneousTreeLikelihood_PIP::computeTreeDLikelihood(const std::string &v
         }
     }
 
-    // Now we go down the tree toward the root node:
+    // Now we go down the tree toward the root nodeInterface:
     computeDownSubtreeDLikelihood(father);
 }
 
 void RHomogeneousTreeLikelihood_PIP::computeDownSubtreeDLikelihood(const Node *node) {
     const Node *father = node->getFather();
-    // We assume that the _dLikelihoods array has been filled for the current node 'node'.
-    // We will evaluate the array for the father node.
+    // We assume that the _dLikelihoods array has been filled for the current nodeInterface 'nodeInterface'.
+    // We will evaluate the array for the father nodeInterface.
     if (father == NULL) return; // We reached the root!
 
-    // Compute dLikelihoods array for the father node.
+    // Compute dLikelihoods array for the father nodeInterface.
     // Fist initialize to 1:
     VVVdouble *_dLikelihoods_father = &likelihoodData_->getDLikelihoodArray(father->getId());
     size_t nbSites = _dLikelihoods_father->size();
@@ -1622,12 +1622,12 @@ double RHomogeneousTreeLikelihood_PIP::getD2LogLikelihood() const {
 }
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeD2Likelihood(const std::string &variable) {
-    // Get the node with the branch whose length must be derivated:
+    // Get the nodeInterface with the branch whose length must be derivated:
     size_t brI = TextTools::to<size_t>(variable.substr(5));
     const Node *branch = nodes_[brI];
     const Node *father = branch->getFather();
 
-    // Compute dLikelihoods array for the father node.
+    // Compute dLikelihoods array for the father nodeInterface.
     // Fist initialize to 1:
     VVVdouble *_d2Likelihoods_father = &likelihoodData_->getD2LikelihoodArray(father->getId());
     size_t nbSites = _d2Likelihoods_father->size();
@@ -1689,17 +1689,17 @@ void RHomogeneousTreeLikelihood_PIP::computeTreeD2Likelihood(const std::string &
         }
     }
 
-    // Now we go down the tree toward the root node:
+    // Now we go down the tree toward the root nodeInterface:
     computeDownSubtreeD2Likelihood(father);
 }
 
 void RHomogeneousTreeLikelihood_PIP::computeDownSubtreeD2Likelihood(const Node *node) {
     const Node *father = node->getFather();
-    // We assume that the _dLikelihoods array has been filled for the current node 'node'.
-    // We will evaluate the array for the father node.
+    // We assume that the _dLikelihoods array has been filled for the current nodeInterface 'nodeInterface'.
+    // We will evaluate the array for the father nodeInterface.
     if (father == NULL) return; // We reached the root!
 
-    // Compute dLikelihoods array for the father node.
+    // Compute dLikelihoods array for the father nodeInterface.
     // Fist initialize to 1:
     VVVdouble *_d2Likelihoods_father = &likelihoodData_->getD2LikelihoodArray(father->getId());
     size_t nbSites = _d2Likelihoods_father->size();
@@ -1836,16 +1836,16 @@ void RHomogeneousTreeLikelihood_PIP::computeInDelDispersionOnTree(const SiteCont
     std::map<int, double> localTreeLength;
 
     for (auto &nodeID:likelihoodNodes_) {
-        // For each node in the tree (except the root node)
+        // For each nodeInterface in the tree (except the root nodeInterface)
         //if (tree_->getNode(nodeID)->hasFather()) {
             if (tree_->getNode(nodeID)->isLeaf()) {
-                // leaf node
+                // leaf nodeInterface
                 subsetAlignmentOnNode[nodeID].push_back(tree_->getNode(nodeID)->getName());
                 localTreeLength[nodeID] = 0;
             } else {
-                // internal node
+                // internal nodeInterface
 
-                // Merge sons into internal node
+                // Merge sons into internal nodeInterface
                 for (auto &sonID:tree_->getNode(nodeID)->getSonsId()) {
                     for (auto &sonItem:subsetAlignmentOnNode[sonID]) {
                         subsetAlignmentOnNode[nodeID].push_back(sonItem);

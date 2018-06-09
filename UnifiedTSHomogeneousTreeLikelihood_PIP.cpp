@@ -132,7 +132,7 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangeme
     //double logLk = getLogLikelihoodOnTopologyChange();
     double logLk = getLogLikelihoodOnTreeRearrangement();
 
-    // Remove root node from the utree structure
+    // Remove root nodeInterface from the utree structure
     utree_->removeVirtualRootNode();
 
     return logLk;
@@ -215,7 +215,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyCommitTree() {
     for (auto &bnode:tree_->getNodes()) {
 
         tempMap.insert(std::pair<int, bpp::Node *>(bnode->getId(), bnode));
-        // Empty array of sons on the node
+        // Empty array of sons on the nodeInterface
         bnode->removeSons();
 
         if (bnode->hasFather()){

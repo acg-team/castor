@@ -180,7 +180,7 @@ namespace bpp {
             std::cout << "Clock                                             Coerce to a clock tree." << std::endl;
             std::cout << std::endl;
             std::cout << "Grafen(height={{real>0}|input}, rho = {real>0})   Uses Grafen’s method to compute branch lengths." << std::endl;
-            std::cout << "                                                  In Grafen’s method, each node is given a weight equal to the number of underlying  " << std::endl;
+            std::cout << "                                                  In Grafen’s method, each nodeInterface is given a weight equal to the number of underlying  " << std::endl;
             std::cout << "                                                  leaves. The length of each branch is then computed as the difference of the weights" << std::endl;
             std::cout << "                                                  of the connected nodes, and further divided by the number of leaves in the tree. " << std::endl;
             std::cout << "                                                  The height of all nodes are then raised to the power of ’rho’, a user specified value. " << std::endl;

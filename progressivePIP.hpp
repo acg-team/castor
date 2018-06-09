@@ -88,9 +88,9 @@ namespace bpp {
         std::vector<double> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
         std::vector<bpp::RowMatrix<double> > prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
 
-        std::vector<std::string>  seqNames_; // vector[nodeId] of sequence names (MSAs seq. names at each internal node) node
-        std::vector<MSA_t>  MSA_; // vector[nodeId] MSA at each node
-        std::vector<vector<int> >  traceback_path_; // vector[nodeId] of traceback paths (1 at each internal node)
+        std::vector<std::string>  seqNames_; // vector[nodeId] of sequence names (MSAs seq. names at each internal nodeInterface) nodeInterface
+        std::vector<MSA_t>  MSA_; // vector[nodeId] MSA at each nodeInterface
+        std::vector<vector<int> >  traceback_path_; // vector[nodeId] of traceback paths (1 at each internal nodeInterface)
         std::vector< vector< vector<int> > > traceback_map_;
 
         std::vector<double>  score_; // vector[msas] of likelihood score
@@ -98,15 +98,15 @@ namespace bpp {
         double tau_;
         std::vector<double> nu_;
 
-        vector<double> log_lk_down_; //each node a vector of lk
-        vector<double> log_lk_empty_down_; //each node a vector of lk_empty (for each gamma category)
+        vector<double> log_lk_down_; //each nodeInterface a vector of lk
+        vector<double> log_lk_empty_down_; //each nodeInterface a vector of lk_empty (for each gamma category)
 
-        std::vector< vector< vector< bpp::ColMatrix<double> > > > fv_data_; // [node][site][catg][fv]
-        vector< bpp::ColMatrix<double> > fv_empty_data_; // [node][catg][fv]
-        std::vector< vector<int> > map_compressed_seqs_; // [node][idx]
-        std::vector< vector<int> > rev_map_compressed_seqs_; // [node][idx]
+        std::vector< vector< vector< bpp::ColMatrix<double> > > > fv_data_; // [nodeInterface][site][catg][fv]
+        vector< bpp::ColMatrix<double> > fv_empty_data_; // [nodeInterface][catg][fv]
+        std::vector< vector<int> > map_compressed_seqs_; // [nodeInterface][idx]
+        std::vector< vector<int> > rev_map_compressed_seqs_; // [nodeInterface][idx]
 
-        std::vector< std::vector< std::vector<double> > > fv_sigma_; // [node][site][catg]
+        std::vector< std::vector< std::vector<double> > > fv_sigma_; // [nodeInterface][site][catg]
         std::vector<double>  fv_empty_sigma_; // [catg]
         //***************************************************************************************
         // METHODS
@@ -144,54 +144,55 @@ namespace bpp {
         //***************************************************************************************
     };
     //*****************************************************
-    class PIPnodeCPUinterface {
+/*
+    class PIPnodeInterface {
 
     public:
-        PIPnodeCPUinterface() {}
+        PIPnodeInterface() {}
         //virtual void DP3D_PIP() = 0;
-        void PIPalignNodeNEW();
-        void DP3D_PIP();
+        //void PIPalignNodeNEW();
+        virtual void DP3D_PIP();
     };
 
-    class PIPnodeCPU : public PIPnodeCPUinterface {
+    class PIPnodeCPU : public PIPnodeInterface {
     public:
         void DP3D_PIP();
     };
 
-    class PIPnodeRAM : public PIPnodeCPUinterface {
+    class PIPnodeRAM : public PIPnodeInterface {
     public:
         void DP3D_PIP();
     };
 
 //    class FactoryPIP {
 //    public:
-//        virtual PIPnodeCPUinterface* createPIPnode() = 0;
+//        virtual PIPnodeInterface* createPIPnode() = 0;
 //    };
 //
 //    class PIPnodeCPUFactory : public FactoryPIP {
 //    public:
-//        PIPnodeCPUinterface* createPIPnode() {
+//        PIPnodeInterface* createPIPnode() {
 //            return new PIPnodeCPU;
 //        }
 //    };
 //
 //    class PIPnodeRAMFactory : public FactoryPIP {
 //    public:
-//        PIPnodeCPUinterface* createPIPnode()   {
+//        PIPnodeInterface* createPIPnode()   {
 //            return new PIPnodeRAM;
 //        }
 //    };
 
-    class PIPnodeCPUFactory : public PIPnodeCPUinterface {
+    class PIPnodeCPUFactory : public PIPnodeInterface {
     public:
-        PIPnodeCPUinterface* createPIPnode() {
+        PIPnodeInterface* createPIPnode() {
             return new PIPnodeCPU;
         }
     };
 
-    class PIPnodeRAMFactory : public PIPnodeCPUinterface {
+    class PIPnodeRAMFactory : public PIPnodeInterface {
     public:
-        PIPnodeCPUinterface* createPIPnode()   {
+        PIPnodeInterface* createPIPnode()   {
             return new PIPnodeRAM;
         }
     };
@@ -208,13 +209,13 @@ namespace bpp {
 
     public:
 
-        std::vector<PIPnodeCPUinterface *> pip_nodes_;
+        std::vector<PIPnodeInterface *> pip_nodes_;
 
         CompositePIPalignerNEW(int n){
             pip_nodes_.resize(n);
         };
 
-        void addPIPcomponent(PIPnodeCPUinterface *pip_node,int i){
+        void addPIPcomponent(PIPnodeInterface *pip_node,int i){
             pip_nodes_.at(i) = pip_node;
         };
 
@@ -227,6 +228,103 @@ namespace bpp {
         }
 
     };
+*/
+    //*****************************************************
+    //*****************************************************
+    //*****************************************************
+
+//    class PIPnodeInterface {
+//
+//    public:
+//        PIPnodeInterface() {}
+//        //virtual void DP3D_PIP() = 0;
+//        //void PIPalignNodeNEW();
+//        virtual void DP3D_PIP();
+//    };
+//
+//    class PIPnodeCPU : public PIPnodeInterface {
+//    public:
+//        void DP3D_PIP();
+//    };
+    //*************************
+    class nodeInterface {
+        int val;
+    public:
+        virtual void DP3D_PIP() = 0;
+    };
+    //*************************
+    class nodeCPU : public nodeInterface {
+        int val;
+    public:
+        nodeCPU(int x){ val=x;}
+        void DP3D_PIP() {
+            std::cout<<"align nodeCPU: "<<val<<"\n";
+        }
+    };
+    //*************************
+    class nodeRAM : public nodeInterface {
+        int val;
+    public:
+        nodeRAM(int x){ val=x;}
+        void DP3D_PIP() {
+            std::cout<<"align nodeRAM: "<<val<<"\n";
+        }
+    };
+    //*************************
+    class IComposite {
+    public:
+        virtual void Align(void) = 0;
+        virtual void Add(nodeInterface* elem,int idx){}
+    };
+    //*************************
+    class Composite : public IComposite {
+        vector<nodeInterface*> elems;
+    public:
+
+        Composite(int n){
+            elems.resize(n);
+        }
+
+        void Align(void) {
+            for (vector<nodeInterface*>::const_iterator iter = elems.begin(); iter != elems.end(); ++iter) {
+                (*iter)->DP3D_PIP();
+            }
+        }
+
+        void Add(nodeInterface* elem,int idx) {
+            elems.at(idx) = elem;
+        }
+
+        ~Composite() {
+            for (vector<nodeInterface*>::const_iterator iter = elems.begin(); iter != elems.end(); ++iter) {
+                delete *iter;
+            }
+        }
+    };
+    //*************************
+    enum genre_e{CPU,RAM};
+
+    class nodeFactory {
+
+    public:
+        /* Factory Method */
+        nodeInterface *getNode(genre_e genre,int id) {
+            switch(genre) {
+                case CPU:
+                    return new nodeCPU(id);
+                    break;
+                case RAM:
+                    return new nodeRAM(id);
+                    break;
+                default:
+                    return NULL;
+            }
+
+        }
+    };
+    //*****************************************************
+    //*****************************************************
+    //*****************************************************
     //*****************************************************
     class CompositePIPaligner : public PIPcomponent{
 
@@ -303,7 +401,7 @@ namespace bpp {
         CompositePIPaligner *compositePIPaligner_;
 
 
-        CompositePIPalignerNEW *compositePIPalignerNEW_;
+        //CompositePIPalignerNEW *compositePIPalignerNEW_;
         //***************************************************************************************
         // METHODS
         //***************************************************************************************

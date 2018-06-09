@@ -372,13 +372,13 @@ throw (Exception)
 
 void RHomogeneousTreeLikelihood_Generic::computeTreeDLikelihood(const string& variable)
 {
-    // Get the node with the branch whose length must be derivated:
+    // Get the nodeInterface with the branch whose length must be derivated:
     size_t brI = TextTools::to<size_t>(variable.substr(5));
     const Node* branch = nodes_[brI];
     const Node* father = branch->getFather();
     VVVdouble* _dLikelihoods_father = &likelihoodData_->getDLikelihoodArray(father->getId());
 
-    // Compute dLikelihoods array for the father node.
+    // Compute dLikelihoods array for the father nodeInterface.
     // Fist initialize to 1:
     size_t nbSites  = _dLikelihoods_father->size();
     for (size_t i = 0; i < nbSites; i++)
@@ -454,7 +454,7 @@ void RHomogeneousTreeLikelihood_Generic::computeTreeDLikelihood(const string& va
         }
     }
 
-    // Now we go down the tree toward the root node:
+    // Now we go down the tree toward the root nodeInterface:
     computeDownSubtreeDLikelihood(father);
 }
 
@@ -463,11 +463,11 @@ void RHomogeneousTreeLikelihood_Generic::computeTreeDLikelihood(const string& va
 void RHomogeneousTreeLikelihood_Generic::computeDownSubtreeDLikelihood(const Node* node)
 {
     const Node* father = node->getFather();
-    // We assume that the _dLikelihoods array has been filled for the current node 'node'.
-    // We will evaluate the array for the father node.
+    // We assume that the _dLikelihoods array has been filled for the current nodeInterface 'nodeInterface'.
+    // We will evaluate the array for the father nodeInterface.
     if (father == NULL) return; // We reached the root!
 
-    // Compute dLikelihoods array for the father node.
+    // Compute dLikelihoods array for the father nodeInterface.
     // Fist initialize to 1:
     VVVdouble* _dLikelihoods_father = &likelihoodData_->getDLikelihoodArray(father->getId());
     size_t nbSites  = _dLikelihoods_father->size();
@@ -623,12 +623,12 @@ throw (Exception)
 
 void RHomogeneousTreeLikelihood_Generic::computeTreeD2Likelihood(const string& variable)
 {
-    // Get the node with the branch whose length must be derivated:
+    // Get the nodeInterface with the branch whose length must be derivated:
     size_t brI = TextTools::to<size_t>(variable.substr(5));
     const Node* branch = nodes_[brI];
     const Node* father = branch->getFather();
 
-    // Compute dLikelihoods array for the father node.
+    // Compute dLikelihoods array for the father nodeInterface.
     // Fist initialize to 1:
     VVVdouble* _d2Likelihoods_father = &likelihoodData_->getD2LikelihoodArray(father->getId());
     size_t nbSites  = _d2Likelihoods_father->size();
@@ -705,7 +705,7 @@ void RHomogeneousTreeLikelihood_Generic::computeTreeD2Likelihood(const string& v
         }
     }
 
-    // Now we go down the tree toward the root node:
+    // Now we go down the tree toward the root nodeInterface:
     computeDownSubtreeD2Likelihood(father);
 }
 
@@ -714,11 +714,11 @@ void RHomogeneousTreeLikelihood_Generic::computeTreeD2Likelihood(const string& v
 void RHomogeneousTreeLikelihood_Generic::computeDownSubtreeD2Likelihood(const Node* node)
 {
     const Node* father = node->getFather();
-    // We assume that the _dLikelihoods array has been filled for the current node 'node'.
-    // We will evaluate the array for the father node.
+    // We assume that the _dLikelihoods array has been filled for the current nodeInterface 'nodeInterface'.
+    // We will evaluate the array for the father nodeInterface.
     if (father == NULL) return; // We reached the root!
 
-    // Compute dLikelihoods array for the father node.
+    // Compute dLikelihoods array for the father nodeInterface.
     // Fist initialize to 1:
     VVVdouble* _d2Likelihoods_father = &likelihoodData_->getD2LikelihoodArray(father->getId());
     size_t nbSites  = _d2Likelihoods_father->size();
@@ -835,7 +835,7 @@ void RHomogeneousTreeLikelihood_Generic::computeSubtreeLikelihood(const Node* no
 
     for (size_t l = 0; l < nbNodes; l++)
     {
-        //For each son node,
+        //For each son nodeInterface,
 
         const Node* son = node->getSon(l);
 
@@ -875,7 +875,7 @@ void RHomogeneousTreeLikelihood_Generic::computeSubtreeLikelihood(const Node* no
 
 void RHomogeneousTreeLikelihood_Generic::displayLikelihood(const Node* node)
 {
-    cout << "Likelihoods at node " << node->getName() << ": " << endl;
+    cout << "Likelihoods at nodeInterface " << node->getName() << ": " << endl;
     displayLikelihoodArray(likelihoodData_->getLikelihoodArray(node->getId()));
     cout << "                                         ***" << endl;
 }

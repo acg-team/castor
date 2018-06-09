@@ -87,19 +87,19 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     int numNodes = nodeList.size();
     int numCatg = rDist_->getNumberOfCategories();
 
-    // lk score at each node
-    score_.resize(numNodes); // best likelihood score at each node (final)
+    // lk score at each nodeInterface
+    score_.resize(numNodes); // best likelihood score at each nodeInterface (final)
     //score_.assign(numNodes, -std::numeric_limits<double>::infinity()); // initialisation of the best score
 
-    // traceback path at each node
+    // traceback path at each nodeInterface
     traceback_path_.resize(numNodes); // vector of strings with the traceback to the path that generates the best MSA
 
     traceback_map_.resize(numNodes);
 
-    // sequence names in the MSA at each node
-    seqNames_.resize(numNodes); // it stores the order of the sequences added to the MSA at each node
+    // sequence names in the MSA at each nodeInterface
+    seqNames_.resize(numNodes); // it stores the order of the sequences added to the MSA at each nodeInterface
 
-    // MSA at each node
+    // MSA at each nodeInterface
     MSA_.resize(numNodes);
 
     // insertion rate with rate variation (gamma)
@@ -150,16 +150,16 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     // Initialise iotas and betas maps
     for (auto &vnode:nodeList) {
 
-        // get node ID
+        // get nodeInterface ID
         int nodeID = treemap_.right.at(vnode);
 
-        // insertion probabilities at the given node with rate variation (gamma)
+        // insertion probabilities at the given nodeInterface with rate variation (gamma)
         iotasNode_[nodeID].resize(numCatg);
 
-        // survival probabilities at the given node with rate variation (gamma)
+        // survival probabilities at the given nodeInterface with rate variation (gamma)
         betasNode_[nodeID].resize(numCatg);
 
-        // substitution/deletion probability matrices at the given node with rate variation (gamma)
+        // substitution/deletion probability matrices at the given nodeInterface with rate variation (gamma)
         prNode_[nodeID].resize(numCatg);
     }
 
@@ -844,7 +844,7 @@ double pPIP::_computeTauRecursive(tshlib::VirtualNode *vnode) {
         double br = _computeTauRecursive(vnode->getNodeRight());
 
 //        if(!vnode->isRootNode()) {
-//            // actual branch length (at the given node)
+//            // actual branch length (at the given nodeInterface)
 //            b0 = tree_->getNode(treemap_.right.at(vnode), false)->getDistanceToFather();
 //            _computeTauRecursive(vnode->getNodeLeft()) + _computeTauRecursive(vnode->getNodeRight());
 //        }else{
@@ -905,7 +905,7 @@ void pPIP::_setAllIotas(bpp::Node *node, bool local_root) {
                 PLOG(WARNING) << "ERROR in set_iota: T too small";
             }
 
-            //iotasNode_[node->getId()][catg] = (node->getDistanceToFather() * rDist_->getCategory(catg) ) / T;
+            //iotasNode_[nodeInterface->getId()][catg] = (nodeInterface->getDistanceToFather() * rDist_->getCategory(catg) ) / T;
             // iota(v,r) = ( lambda * r * b(v) ) / (lambda * r * (tau + 1/ (mu *r) ) )
             //           = b(v) / (tau + 1/ (mu *r) )
             iotasNode_[nodeID][catg] = node->getDistanceToFather() / T;
@@ -923,8 +923,8 @@ void pPIP::_setAllIotas(bpp::Node *node, bool local_root) {
         int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-        _setAllIotas(sonLeft, false);  // false: only at the first call local_root=true (first node is the actual root)
-        _setAllIotas(sonRight, false); // false: only at the first call local_root=true (first node is the actual root)
+        _setAllIotas(sonLeft, false);  // false: only at the first call local_root=true (first nodeInterface is the actual root)
+        _setAllIotas(sonRight, false); // false: only at the first call local_root=true (first nodeInterface is the actual root)
 
     }
 
@@ -954,7 +954,7 @@ void pPIP::_setAllBetas(bpp::Node *node, bool local_root) {
             if (fabs(muT) < SMALL_DOUBLE) {
                 perror("ERROR mu * T is too small");
             }
-            // survival probability on node v (different from (local)-root)
+            // survival probability on nodeInterface v (different from (local)-root)
             // beta(v,r) = (1 - exp( -mu * r * b(v) )) / (mu * r * b(v))
             betasNode_[nodeID][catg] = (1.0 - exp(-muT)) / muT;
         }
@@ -972,8 +972,8 @@ void pPIP::_setAllBetas(bpp::Node *node, bool local_root) {
         int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-        _setAllBetas(sonLeft, false); // false: only at the first call local_root=true (first node is the actual root)
-        _setAllBetas(sonRight, false); // false: only at the first call local_root=true (first node is the actual root)
+        _setAllBetas(sonLeft, false); // false: only at the first call local_root=true (first nodeInterface is the actual root)
+        _setAllBetas(sonRight, false); // false: only at the first call local_root=true (first nodeInterface is the actual root)
 
     }
 
@@ -988,7 +988,7 @@ void pPIP::_getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNod
         auto node = tree_->getNode(treemap_.right.at(vnode), false);
 
         if (!node->hasFather()) {
-            // root node doesn't have Pr
+            // root nodeInterface doesn't have Pr
         } else {
 
             nodeID=node->getId();
@@ -1079,7 +1079,7 @@ double pPIP::computeLK_MXY_local(double log_phi_gamma,
 
 void pPIP::allgaps(bpp::Node *node, std::string &s, int &idx, bool &flag) {
 
-    // flag is true if all the leaves of the subtree rooted in node contain a gap
+    // flag is true if all the leaves of the subtree rooted in nodeInterface contain a gap
 
     if (node->isLeaf()) {
         char ch = s[idx];
@@ -1389,7 +1389,7 @@ std::vector<double> pPIP::computeLK_GapColumn_local(int nodeID,
         // fv0 = pi * fv
         fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        // lk at the actual node (considered as root node => beta = 1.0)
+        // lk at the actual nodeInterface (considered as root nodeInterface => beta = 1.0)
         p0 = iotasNode_[nodeID][catg] * fv0;
 
         pL=log_lk_empty_down_[sonLeftID][catg];
@@ -1444,7 +1444,7 @@ std::vector<double> pPIP::computeLK_GapColumn_local(int nodeID,
 
         fv_empty_sigma_.at(catg) = fv0;
 
-        // lk at the actual node (considered as root node => beta = 1.0)
+        // lk at the actual nodeInterface (considered as root nodeInterface => beta = 1.0)
         p0 = iotasNode_[nodeID][catg] * fv0;
 
         pL = lk_empty_down_L.at(catg);
@@ -1504,7 +1504,7 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
         // fv0 = pi * fv
         double fv0 = MatrixBppUtils::dotProd(fv, pi_);
 
-        // lk at the actual node (considered as root node => beta = 1.0)
+        // lk at the actual nodeInterface (considered as root nodeInterface => beta = 1.0)
         double p0 = iotasNode_[node->getId()][catg] * fv0;
 
         double pL,pR;
@@ -2031,7 +2031,7 @@ double pPIP::computeLK_Y_local(double NU,
     return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,flag_RAM);
 }
 
-//void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,double temperature,int num_SB){
+//void pPIP::DP3D_PIP_SB(bpp::Node *nodeInterface,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,double temperature,int num_SB){
 //
 //    //TODO: place as argument
 //    bool randomSeed = true;
@@ -2041,22 +2041,22 @@ double pPIP::computeLK_Y_local(double NU,
 //    double mu_gamma = mu_ * gamma_rate;
 //
 //    if(local){
-//        _setTau(node);
+//        _setTau(nodeInterface);
 //        _computeNu();
-//        _setAllIotas(node,true);
-//        _setAllBetas(node,true);
+//        _setAllIotas(nodeInterface,true);
+//        _setAllBetas(nodeInterface,true);
 //    }else{
 //    }
 //
 //    int lw;
 //    int h,w;
 //
-//    auto sons = node->getSons();
+//    auto sons = nodeInterface->getSons();
 //
 //    int s1ID = sons.at(LEFT)->getId();
 //    int s2ID = sons.at(RIGHT)->getId();
 //
-//    int nodeID = node->getId();
+//    int nodeID = nodeInterface->getId();
 //
 //    h = MSA_.at(s1ID).size()+1;
 //    w = MSA_.at(s2ID).size()+1;
@@ -2091,11 +2091,11 @@ double pPIP::computeLK_Y_local(double NU,
 //    //***************************************************************************************
 //    //***************************************************************************************
 //    if(local){
-//        pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs);
+//        pc0 = computeLK_GapColumn_local(nodeInterface, col_gap_Ls, col_gap_Rs);
 //    }
 //
 //    //else{
-//    //    pc0 = compute_pr_gap_all_edges_s(node,
+//    //    pc0 = compute_pr_gap_all_edges_s(nodeInterface,
 //    //                                     col_gap_Ls,
 //    //                                     col_gap_Rs,
 //    //                                     pi,
@@ -2207,7 +2207,7 @@ double pPIP::computeLK_Y_local(double NU,
 //                            val = computeLK_M_local(valM,
 //                                                    valX,
 //                                                    valY,
-//                                                    node,
+//                                                    nodeInterface,
 //                                                    sLs,
 //                                                    sRs,
 //                                                    m,
@@ -2218,7 +2218,7 @@ double pPIP::computeLK_Y_local(double NU,
 //                                                            valX,
 //                                                            valY,
 //                                                            nu,
-//                                                            node,
+//                                                            nodeInterface,
 //                                                            sLs, sRs,
 //                                                            pi,
 //                                                            m,
@@ -2244,7 +2244,7 @@ double pPIP::computeLK_Y_local(double NU,
 //                            val = computeLK_X_local(valM,
 //                                                    valX,
 //                                                    valY,
-//                                                    node,
+//                                                    nodeInterface,
 //                                                    sLs, col_gap_Rs,
 //                                                    m,
 //                                                    lkX);
@@ -2254,7 +2254,7 @@ double pPIP::computeLK_Y_local(double NU,
 //                                                            valX,
 //                                                            valY,
 //                                                            nu,
-//                                                            node,
+//                                                            nodeInterface,
 //                                                            sLs, col_gap_Rs,
 //                                                            pi,
 //                                                            m,
@@ -2281,7 +2281,7 @@ double pPIP::computeLK_Y_local(double NU,
 //                            val = computeLK_Y_local(valM,
 //                                                    valX,
 //                                                    valY,
-//                                                    node,
+//                                                    nodeInterface,
 //                                                    col_gap_Ls, sRs,
 //                                                    m,
 //                                                    lkY);
@@ -2291,7 +2291,7 @@ double pPIP::computeLK_Y_local(double NU,
 //                                                            valX,
 //                                                            valY,
 //                                                            nu,
-//                                                            node,
+//                                                            nodeInterface,
 //                                                            col_gap_Ls, sRs,
 //                                                            pi,
 //                                                            m,
@@ -2789,10 +2789,10 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
     //***************************************************************************************
     // NODE VARIABLES
     //***************************************************************************************
-    // Get the IDs of the current node
+    // Get the IDs of the current nodeInterface
     int nodeID = node->getId();
 
-    // Get the IDs of the sons nodes given the current node
+    // Get the IDs of the sons nodes given the current nodeInterface
     tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
     tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
 
@@ -2808,8 +2808,8 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
     //***************************************************************************************
     // TRACEBACK VARIABLES
     //***************************************************************************************
-    double curr_best_score = min_inf; // best likelihood value at this node
-    double prev_best_score = min_inf; // previuous best value at this node
+    double curr_best_score = min_inf; // best likelihood value at this nodeInterface
+    double prev_best_score = min_inf; // previuous best value at this nodeInterface
     int level_max_lk = INT_MIN; // Depth in M,X,Y with the highest lk value
     int tr_index = (int)STOP_STATE; // traceback index: 1=MATCH, 2=GAPX, 3=GAPY
     double max_lk_val = min_inf;
@@ -2832,7 +2832,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
     //***************************************************************************************
     // SET LOCAL TREE VARIABLES
     //***************************************************************************************
-    // set local tau, total tree length of a tree root at the given node
+    // set local tau, total tree length of a tree root at the given nodeInterface
     tau_ = taus_.at(nodeID);
 
     // set the normalizing factor nu for the local tree
@@ -2851,7 +2851,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
     //***************************************************************************************
     // DP SIZES
     //***************************************************************************************
-    // Compute dimensions of the 3D block at current internal node.
+    // Compute dimensions of the 3D block at current internal nodeInterface.
     int h = MSA_.at(nodeID_L).size() + 1; // dimension of the alignment on the left side
     int w = MSA_.at(nodeID_R).size() + 1; // dimension of the alignment on the right side
     int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
@@ -3497,7 +3497,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
     _compressMSA(node,0);
 
     // compress fv values and lk_down
-    //_compress_lk_components(node, lk_down_not_compressed, fv_data_not_compressed);
+    //_compress_lk_components(nodeInterface, lk_down_not_compressed, fv_data_not_compressed);
     _compress_Fv(node,
                  fv_sigma_not_compressed,
                  fv_data_not_compressed,
@@ -3511,10 +3511,10 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //***************************************************************************************
     // NODE VARIABLES
     //***************************************************************************************
-    // Get the IDs of the current node
+    // Get the IDs of the current nodeInterface
     int nodeID = node->getId();
 
-    // Get the IDs of the sons nodes given the current node
+    // Get the IDs of the sons nodes given the current nodeInterface
     tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
     tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
 
@@ -3530,8 +3530,8 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //***************************************************************************************
     // TRACEBACK VARIABLES
     //***************************************************************************************
-    double curr_best_score = min_inf; // best likelihood value at this node
-    double prev_best_score = min_inf; // previuous best value at this node
+    double curr_best_score = min_inf; // best likelihood value at this nodeInterface
+    double prev_best_score = min_inf; // previuous best value at this nodeInterface
     int level_max_lk = INT_MIN; // Depth in M,X,Y with the highest lk value
     int tr_index = (int)STOP_STATE; // traceback index: 1=MATCH, 2=GAPX, 3=GAPY
     double max_lk_val = min_inf;
@@ -3554,7 +3554,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //***************************************************************************************
     // SET LOCAL TREE VARIABLES
     //***************************************************************************************
-    // set local tau, total tree length of a tree root at the given node
+    // set local tau, total tree length of a tree root at the given nodeInterface
     tau_ = taus_.at(nodeID);
 
     // set the normalizing factor nu for the local tree
@@ -3573,7 +3573,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //***************************************************************************************
     // DP SIZES
     //***************************************************************************************
-    // Compute dimensions of the 3D block at current internal node.
+    // Compute dimensions of the 3D block at current internal nodeInterface.
     int h = MSA_.at(nodeID_L).size() + 1; // dimension of the alignment on the left side
     int w = MSA_.at(nodeID_R).size() + 1; // dimension of the alignment on the right side
     int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
@@ -4005,7 +4005,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     _compressMSA(node,0);
 
     // compress fv values and lk_down
-    //_compress_lk_components(node, lk_down_not_compressed, fv_data_not_compressed);
+    //_compress_lk_components(nodeInterface, lk_down_not_compressed, fv_data_not_compressed);
     _compress_Fv(node,
                  fv_sigma_not_compressed,
                  fv_data_not_compressed,
@@ -4020,7 +4020,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     // used to select random when 2 or 3 lks (M,X,Y) have "exactly" the same value
     //bool randomSeed = true;
 
-    // Get the IDs of the sons nodes given the current node
+    // Get the IDs of the sons nodes given the current nodeInterface
     int nodeID = node->getId();
 
     // number of discrete gamma categories
@@ -4055,7 +4055,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     int sequenceID_1 = treemap_.right.at(vnode_left);
     int sequenceID_2 = treemap_.right.at(vnode_right);
 
-    // Compute dimensions of the 3D block at current internal node.
+    // Compute dimensions of the 3D block at current internal nodeInterface.
     h = MSA_.at(sequenceID_1).size() + 1; // dimension of the alignment on the left side
     w = MSA_.at(sequenceID_2).size() + 1; // dimension of the alignment on the riht side
 
@@ -4094,7 +4094,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
         pc0 = computeLK_GapColumn_local(node, col_gap_Ls, col_gap_Rs,false);
     } else {
         /*
-        pc0 = compute_pr_gap_all_edges_s(node,
+        pc0 = compute_pr_gap_all_edges_s(nodeInterface,
                                          col_gap_Ls,
                                          col_gap_Rs,
                                          pi,
@@ -4337,7 +4337,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                                                         valX,
                                                         valY,
                                                         nu,
-                                                        node,
+                                                        nodeInterface,
                                                         sLs, sRs,
                                                         pi,
                                                         m,
@@ -4469,7 +4469,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                                                         valX,
                                                         valY,
                                                         nu,
-                                                        node,
+                                                        nodeInterface,
                                                         sLs, col_gap_Rs,
                                                         pi,
                                                         m,
@@ -4600,7 +4600,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                                                         valX,
                                                         valY,
                                                         nu,
-                                                        node,
+                                                        nodeInterface,
                                                         col_gap_Ls, sRs,
                                                         pi,
                                                         m,
@@ -4826,7 +4826,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
 
     //***************************************************************************************
     // PROGRESSIVE PIP ALIGNER
-    // local: local subtree, rooted at the current node
+    // local: local subtree, rooted at the current nodeInterface
     //***************************************************************************************
     // MEMORY PRE-ALLOCATION
     //***************************************************************************************
@@ -4870,14 +4870,14 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
     size_t i = 1;
     for (auto &vnode:list_vnode_to_root) {
         // traverses the list of nodes and aligns the MSAs on the left and right side
-        // if node is a leaf the resulting MSA is the sequence itself
+        // if nodeInterface is a leaf the resulting MSA is the sequence itself
 
         ApplicationTools::displayGauge(i, list_vnode_to_root.size());
         i++;
 
         auto node = tree_->getNode(treemap_.right.at(vnode), false);
 
-        VLOG(1) << "[pPIP] Processing node " << node->getId();
+        VLOG(1) << "[pPIP] Processing nodeInterface " << node->getId();
 
         if (node->isLeaf()) {
             //*******************************************************************************
@@ -4885,10 +4885,10 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
             //*******************************************************************************
             std::string seqname = sequences_->getSequencesNames().at((int) vnode->vnode_seqid);
 
-            // associates the sequence name to the leaf node
+            // associates the sequence name to the leaf nodeInterface
             _setMSAsequenceNames(node, seqname);
 
-            // creates a column containing the sequence associated to the leaf node
+            // creates a column containing the sequence associated to the leaf nodeInterface
             _setMSAleaves(node, sequences_->getSequence(seqname).toString());
 
             // compresses sequence at the leaves
@@ -4918,10 +4918,10 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
                 DP3D_PIP_RAM_FAST(node);
             }else {
                 if (flag_RAM) {
-                   // DP3D_PIP_RAM(node, local, flag_map, flag_pattern); // local: tree rooted at the given node
+                   // DP3D_PIP_RAM(nodeInterface, local, flag_map, flag_pattern); // local: tree rooted at the given nodeInterface
                 } else {
-                    DP3D_PIP(node, local, flag_map); // local: tree rooted at the given node
-                    // DP3D_PIP_no_gamma(node, local, flag_map); // local: tree rooted at the given node
+                    DP3D_PIP(node, local, flag_map); // local: tree rooted at the given nodeInterface
+                    // DP3D_PIP_no_gamma(nodeInterface, local, flag_map); // local: tree rooted at the given nodeInterface
                 }
             }
             //*******************************************************************************

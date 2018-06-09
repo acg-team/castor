@@ -61,6 +61,7 @@
 using namespace bpp;
 
 //***************************************************************************************
+/*
 void PIPnodeCPU:: DP3D_PIP() {
     std::cout<<"\n aligning with PIPnodeCPU\n";
 };
@@ -69,15 +70,16 @@ void PIPnodeRAM:: DP3D_PIP() {
     std::cout<<"\n aligning with PIPnodeRAM\n";
 };
 
-void PIPnodeCPUinterface:: DP3D_PIP() {
+void PIPnodeInterface:: DP3D_PIP() {
 
 };
 
-void PIPnodeCPUinterface::PIPalignNodeNEW() {
+void PIPnodeInterface::PIPalignNodeNEW() {
 
     DP3D_PIP();
 
 }
+*/
 //***************************************************************************************
 void CompositePIPaligner::PIPalignNode(){
 
@@ -93,7 +95,7 @@ void CompositePIPaligner::PIPalign() {
 
     for (int k = 0; k < num_nodes; k++) {
         // traverses the list of nodes and aligns the MSAs on the left and right side
-        // if node is a leaf the resulting MSA is the sequence itself
+        // if nodeInterface is a leaf the resulting MSA is the sequence itself
 
         ApplicationTools::displayGauge(k, num_nodes);
 
@@ -120,13 +122,13 @@ void PIPnode::_reserve(int numCatg){
 
     fv_empty_sigma_.resize(numCatg);
 
-    // insertion probabilities at the given node with rate variation (gamma)
+    // insertion probabilities at the given nodeInterface with rate variation (gamma)
     iotasNode_.resize(numCatg);
 
-    // survival probabilities at the given node with rate variation (gamma)
+    // survival probabilities at the given nodeInterface with rate variation (gamma)
     betasNode_.resize(numCatg);
 
-    // substitution/deletion probability matrices at the given node with rate variation (gamma)
+    // substitution/deletion probability matrices at the given nodeInterface with rate variation (gamma)
     prNode_.resize(numCatg);
 
 };
@@ -306,17 +308,17 @@ void PIPnode::_setTracebackPathleaves() {
 //***************************************************************************************
 void PIPnode::PIPalignNode() {
 
-    VLOG(1) << "[progressivePIP] Processing node " << bnode_->getId();
+    VLOG(1) << "[progressivePIP] Processing nodeInterface " << bnode_->getId();
 
     if (bnode_->isLeaf()) {
         //*******************************************************************************
         // ALIGNS LEAVES
         //*******************************************************************************
-        // associates the sequence name to the leaf node
+        // associates the sequence name to the leaf nodeInterface
         // TODO sequence should be on the object
         _setMSAsequenceNames();
 
-        // creates a column containing the sequence associated to the leaf node
+        // creates a column containing the sequence associated to the leaf nodeInterface
         // TODO sequence should be on the object
         _setMSAleaves();
 
@@ -346,13 +348,13 @@ void PIPnode::PIPalignNode() {
         //*******************************************************************************
         // align using progressive 3D DP PIP
         if(flag_fv){
-            DP3D_PIP_RAM_FAST(node);
+            DP3D_PIP_RAM_FAST(nodeInterface);
         }else {
             if (flag_RAM) {
-                // DP3D_PIP_RAM(node, local, flag_map, flag_pattern); // local: tree rooted at the given node
+                // DP3D_PIP_RAM(nodeInterface, local, flag_map, flag_pattern); // local: tree rooted at the given nodeInterface
             } else {
-                DP3D_PIP(node, local, flag_map); // local: tree rooted at the given node
-                // DP3D_PIP_no_gamma(node, local, flag_map); // local: tree rooted at the given node
+                DP3D_PIP(nodeInterface, local, flag_map); // local: tree rooted at the given nodeInterface
+                // DP3D_PIP_no_gamma(nodeInterface, local, flag_map); // local: tree rooted at the given nodeInterface
             }
 */
         }
@@ -400,7 +402,7 @@ void PIPnode::_computeLocalNu(int numCategories) {
 void PIPnode::_getPrFromSubstutionModel() {
 
     if (!bnode_->hasFather()) {
-        // root node doesn't have Pr
+        // root nodeInterface doesn't have Pr
     } else {
 
         for (int i = 0; i < progressivePIP_->rDist_->getNumberOfCategories(); i++) {
@@ -456,10 +458,31 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
     _setPi(substModel_->getFrequencies());
     //***************************************************************************************
 
-    compositePIPaligner_ = new CompositePIPaligner(numNodes);
+    //compositePIPaligner_ = new CompositePIPaligner(numNodes);
 
 
-    compositePIPalignerNEW_ = new CompositePIPalignerNEW(7);
+    //compositePIPalignerNEW_ = new CompositePIPalignerNEW(7);
+
+//    nodeInterface* a = new nodeRAM(5);
+//    nodeInterface* b = new nodeRAM(6);
+//    nodeInterface* c = new nodeRAM(7);
+//    IComposite* clientComposite = new Composite(3);
+//    clientComposite->Add(a);
+//    clientComposite->Add(b);
+//    clientComposite->Add(c);
+//    clientComposite->Align();
+
+    nodeFactory *nodeFactory = new bpp::nodeFactory();
+
+    /*Factory instantiating an object of type ROCK*/
+    nodeInterface *node1 = nodeFactory->getNode(RAM,1);
+    nodeInterface *node2 = nodeFactory->getNode(RAM,2);
+    nodeInterface *node3 = nodeFactory->getNode(RAM,3);
+    IComposite* clientComposite = new Composite(3);
+    clientComposite->Add(node1,0);
+    clientComposite->Add(node2,1);
+    clientComposite->Add(node3,2);
+    clientComposite->Align();
 
     int kkk = 0;
 
@@ -469,14 +492,14 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
 
         PIPnode * pip_node = new PIPnode(this,vnode,bnode);
 
-        int PIPtype=1;
+/*        int PIPtype=1;
         //FactoryPIP *factory;
-        PIPnodeCPUinterface *factory;
+        PIPnodeInterface *factory;
         if(PIPtype==1){
             factory = new PIPnodeCPUFactory;
         }else{
             factory = new PIPnodeRAMFactory;
-        }
+        }*/
 
 
         pip_node->_reserve(numCatg);
@@ -499,14 +522,14 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
         compositePIPaligner_->addPIPcomponent(pip_node);
 
 
-        compositePIPalignerNEW_->addPIPcomponent(factory,kkk); kkk++;
+        //compositePIPalignerNEW_->addPIPcomponent(factory,kkk); kkk++;
 
     }
     //***************************************************************************************
 
-    //compositePIPaligner_->PIPalign();
+    compositePIPaligner_->PIPalign();
 
-    compositePIPalignerNEW_->PIPalignNEW();
+    //compositePIPalignerNEW_->PIPalignNEW();
 
 
 }

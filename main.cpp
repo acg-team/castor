@@ -624,7 +624,7 @@ int main(int argc, char *argv[]) {
 
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),num_sb);
 
-            // Execute alignment on post-order node list
+            // Execute alignment on post-order nodeInterface list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
@@ -655,7 +655,7 @@ int main(int argc, char *argv[]) {
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
 
-/*
+
             //TEST
             progressivePIP *PIPmsa = new bpp::progressivePIP(utree,
                                                    tree,
@@ -667,7 +667,7 @@ int main(int argc, char *argv[]) {
 
             PIPmsa->initializePIP(ftn, num_sb);
 
-*/
+
 
 
 
