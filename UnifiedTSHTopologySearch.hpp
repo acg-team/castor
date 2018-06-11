@@ -62,9 +62,10 @@ namespace tshlib {
         bpp::AbstractHomogeneousTreeLikelihood *likelihoodFunc;
         double tshinitScore;
         double tshcycleScore;
-        TreeSearchHeuristics tshStrategy;
-        TreeRearrangmentOperations tshOperations;
+        TreeSearchHeuristics tshSearchHeuristic;
+        TreeRearrangmentOperations tshRearrangmentCoverage;
         TreeSearchStopCondition stopConditionMethod;
+        StartingNodeHeuristics tshStartingNodeMethod;
         double stopConditionValue;
         std::string scoringMethod;
         int performed_moves;
@@ -79,8 +80,9 @@ namespace tshlib {
             likelihoodFunc = nullptr;
             tshinitScore = -std::numeric_limits<double>::infinity();
             tshcycleScore = -std::numeric_limits<double>::infinity();
-            tshStrategy = TreeSearchHeuristics::nosearch;
-            tshOperations = TreeRearrangmentOperations::classic_Mixed;
+            tshSearchHeuristic = TreeSearchHeuristics::nosearch;
+            tshRearrangmentCoverage = TreeRearrangmentOperations::classic_Mixed;
+            tshStartingNodeMethod = StartingNodeHeuristics::greedy;
             stopConditionMethod = TreeSearchStopCondition::convergence;
             stopConditionValue = 0;
             performed_moves = 0;
@@ -111,14 +113,24 @@ namespace tshlib {
         }
 
         void setTreeSearchStrategy(TreeSearchHeuristics in_tshStrategy, TreeRearrangmentOperations in_tshOperations) {
-            tshStrategy = in_tshStrategy;
-            tshOperations = in_tshOperations;
+            tshSearchHeuristic = in_tshStrategy;
+            tshRearrangmentCoverage = in_tshOperations;
         }
 
         void setStopCondition(TreeSearchStopCondition in_stopConditionMethod, double in_stopConditionValue) {
             stopConditionMethod = in_stopConditionMethod;
             stopConditionValue = in_stopConditionValue;
         }
+
+        void setStartingNodeHeuristic(StartingNodeHeuristics in_tshStartingNodeMethod, int in_search_startingnodes){
+            tshStartingNodeMethod = in_tshStartingNodeMethod;
+            search_startingnodes = in_search_startingnodes;
+        }
+
+        StartingNodeHeuristics getStartingNodeHeuristic() const {
+            return tshStartingNodeMethod;
+        }
+
 
         bpp::AbstractHomogeneousTreeLikelihood *getLikelihoodFunc() const {
             return likelihoodFunc;
@@ -129,11 +141,11 @@ namespace tshlib {
         }
 
         TreeSearchHeuristics getTshStrategy() const {
-            return tshStrategy;
+            return tshSearchHeuristic;
         }
 
         TreeRearrangmentOperations getTshOperations() const {
-            return tshOperations;
+            return tshRearrangmentCoverage;
         }
 
         TreeSearchStopCondition getStopConditionMethod() const {
@@ -160,6 +172,77 @@ namespace tshlib {
             search_startingnodes = in_search_startingnodes;
         }
 
+
+        std::string getRearrangmentCoverageDescription() const {
+            std::string rtToken;
+            switch (tshRearrangmentCoverage) {
+                case tshlib::TreeRearrangmentOperations::classic_NNI:
+                    rtToken = "NNI-like";
+                    break;
+                case tshlib::TreeRearrangmentOperations::classic_SPR:
+                    rtToken = "SPR-like";
+                    break;
+                case tshlib::TreeRearrangmentOperations::classic_TBR:
+                    rtToken = "TBR-like";
+                    break;
+                case tshlib::TreeRearrangmentOperations::classic_Mixed:
+                    rtToken = "Complete";
+                    break;
+            }
+            return rtToken;
+        }
+
+        std::string getTreeSearchStrategyDescription() const {
+            std::string rtToken;
+            switch (tshSearchHeuristic) {
+                case tshlib::TreeSearchHeuristics::swap:
+                    rtToken = "Swap";
+                    break;
+                case tshlib::TreeSearchHeuristics::phyml:
+                    rtToken = "phyML";
+                    break;
+                case tshlib::TreeSearchHeuristics::mixed:
+                    rtToken = "Mixed(Swap+phyML)";
+                    break;
+                case tshlib::TreeSearchHeuristics::nosearch:
+                    rtToken = "no-search";
+                    break;
+            }
+            return rtToken;
+        }
+
+        std::string getStartingNodeHeuristicDescription() const {
+            std::string rtToken;
+            switch (tshStartingNodeMethod) {
+                case tshlib::StartingNodeHeuristics::particle_swarm:
+                    rtToken = "Particle Swarm";
+                    break;
+                case tshlib::StartingNodeHeuristics::hillclimbing:
+                    rtToken = "Hillclimbing";
+                    break;
+                case tshlib::StartingNodeHeuristics::greedy:
+                    rtToken = "Greedy";
+                    break;
+                case tshlib::StartingNodeHeuristics::undef:
+                    rtToken = "undef";
+                    break;
+            }
+            return rtToken;
+        }
+
+        std::string getStopConditionDescription() const {
+            std::string rtToken;
+            switch (stopConditionMethod) {
+                case tshlib::TreeSearchStopCondition::convergence:
+                    rtToken = "convergence";
+                    break;
+                case tshlib::TreeSearchStopCondition::iterations:
+                    rtToken = "max iterations";
+                    break;
+            }
+
+            return rtToken;
+        }
 
         double performTreeSearch();
 
