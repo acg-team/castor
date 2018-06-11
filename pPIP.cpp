@@ -54,6 +54,7 @@
 #define MATCH_STATE 1
 #define GAP_X_STATE 2
 #define GAP_Y_STATE 3
+#define GAP_CHAR '-'
 #define STOP_STATE 4
 #define LEFT 0
 #define RIGHT 1
