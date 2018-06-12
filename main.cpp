@@ -629,25 +629,19 @@ int main(int argc, char *argv[]) {
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_local = false;
-            bool flag_RAM = false;
             bool flag_map = true;
-            bool flag_pattern = false;
             bool flag_fv = false;
 
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
                  flag_local = true;
-                 flag_RAM = false;
                  flag_map = true;
-                 flag_pattern = false;
                  flag_fv = false;
 
             }else if (PAR_alignment_version.find("ram") != std::string::npos) {
 
                  flag_local = true;
-                 flag_RAM = true;
                  flag_map = false;
-                 flag_pattern = true;
                  flag_fv = true;
 
             }
