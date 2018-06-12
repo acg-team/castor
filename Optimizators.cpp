@@ -511,7 +511,7 @@ namespace bpp {
                 treesearch->setLikelihoodFunc(tl);
 
                 // Execute tree-search
-                treesearch->performTreeSearch();
+                treesearch->executeTreeSearch();
 
 
                 LOG(INFO) << "[TSH Cycle] Likelihood after tree-search lk=" << std::setprecision(18) << tl->getLogLikelihood();
@@ -630,7 +630,7 @@ namespace bpp {
                       << PAR_align_algorithm_tolerance << "," << PAR_align_algorithm_maxeval <<
                       ")";
 
-            // Execute alignment on post-order nodeInterface list
+            // Execute alignment on post-order node list
             tshlib::Utree *utree_;
 
             if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(tl)) {

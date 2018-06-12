@@ -52,27 +52,28 @@
 
 using namespace bpp;
 
-tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves() {
+tshlib::TreeRearrangment *tshlib::TreeSearch::defineMoves() {
 
     // Initialise a new rearrangement list
     auto candidateMoveSet = new tshlib::TreeRearrangment;
     candidateMoveSet->setTreeTopology(utree_);
-    candidateMoveSet->setTreeCoverage(tshRearrangmentCoverage);
+    candidateMoveSet->setTreeCoverage(tshRearrangementCoverage);
     candidateMoveSet->setStrategy(tshSearchHeuristic);
     candidateMoveSet->initialize();
 
     std::vector<tshlib::VirtualNode *> pickedNodes((int)search_startingnodes);
 
+    // instantiating the method to define the number of initial nodes on which computing the candidate moves
     switch (tshStartingNodeMethod) {
         case tshlib::StartingNodeHeuristics::greedy:
             // Generate candidate list of possible moves given the tree topology and the rearrangement operation type
             for (auto &node:utree_->listVNodes) {
-                // Print nodeInterface description with neighbors
+                // Print node description with neighbors
                 //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
                 candidateMoveSet->setSourceNode(node);
-                // Get all the target nodes with distance == radius from the source nodeInterface
-                // excluding the starting nodeInterface (false)
+                // Get all the target nodes with distance == radius from the source node
+                // excluding the starting node (false)
                 // do not duplicate moves in the list
                 candidateMoveSet->defineMoves(false, false);
 
@@ -83,16 +84,16 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves() {
 
             RandomTools::getSample(utree_->listVNodes,pickedNodes);
 
-            // Generate candidate list of possible moves given the nodeInterface topology and the rearrangement operation type
+            // Generate candidate list of possible moves given the node topology and the rearrangement operation type
             for(auto &node:pickedNodes){
-                //VirtualNode *nodeInterface = utree_->listVNodes.at(node_ids.at(i));
+                //VirtualNode *node = utree_->listVNodes.at(node_ids.at(i));
 
-                // Print nodeInterface description with neighbors
+                // Print node description with neighbors
                 //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
                 candidateMoveSet->setSourceNode(node);
-                // Get all the target nodes with distance == radius from the source nodeInterface
-                // excluding the starting nodeInterface (false)
+                // Get all the target nodes with distance == radius from the source node
+                // excluding the starting node (false)
                 // do not duplicate moves in the list
                 candidateMoveSet->defineMoves(false, false);
 
@@ -105,14 +106,14 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineCandidateMoves() {
             break;
     }
 
-    // Print the list of moves for the current P nodeInterface (source nodeInterface)
+    // Print the list of moves for the current P node (source node)
     //rearrangmentList.printMoves();
 
     return candidateMoveSet;
 }
 
 
-double tshlib::TreeSearch::performTreeSearch() {
+double tshlib::TreeSearch::executeTreeSearch() {
     double newScore = 0;
 
     // Store initial likelihood value
@@ -129,24 +130,8 @@ double tshlib::TreeSearch::performTreeSearch() {
               << "starting nodes: " + std::to_string(search_startingnodes)
               << ", stop condition: " << getStopConditionDescription();
 
-    // instantiating the method to define the number of initial nodes on which computing the candidate moves
-    switch (tshStartingNodeMethod) {
-        case tshlib::StartingNodeHeuristics::greedy:
-            newScore = greedy();
-            break;
-
-        case tshlib::StartingNodeHeuristics::hillclimbing:
-            newScore = hillclimbing();
-            break;
-
-        case tshlib::StartingNodeHeuristics::particle_swarm:
-            newScore = particleswarming();
-            break;
-
-        case tshlib::StartingNodeHeuristics::undef:
-            LOG(FATAL) << "[TSH Optimisation] Strarting node heuristic not defined. Execution aborted!";
-            break;
-    }
+    // execute tree search according to settings
+    newScore = iterate();
 
     // Add root on the tree topology
     utree_->addVirtualRootNode();
@@ -154,11 +139,11 @@ double tshlib::TreeSearch::performTreeSearch() {
 }
 
 
-void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateMoves) {
+void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
 
     for (unsigned long i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
-        ApplicationTools::displayGauge(i + 1, candidateMoves->getNumberOfMoves(), '>', std::string("nodeInterface " + candidateMoves->getMove(i)->getSourceNode()->vnode_name));
+        ApplicationTools::displayGauge(i + 1, candidateMoves->getNumberOfMoves(), '>', std::string("node " + candidateMoves->getMove(i)->getSourceNode()->vnode_name));
 
         std::vector < tshlib::VirtualNode * > listNodesWithinPath, updatedNodesWithinPath;
         double moveLogLK = 0;
@@ -169,8 +154,6 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         //listNodesWithinPath = inputTree->computePathBetweenNodes(pnode, qnode);
         listNodesWithinPath = utree_->computePathBetweenNodes(candidateMoves->getMove(i)->getSourceNode(), candidateMoves->getMove(i)->getTargetNode());
         updatedNodesWithinPath = candidateMoves->updatePathBetweenNodes(i, listNodesWithinPath);
-
-        //listNodesWithinPath = candidateMoves->getNodesInMovePath(i);
 
         // ------------------------------------
         // Log move details
@@ -183,7 +166,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
         VLOG(1) << "[TSH Cycle - Topology] [A] MOVE#" << candidateMoves->getMove(i)->getUID() << " | " << utree_->printTreeNewick(true);
 
         // ------------------------------------
-        // Print root reachability from every nodeInterface (includes rotations)
+        // Print root reachability from every node (includes rotations)
         // inputTree->_testReachingPseudoRoot();
 
         // ------------------------------------
@@ -205,7 +188,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
             for (auto &node:updatedNodesWithinPath) {
                 nodepath << node->getNodeName() << ">";
             }
-            LOG_IF(ERROR, std::isinf(moveLogLK)) << "llk[Move] is -inf for move " << candidateMoves->getMove(i)->getUID() << " nodeInterface-path:" << nodepath.str();
+            LOG_IF(ERROR, std::isinf(moveLogLK)) << "llk[Move] is -inf for move " << candidateMoves->getMove(i)->getUID() << " node-path:" << nodepath.str();
         }
         // ------------------------------------
         // Store likelihood of the move
@@ -238,7 +221,7 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
             for (auto &node:listNodesWithinPath) {
                 nodepath << node->getNodeName() << ">";
             }
-            LOG_IF(ERROR, std::isinf(moveLogLK_return)) << "llk[Return] value is -inf for move " << candidateMoves->getMove(i)->getUID() << " nodeInterface-path:" << nodepath.str();
+            LOG_IF(ERROR, std::isinf(moveLogLK_return)) << "llk[Return] value is -inf for move " << candidateMoves->getMove(i)->getUID() << " node-path:" << nodepath.str();
         }
 
         //candidateMoves->displayRearrangmentStatus(i, true);
@@ -258,10 +241,8 @@ void tshlib::TreeSearch::testCandidateMoves(tshlib::TreeRearrangment *candidateM
 }
 
 
-double tshlib::TreeSearch::greedy() {
+double tshlib::TreeSearch::iterate() {
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-
-    //tshcycleScore = tshinitScore;
 
     // Condition handler
     double cycle_no = 0;
@@ -277,20 +258,20 @@ double tshlib::TreeSearch::greedy() {
 
     while (c < stopConditionValue) {
 
-        // Define moves according to tree-search criteria
-        tshlib::TreeRearrangment *candidateMoves = defineCandidateMoves();
+        // 1. Define moves according to tree-search criteria
+        tshlib::TreeRearrangment *candidateMoves = defineMoves();
+
         std::ostringstream taskDescription;
         taskDescription << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << cycle_no + 1
                         << " | Testing " << candidateMoves->getNumberOfMoves() << " tree rearrangements.";
         ApplicationTools::displayMessage(taskDescription.str());
-
         LOG(INFO) << "[TSH Optimisation] Cycle " << std::setfill('0') << std::setw(3) << cycle_no + 1 << " - lk= " << TextTools::toString(tshcycleScore, 15);
 
 
-        // Test and record likelihood of each and every candidate move
-        testCandidateMoves(candidateMoves);
+        // 2. Test and record likelihood of each and every candidate move
+        testMoves(candidateMoves);
 
-        // Select the best move in the list and store it
+        // 3. Select the best move in the list and store it
         Move *bestMove = candidateMoves->selectBestMove(tshcycleScore);
 
         // ------------------------------------
@@ -381,13 +362,4 @@ double tshlib::TreeSearch::greedy() {
     VLOG(1) << "[TSH Cycle] *** " << (double) duration / performed_moves << " microseconds/move *** " << std::endl;
 
     return -tshcycleScore;
-}
-
-
-double tshlib::TreeSearch::hillclimbing() {
-    return greedy();
-}
-
-double tshlib::TreeSearch::particleswarming() {
-    return 0;
 }

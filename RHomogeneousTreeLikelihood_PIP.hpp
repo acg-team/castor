@@ -63,14 +63,14 @@ namespace bpp {
         mutable DRASRTreeLikelihoodData *likelihoodData_;
         mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;
 
-        mutable std::vector<int> likelihoodNodes_;                            //The nodeInterface is represented via its <int> ID
+        mutable std::vector<int> likelihoodNodes_;                            //The node is represented via its <int> ID
 
         mutable std::map<int, std::pair<std::vector<int>, int>> descCountData_;
-        mutable std::map<int, std::pair<std::vector<bool>, int>> setAData_;                   // SetA flags if a nodeInterface should be included in the insertion histories
+        mutable std::map<int, std::pair<std::vector<bool>, int>> setAData_;                   // SetA flags if a node should be included in the insertion histories
 
         mutable std::map<int, std::pair<std::vector<int>, bool>> descGapCountData_;           // Counts the number of gaps in the descending nodes
-        mutable std::map<int, int> evolutionaryEvents_;                                       // Evolutionary events counts the number of possible evolutionary events happened on the nodeInterface
-        mutable std::map<int, double> evolutionaryEventsWeighted_;                            // Evolutionary events counts the number of possible evolutionary events happened on the nodeInterface
+        mutable std::map<int, int> evolutionaryEvents_;                                       // Evolutionary events counts the number of possible evolutionary events happened on the node
+        mutable std::map<int, double> evolutionaryEventsWeighted_;                            // Evolutionary events counts the number of possible evolutionary events happened on the node
                                                                                               // weighted them by the number of nodes in the clade
         mutable std::map<int, double> iotasData_;
         mutable std::map<int, double> betasData_;
@@ -200,7 +200,7 @@ namespace bpp {
 
 
         //double getLogLikelihood(std::vector<tshlib::VirtualNode *> &listNodes) const;
-        //double getLogLikelihoodSubtree(const Node *nodeInterface) const;
+        //double getLogLikelihoodSubtree(const Node *node) const;
         //double getLogLikelihoodSubtreeForASite(size_t site) const;
         //double getLogLikelihoodSubtreeForASiteForARateClass(size_t site, size_t rateClass) const;
 
@@ -413,7 +413,7 @@ namespace bpp {
          * @brief This method sets to 1 all the likelihood arrays recursively from a starting node
          * @param node The node at which the likelihood arrays must be reset
          */
-        //virtual void resetNodeLikelihoodArrays(const Node *nodeInterface);
+        //virtual void resetNodeLikelihoodArrays(const Node *node);
 
         /**
          * @brief This method updates the likelihood arrays recursively from a starting node for a
@@ -422,7 +422,7 @@ namespace bpp {
          */
         //virtual void recombineFvAfterMove() const;
 
-        //virtual void recombineFvAtNode(Node *nodeInterface) const;
+        //virtual void recombineFvAtNode(Node *node) const;
 
         void setIndicatorFunction(const SiteContainer &sites) const;
 

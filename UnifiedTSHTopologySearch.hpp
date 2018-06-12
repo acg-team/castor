@@ -63,7 +63,7 @@ namespace tshlib {
         double tshinitScore;
         double tshcycleScore;
         TreeSearchHeuristics tshSearchHeuristic;
-        TreeRearrangmentOperations tshRearrangmentCoverage;
+        TreeRearrangmentOperations tshRearrangementCoverage;
         TreeSearchStopCondition stopConditionMethod;
         StartingNodeHeuristics tshStartingNodeMethod;
         double stopConditionValue;
@@ -81,7 +81,7 @@ namespace tshlib {
             tshinitScore = -std::numeric_limits<double>::infinity();
             tshcycleScore = -std::numeric_limits<double>::infinity();
             tshSearchHeuristic = TreeSearchHeuristics::nosearch;
-            tshRearrangmentCoverage = TreeRearrangmentOperations::classic_Mixed;
+            tshRearrangementCoverage = TreeRearrangmentOperations::classic_Mixed;
             tshStartingNodeMethod = StartingNodeHeuristics::greedy;
             stopConditionMethod = TreeSearchStopCondition::convergence;
             stopConditionValue = 0;
@@ -114,7 +114,7 @@ namespace tshlib {
 
         void setTreeSearchStrategy(TreeSearchHeuristics in_tshStrategy, TreeRearrangmentOperations in_tshOperations) {
             tshSearchHeuristic = in_tshStrategy;
-            tshRearrangmentCoverage = in_tshOperations;
+            tshRearrangementCoverage = in_tshOperations;
         }
 
         void setStopCondition(TreeSearchStopCondition in_stopConditionMethod, double in_stopConditionValue) {
@@ -145,7 +145,7 @@ namespace tshlib {
         }
 
         TreeRearrangmentOperations getTshOperations() const {
-            return tshRearrangmentCoverage;
+            return tshRearrangementCoverage;
         }
 
         TreeSearchStopCondition getStopConditionMethod() const {
@@ -175,7 +175,7 @@ namespace tshlib {
 
         std::string getRearrangmentCoverageDescription() const {
             std::string rtToken;
-            switch (tshRearrangmentCoverage) {
+            switch (tshRearrangementCoverage) {
                 case tshlib::TreeRearrangmentOperations::classic_NNI:
                     rtToken = "NNI-like";
                     break;
@@ -244,19 +244,28 @@ namespace tshlib {
             return rtToken;
         }
 
-        double performTreeSearch();
+        double executeTreeSearch();
 
     protected:
 
-        tshlib::TreeRearrangment *defineCandidateMoves();
+        /*!
+         * @brief This method execute the cycle of tree search according to the settings selected by the user
+         * @return the score of the tree topology found during the tree search
+         */
+        double iterate();
 
-        void testCandidateMoves(tshlib::TreeRearrangment *candidateMoves);
+        /*!
+         * @brief This method defines the candidate rearrangements to be performed on the topology
+         * @return A list of candidate topologies (in the form of rearrangement operations)
+         */
+        tshlib::TreeRearrangment *defineMoves();
 
-        double greedy();
+        /*!
+         * @brief testCandidateMoves method tests all the candidate tree topologies in the rearrangement list (or set), and it saves the score for each of them
+         * @param candidateMoves pointer to the list of candidate rearrangements on a fixed topology
+         */
+        void testMoves(tshlib::TreeRearrangment *candidateMoves);
 
-        double hillclimbing();
-
-        double particleswarming();
     };
 }
 

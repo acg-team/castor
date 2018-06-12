@@ -182,13 +182,13 @@ void UtreeBppUtils::convertTree_b2u(bpp::Tree *in_tree, Utree *out_tree, treemap
 
         _traverseTree_b2u(out_tree, ichild, in_tree, sonId, tm);
 
-        // Add this nodeInterface as starting point of the tree
+        // Add this node as starting point of the tree
         out_tree->addMember(ichild, true);
 
     }
 
     // Collapse multiforcating trees to star tree pointing to the same pseudoroot
-    // Pick root nodeInterface at random within the nodeInterface-vector
+    // Pick root node at random within the node-vector
 
     out_tree->startVNodes.at(0)->_setNodeUp(out_tree->startVNodes.at(1));
     out_tree->startVNodes.at(1)->_setNodeUp(out_tree->startVNodes.at(0));
@@ -202,7 +202,7 @@ void UtreeBppUtils::convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree
     bpp::Node * RootNode = in_tree->getRootNode();
 
     std::string name;
-    // For each nodeInterface descending the root, create either a new VirtualNode
+    // For each node descending the root, create either a new VirtualNode
     for (auto &bppNode:RootNode->getSons()) {
 
         auto ichild = new VirtualNode;
@@ -220,14 +220,14 @@ void UtreeBppUtils::convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree
 
         _traverseTree_b2u(out_tree, ichild, bppNode, tm);
 
-        // Add this nodeInterface as starting point of the tree
+        // Add this node as starting point of the tree
         out_tree->addMember(ichild, true);
 
 
     }
 
     // Collapse multiforcating trees to star tree pointing to the same pseudoroot
-    // Pick root nodeInterface at random within the nodeInterface-vector
+    // Pick root node at random within the node-vector
 
     out_tree->startVNodes.at(0)->_setNodeUp(out_tree->startVNodes.at(1));
     out_tree->startVNodes.at(1)->_setNodeUp(out_tree->startVNodes.at(0));
@@ -249,7 +249,7 @@ bpp::TreeTemplate<bpp::Node> *UtreeBppUtils::convertTree_u2b(tshlib::Utree *in_t
 
     RootNode->setId((int) in_tree->listVNodes.size());
 
-    // Set root nodeInterface on new bpp tree
+    // Set root node on new bpp tree
     auto *tree = new bpp::TreeTemplate<bpp::Node>();
 
     tree->setRootNode(RootNode);
@@ -399,7 +399,7 @@ void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib:
             //bpp::Node *pNode = inBTree.getNode(tm.right.at(vnode));
             bpp::Node *pNode = tempMap[tm.right.at(vnode)];
 
-            // Empty array of sons on the parent nodeInterface
+            // Empty array of sons on the parent node
             //pNode->removeSons();
 
             //leftBNode->removeFather();

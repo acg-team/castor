@@ -624,7 +624,7 @@ int main(int argc, char *argv[]) {
 
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),num_sb);
 
-            // Execute alignment on post-order nodeInterface list
+            // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
