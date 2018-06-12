@@ -668,8 +668,8 @@ void pPIP::_build_MSA(bpp::Node *node, int idx_sb) {
     MSA_t *MSA_L = &(MSA_.at(sonLeftID).at(0));
     MSA_t *MSA_R = &(MSA_.at(sonRightID).at(0));
 
-    int lenColL = MSA_L->size();
-    int lenColR = MSA_R->size();
+    int lenColL = MSA_L->at(0).size();
+    int lenColR = MSA_R->at(0).size();
 
     MSA_t MSA;
 
@@ -1214,7 +1214,7 @@ std::vector<double> pPIP::_compute_lk_down(bpp::Node *node,int idx_sb){
 
     std::vector<double> lk_down;
 
-    int MSAlen = rev_map_compressed_seqs_.at(nodeID).size();
+    int MSAlen = rev_map_compressed_seqs_.at(nodeID).at(idx_sb).size();
 
     lk_down.resize(MSAlen);
 
@@ -2542,7 +2542,7 @@ void pPIP::_setFVsigmaLeaf(bpp::Node *node) {
 
     size_t num_gamma_categories = rDist_->getNumberOfCategories();
 
-    int lenComprSeqs = rev_map_compressed_seqs_.at(nodeID).size();
+    int lenComprSeqs = rev_map_compressed_seqs_.at(nodeID).at(0).size();
 
     fv_sigma_.at(nodeID).resize(1);
     fv_sigma_.at(nodeID).at(0).resize(lenComprSeqs);
@@ -2572,7 +2572,7 @@ void pPIP::_setFVleaf(bpp::Node *node) {
 
     size_t num_gamma_categories = rDist_->getNumberOfCategories();
 
-    int lenComprSeqs = rev_map_compressed_seqs_.at(nodeID).size();
+    int lenComprSeqs = rev_map_compressed_seqs_.at(nodeID).at(0).size();
 
     fv_data_.at(nodeID).resize(1);
 
@@ -2817,7 +2817,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
     auto epsilon = DBL_EPSILON;
     double min_inf = -std::numeric_limits<double>::infinity();
     //***************************************************************************************
-    double col_lk;
+    double log_col_lk;
     double l1,l2,l3;
     //***************************************************************************************
     // TRACEBACK VARIABLES
@@ -2866,11 +2866,11 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
     // DP SIZES
     //***************************************************************************************
     // Compute dimensions of the 3D block at current internal nodeInterface.
-    int h = MSA_.at(nodeID_L).size() + 1; // dimension of the alignment on the left side
-    int w = MSA_.at(nodeID_R).size() + 1; // dimension of the alignment on the right side
+    int h = MSA_.at(nodeID_L).at(0).size() + 1; // dimension of the alignment on the left side
+    int w = MSA_.at(nodeID_R).at(0).size() + 1; // dimension of the alignment on the right side
     int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
-    int h_compr = rev_map_compressed_seqs_.at(nodeID_L).size(); // dimension of the compressed alignment on the left side
-    int w_compr = rev_map_compressed_seqs_.at(nodeID_R).size(); // dimension of the compressed alignment on the right side
+    int h_compr = rev_map_compressed_seqs_.at(nodeID_L).at(0).size(); // dimension of the compressed alignment on the left side
+    int w_compr = rev_map_compressed_seqs_.at(nodeID_R).at(0).size(); // dimension of the compressed alignment on the right side
     int i,j,k;
     int id1m,id2m;
     int id1x,id2y;
@@ -3083,7 +3083,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
                 id1m = map_compressed_seqs_.at(nodeID_L).at(0).at(i-1);
                 id2m = map_compressed_seqs_.at(nodeID_R).at(0).at(j-1);
 
-                col_lk = computeLK_MXY_local( log_phi_gamma,
+                log_col_lk = computeLK_MXY_local( log_phi_gamma,
                                               Log3DM[m - 1][i-1][j-1],
                                               Log3DX[m - 1][i-1][j-1],
                                               Log3DY[m - 1][i-1][j-1],
@@ -3091,7 +3091,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
 
                 l1 = pPIPUtils::add_lns(Log3DM[m - 1][i - 1][j - 1], Log3DX[m - 1][i - 1][j - 1]);
                 l2 = pPIPUtils::add_lns(l1, Log3DY[m - 1][i - 1][j - 1]);
-                l3 = -log(m - 1) + log(nu_.at(nodeID)) + col_lk;
+                l3 = -log(m) + log_nu_gamma + log_col_lk;
                 Log3DM[m][i][j] = pPIPUtils::add_lns(l2, l3);
                 //***************************************************************************
                 // GAPX[i][j]
@@ -3105,7 +3105,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
 
                 l1 = pPIPUtils::add_lns(Log3DM[m - 1][i - 1][j], Log3DX[m - 1][i - 1][j]);
                 l2 = pPIPUtils::add_lns(l1, Log3DY[m - 1][i - 1][j]);
-                l3 = -log(m - 1) + log(nu_.at(nodeID)) + col_lk;
+                l3 = -log(m) + log_nu_gamma + log_col_lk;
                 Log3DX[m][i][j] = pPIPUtils::add_lns(l2, l3);
                 //***************************************************************************
                 // GAPY[i][j]
@@ -3119,7 +3119,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
 
                 l1 = pPIPUtils::add_lns(Log3DM[m - 1][i][j - 1], Log3DX[m - 1][i][j - 1]);
                 l2 = pPIPUtils::add_lns(l1, Log3DY[m - 1][i][j - 1]);
-                l3 = -log(m - 1) + log(nu_.at(nodeID)) + col_lk;
+                l3 = -log(m) + log_nu_gamma + log_col_lk;
                 Log3DY[m][i][j] = pPIPUtils::add_lns(l2, l3);
                 //***************************************************************************
             }
@@ -3226,10 +3226,10 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
     int idxMax;
     int idmL,idmR;
 
-    for(int sb=0;sb<num_sb_;sb++) {
-
-        i = h;
-        j = w;
+    //for(int sb=0;sb<num_sb_;sb++) {
+    for(int sb=0;sb<1;sb++) {
+        i = h-1;
+        j = w-1;
 
         //TODO: assign fv_data_not_compressed
         std::vector< vector< bpp::ColMatrix<double> > > fv_data_not_compressed;
@@ -3333,8 +3333,8 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
 
         std::vector<int> traceback;
 
-        m = 1;
-        lk = -log(m) + log(nu_.at(nodeID)) + p0;
+        m = m-1;
+        lk = -log(m) + log_nu_gamma + p0;
 
         while (i > 1 || j > 1 || m > 1) {
 
@@ -3540,11 +3540,11 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     // DP SIZES
     //***************************************************************************************
     // Compute dimensions of the 3D block at current internal nodeInterface.
-    int h = MSA_.at(nodeID_L).size() + 1; // dimension of the alignment on the left side
-    int w = MSA_.at(nodeID_R).size() + 1; // dimension of the alignment on the right side
+    int h = MSA_.at(nodeID_L).at(0).size() + 1; // dimension of the alignment on the left side
+    int w = MSA_.at(nodeID_R).at(0).size() + 1; // dimension of the alignment on the right side
     int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
-    int h_compr = rev_map_compressed_seqs_.at(nodeID_L).size(); // dimension of the compressed alignment on the left side
-    int w_compr = rev_map_compressed_seqs_.at(nodeID_R).size(); // dimension of the compressed alignment on the right side
+    int h_compr = rev_map_compressed_seqs_.at(nodeID_L).at(0).size(); // dimension of the compressed alignment on the left side
+    int w_compr = rev_map_compressed_seqs_.at(nodeID_R).at(0).size(); // dimension of the compressed alignment on the right side
     int i,j,k;
     int id1m,id2m;
     int id1x,id2y;
@@ -4104,8 +4104,8 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     int sequenceID_2 = treemap_.right.at(vnode_right);
 
     // Compute dimensions of the 3D block at current internal nodeInterface.
-    h = MSA_.at(sequenceID_1).size() + 1; // dimension of the alignment on the left side
-    w = MSA_.at(sequenceID_2).size() + 1; // dimension of the alignment on the riht side
+    h = MSA_.at(sequenceID_1).at(0).size() + 1; // dimension of the alignment on the left side
+    w = MSA_.at(sequenceID_2).at(0).size() + 1; // dimension of the alignment on the riht side
 
     int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
 
@@ -4303,7 +4303,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                 coordTriangle_prev_i = coordTriangle_this_i - 1;
 
                 // get left MSA column
-                sLs = (MSA_.at(0).at(sequenceID_1).at(coordSeq_1));
+                sLs = (MSA_.at(sequenceID_1).at(0).at(coordSeq_1));
 
                 for (int j = 0; j <= lw; j++) {
 
@@ -4312,7 +4312,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                     coordTriangle_prev_j = coordTriangle_this_j - 1;
 
                     // get right MSA column
-                    sRs = (MSA_.at(0).at(sequenceID_2).at(coordSeq_2));
+                    sRs = (MSA_.at(sequenceID_2).at(0).at(coordSeq_2));
 
                     idx = get_indices_M(coordTriangle_prev_i,
                                         coordTriangle_prev_j,
@@ -4439,7 +4439,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                 coordSeq_1 = coordTriangle_this_i - 1;
 
                 // get left MSA column
-                sLs = (MSA_.at(0).at(sequenceID_1).at(coordSeq_1));
+                sLs = (MSA_.at(sequenceID_1).at(0).at(coordSeq_1));
 
                 for (int j = 0; j <= lw; j++) {
 
@@ -4575,7 +4575,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
                     coordSeq_2 = coordTriangle_this_j - 1;
 
                     // get right MSA column
-                    sRs = (MSA_.at(0).at(sequenceID_2).at(coordSeq_2));
+                    sRs = (MSA_.at(sequenceID_2).at(0).at(coordSeq_2));
 
                     idx = get_indices_M(coordTriangle_prev_i,
                                         coordTriangle_prev_j,
@@ -4850,6 +4850,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     //traceback_path_.at(nodeID) = traceback_path;
 
     // converts traceback path into an MSA
+    MSA_.at(nodeID).resize(1);
     _build_MSA(node,0);
 
     // assigns the sequence names of the new alligned sequences to the current MSA
@@ -4867,9 +4868,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
 void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
                       bool local,
-                      bool flag_RAM,
                       bool flag_map,
-                      bool flag_pattern,
                       bool flag_fv) {
 
     //***************************************************************************************
@@ -4963,14 +4962,13 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
             //*******************************************************************************
             // align using progressive 3D DP PIP
             if(flag_fv){
-                DP3D_PIP_RAM_FAST(node);
-            }else {
-                if (flag_RAM) {
-                   // DP3D_PIP_RAM(nodeInterface, local, flag_map, flag_pattern); // local: tree rooted at the given nodeInterface
-                } else {
-                    DP3D_PIP(node, local, flag_map); // local: tree rooted at the given nodeInterface
-                    // DP3D_PIP_no_gamma(nodeInterface, local, flag_map); // local: tree rooted at the given nodeInterface
+                if(num_sb_>1){
+                    DP3D_PIP_RAM_FAST_SB(node);
+                }else{
+                    DP3D_PIP_RAM_FAST(node);
                 }
+            }else {
+                    DP3D_PIP(node, local, flag_map); // local: tree rooted at the given nodeInterface
             }
             //*******************************************************************************
         }

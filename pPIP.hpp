@@ -80,9 +80,7 @@ namespace bpp {
 
         void PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
                         bool local,
-                        bool flag_RAM,
                         bool flag_map,
-                        bool flag_pattern,
                         bool flag_fv);
 
         std::vector< std::vector< std::string > > getMSA(bpp::Node *node);
