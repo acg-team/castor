@@ -620,7 +620,7 @@ int main(int argc, char *argv[]) {
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
 
-            int num_sb = 1;
+            int num_sb = 4;
 
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),num_sb);
 

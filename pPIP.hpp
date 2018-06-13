@@ -83,7 +83,7 @@ namespace bpp {
                         bool flag_map,
                         bool flag_fv);
 
-        std::vector< std::vector< std::string > > getMSA(bpp::Node *node);
+        std::vector< std::string > getMSA(bpp::Node *node,int idx);
 
         std::vector<double> getScore(bpp::Node *node);
 
@@ -122,6 +122,8 @@ namespace bpp {
         std::vector< std::vector<MSA_t> > MSA_;                                   // vector[nodeId] MSA at each node
         std::vector< std::vector<vector<int> > > traceback_path_;              // vector[nodeId] of traceback paths (1 at each internal node)
         std::vector< std::vector< vector< vector<int> > > > traceback_map_;
+
+        std::vector< std::vector< std::vector<int> > > subMSAidx_;
 
         std::vector< std::vector<double> > score_;                                // vector[nodeId] of likelihood score
         double lambda0_;                                            // original lambda (no Gamma distribution)
@@ -329,6 +331,8 @@ namespace bpp {
 
         void _setTracebackPathleaves(bpp::Node *node);
 
+        void _setSubMSAindexLeaves(bpp::Node *node);
+
         bpp::ColMatrix<double> fv_observed(MSAcolumn_t &s, int &idx);
 
         bpp::ColMatrix<double> computeFVrec(bpp::Node *node,
@@ -366,7 +370,7 @@ namespace bpp {
 
         std::vector<double> _compute_lk_empty_down(bpp::Node *node);
 
-        double _compute_lk_down_rec(bpp::Node *node,int idx,double lk,int idx_sb);
+        double _compute_lk_down_rec(bpp::Node *node,int idx,double lk,int position);
 
         std::vector<double> _compute_lk_down(bpp::Node *node,int idx_sb);
 
@@ -447,6 +451,21 @@ namespace bpp {
 
         void DP3D_PIP(bpp::Node *node, bool local,bool flag_map);
 
+        void extract_N_best(bpp::Node *node,int totalSubMSAs);
+
+        void startingLevelSB(std::vector< vector< vector<double> > > &Log3DM,
+                             std::vector< vector< vector<double> > > &Log3DX,
+                             std::vector< vector< vector<double> > > &Log3DY,
+                             double epsilon,
+                             std::default_random_engine &generator,
+                             std::uniform_real_distribution<double> &distribution,
+                             int d,
+                             int h,
+                             int w,
+                             int &lev,
+                             double &val,
+                             int &state);
+
         //void DP3D_PIP_no_gamma(bpp::Node *node, bool local,bool flag_map);
 
 //        void DP3D_PIP_RAM(bpp::Node *node,
@@ -458,7 +477,7 @@ namespace bpp {
 
         void DP3D_PIP_RAM_FAST_SB_cross(bpp::Node *node);
 
-        void DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R);
+        void DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R, int &position);
 
 //        void DP3D_PIP_SB(bpp::Node *node,
 //                         UtreeBppUtils::treemap *tm,
