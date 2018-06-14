@@ -162,6 +162,8 @@ find_package(bpp-core REQUIRED)
 find_package(bpp-seq REQUIRED)
 find_package(bpp-phyl REQUIRED)
 
+# @MAX: memtest
+include (CTest)
 
 set(SOURCES
         main.cpp
@@ -214,6 +216,9 @@ else ()
     target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
     target_link_libraries(miniJATI ${Boost_LIBRARIES})
 endif ()
+
+# @MAX: memtest
+add_test(example_test miniJATI)
 
 # Test target
 #enable_testing()
