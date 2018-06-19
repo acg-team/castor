@@ -54,6 +54,7 @@
 #define MATCH_STATE 1
 #define GAP_X_STATE 2
 #define GAP_Y_STATE 3
+#define GAP_CHAR '-'
 #define STOP_STATE 4
 #define LEFT 0
 #define RIGHT 1
@@ -2202,8 +2203,8 @@ double pPIP::computeLK_Y_local(double NU,
 //                sRs = (MSA_.at(s2ID).at(coordSeq_2));
 //
 //                if (i - 1 > 0 && j - 1 > 0) {
-//                    if (!(isinf(LogM[m - 1][i - 1][j - 1])) | !(isinf(LogX[m - 1][i - 1][j - 1])) |
-//                        !(isinf(LogY[m - 1][i - 1][j - 1]))) {
+//                    if (!(std::isinf(LogM[m - 1][i - 1][j - 1])) | !(std::isinf(LogX[m - 1][i - 1][j - 1])) |
+//                        !(std::isinf(LogY[m - 1][i - 1][j - 1]))) {
 //
 //
 //                        if (local) {
@@ -2240,8 +2241,8 @@ double pPIP::computeLK_Y_local(double NU,
 //                }
 //
 //                if (i - 1 > 0) {
-//                    if (!(isinf(LogM[m - 1][i - 1][j])) || !(isinf(LogX[m - 1][i - 1][j])) ||
-//                        !(isinf(LogY[m - 1][i - 1][j]))) {
+//                    if (!(std::isinf(LogM[m - 1][i - 1][j])) || !(std::isinf(LogX[m - 1][i - 1][j])) ||
+//                        !(std::isinf(LogY[m - 1][i - 1][j]))) {
 //
 //                        if (local) {
 //                            val = computeLK_X_local(valM,
@@ -2277,8 +2278,8 @@ double pPIP::computeLK_Y_local(double NU,
 //                }
 //
 //                if (j - 1 > 0) {
-//                    if (!(isinf(LogM[m - 1][i][j - 1])) || !(isinf(LogX[m - 1][i][j - 1])) ||
-//                        !(isinf(LogY[m - 1][i][j - 1]))) {
+//                    if (!(std::isinf(LogM[m - 1][i][j - 1])) || !(std::isinf(LogX[m - 1][i][j - 1])) ||
+//                        !(std::isinf(LogY[m - 1][i][j - 1]))) {
 //
 //                        if (local) {
 //                            val = computeLK_Y_local(valM,
@@ -2370,18 +2371,18 @@ double pPIP::computeLK_Y_local(double NU,
 //        double log_Zx = LogX[m][i][j];
 //        double log_Zy = LogY[m][i][j];
 //
-//        if(isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)){
+//        if(std::isinf(log_Zm) && std::isinf(log_Zx) && std::isinf(log_Zy)){
 //            perror("ERROR 1: Zm, Zx and Zy are inf");
 //        }
 //
 //        double log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
 //        double log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
 //
-//        if(isinf(log_Z)){
+//        if(std::isinf(log_Z)){
 //            perror("ERROR 2 Z: is inf");
 //        }
 //
-//        if(isinf(log_Zm)){
+//        if(std::isinf(log_Zm)){
 //            pm = 0;
 //            pmn = 0;
 //        }else{
@@ -2390,7 +2391,7 @@ double pPIP::computeLK_Y_local(double NU,
 //            pmn = exp(-(1 - pm) / temperature);
 //        }
 //
-//        if(isinf(log_Zx)){
+//        if(std::isinf(log_Zx)){
 //            px = 0;
 //            pxn = 0;
 //        }else{
@@ -2399,7 +2400,7 @@ double pPIP::computeLK_Y_local(double NU,
 //            pxn = exp(-(1 - px) / temperature);
 //        }
 //
-//        if(isinf(log_Zy)){
+//        if(std::isinf(log_Zy)){
 //            py = 0;
 //            pyn = 0;
 //        }else{
@@ -2440,7 +2441,7 @@ double pPIP::computeLK_Y_local(double NU,
 //                T = GAP_Y_CHAR;
 //            }
 //
-//            if(isinf(log_P)){
+//            if(std::isinf(log_P)){
 //                perror("ERROR 3: P inf");
 //            }
 //
@@ -2452,18 +2453,18 @@ double pPIP::computeLK_Y_local(double NU,
 //            log_Zx = LogX[m][i][j];
 //            log_Zy = LogY[m][i][j];
 //
-//            if (isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)) {
+//            if (std::isinf(log_Zm) && std::isinf(log_Zx) && std::isinf(log_Zy)) {
 //                perror("ERROR 1: Zm, Zx and Zy are inf");
 //            }
 //
 //            log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
 //            log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
 //
-//            if(isinf(log_Z)){
+//            if(std::isinf(log_Z)){
 //                perror("ERROR 2 Z: is inf");
 //            }
 //
-//            if(isinf(log_Zm)) {
+//            if(std::isinf(log_Zm)) {
 //                pm = 0;
 //                pmn = 0;
 //            }else {
@@ -2472,7 +2473,7 @@ double pPIP::computeLK_Y_local(double NU,
 //                pmn = exp(-(1 - pm) / temperature);
 //            }
 //
-//            if(isinf(log_Zx)){
+//            if(std::isinf(log_Zx)){
 //                px = 0;
 //                pxn = 0;
 //            }else {
@@ -2481,7 +2482,7 @@ double pPIP::computeLK_Y_local(double NU,
 //                pxn = exp(-(1 - px) / temperature);
 //            }
 //
-//            if(isinf(log_Zy)) {
+//            if(std::isinf(log_Zy)) {
 //                py = 0;
 //                pyn = 0;
 //            }else {
@@ -3288,18 +3289,18 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
         double log_Zx = Log3DX[m][i-1][j-1];
         double log_Zy = Log3DY[m][i-1][j-1];
 
-        if (isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)) {
+        if (std::isinf(log_Zm) && std::isinf(log_Zx) && std::isinf(log_Zy)) {
             perror("ERROR 1: Zm, Zx and Zy are inf");
         }
 
         double log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
         double log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
 
-        if (isinf(log_Z)) {
+        if (std::isinf(log_Z)) {
             perror("ERROR 2 Z: is inf");
         }
 
-        if (isinf(log_Zm)) {
+        if (std::isinf(log_Zm)) {
             pm = 0;
             pmn = 0;
         } else {
@@ -3308,7 +3309,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
             pmn = exp(-(1 - pm) / temperature);
         }
 
-        if (isinf(log_Zx)) {
+        if (std::isinf(log_Zx)) {
             px = 0;
             pxn = 0;
         } else {
@@ -3317,7 +3318,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
             pxn = exp(-(1 - px) / temperature);
         }
 
-        if (isinf(log_Zy)) {
+        if (std::isinf(log_Zy)) {
             py = 0;
             pyn = 0;
         } else {
@@ -3377,7 +3378,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
 
             }
 
-            if (isinf(log_P)) {
+            if (std::isinf(log_P)) {
                 perror("ERROR 3: P inf");
             }
 
@@ -3389,18 +3390,18 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
             log_Zx = Log3DX[m][i][j];
             log_Zy = Log3DY[m][i][j];
 
-            if (isinf(log_Zm) && isinf(log_Zx) && isinf(log_Zy)) {
+            if (std::isinf(log_Zm) && std::isinf(log_Zx) && std::isinf(log_Zy)) {
                 perror("ERROR 1: Zm, Zx and Zy are inf");
             }
 
             log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
             log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
 
-            if (isinf(log_Z)) {
+            if (std::isinf(log_Z)) {
                 perror("ERROR 2 Z: is inf");
             }
 
-            if (isinf(log_Zm)) {
+            if (std::isinf(log_Zm)) {
                 pm = 0;
                 pmn = 0;
             } else {
@@ -3409,7 +3410,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
                 pmn = exp(-(1 - pm) / temperature);
             }
 
-            if (isinf(log_Zx)) {
+            if (std::isinf(log_Zx)) {
                 px = 0;
                 pxn = 0;
             } else {
@@ -3418,7 +3419,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node) {
                 pxn = exp(-(1 - px) / temperature);
             }
 
-            if (isinf(log_Zy)) {
+            if (std::isinf(log_Zy)) {
                 py = 0;
                 pyn = 0;
             } else {

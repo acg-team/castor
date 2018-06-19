@@ -146,15 +146,8 @@ endif()
 
 endif()
 
-#find_package(Eigen3 REQUIRED)
-#if (EIGEN3_FOUND)
-#    message("-- Found Eigen3 in: ${EIGEN3_INCLUDE_DIR}")
-#    include_directories(${EIGEN3_INCLUDE_DIR})
-#endif ()
-
-find_package(TshLib REQUIRED)
+find_package(TshLib 2.0.0 REQUIRED)
 if (TSHLIB_FOUND)
-    message("-- Found TSHLIB in ${TSHLIB_INCLUDE_DIRS}")
     include_directories(${TSHLIB_INCLUDE_DIRS})
 endif ()
 
