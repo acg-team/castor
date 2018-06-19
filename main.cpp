@@ -85,7 +85,6 @@
 /*
 * From TSHLib:
 */
-#include <Alignment.hpp>
 #include <TreeRearrangment.hpp>
 
 /*
@@ -110,6 +109,7 @@ using namespace tshlib;
 #include "Optimizators.hpp"
 #include "SupportMeasures.hpp"
 
+#include "progressivePIP.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -611,46 +611,66 @@ int main(int argc, char *argv[]) {
         pPIP *alignment = nullptr;
         if (PAR_alignment) {
             std::string PAR_alignment_version = ApplicationTools::getStringParameter("alignment.version", jatiapp.getParams(), "cpu", "", true, 0);
-            ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
-            ApplicationTools::displayResult("\nProportion gappy sites", TextTools::toString(PAR_proportion, 4));
-            ApplicationTools::displayResult("\nAligner version:", PAR_alignment_version);
+            int PAR_alignment_sbsolutions = ApplicationTools::getIntParameter("alignment.sb_solutions", jatiapp.getParams(), 1, "", true, 0);
 
+            ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
+            ApplicationTools::displayResult("Proportion gappy sites", TextTools::toString(PAR_proportion, 4));
+            ApplicationTools::displayResult("Aligner optimised for:", PAR_alignment_version);
+
+            ApplicationTools::displayBooleanResult("Stochastic backtracking active", PAR_alignment_sbsolutions>1);
+            if (PAR_alignment_sbsolutions>1) {
+                ApplicationTools::displayResult("Number of stochastic solutions:", TextTools::toString(PAR_alignment_sbsolutions));
+            }
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
-            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed());
+            // Initialise alignment object
+            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),PAR_alignment_sbsolutions);
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_local = false;
-            bool flag_RAM = false;
             bool flag_map = true;
-            bool flag_pattern = false;
             bool flag_fv = false;
 
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
                  flag_local = true;
-                 flag_RAM = false;
                  flag_map = true;
-                 flag_pattern = false;
                  flag_fv = false;
 
             }else if (PAR_alignment_version.find("ram") != std::string::npos) {
 
                  flag_local = true;
-                 flag_RAM = true;
                  flag_map = false;
-                 flag_pattern = true;
                  flag_fv = true;
 
             }
 
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
-            alignment->PIPAligner(ftn, flag_local, flag_RAM, flag_map, flag_pattern, flag_fv);
+
+/*
+
+            //TEST
+            progressivePIP *PIPmsa = new bpp::progressivePIP(utree,
+                                                   tree,
+                                                   smodel,
+                                                   tm,
+                                                   sequences,
+                                                   rDist,
+                                                   jatiapp.getSeed());
+
+            PIPmsa->initializePIP(ftn, num_sb);
+
+
+
+*/
+
+
+            alignment->PIPAligner(ftn, flag_local, flag_map, flag_fv);
 
             std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
@@ -660,7 +680,7 @@ int main(int argc, char *argv[]) {
             //ApplicationTools::displayResult("[Alignment sequences] MSA_t inference using Pro-PIP", "terminated successfully");
 
             // Convert PIP Aligner into bpp::sites
-            sites = pPIPUtils::pPIPmsa2Sites(alignment);
+            sites = pPIPUtils::pPIPmsa2Sites(alignment,0);
 
             // Export alignment to file
             if (PAR_output_file_msa.find("none") == std::string::npos) {
@@ -670,7 +690,7 @@ int main(int argc, char *argv[]) {
             }
 
             double score;
-            score = alignment->getScore(alignment->getRootNode());
+            score = alignment->getScore(alignment->getRootNode()).at(0);
 
             std::ofstream lkFile;
             lkFile << std::setprecision(18);
@@ -824,8 +844,8 @@ int main(int argc, char *argv[]) {
 
         // Overwrite the initial alignment with the optimised one  | TODO: the likelihood function should not be reimplemented here.
         if (PAR_alignment && PAR_align_optim) {
-            sites = pPIPUtils::pPIPmsa2Sites(alignment);
-            logL = alignment->getScore(alignment->getRootNode());
+            sites = pPIPUtils::pPIPmsa2Sites(alignment,0);
+            logL = alignment->getScore(alignment->getRootNode()).at(0);
 
             const Tree &tmpTree = tl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
 

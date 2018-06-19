@@ -146,15 +146,8 @@ endif()
 
 endif()
 
-#find_package(Eigen3 REQUIRED)
-#if (EIGEN3_FOUND)
-#    message("-- Found Eigen3 in: ${EIGEN3_INCLUDE_DIR}")
-#    include_directories(${EIGEN3_INCLUDE_DIR})
-#endif ()
-
-find_package(TshLib REQUIRED)
+find_package(TshLib 2.0.0 REQUIRED)
 if (TSHLIB_FOUND)
-    message("-- Found TSHLIB in ${TSHLIB_INCLUDE_DIRS}")
     include_directories(${TSHLIB_INCLUDE_DIRS})
 endif ()
 
@@ -162,6 +155,8 @@ find_package(bpp-core REQUIRED)
 find_package(bpp-seq REQUIRED)
 find_package(bpp-phyl REQUIRED)
 
+# @MAX: memtest
+include (CTest)
 
 set(SOURCES
         main.cpp
@@ -194,7 +189,9 @@ set(SOURCES
         RHomogeneousTreeLikelihood_Generic.cpp
         RHomogeneousTreeLikelihood_Generic.hpp
         SupportMeasures.cpp
-        SupportMeasures.hpp )
+        SupportMeasures.hpp
+        progressivePIP.hpp
+        progressivePIP.cpp)
 
 
 if (STATIC GREATER 0)
@@ -212,6 +209,9 @@ else ()
     target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
     target_link_libraries(miniJATI ${Boost_LIBRARIES})
 endif ()
+
+# @MAX: memtest
+add_test(example_test miniJATI)
 
 # Test target
 #enable_testing()

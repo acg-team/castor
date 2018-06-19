@@ -62,9 +62,10 @@ namespace tshlib {
         bpp::AbstractHomogeneousTreeLikelihood *likelihoodFunc;
         double tshinitScore;
         double tshcycleScore;
-        TreeSearchHeuristics tshStrategy;
-        TreeRearrangmentOperations tshOperations;
+        TreeSearchHeuristics tshSearchHeuristic;
+        TreeRearrangmentOperations tshRearrangementCoverage;
         TreeSearchStopCondition stopConditionMethod;
+        StartingNodeHeuristics tshStartingNodeMethod;
         double stopConditionValue;
         std::string scoringMethod;
         int performed_moves;
@@ -79,8 +80,9 @@ namespace tshlib {
             likelihoodFunc = nullptr;
             tshinitScore = -std::numeric_limits<double>::infinity();
             tshcycleScore = -std::numeric_limits<double>::infinity();
-            tshStrategy = TreeSearchHeuristics::nosearch;
-            tshOperations = TreeRearrangmentOperations::classic_Mixed;
+            tshSearchHeuristic = TreeSearchHeuristics::nosearch;
+            tshRearrangementCoverage = TreeRearrangmentOperations::classic_Mixed;
+            tshStartingNodeMethod = StartingNodeHeuristics::greedy;
             stopConditionMethod = TreeSearchStopCondition::convergence;
             stopConditionValue = 0;
             performed_moves = 0;
@@ -111,14 +113,24 @@ namespace tshlib {
         }
 
         void setTreeSearchStrategy(TreeSearchHeuristics in_tshStrategy, TreeRearrangmentOperations in_tshOperations) {
-            tshStrategy = in_tshStrategy;
-            tshOperations = in_tshOperations;
+            tshSearchHeuristic = in_tshStrategy;
+            tshRearrangementCoverage = in_tshOperations;
         }
 
         void setStopCondition(TreeSearchStopCondition in_stopConditionMethod, double in_stopConditionValue) {
             stopConditionMethod = in_stopConditionMethod;
             stopConditionValue = in_stopConditionValue;
         }
+
+        void setStartingNodeHeuristic(StartingNodeHeuristics in_tshStartingNodeMethod, int in_search_startingnodes){
+            tshStartingNodeMethod = in_tshStartingNodeMethod;
+            search_startingnodes = in_search_startingnodes;
+        }
+
+        StartingNodeHeuristics getStartingNodeHeuristic() const {
+            return tshStartingNodeMethod;
+        }
+
 
         bpp::AbstractHomogeneousTreeLikelihood *getLikelihoodFunc() const {
             return likelihoodFunc;
@@ -129,11 +141,11 @@ namespace tshlib {
         }
 
         TreeSearchHeuristics getTshStrategy() const {
-            return tshStrategy;
+            return tshSearchHeuristic;
         }
 
         TreeRearrangmentOperations getTshOperations() const {
-            return tshOperations;
+            return tshRearrangementCoverage;
         }
 
         TreeSearchStopCondition getStopConditionMethod() const {
@@ -161,19 +173,99 @@ namespace tshlib {
         }
 
 
-        double performTreeSearch();
+        std::string getRearrangmentCoverageDescription() const {
+            std::string rtToken;
+            switch (tshRearrangementCoverage) {
+                case tshlib::TreeRearrangmentOperations::classic_NNI:
+                    rtToken = "NNI-like";
+                    break;
+                case tshlib::TreeRearrangmentOperations::classic_SPR:
+                    rtToken = "SPR-like";
+                    break;
+                case tshlib::TreeRearrangmentOperations::classic_TBR:
+                    rtToken = "TBR-like";
+                    break;
+                case tshlib::TreeRearrangmentOperations::classic_Mixed:
+                    rtToken = "Complete";
+                    break;
+            }
+            return rtToken;
+        }
+
+        std::string getTreeSearchStrategyDescription() const {
+            std::string rtToken;
+            switch (tshSearchHeuristic) {
+                case tshlib::TreeSearchHeuristics::swap:
+                    rtToken = "Swap";
+                    break;
+                case tshlib::TreeSearchHeuristics::phyml:
+                    rtToken = "PhyML";
+                    break;
+                case tshlib::TreeSearchHeuristics::mixed:
+                    rtToken = "Mixed(Swap+phyML)";
+                    break;
+                case tshlib::TreeSearchHeuristics::nosearch:
+                    rtToken = "no-search";
+                    break;
+            }
+            return rtToken;
+        }
+
+        std::string getStartingNodeHeuristicDescription() const {
+            std::string rtToken;
+            switch (tshStartingNodeMethod) {
+                case tshlib::StartingNodeHeuristics::particle_swarm:
+                    rtToken = "Particle Swarm";
+                    break;
+                case tshlib::StartingNodeHeuristics::hillclimbing:
+                    rtToken = "Hillclimbing";
+                    break;
+                case tshlib::StartingNodeHeuristics::greedy:
+                    rtToken = "Greedy";
+                    break;
+                case tshlib::StartingNodeHeuristics::undef:
+                    rtToken = "undef";
+                    break;
+            }
+            return rtToken;
+        }
+
+        std::string getStopConditionDescription() const {
+            std::string rtToken;
+            switch (stopConditionMethod) {
+                case tshlib::TreeSearchStopCondition::convergence:
+                    rtToken = "convergence";
+                    break;
+                case tshlib::TreeSearchStopCondition::iterations:
+                    rtToken = "max iterations";
+                    break;
+            }
+
+            return rtToken;
+        }
+
+        double executeTreeSearch();
 
     protected:
 
-        tshlib::TreeRearrangment *defineCandidateMoves();
+        /*!
+         * @brief This method execute the cycle of tree search according to the settings selected by the user
+         * @return the score of the tree topology found during the tree search
+         */
+        double iterate();
 
-        void testCandidateMoves(tshlib::TreeRearrangment *candidateMoves);
+        /*!
+         * @brief This method defines the candidate rearrangements to be performed on the topology
+         * @return A list of candidate topologies (in the form of rearrangement operations)
+         */
+        tshlib::TreeRearrangment *defineMoves();
 
-        double greedy();
+        /*!
+         * @brief testCandidateMoves method tests all the candidate tree topologies in the rearrangement list (or set), and it saves the score for each of them
+         * @param candidateMoves pointer to the list of candidate rearrangements on a fixed topology
+         */
+        void testMoves(tshlib::TreeRearrangment *candidateMoves);
 
-        double hillclimbing();
-
-        double particleswarming();
     };
 }
 
