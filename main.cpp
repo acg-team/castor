@@ -611,17 +611,21 @@ int main(int argc, char *argv[]) {
         pPIP *alignment = nullptr;
         if (PAR_alignment) {
             std::string PAR_alignment_version = ApplicationTools::getStringParameter("alignment.version", jatiapp.getParams(), "cpu", "", true, 0);
-            ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
-            ApplicationTools::displayResult("\nProportion gappy sites", TextTools::toString(PAR_proportion, 4));
-            ApplicationTools::displayResult("\nAligner version:", PAR_alignment_version);
+            int PAR_alignment_sbsolutions = ApplicationTools::getIntParameter("alignment.sb_solutions", jatiapp.getParams(), 1, "", true, 0);
 
+            ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
+            ApplicationTools::displayResult("Proportion gappy sites", TextTools::toString(PAR_proportion, 4));
+            ApplicationTools::displayResult("Aligner optimised for:", PAR_alignment_version);
+
+            ApplicationTools::displayBooleanResult("Stochastic backtracking active", PAR_alignment_sbsolutions>1);
+            if (PAR_alignment_sbsolutions>1) {
+                ApplicationTools::displayResult("Number of stochastic solutions:", TextTools::toString(PAR_alignment_sbsolutions));
+            }
 
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
-
-            int num_sb = 4;
-
-            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),num_sb);
+            // Initialise alignment object
+            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),PAR_alignment_sbsolutions);
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
