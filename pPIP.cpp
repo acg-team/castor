@@ -2881,7 +2881,7 @@ void pPIP::startingLevelSB(std::vector< vector< vector<double> > > &Log3DM,
 
 void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int &position) {
 
-    std::cout<<"\nDP3D_PIP_RAM_FAST_SB at node: "<<node->getName()<<"["<<msa_idx_L<<";"<<msa_idx_R<<"]\n";
+    VLOG(1)<<"DP3D_PIP_RAM_FAST_SB at node: "<<node->getName()<<"["<<msa_idx_L<<";"<<msa_idx_R<<"]";
 
     double temperature = 1.0;
 
@@ -3530,7 +3530,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int
 
 void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
-    std::cout<<"\nDP3D_PIP_RAM_FAST at node: "<<node->getName()<<"\n";
+    VLOG(1) << "DP3D_PIP_RAM_FAST at node: "<<node->getName();
 
     //***************************************************************************************
     // NODE VARIABLES
