@@ -446,6 +446,37 @@ namespace bpp {
                 double PAR_optim_topology_tolerance = ApplicationTools::getDoubleParameter("tolerance", optTopology_MethodDetails, 0.001, suffix, suffixIsOptional, warn + 1);
                 std::string PAR_lkmove = ApplicationTools::getStringParameter("optimization.topology.likelihood", params, "bothways", "", true, true);
 
+                // Prepare settings for the tree-search object (method + coverage)
+                tshlib::TreeSearchHeuristics tsh = tshlib::TreeSearchHeuristics::nosearch;
+
+                if(optTopology_MethodName == "Swap"){
+                    tsh = tshlib::TreeSearchHeuristics::swap;
+                }else if (optTopology_MethodName == "Phyml"){
+                    tsh = tshlib::TreeSearchHeuristics::phyml;
+                }else if (optTopology_MethodName == "Mixed"){
+                    tsh = tshlib::TreeSearchHeuristics::mixed;
+                }
+                // Coverage setting
+                tshlib::TreeRearrangmentOperations tro = tshlib::TreeRearrangmentOperations::classic_Mixed;
+
+                if(PAR_optim_topology_coverage == "nni-search"){
+                    tro = tshlib::TreeRearrangmentOperations::classic_NNI;
+                }else if (PAR_optim_topology_coverage == "spr-search" ){
+                    tro = tshlib::TreeRearrangmentOperations::classic_SPR;
+                }else if (PAR_optim_topology_coverage == "tbr-search"){
+                    tro = tshlib::TreeRearrangmentOperations::classic_TBR;
+                }else{
+                    tro = tshlib::TreeRearrangmentOperations::classic_Mixed;
+                }
+
+                // if the user requests PhyML-like moves, then the search should cover only spr-like moves
+                if(tsh == tshlib::TreeSearchHeuristics::phyml &&  tro != tshlib::TreeRearrangmentOperations::classic_SPR){
+                    tro = tshlib::TreeRearrangmentOperations::classic_SPR;
+                    PAR_optim_topology_coverage = "spr-search";
+                    if (verbose) ApplicationTools::displayWarning("PhyML-like moves are supported only for SPR-coverage tree-search.\n           "
+                                                                  "The execution will continue with the following settings:");
+                }
+
                 // Print on screen if verbose level is sufficient
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Algorithm", optTopology_MethodName);
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Moves class", PAR_optim_topology_coverage);
@@ -461,33 +492,12 @@ namespace bpp {
                 if (verbose) ApplicationTools::displayResult("Topology optimization | BrLen optimisation", PAR_optim_topology_branchoptim);
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Max # cycles", PAR_optim_topology_maxcycles);
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Tolerance", PAR_optim_topology_tolerance);
-
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Initial lk ", TextTools::toString(-tl->getValue(), 15));
 
                 // Instantiate tree-search object
                 auto treesearch = new tshlib::TreeSearch;
 
-                tshlib::TreeSearchHeuristics tsh = tshlib::TreeSearchHeuristics::nosearch;
 
-                if(optTopology_MethodName == "Swap"){
-                    tsh = tshlib::TreeSearchHeuristics::swap;
-                }else if (optTopology_MethodName == "Phyml"){
-                    tsh = tshlib::TreeSearchHeuristics::phyml;
-                }else if (optTopology_MethodName == "Mixed"){
-                    tsh = tshlib::TreeSearchHeuristics::mixed;
-                }
-
-                tshlib::TreeRearrangmentOperations tro = tshlib::TreeRearrangmentOperations::classic_Mixed;
-
-                if(PAR_optim_topology_coverage == "nni-search"){
-                    tro = tshlib::TreeRearrangmentOperations::classic_NNI;
-                }else if (PAR_optim_topology_coverage == "spr-search" ){
-                    tro = tshlib::TreeRearrangmentOperations::classic_SPR;
-                }else if (PAR_optim_topology_coverage == "tbr-search"){
-                    tro = tshlib::TreeRearrangmentOperations::classic_TBR;
-                }else{
-                    tro = tshlib::TreeRearrangmentOperations::classic_Mixed;
-                }
 
                 treesearch->setTreeSearchStrategy(tsh, tro);
 

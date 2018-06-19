@@ -247,7 +247,7 @@ PIP_AA::PIP_AA(const ProteicAlphabet *alpha, SubstitutionModel *basemodel, const
         setFreqFromData(data, 0);
     }else{
         // Add fixed frequency for gap character
-        freq_ = freqSet_->getFrequencies();
+         freq_ = freqSet_->getFrequencies();
     }
 
 
