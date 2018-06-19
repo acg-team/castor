@@ -620,7 +620,7 @@ int main(int argc, char *argv[]) {
             LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
 
-            int num_sb = 1;
+            int num_sb = 4;
 
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),num_sb);
 
@@ -629,25 +629,19 @@ int main(int argc, char *argv[]) {
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_local = false;
-            bool flag_RAM = false;
             bool flag_map = true;
-            bool flag_pattern = false;
             bool flag_fv = false;
 
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
                  flag_local = true;
-                 flag_RAM = false;
                  flag_map = true;
-                 flag_pattern = false;
                  flag_fv = false;
 
             }else if (PAR_alignment_version.find("ram") != std::string::npos) {
 
                  flag_local = true;
-                 flag_RAM = true;
                  flag_map = false;
-                 flag_pattern = true;
                  flag_fv = true;
 
             }
@@ -673,7 +667,7 @@ int main(int argc, char *argv[]) {
 */
 
 
-            alignment->PIPAligner(ftn, flag_local, flag_RAM, flag_map, flag_pattern, flag_fv);
+            alignment->PIPAligner(ftn, flag_local, flag_map, flag_fv);
 
             std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
