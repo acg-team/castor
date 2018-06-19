@@ -85,7 +85,6 @@
 /*
 * From TSHLib:
 */
-#include <Alignment.hpp>
 #include <TreeRearrangment.hpp>
 
 /*
