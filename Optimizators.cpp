@@ -497,8 +497,6 @@ namespace bpp {
                 // Instantiate tree-search object
                 auto treesearch = new tshlib::TreeSearch;
 
-
-
                 treesearch->setTreeSearchStrategy(tsh, tro);
 
                 // Set initial score of the reference topology (up to this point in the optimisation process)

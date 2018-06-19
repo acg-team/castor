@@ -199,7 +199,7 @@ namespace tshlib {
                     rtToken = "Swap";
                     break;
                 case tshlib::TreeSearchHeuristics::phyml:
-                    rtToken = "phyML";
+                    rtToken = "PhyML";
                     break;
                 case tshlib::TreeSearchHeuristics::mixed:
                     rtToken = "Mixed(Swap+phyML)";
