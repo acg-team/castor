@@ -215,7 +215,7 @@ namespace bpp {
                        int xt,
                        int yt);
 
-        void set_indeces_M(int &up_corner_i,
+        void set_indices_M(int &up_corner_i,
                            int &up_corner_j,
                            int &bot_corner_i,
                            int &bot_corner_j,
@@ -223,7 +223,7 @@ namespace bpp {
                            int h,
                            int w);
 
-        void set_indeces_X(int &up_corner_i,
+        void set_indices_X(int &up_corner_i,
                            int &up_corner_j,
                            int &bot_corner_i,
                            int &bot_corner_j,
@@ -231,7 +231,7 @@ namespace bpp {
                            int h,
                            int w);
 
-        void set_indeces_Y(int &up_corner_i,
+        void set_indices_Y(int &up_corner_i,
                            int &up_corner_j,
                            int &bot_corner_i,
                            int &bot_corner_j,
@@ -269,7 +269,7 @@ namespace bpp {
                                   int h,
                                   int w);
 
-        void set_indeces_T(int &up_corner_i,
+        void set_indices_T(int &up_corner_i,
                            int &up_corner_j,
                            int &bot_corner_i,
                            int &bot_corner_j,

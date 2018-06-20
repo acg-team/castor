@@ -205,7 +205,7 @@ bool pPIP::is_inside(int x0, int y0, int xf, int yf, int xt, int yt) {
     return true;
 }
 
-void pPIP::set_indeces_M(int &up_corner_i,
+void pPIP::set_indices_M(int &up_corner_i,
                          int &up_corner_j,
                          int &bot_corner_i,
                          int &bot_corner_j,
@@ -227,7 +227,7 @@ void pPIP::set_indeces_M(int &up_corner_i,
 
 }
 
-void pPIP::set_indeces_X(int &up_corner_i,
+void pPIP::set_indices_X(int &up_corner_i,
                          int &up_corner_j,
                          int &bot_corner_i,
                          int &bot_corner_j,
@@ -249,7 +249,7 @@ void pPIP::set_indeces_X(int &up_corner_i,
 
 }
 
-void pPIP::set_indeces_Y(int &up_corner_i,
+void pPIP::set_indices_Y(int &up_corner_i,
                          int &up_corner_j,
                          int &bot_corner_i,
                          int &bot_corner_j,
@@ -283,7 +283,7 @@ signed long pPIP::get_indices_M(int nx,
 
     signed long idx;
 
-    set_indeces_M(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
+    set_indices_M(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
 
     if (is_inside(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, nx, ny)) {
 
@@ -314,7 +314,7 @@ signed long pPIP::get_indices_X(int nx,
 
     signed long idx;
 
-    set_indeces_X(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
+    set_indices_X(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
 
     if (is_inside(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, nx, ny)) {
 
@@ -345,7 +345,7 @@ signed long pPIP::get_indices_Y(int nx,
 
     signed long idx;
 
-    set_indeces_Y(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
+    set_indices_Y(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
 
     if (is_inside(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, nx, ny)) {
 
@@ -364,7 +364,7 @@ signed long pPIP::get_indices_Y(int nx,
 
 }
 
-void pPIP::set_indeces_T(int &up_corner_i,
+void pPIP::set_indices_T(int &up_corner_i,
                          int &up_corner_j,
                          int &bot_corner_i,
                          int &bot_corner_j,
@@ -384,9 +384,9 @@ void pPIP::set_indeces_T(int &up_corner_i,
     int bot_corner_j_x;
     int bot_corner_j_y;
 
-    set_indeces_X(up_corner_i_x, up_corner_j_x, bot_corner_i_x, bot_corner_j_x, level, h, w);
+    set_indices_X(up_corner_i_x, up_corner_j_x, bot_corner_i_x, bot_corner_j_x, level, h, w);
 
-    set_indeces_Y(up_corner_i_y, up_corner_j_y, bot_corner_i_y, bot_corner_j_y, level, h, w);
+    set_indices_Y(up_corner_i_y, up_corner_j_y, bot_corner_i_y, bot_corner_j_y, level, h, w);
 
     int delta_i, delta_j;
 
@@ -439,7 +439,7 @@ int pPIP::get_indices_T(int nx,
                         int h,
                         int w) {
 
-    set_indeces_T(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
+    set_indices_T(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, m, h, w);
 
     reset_corner(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, h, w);
 
@@ -4351,7 +4351,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
         //***************************************************************************************
         //***************************************************************************************
         // COMPUTES MATCH LK
-        set_indeces_M(up_corner_i,
+        set_indices_M(up_corner_i,
                       up_corner_j,
                       bot_corner_i,
                       bot_corner_j,
@@ -4486,7 +4486,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
         //***************************************************************************************
         //***************************************************************************************
         // COMPUTES GAPX LK
-        set_indeces_X(up_corner_i,
+        set_indices_X(up_corner_i,
                       up_corner_j,
                       bot_corner_i,
                       bot_corner_j,
@@ -4619,7 +4619,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
         //***************************************************************************************
         //***************************************************************************************
         // COMPUTES GAPY LK
-        set_indeces_Y(up_corner_i,
+        set_indices_Y(up_corner_i,
                       up_corner_j,
                       bot_corner_i,
                       bot_corner_j,
@@ -4754,7 +4754,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
         /*TODO: optimize size TR*/
         TR[m] = new int[size_tr]();
 
-        set_indeces_T(up_corner_i,
+        set_indices_T(up_corner_i,
                       up_corner_j,
                       bot_corner_i,
                       bot_corner_j,
@@ -4890,7 +4890,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     int id1 = h - 1;
     int id2 = w - 1;
     for (int lev = depth; lev > 0; lev--) {
-        set_indeces_T(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, lev, h, w);
+        set_indices_T(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, lev, h, w);
         idx = get_indices_T(id1, id2, up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, lev, h, w);
         int state = TR[lev][idx];
         switch (TR[lev][idx]) {
