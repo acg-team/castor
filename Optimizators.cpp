@@ -503,6 +503,9 @@ namespace bpp {
                 treesearch->setInitialLikelihoodValue(-tl->getValue());
                 treesearch->setScoringMethod(PAR_lkmove);
 
+                // Pass the reference of the likelihood function to score the candidate topologies
+                treesearch->setLikelihoodFunc(tl);
+
                 // Set starting node method and number of nodes
                 tshlib::StartingNodeHeuristics  snh = tshlib::StartingNodeHeuristics::undef;
                 if(optTopology_StartingNodes_MethodName == "Greedy"){
@@ -514,9 +517,6 @@ namespace bpp {
 
                 // Set stop condition and threshold to reach (either no. iterations or tolerance)
                 treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
-
-                // Pass the reference of the likelihood function to score the candidate topologies
-                treesearch->setLikelihoodFunc(tl);
 
                 // Execute tree-search
                 treesearch->executeTreeSearch();
