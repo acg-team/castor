@@ -97,15 +97,20 @@ namespace tshlib {
             utree_ = inUTree;
         }
 
+        Utree* getUtree() {
+            return utree_ ?: nullptr;
+        }
+
         void setLikelihoodFunc(bpp::AbstractHomogeneousTreeLikelihood *in_likelihoodFunc) {
             likelihoodFunc = in_likelihoodFunc;
-
+            Utree *lkUtree;
             if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)) {
-                utree_ = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)->getUtreeTopology();
+                lkUtree = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)->getUtreeTopology();
             } else {
-                utree_ = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood *>(likelihoodFunc)->getUtreeTopology();
+                lkUtree = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood *>(likelihoodFunc)->getUtreeTopology();
             }
 
+            setUtree(lkUtree);
         }
 
         void setInitialLikelihoodValue(double in_initialLikelihoodValue) {
@@ -124,7 +129,7 @@ namespace tshlib {
 
         void setStartingNodeHeuristic(StartingNodeHeuristics in_tshStartingNodeMethod, int in_search_startingnodes){
             tshStartingNodeMethod = in_tshStartingNodeMethod;
-            search_startingnodes = in_search_startingnodes;
+            setStartingNodes(in_search_startingnodes);
         }
 
         StartingNodeHeuristics getStartingNodeHeuristic() const {
@@ -169,7 +174,23 @@ namespace tshlib {
         }
 
         void setStartingNodes(int in_search_startingnodes) {
-            search_startingnodes = in_search_startingnodes;
+
+            if (getUtree()) {
+                if (utree_->listVNodes.size() < in_search_startingnodes) {
+
+                    search_startingnodes = (int) utree_->listVNodes.size();
+
+                    LOG(WARNING) << "[TreeSearch::setStartingNodes] User requested too many initial seed nodes [" << in_search_startingnodes
+                                 << "] to define candidate topology. Reset value to max number of nodes in the tree = "
+                                 << search_startingnodes;
+
+                } else {
+                    search_startingnodes = in_search_startingnodes;
+
+                }
+            }else{
+                LOG(ERROR) << "[TreeSearch::setStartingNodes] Utree has not been set for the current tree-search object. Call setUtree() first.";
+            }
         }
 
 
