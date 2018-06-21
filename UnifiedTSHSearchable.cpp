@@ -115,7 +115,7 @@ void UnifiedTSHSearchable::setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
     optimiser_->setProfiler(profiler);
     optimiser_->setMessageHandler(messageHandler);
     optimiser_->setMaximumNumberOfEvaluations(nbEvalMax);
-    optimiser_->setVerbose(1);
+    optimiser_->setVerbose(0);
 
 }
 
