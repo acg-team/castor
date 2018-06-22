@@ -23,7 +23,7 @@ pipelines:
               - cd /tshlib; git checkout master; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
           - step:
               script: # Modify the commands below to build your repository.
-              - cd $BUILD_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+              - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
               - miniJATI
@@ -42,7 +42,7 @@ pipelines:
               - cd /tshlib; git checkout develop; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
           - step:
               script: # Modify the commands below to build your repository.
-              - cd $BUILD_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+              - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
               - miniJATI
@@ -56,7 +56,7 @@ pipelines:
               - cd /tshlib; git checkout develop; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
           - step:
               script: # Modify the commands below to build your repository.
-              - cd $BUILD_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+              - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
               - miniJATI
@@ -69,7 +69,7 @@ pipelines:
               - cd /tshlib; git checkout master; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
           - step:
               script: # Modify the commands below to build your repository.
-              - cd $BUILD_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+              - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
               - miniJATI
@@ -87,7 +87,7 @@ pipelines:
               - cd /tshlib; git checkout master; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
           - step:
               script: # Modify the commands below to build your repository.
-              - cd $BUILD_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+              - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
               - miniJATI
