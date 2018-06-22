@@ -631,9 +631,9 @@ int main(int argc, char *argv[]) {
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
-            bool flag_local = false;
-            bool flag_map = true;
-            bool flag_fv = false;
+            bool flag_local;
+            bool flag_map;
+            bool flag_fv;
 
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
@@ -646,6 +646,14 @@ int main(int argc, char *argv[]) {
                  flag_local = true;
                  flag_map = false;
                  flag_fv = true;
+
+            }else{
+
+                 flag_local = false;
+                 flag_map = true;
+                 flag_fv = false;
+
+                ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
 
             }
 
