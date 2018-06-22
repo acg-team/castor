@@ -339,7 +339,7 @@ void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvSons(Node 
         (*fv_out)[x] = val;
     }
 
-    // Add transition probabilities to the FV vector
+/*    // Add transition probabilities to the FV vector
     if(node->hasFather()) {
         VVVdouble *pxy__node = &pxy_[node->getId()];
         // this vector stores the old values before recomputing them
@@ -357,7 +357,7 @@ void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvSons(Node 
                 (*fv_out)[x] = val;
             }
         }
-    }
+    }*/
 
 }
 
@@ -1038,7 +1038,7 @@ void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvEmptySons(
         (*fv_out)[x] = val;
     }
 
-    // Add transition probabilities to the FV vector
+/*    // Add transition probabilities to the FV vector
     if(node->hasFather()) {
         VVVdouble *pxy__node = &pxy_[node->getId()];
         // this vector stores the old values before recomputing them
@@ -1055,7 +1055,7 @@ void RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvEmptySons(
                 (*fv_out)[x] = val;
             }
         }
-    }
+    }*/
 
 }
 
