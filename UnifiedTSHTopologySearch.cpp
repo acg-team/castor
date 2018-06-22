@@ -150,8 +150,6 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
         // ------------------------------------
         // Prepare the list of nodes involved in the move (Required here!)
-        //std::vector<tshlib::VirtualNode *> listNodesWithinPath = candidateMoves->getNodesInMovePath(i);
-        //listNodesWithinPath = inputTree->computePathBetweenNodes(pnode, qnode);
         listNodesWithinPath = utree_->computePathBetweenNodes(candidateMoves->getMove(i)->getSourceNode(), candidateMoves->getMove(i)->getTargetNode());
         updatedNodesWithinPath = candidateMoves->updatePathBetweenNodes(i, listNodesWithinPath);
 
@@ -174,8 +172,6 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
         //inputTree->saveTreeOnFile("../data/test.txt");
         updatedNodesWithinPath.push_back(utree_->rootnode);
         listNodesWithinPath.push_back(utree_->rootnode);
-
-        //moveLogLK = likelihoodFunc->updateLikelihood(updatedNodesWithinPath);
 
         if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)) {
             moveLogLK = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(updatedNodesWithinPath);
@@ -202,12 +198,10 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
         candidateMoves->revertMove(i);
         VLOG(1) << "[TSH Cycle - Topology] [R] MOVE#" << candidateMoves->getMove(i)->getUID() << " | " << utree_->printTreeNewick(true);
 
-        //listNodesWithinPath = candidateMoves->getNodesInMovePath(i);
-
         // ------------------------------------
         double moveLogLK_return = -std::numeric_limits<double>::infinity();
+
         if (scoringMethod.find("bothways") != std::string::npos) {
-            //moveLogLK = likelihoodFunc->updateLikelihood(updatedNodesWithinPath);
 
             if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)) {
                 moveLogLK_return = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(listNodesWithinPath);
@@ -224,7 +218,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
             LOG_IF(ERROR, std::isinf(moveLogLK_return)) << "llk[Return] value is -inf for move " << candidateMoves->getMove(i)->getUID() << " node-path:" << nodepath.str();
         }
 
-        //candidateMoves->displayRearrangmentStatus(i, true);
+        candidateMoves->displayRearrangmentStatus(i, true);
         LOG_IF(ERROR, !ComparisonUtils::areLogicallyEqual(moveLogLK_return, tshinitScore)) << "Error in evaluating likelihood during TS @move " << candidateMoves->getMove(i)->getUID() <<
                                                         "\tllk[Initial]=" << TextTools::toString(tshinitScore, 15) <<
                                                         "\tllk[Return]=" << TextTools::toString(moveLogLK_return, 15) <<
