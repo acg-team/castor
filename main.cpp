@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
     FLAGS_log_dir = ".";
     int OMP_max_avail_threads = 1;
     google::InitGoogleLogging(software::name.c_str());
+    google::InstallFailureSignalHandler();
 
     try {
 
@@ -133,7 +134,6 @@ int main(int argc, char *argv[]) {
         } else {
             jatiapp.banner();
             jatiapp.startTimer();
-            //LOG(INFO) << "Execution started!";
         };
 
         bpp::ApplicationTools::displayResult("Random seed set to", jatiapp.getSeed());
@@ -225,8 +225,6 @@ int main(int argc, char *argv[]) {
                 gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet *>(alphabetNoGaps)->getNucleicAlphabet(), codeDesc));
             //}
         }
-
-
 
         ApplicationTools::displayResult("Alphabet", TextTools::toString(alphabetNoGaps->getAlphabetType()));
         ApplicationTools::displayBooleanResult("Allow gaps as extra character", PAR_model_indels);
