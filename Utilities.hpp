@@ -72,11 +72,9 @@ namespace UtreeBppUtils {
 
     void _traverseTree_u2b(bpp::Node *target, VirtualNode *source);
 
-
     void updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, Utree *inUTree, treemap &tm);
 
     void updateTree_u2b(bpp::Tree *inBTree, Utree *inUTree, treemap &tm);
-
 
     void associateNode2Alignment(bpp::SiteContainer *sites, Utree *in_tree);
 
@@ -85,8 +83,6 @@ namespace UtreeBppUtils {
     void renameInternalNodes(bpp::Tree *in_tree, std::string prefix = "V");
 
     std::vector<bpp::Node *> remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm);
-
-
 
 
 }
