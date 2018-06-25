@@ -131,8 +131,7 @@ double tshlib::TreeSearch::executeTreeSearch() {
     LOG(INFO) << "[TSH Optimisation] Initial likelihood: " << TextTools::toString(tshinitScore, 15);
     LOG(INFO) << "[TSH Optimisation] algorithm: " << getStartingNodeHeuristicDescription()
               << ", moves: " << getRearrangmentCoverageDescription() << ", "
-              << "starting nodes: " + std::to_string(search_startingnodes)
-              << ", stop condition: " << getStopConditionDescription();
+              << "starting nodes: " + std::to_string(search_startingnodes);
 
     // execute tree search according to settings
     newScore = iterate();
@@ -276,17 +275,9 @@ double tshlib::TreeSearch::iterate() {
 
     // Condition handler
     double cycle_no = 0;
-    double c;
-    switch (stopConditionMethod) {
-        case tshlib::TreeSearchStopCondition::iterations:
-            c = 0;
-            break;
-        case tshlib::TreeSearchStopCondition::convergence:
-            c = tshinitScore;
-            break;
-    }
+    double c = std::abs(tshinitScore);
 
-    while (c < stopConditionValue) {
+    while (toleranceValue < c) {
 
         // ------------------------------------
         // 1. Define moves according to tree-search criteria
@@ -347,8 +338,14 @@ double tshlib::TreeSearch::iterate() {
             DVLOG(1) << "bpp after commit " << OutputUtils::TreeTools::writeTree2String(likelihoodFunc->getTree().clone());
 
             tshcycleScore = -likelihoodFunc->getValue();
+
+            // Update tolerance
+            c = std::abs(tshinitScore) - std::abs(tshcycleScore);
             tshinitScore = tshcycleScore;
+
+            // number of cycles
             cycle_no++;
+
 
             // ------------------------------------
             // Clean memory
@@ -365,20 +362,15 @@ double tshlib::TreeSearch::iterate() {
             break;
         }
 
-        switch (stopConditionMethod) {
-            case tshlib::TreeSearchStopCondition::iterations:
-                c++;
-                break;
-            case tshlib::TreeSearchStopCondition::convergence:
-                c = c - tshcycleScore;
-                break;
+        if(cycle_no == maxTSCycles){
+            LOG(INFO) << "[TSH Cycle] Reached max number of tree-search cycles after " << cycle_no << " cycles";
+            break;
         }
+
+
+
     }
 
-    if (c < stopConditionValue) {
-
-        LOG(INFO) << "[TSH Cycle] Reached Stop-Condition boundary at " << c;
-    }
 
     // ------------------------------------
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();

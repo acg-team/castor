@@ -64,9 +64,9 @@ namespace tshlib {
         double tshcycleScore;
         TreeSearchHeuristics tshSearchHeuristic;
         TreeRearrangmentOperations tshRearrangementCoverage;
-        TreeSearchStopCondition stopConditionMethod;
         StartingNodeHeuristics tshStartingNodeMethod;
-        double stopConditionValue;
+        double toleranceValue;
+        int maxTSCycles;
         std::string scoringMethod;
         int performed_moves;
         int search_startingnodes;
@@ -83,8 +83,6 @@ namespace tshlib {
             tshSearchHeuristic = TreeSearchHeuristics::nosearch;
             tshRearrangementCoverage = TreeRearrangmentOperations::classic_Mixed;
             tshStartingNodeMethod = StartingNodeHeuristics::greedy;
-            stopConditionMethod = TreeSearchStopCondition::convergence;
-            stopConditionValue = 0;
             performed_moves = 0;
             search_startingnodes = 0;
             scoringMethod = "";
@@ -122,9 +120,13 @@ namespace tshlib {
             tshRearrangementCoverage = in_tshOperations;
         }
 
-        void setStopCondition(TreeSearchStopCondition in_stopConditionMethod, double in_stopConditionValue) {
-            stopConditionMethod = in_stopConditionMethod;
-            stopConditionValue = in_stopConditionValue;
+
+        void setTolerance(double inTolerance) {
+            toleranceValue = inTolerance;
+        }
+
+        void setMaxCycles(int inCycles){
+            maxTSCycles = inCycles;
         }
 
         void setStartingNodeHeuristic(StartingNodeHeuristics in_tshStartingNodeMethod, int in_search_startingnodes){
@@ -153,13 +155,6 @@ namespace tshlib {
             return tshRearrangementCoverage;
         }
 
-        TreeSearchStopCondition getStopConditionMethod() const {
-            return stopConditionMethod;
-        }
-
-        double getStopConditionValue() const {
-            return stopConditionValue;
-        }
 
         const std::string getScoringMethod() const {
             return scoringMethod;
@@ -251,19 +246,6 @@ namespace tshlib {
             return rtToken;
         }
 
-        std::string getStopConditionDescription() const {
-            std::string rtToken;
-            switch (stopConditionMethod) {
-                case tshlib::TreeSearchStopCondition::convergence:
-                    rtToken = "convergence";
-                    break;
-                case tshlib::TreeSearchStopCondition::iterations:
-                    rtToken = "max iterations";
-                    break;
-            }
-
-            return rtToken;
-        }
 
         double executeTreeSearch();
 

@@ -516,7 +516,9 @@ namespace bpp {
                 treesearch->setStartingNodeHeuristic(snh, PAR_optim_topology_startnodes);
 
                 // Set stop condition and threshold to reach (either no. iterations or tolerance)
-                treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
+                treesearch->setTolerance(PAR_optim_topology_tolerance);
+                treesearch->setMaxCycles(PAR_optim_topology_maxcycles);
+                //treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
 
                 // Execute tree-search
                 treesearch->executeTreeSearch();
