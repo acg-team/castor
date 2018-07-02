@@ -40,10 +40,10 @@ pipelines:
                deployment: production   # can be test, staging or production
                # trigger: manual  # uncomment to make manual deployment
                script:
-                - echo "Deploying to test environment"
+                - apt-get install -y curl
                 - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release-static CMakeLists.txt
                 - make
-                - export EVERSION=$(git describe --abbrev=0 --tags)
+                - export EVERSION=$(git describe --abbrev=0 --tags); echo ${EVERSION};
                 - mv miniJATI miniJATI.Stable.${EVERSION}
                 - curl -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"miniJATI.Stable.${EVERSION}"
       develop:
@@ -65,10 +65,10 @@ pipelines:
               deployment: test   # can be test, staging or production
             # trigger: manual    # uncomment to make manual deployment
               script:
-              - echo "Deploying to test environment"
+              - apt-get install -y curl
               - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release-static CMakeLists.txt
               - make
-              - export EVERSION=$(git describe --abbrev=0 --tags)
+              - export EVERSION=$(git describe --abbrev=0 --tags); echo ${EVERSION};
               - mv miniJATI miniJATI.NightBuild.${EVERSION}
               - curl -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"miniJATI.NightBuild.${EVERSION}"
               
