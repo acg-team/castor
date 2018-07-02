@@ -200,7 +200,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
                                                                          updatedNodesWithinPath,
                                                                          tshinitScore,
                                                                          moveLogLK,
-                                                                         0).str();
+                                                                         0);
 
                 // ------------------------------------
                 // Store likelihood of the move
@@ -236,7 +236,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
                                                                                 updatedNodesWithinPath,
                                                                                 tshinitScore,
                                                                                 moveLogLK,
-                                                                                moveLogLK_return).str();
+                                                                                moveLogLK_return);
 
                 LOG_IF(FATAL, !ComparisonUtils::areLogicallyEqual(moveLogLK_return, tshinitScore)) << "Error in evaluating likelihood [MOVE " << candidateMoves->getMove(i)->getUID() << "]" <<
                                                                                                    debugStackTraceMove(candidateMoves->getMove(i),
@@ -245,7 +245,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
                                                                                                                        updatedNodesWithinPath,
                                                                                                                        tshinitScore,
                                                                                                                        moveLogLK,
-                                                                                                                       moveLogLK_return).str();
+                                                                                                                       moveLogLK_return);
 
                 // ------------------------------------
                 // Count moves performed
@@ -384,7 +384,7 @@ double tshlib::TreeSearch::iterate() {
 }
 
 
-std::ostringstream tshlib::TreeSearch::debugStackTraceMove(Move *move, Utree *tree,
+std::string tshlib::TreeSearch::debugStackTraceMove(Move *move, Utree *tree,
                                                            std::vector < tshlib::VirtualNode * > listNodesInvolved,
                                                            std::vector < tshlib::VirtualNode * > updatedList,
                                                            double initLK, double moveLK, double returnLK){
@@ -410,6 +410,6 @@ std::ostringstream tshlib::TreeSearch::debugStackTraceMove(Move *move, Utree *tr
 
     //stm << "    @ [Tree] " << tree->printTreeNewick(true);
 
-    return stm;
+    return stm.str();
 
 }

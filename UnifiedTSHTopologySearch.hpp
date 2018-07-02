@@ -273,7 +273,7 @@ namespace tshlib {
 
 
 
-        std::ostringstream debugStackTraceMove(Move *move, Utree *tree,
+        std::string debugStackTraceMove(Move *move, Utree *tree,
                                                std::vector < tshlib::VirtualNode * > listNodesInvolved,
                                                std::vector < tshlib::VirtualNode * > updatedList,
                                                double initLK = 0, double moveLK = 0, double returnLK = 0);
