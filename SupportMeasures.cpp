@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 02 05 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 
 #include <glog/logging.h>
@@ -116,7 +116,7 @@ Bootstrap::Bootstrap(AbstractHomogeneousTreeLikelihood *tl,
 
         for (unsigned int i = 0; i < nbBS; i++) {
 
-            LOG(INFO) << "[Bootstrap] " <<  bootstrapMethod << " cycle #" << i;
+           DLOG(INFO) << "[Bootstrap] " <<  bootstrapMethod << " cycle #" << i;
 
             ApplicationTools::displayGauge(i, nbBS - 1, '=');
             VectorSiteContainer *sample = SiteContainerTools::bootstrapSites(*sites);

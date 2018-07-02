@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 02 05 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 #ifndef MINIJATI_SUPPORTMEASURES_HPP
 #define MINIJATI_SUPPORTMEASURES_HPP

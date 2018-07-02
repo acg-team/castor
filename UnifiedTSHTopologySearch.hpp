@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 05 02 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 #ifndef MINIJATI_TSHTOPOLOGYSEARCH_HPP
 #define MINIJATI_TSHTOPOLOGYSEARCH_HPP
@@ -69,6 +69,7 @@ namespace tshlib {
         int maxTSCycles;
         std::string scoringMethod;
         int performed_moves;
+        int performed_cycles;
         int search_startingnodes;
         mutable tshlib::Utree *utree_;
 
@@ -84,6 +85,7 @@ namespace tshlib {
             tshRearrangementCoverage = TreeRearrangmentOperations::classic_Mixed;
             tshStartingNodeMethod = StartingNodeHeuristics::greedy;
             performed_moves = 0;
+            performed_cycles = 0;
             search_startingnodes = 0;
             scoringMethod = "";
             utree_ = nullptr;
@@ -175,7 +177,7 @@ namespace tshlib {
 
                     search_startingnodes = (int) utree_->listVNodes.size();
 
-                    LOG(WARNING) << "[TreeSearch::setStartingNodes] User requested too many initial seed nodes [" << in_search_startingnodes
+                   DLOG(WARNING) << "[TreeSearch::setStartingNodes] User requested too many initial seed nodes [" << in_search_startingnodes
                                  << "] to define candidate topology. Reset value to max number of nodes in the tree = "
                                  << search_startingnodes;
 

@@ -25,7 +25,7 @@
  * @file tshlib_utree_test.cpp
  * @author Lorenzo Gatti
  * @date 27 04 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @status Development
@@ -36,7 +36,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: http://www.lorenzogatti.me
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Homehttp://www.lorenzogatti.me
  */
 
 

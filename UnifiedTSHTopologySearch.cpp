@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 05 02 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 #include <random>
 #include <glog/logging.h>
@@ -72,7 +72,7 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineMoves() {
             for (auto &node:utree_->listVNodes) {
 
                 // Print node description with neighbors
-                //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
+                //DVLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
                 candidateMoveSet->setSourceNode(node);
 
@@ -92,7 +92,7 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineMoves() {
             for(auto &node:pickedNodes){
 
                 // Print node description with neighbors
-                //VLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
+                //DVLOG(2) << "[utree neighbours] " << vnode->printNeighbours() << std::endl;
 
                 candidateMoveSet->setSourceNode(node);
 
@@ -121,15 +121,16 @@ double tshlib::TreeSearch::executeTreeSearch() {
     double newScore = 0;
 
     // Store initial likelihood value
-    tshinitScore = likelihoodFunc->getLogLikelihood();
+    setInitialLikelihoodValue(likelihoodFunc->getLogLikelihood());
+    //tshinitScore =  likelihoodFunc->getLogLikelihood();
     tshcycleScore = tshinitScore;
 
     // Remove root on the tree topology
     utree_->removeVirtualRootNode();
 
-    LOG(INFO) << "[TSH Optimisation] Initial topology: " << utree_->printTreeNewick(true);
-    LOG(INFO) << "[TSH Optimisation] Initial likelihood: " << TextTools::toString(tshinitScore, 15);
-    LOG(INFO) << "[TSH Optimisation] algorithm: " << getStartingNodeHeuristicDescription()
+   DLOG(INFO) << "[TSH Optimisation] Initial topology: " << utree_->printTreeNewick(true);
+   DLOG(INFO) << "[TSH Optimisation] Initial likelihood: " << TextTools::toString(tshinitScore, 15);
+   DLOG(INFO) << "[TSH Optimisation] algorithm: " << getStartingNodeHeuristicDescription()
               << ", moves: " << getRearrangmentCoverageDescription() << ", "
               << "starting nodes: " + std::to_string(search_startingnodes);
 
@@ -160,7 +161,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
             // ------------------------------------
             // Log move details
-            LOG(INFO) << "Move [" << candidateMoves->getMove(i)->getSourceNode()->getNodeName() << "->" << candidateMoves->getMove(i)->getTargetNode()->getNodeName() << "]\t"
+           DVLOG(1) << "Move [" << candidateMoves->getMove(i)->getSourceNode()->getNodeName() << "->" << candidateMoves->getMove(i)->getTargetNode()->getNodeName() << "]\t"
                       << candidateMoves->getMove(i)->getClass() << "\t(" << candidateMoves->getMove(i)->getRadius() << ")" << "\tdirection: " << candidateMoves->getMove(i)->getDirection();
 
             // ------------------------------------
@@ -169,7 +170,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
             if(status) {
 
-                VLOG(1) << "[TSH Cycle - Topology] [A] MOVE#" << candidateMoves->getMove(i)->getUID() << " | " << utree_->printTreeNewick(true);
+               DVLOG(1) << "[TSH Cycle - Topology] [A] MOVE#" << candidateMoves->getMove(i)->getUID() << " | " << utree_->printTreeNewick(true);
 
                 // ------------------------------------
                 // Print root reachability from every node (includes rotations)
@@ -212,7 +213,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
                 // ------------------------------------
                 // Revert the move, and return to the original tree
                 candidateMoves->revertMove(i);
-                VLOG(1) << "[TSH Cycle - Topology] [R] MOVE#" << candidateMoves->getMove(i)->getUID() << " | " << utree_->printTreeNewick(true);
+               DVLOG(1) << "[TSH Cycle - Topology] [R] MOVE#" << candidateMoves->getMove(i)->getUID() << " | " << utree_->printTreeNewick(true);
 
                 // ------------------------------------
                 // Recompute the likelihood after reverting the move
@@ -265,7 +266,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
         LOG(ERROR) << e.what() ;
     }
 
-    ApplicationTools::displayMessage("\n");
+    ApplicationTools::displayMessage("");
 
 }
 
@@ -274,7 +275,7 @@ double tshlib::TreeSearch::iterate() {
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
     // Condition handler
-    double cycle_no = 0;
+    //double cycle_no = 0;
     double c = std::abs(tshinitScore);
 
     while (toleranceValue < c) {
@@ -284,10 +285,10 @@ double tshlib::TreeSearch::iterate() {
         tshlib::TreeRearrangment *candidateMoves = defineMoves();
 
         std::ostringstream taskDescription;
-        taskDescription << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << cycle_no + 1
+        taskDescription << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << performed_cycles + 1
                         << " | Testing " << candidateMoves->getNumberOfMoves() << " tree rearrangements.";
         ApplicationTools::displayMessage(taskDescription.str());
-        LOG(INFO) << "[TSH Optimisation] Cycle " << std::setfill('0') << std::setw(3) << cycle_no + 1 << " - lk= " << TextTools::toString(tshcycleScore, 15);
+       DVLOG(1) << "[TSH Optimisation] Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " - lk= " << TextTools::toString(tshcycleScore, 15);
 
         // ------------------------------------
         // 2. Test and record likelihood of each and every candidate move
@@ -297,18 +298,20 @@ double tshlib::TreeSearch::iterate() {
         // 3. Select the best move in the list and store it
         Move *bestMove = candidateMoves->selectBestMove(tshcycleScore);
 
+        // number of cycles
+        performed_cycles = performed_cycles+1;
         // ------------------------------------
         // Print winning move
         if (bestMove) {
 
-            LOG(INFO) << "[TSH Cycle - Topology] (cycle" << std::setfill('0') << std::setw(3) << cycle_no + 1 << ")\t"
+           DVLOG(1) << "[TSH Cycle - Topology] (cycle" << std::setfill('0') << std::setw(3) << performed_cycles + 1 << ")\t"
                       << "lk = " << std::setprecision(12) << bestMove->getScore() << " | "
                       << bestMove->getClass() << "." << std::setfill('0') << std::setw(3) << bestMove->getUID()
                       << " [" << bestMove->getSourceNode()->getNodeName() << " -> " << bestMove->getTargetNode()->getNodeName() << "]";
 
 
             taskDescription.str(std::string());
-            taskDescription << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << cycle_no + 1 << " | ["
+            taskDescription << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " | ["
                             << bestMove->getClass() << "." << std::setfill('0') << std::setw(3) << bestMove->getUID()
                             << "] New likelihood: " << std::setprecision(12) << bestMove->getScore();
             ApplicationTools::displayMessage(taskDescription.str());
@@ -334,6 +337,7 @@ double tshlib::TreeSearch::iterate() {
             }
 
             ApplicationTools::displayTaskDone();
+            ApplicationTools::displayMessage("");
 
             DVLOG(1) << "bpp after commit " << OutputUtils::TreeTools::writeTree2String(likelihoodFunc->getTree().clone());
 
@@ -343,17 +347,13 @@ double tshlib::TreeSearch::iterate() {
             c = std::abs(tshinitScore) - std::abs(tshcycleScore);
             tshinitScore = tshcycleScore;
 
-            // number of cycles
-            cycle_no++;
-
-
             // ------------------------------------
             // Clean memory
             delete candidateMoves;
 
         } else {
 
-            LOG(INFO) << "[TSH Cycle] No further likelihood improvement after " << cycle_no << " cycles and " << performed_moves << " performed moves. Exit loop.";
+           DLOG(INFO) << "[TSH Cycle] No further likelihood improvement after " << performed_cycles << " cycles and " << performed_moves << " performed moves. Exit loop.";
 
             // ------------------------------------
             // Clean memory
@@ -362,8 +362,8 @@ double tshlib::TreeSearch::iterate() {
             break;
         }
 
-        if(cycle_no == maxTSCycles){
-            LOG(INFO) << "[TSH Cycle] Reached max number of tree-search cycles after " << cycle_no << " cycles";
+        if(performed_cycles == maxTSCycles){
+           DLOG(INFO) << "[TSH Cycle] Reached max number of tree-search cycles after " << performed_cycles << " cycles";
             break;
         }
 
@@ -376,9 +376,9 @@ double tshlib::TreeSearch::iterate() {
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
 
-    VLOG(1) << "[TSH Cycle] Moves applied and reverted: " << performed_moves << std::endl;
-    VLOG(1) << "[TSH Cycle] Elapsed time: " << duration << " microseconds" << std::endl;
-    VLOG(1) << "[TSH Cycle] *** " << (double) duration / performed_moves << " microseconds/move *** " << std::endl;
+   DVLOG(1) << "[TSH Cycle] Moves applied and reverted: " << performed_moves << std::endl;
+   DVLOG(1) << "[TSH Cycle] Elapsed time: " << duration << " microseconds" << std::endl;
+   DVLOG(1) << "[TSH Cycle] *** " << (double) duration / performed_moves << " microseconds/move *** " << std::endl;
 
     return -tshcycleScore;
 }

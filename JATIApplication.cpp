@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 06 02 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 #include "JATIApplication.hpp"
 #include <ctime>
@@ -53,7 +53,7 @@ using namespace bpp;
 
 JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name, const std::string &strVersion, const std::string &build_date) :
         appName_(name), appBuild_(build_date), appVersion_(strVersion), params_(), timerStarted_(false) {
-    //LOG(INFO) << "Parsing options:";
+
     params_ = bpp::AttributesTools::parseOptions(argc, argv);
     bool showversion = bpp::ApplicationTools::getBooleanParameter("version", params_, false, "", true, 3);
     bpp::ApplicationTools::warningLevel = bpp::ApplicationTools::getIntParameter("warning", params_, 0, "", true, 3);
@@ -70,6 +70,7 @@ JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name
         bpp::RandomTools::setSeed(seed_);
     }
 
+    // Print version header
 
     if (showversion) {
         this->version();
@@ -83,7 +84,7 @@ void JATIApplication::startTimer() {
 }
 
 void JATIApplication::done() {
-    LOG(INFO) << appName_ << "'s done. Bye.";
+   DLOG(INFO) << appName_ << "'s done. Bye.";
     if (timerStarted_)
         bpp::ApplicationTools::displayTime("Total execution time:");
 }

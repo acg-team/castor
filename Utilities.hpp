@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 21 12 2017
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 #ifndef MINIJATI_UTILS_HPP
 #define MINIJATI_UTILS_HPP
@@ -53,7 +53,6 @@
 #include <Bpp/Phyl/Distance/DistanceEstimation.h>
 #include <Bpp/Seq/GeneticCode/GeneticCode.h>
 
-//#include "pPIP.hpp"
 
 namespace UtreeBppUtils {
     using namespace tshlib;

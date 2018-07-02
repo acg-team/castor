@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 19 02 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 
 #include <chrono>
@@ -2881,7 +2881,7 @@ void pPIP::startingLevelSB(std::vector< vector< vector<double> > > &Log3DM,
 
 void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int &position) {
 
-    VLOG(1)<<"DP3D_PIP_RAM_FAST_SB at node: "<<node->getName()<<"["<<msa_idx_L<<";"<<msa_idx_R<<"]";
+   DVLOG(1)<<"DP3D_PIP_RAM_FAST_SB at node: "<<node->getName()<<"["<<msa_idx_L<<";"<<msa_idx_R<<"]";
 
     double temperature = 1.0;
 
@@ -3530,7 +3530,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int
 
 void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 
-    VLOG(1) << "DP3D_PIP_RAM_FAST at node: "<<node->getName();
+   DVLOG(1) << "DP3D_PIP_RAM_FAST at node: "<<node->getName();
 
     //***************************************************************************************
     // NODE VARIABLES
@@ -5915,7 +5915,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
 
         auto node = tree_->getNode(treemap_.right.at(vnode), false);
 
-        VLOG(1) << "[pPIP] Processing node :(" << node->getId()<<") : "<<node->getName();
+       DVLOG(1) << "[pPIP] Processing node :(" << node->getId()<<") : "<<node->getName();
 
         if (node->isLeaf()) {
             //*******************************************************************************
