@@ -15,7 +15,7 @@ pipelines:
         script: # Modify the commands below to build your repository.
         #- cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
         #- make
-        - apt-get install -y curl
+        - apt-get update; apt-get install -y curl
   branches:
       master:
           - step:
@@ -40,7 +40,7 @@ pipelines:
                deployment: production   # can be test, staging or production
                # trigger: manual  # uncomment to make manual deployment
                script:
-                - apt-get install -y curl
+                - apt-get update; apt-get install -y curl
                 - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release-static CMakeLists.txt
                 - make
                 - export EVERSION=$(git describe --abbrev=0 --tags); echo ${EVERSION};
@@ -65,7 +65,7 @@ pipelines:
               deployment: test   # can be test, staging or production
             # trigger: manual    # uncomment to make manual deployment
               script:
-              - apt-get install -y curl
+              - apt-get update; apt-get install -y curl
               - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release-static CMakeLists.txt
               - make
               - export EVERSION=$(git describe --abbrev=0 --tags); echo ${EVERSION};
