@@ -43,8 +43,9 @@ pipelines:
                 - echo "Deploying to test environment"
                 - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release-static CMakeLists.txt
                 - make
-                - mv miniJATI miniJATI-Stable-${git describe --abbrev=0 --tags}
-                - curl -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"miniJATI-Stable-${git describe --abbrev=0 --tags}"
+                - export EVERSION=$(git describe --abbrev=0 --tags)
+                - mv miniJATI miniJATI.Stable.${EVERSION}
+                - curl -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"miniJATI.Stable.${EVERSION}"
       develop:
           - step:
               script:
@@ -67,8 +68,9 @@ pipelines:
               - echo "Deploying to test environment"
               - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release-static CMakeLists.txt
               - make
-              - mv miniJATI miniJATI-NightBuild-${git describe --abbrev=0 --tags}
-              - curl -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"miniJATI-NightBuild-${git describe --abbrev=0 --tags}"
+              - export EVERSION=$(git describe --abbrev=0 --tags)
+              - mv miniJATI miniJATI.NightBuild.${EVERSION}
+              - curl -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"miniJATI.NightBuild.${EVERSION}"
               
       feature/*:
           - step:
