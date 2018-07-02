@@ -35,7 +35,16 @@ pipelines:
               - ./miniJATI params=./tests/param_files/GTR_F/nt_real_aligned_optall.txt
               - ./miniJATI params=./tests/param_files/GTR_PIP/nt_real_aligned_optall.txt
               - ./miniJATI params=./tests/param_files/GTR_PIP_F/nt_real_aligned_optall.txt
-
+          - step:
+               name: Deploy Production Version
+               deployment: production   # can be test, staging or production
+               # trigger: manual  # uncomment to make manual deployment
+               script:
+                - echo "Deploying to test environment"
+                - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release-static CMakeLists.txt
+                - make
+                - mv miniJATI miniJATI-Stable-${git describe --abbrev=0 --tags}
+                - curl -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"miniJATI-Stable-${git describe --abbrev=0 --tags}"
       develop:
           - step:
               script:
@@ -50,6 +59,17 @@ pipelines:
               script:
               - ./miniJATI version=true
               - ./miniJATI params=./tests/param_files/CORE/pip_likelihoodfunction.txt ; bash ./tests/scripts/test_core_pip_lkfunc.sh
+          - step:
+              name: Deploy Night-Build Version
+              deployment: test   # can be test, staging or production
+            # trigger: manual    # uncomment to make manual deployment
+              script:
+              - echo "Deploying to test environment"
+              - cd $BITBUCKET_CLONE_DIR; cmake --target miniJATI -- -DCMAKE_BUILD_TYPE=Release-static CMakeLists.txt
+              - make
+              - mv miniJATI miniJATI-NightBuild-${git describe --abbrev=0 --tags}
+              - curl -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"miniJATI-NightBuild-${git describe --abbrev=0 --tags}"
+              
       feature/*:
           - step:
               script:
