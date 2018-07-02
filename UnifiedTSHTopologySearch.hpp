@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 05 02 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 #ifndef MINIJATI_TSHTOPOLOGYSEARCH_HPP
 #define MINIJATI_TSHTOPOLOGYSEARCH_HPP
@@ -64,11 +64,12 @@ namespace tshlib {
         double tshcycleScore;
         TreeSearchHeuristics tshSearchHeuristic;
         TreeRearrangmentOperations tshRearrangementCoverage;
-        TreeSearchStopCondition stopConditionMethod;
         StartingNodeHeuristics tshStartingNodeMethod;
-        double stopConditionValue;
+        double toleranceValue;
+        int maxTSCycles;
         std::string scoringMethod;
         int performed_moves;
+        int performed_cycles;
         int search_startingnodes;
         mutable tshlib::Utree *utree_;
 
@@ -83,9 +84,8 @@ namespace tshlib {
             tshSearchHeuristic = TreeSearchHeuristics::nosearch;
             tshRearrangementCoverage = TreeRearrangmentOperations::classic_Mixed;
             tshStartingNodeMethod = StartingNodeHeuristics::greedy;
-            stopConditionMethod = TreeSearchStopCondition::convergence;
-            stopConditionValue = 0;
             performed_moves = 0;
+            performed_cycles = 0;
             search_startingnodes = 0;
             scoringMethod = "";
             utree_ = nullptr;
@@ -97,15 +97,20 @@ namespace tshlib {
             utree_ = inUTree;
         }
 
+        Utree* getUtree() {
+            return utree_ ?: nullptr;
+        }
+
         void setLikelihoodFunc(bpp::AbstractHomogeneousTreeLikelihood *in_likelihoodFunc) {
             likelihoodFunc = in_likelihoodFunc;
-
+            Utree *lkUtree;
             if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)) {
-                utree_ = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)->getUtreeTopology();
+                lkUtree = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)->getUtreeTopology();
             } else {
-                utree_ = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood *>(likelihoodFunc)->getUtreeTopology();
+                lkUtree = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood *>(likelihoodFunc)->getUtreeTopology();
             }
 
+            setUtree(lkUtree);
         }
 
         void setInitialLikelihoodValue(double in_initialLikelihoodValue) {
@@ -117,14 +122,18 @@ namespace tshlib {
             tshRearrangementCoverage = in_tshOperations;
         }
 
-        void setStopCondition(TreeSearchStopCondition in_stopConditionMethod, double in_stopConditionValue) {
-            stopConditionMethod = in_stopConditionMethod;
-            stopConditionValue = in_stopConditionValue;
+
+        void setTolerance(double inTolerance) {
+            toleranceValue = inTolerance;
+        }
+
+        void setMaxCycles(int inCycles){
+            maxTSCycles = inCycles;
         }
 
         void setStartingNodeHeuristic(StartingNodeHeuristics in_tshStartingNodeMethod, int in_search_startingnodes){
             tshStartingNodeMethod = in_tshStartingNodeMethod;
-            search_startingnodes = in_search_startingnodes;
+            setStartingNodes(in_search_startingnodes);
         }
 
         StartingNodeHeuristics getStartingNodeHeuristic() const {
@@ -148,13 +157,6 @@ namespace tshlib {
             return tshRearrangementCoverage;
         }
 
-        TreeSearchStopCondition getStopConditionMethod() const {
-            return stopConditionMethod;
-        }
-
-        double getStopConditionValue() const {
-            return stopConditionValue;
-        }
 
         const std::string getScoringMethod() const {
             return scoringMethod;
@@ -169,7 +171,23 @@ namespace tshlib {
         }
 
         void setStartingNodes(int in_search_startingnodes) {
-            search_startingnodes = in_search_startingnodes;
+
+            if (getUtree()) {
+                if (utree_->listVNodes.size() < in_search_startingnodes) {
+
+                    search_startingnodes = (int) utree_->listVNodes.size();
+
+                   DLOG(WARNING) << "[TreeSearch::setStartingNodes] User requested too many initial seed nodes [" << in_search_startingnodes
+                                 << "] to define candidate topology. Reset value to max number of nodes in the tree = "
+                                 << search_startingnodes;
+
+                } else {
+                    search_startingnodes = in_search_startingnodes;
+
+                }
+            }else{
+                LOG(ERROR) << "[TreeSearch::setStartingNodes] Utree has not been set for the current tree-search object. Call setUtree() first.";
+            }
         }
 
 
@@ -230,19 +248,6 @@ namespace tshlib {
             return rtToken;
         }
 
-        std::string getStopConditionDescription() const {
-            std::string rtToken;
-            switch (stopConditionMethod) {
-                case tshlib::TreeSearchStopCondition::convergence:
-                    rtToken = "convergence";
-                    break;
-                case tshlib::TreeSearchStopCondition::iterations:
-                    rtToken = "max iterations";
-                    break;
-            }
-
-            return rtToken;
-        }
 
         double executeTreeSearch();
 
@@ -266,6 +271,12 @@ namespace tshlib {
          */
         void testMoves(tshlib::TreeRearrangment *candidateMoves);
 
+
+
+        std::string debugStackTraceMove(Move *move, Utree *tree,
+                                               std::vector < tshlib::VirtualNode * > listNodesInvolved,
+                                               std::vector < tshlib::VirtualNode * > updatedList,
+                                               double initLK = 0, double moveLK = 0, double returnLK = 0);
     };
 }
 

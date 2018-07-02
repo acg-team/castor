@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 20 12 2017
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -110,6 +110,7 @@ using namespace tshlib;
 #include "SupportMeasures.hpp"
 
 #include "progressivePIP.hpp"
+#include "UnifiedDistanceEstimation.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -117,6 +118,7 @@ int main(int argc, char *argv[]) {
     FLAGS_log_dir = ".";
     int OMP_max_avail_threads = 1;
     google::InitGoogleLogging(software::name.c_str());
+    google::InstallFailureSignalHandler();
 
     try {
 
@@ -133,7 +135,6 @@ int main(int argc, char *argv[]) {
         } else {
             jatiapp.banner();
             jatiapp.startTimer();
-            //LOG(INFO) << "Execution started!";
         };
 
         bpp::ApplicationTools::displayResult("Random seed set to", jatiapp.getSeed());
@@ -222,15 +223,14 @@ int main(int argc, char *argv[]) {
             //if (PAR_model_indels) {
             //    gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet_Extended *>(alphabet)->getNucleicAlphabet(), codeDesc));
             //} else {
-                gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet *>(alphabetNoGaps)->getNucleicAlphabet(), codeDesc));
+            gCode.reset(bpp::SequenceApplicationTools::getGeneticCode(dynamic_cast<bpp::CodonAlphabet *>(alphabetNoGaps)->getNucleicAlphabet(),
+                                                                      codeDesc));
             //}
         }
 
-
-
         ApplicationTools::displayResult("Alphabet", TextTools::toString(alphabetNoGaps->getAlphabetType()));
         ApplicationTools::displayBooleanResult("Allow gaps as extra character", PAR_model_indels);
-        LOG(INFO) << "alphabet:  " << PAR_Alphabet << " | gap-extention " << (int) PAR_model_indels;
+        DLOG(INFO) << "alphabet:  " << PAR_Alphabet << " | gap-extention " << (int) PAR_model_indels;
 
 
         //////////////////////////////////////////////
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
         if (initTreeOpt == "user") {
 
             tree = PhylogeneticsApplicationTools::getTree(jatiapp.getParams());
-            LOG(INFO) << "[Input tree parser] Number of leaves" << tree->getNumberOfLeaves();
+            DLOG(INFO) << "[Input tree parser] Number of leaves" << tree->getNumberOfLeaves();
 
         } else if (initTreeOpt == "random") {
 
@@ -292,38 +292,88 @@ int main(int argc, char *argv[]) {
 
             bpp::DistanceMatrix *distances;
 
+            std::string PAR_distance_method = ApplicationTools::getStringParameter("init.distance.method", jatiapp.getParams(), "nj");
+            ApplicationTools::displayResult("Initial tree reconstruction method", PAR_distance_method);
+
+            AgglomerativeDistanceMethod *distMethod = nullptr;
+            std::string token = PAR_distance_method.substr(0, PAR_distance_method.find("-"));
+            if (token == "wpgma") {
+                auto *wpgma = new PGMA(true);
+                distMethod = wpgma;
+            } else if (token == "upgma") {
+                auto *upgma = new PGMA(false);
+                distMethod = upgma;
+            } else if (token == "nj") {
+                auto *nj = new NeighborJoining();
+                nj->outputPositiveLengths(true);
+                distMethod = nj;
+            } else if (token == "bionj") {
+                auto *bionj = new BioNJ();
+                bionj->outputPositiveLengths(true);
+                distMethod = bionj;
+            } else throw Exception("Unknown tree reconstruction method.");
+
             if (!PAR_alignment) {
-
-                std::string PAR_distance_method = ApplicationTools::getStringParameter("init.distance.method", jatiapp.getParams(), "nj");
-                ApplicationTools::displayResult("Initial tree reconstruction method", PAR_distance_method);
-
-                AgglomerativeDistanceMethod *distMethod = nullptr;
-                if (PAR_distance_method == "wpgma") {
-                    auto *wpgma = new PGMA(true);
-                    distMethod = wpgma;
-                } else if (PAR_distance_method == "upgma") {
-                    auto *upgma = new PGMA(false);
-                    distMethod = upgma;
-                } else if (PAR_distance_method == "nj") {
-                    auto *nj = new NeighborJoining();
-                    nj->outputPositiveLengths(true);
-                    distMethod = nj;
-                } else if (PAR_distance_method == "bionj") {
-                    auto *bionj = new BioNJ();
-                    bionj->outputPositiveLengths(true);
-                    distMethod = bionj;
-                } else throw Exception("Unknown tree reconstruction method.");
 
                 // Compute bioNJ tree using the GTR model
                 map<std::string, std::string> parmap;
-                parmap["model"] = "JC69";
 
-                VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabetNoGaps, jatiapp.getParams());
-                VectorSiteContainer *sites_bioNJ = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams());
+                VectorSiteContainer *allSites;
+                VectorSiteContainer *sitesDistMethod;
+                bpp::Alphabet *alphabetDistMethod;
+
+                if (PAR_model_indels) {
+                    alphabetDistMethod = alphabet;
+                    parmap["model"] = modelMap["model"];
+                } else {
+                    alphabetDistMethod = alphabetNoGaps;
+                    parmap["model"] = jatiapp.getParams()["model"];
+                }
+
+                allSites = SequenceApplicationTools::getSiteContainer(alphabetDistMethod, jatiapp.getParams());
+                sitesDistMethod = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams());
                 delete allSites;
 
+                bpp::SubstitutionModel *smodel;
+                if (PAR_model_indels) {
+
+                    // Instantiation of the canonical substitution model
+                    if (PAR_Alphabet.find("Codon") != std::string::npos || PAR_Alphabet.find("Protein") != std::string::npos) {
+                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(), sites, modelMap, "", true,
+                                                                                          false, 0);
+                    } else {
+                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetDistMethod, gCode.get(), sites, modelMap, "", true,
+                                                                                          false, 0);
+                    }
+
+                    double lambda = (modelMap.find("lambda") == modelMap.end()) ? 0.1 : std::stod(modelMap["lambda"]);
+                    double mu = (modelMap.find("mu") == modelMap.end()) ? 0.2 : std::stod(modelMap["mu"]);
+
+                    // Instatiate the corrisponding PIP model given the alphabet
+                    if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
+                        smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabetDistMethod), smodel, *sequences, lambda, mu, false);
+                    } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
+                        smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabetDistMethod), smodel, *sequences, lambda, mu, false);
+                    } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
+                        smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabetDistMethod), gCode.get(), smodel, *sequences, lambda,
+                                               mu, false);
+                        ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
+                        DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
+                    }
+
+                }
+
                 //Initialize model to compute the distance tree
-                TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetNoGaps, gCode.get(), sites_bioNJ, parmap);
+                //TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetDistMethod, gCode.get(), sitesDistMethod, parmap);
+                TransitionModel *dmodel;
+                // Get transition model from substitution model
+                if (!PAR_model_indels) {
+                    dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetDistMethod, gCode.get(), sitesDistMethod, parmap);
+                } else {
+                    unique_ptr<TransitionModel> test;
+                    test.reset(smodel);
+                    dmodel = test.release();
+                }
 
                 // Add a ASRV distribution
                 DiscreteDistribution *rDist = nullptr;
@@ -333,72 +383,88 @@ int main(int argc, char *argv[]) {
                 } else {
                     rDist = PhylogeneticsApplicationTools::getRateDistribution(jatiapp.getParams());
                 }
+
                 // Remove gap characters since we are roughly estimating the initial topology
+                if (!PAR_model_indels) {
+                    bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sitesDistMethod);
+                }
 
-                bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites_bioNJ);
-                DistanceEstimation distEstimation(dmodel, rDist, sites_bioNJ, 1, false);
+                UnifiedDistanceEstimation distEstimation(dmodel, rDist, sitesDistMethod, 1, false);
 
-                std::string PAR_optim_distance = ApplicationTools::getStringParameter("init.distance.optimization.method", jatiapp.getParams(), "init");
-                ApplicationTools::displayResult("Initial tree model parameters estimation method", PAR_optim_distance);
-                if (PAR_optim_distance == "init") PAR_optim_distance = Optimizators::DISTANCEMETHOD_INIT;
-                else if (PAR_optim_distance == "pairwise") PAR_optim_distance = Optimizators::DISTANCEMETHOD_PAIRWISE;
-                else if (PAR_optim_distance == "iterations") PAR_optim_distance = Optimizators::DISTANCEMETHOD_ITERATIONS;
-                else throw Exception("Unknown parameter estimation procedure '" + PAR_optim_distance + "'.");
+                if (PAR_distance_method.find("-ml") != std::string::npos) {
 
-                // Optimisation method verbosity
-                auto optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose", jatiapp.getParams(), 2);
-                string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", jatiapp.getParams(), false, false);
-                auto *messenger = (mhPath == "none") ? nullptr : (mhPath == "std") ? ApplicationTools::message : new StlOutputStream(new ofstream(mhPath.c_str(), ios::out));
-                ApplicationTools::displayResult("Initial tree optimization handler", mhPath);
+                    std::string PAR_optim_distance = ApplicationTools::getStringParameter("init.distance.optimization.method", jatiapp.getParams(),
+                                                                                          "init");
+                    ApplicationTools::displayResult("Initial tree model parameters estimation method", PAR_optim_distance);
+                    if (PAR_optim_distance == "init") PAR_optim_distance = Optimizators::DISTANCEMETHOD_INIT;
+                    else if (PAR_optim_distance == "pairwise") PAR_optim_distance = Optimizators::DISTANCEMETHOD_PAIRWISE;
+                    else if (PAR_optim_distance == "iterations") PAR_optim_distance = Optimizators::DISTANCEMETHOD_ITERATIONS;
+                    else throw Exception("Unknown parameter estimation procedure '" + PAR_optim_distance + "'.");
 
-                // Optimisation method profiler
-                string prPath = ApplicationTools::getAFilePath("optimization.profiler", jatiapp.getParams(), false, false);
-                auto *profiler = (prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message : new StlOutputStream(new ofstream(prPath.c_str(), ios::out));
-                if (profiler) profiler->setPrecision(20);
-                ApplicationTools::displayResult("Initial tree optimization profiler", prPath);
+                    // Optimisation method verbosity
+                    auto optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose", jatiapp.getParams(), 2);
+                    string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", jatiapp.getParams(), false, false);
+                    auto *messenger = (mhPath == "none") ? nullptr : (mhPath == "std") ? ApplicationTools::message : new StlOutputStream(
+                            new ofstream(mhPath.c_str(), ios::out));
+                    ApplicationTools::displayResult("Initial tree optimization handler", mhPath);
 
-                // Should I ignore some parameters?
-                ParameterList allParameters = dmodel->getParameters();
-                allParameters.addParameters(rDist->getParameters());
+                    // Optimisation method profiler
+                    string prPath = ApplicationTools::getAFilePath("optimization.profiler", jatiapp.getParams(), false, false);
+                    auto *profiler = (prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message : new StlOutputStream(
+                            new ofstream(prPath.c_str(), ios::out));
+                    if (profiler) profiler->setPrecision(20);
+                    ApplicationTools::displayResult("Initial tree optimization profiler", prPath);
 
-                ParameterList parametersToIgnore;
-                string paramListDesc = ApplicationTools::getStringParameter("init.distance.optimization.ignore_parameter", jatiapp.getParams(), "", "", true, false);
-                bool ignoreBrLen = false;
-                StringTokenizer st(paramListDesc, ",");
+                    // Should I ignore some parameters?
+                    ParameterList allParameters = dmodel->getParameters();
+                    allParameters.addParameters(rDist->getParameters());
 
-                while (st.hasMoreToken()) {
-                    try {
-                        string param = st.nextToken();
-                        if (param == "BrLen")
-                            ignoreBrLen = true;
-                        else {
-                            if (allParameters.hasParameter(param)) {
-                                Parameter *p = &allParameters.getParameter(param);
-                                parametersToIgnore.addParameter(*p);
-                            } else ApplicationTools::displayWarning("Parameter '" + param + "' not found.");
+                    ParameterList parametersToIgnore;
+                    string paramListDesc = ApplicationTools::getStringParameter("init.distance.optimization.ignore_parameter", jatiapp.getParams(),
+                                                                                "", "", true, false);
+                    bool ignoreBrLen = false;
+                    StringTokenizer st(paramListDesc, ",");
+
+                    while (st.hasMoreToken()) {
+                        try {
+                            string param = st.nextToken();
+                            if (param == "BrLen")
+                                ignoreBrLen = true;
+                            else {
+                                if (allParameters.hasParameter(param)) {
+                                    Parameter *p = &allParameters.getParameter(param);
+                                    parametersToIgnore.addParameter(*p);
+                                } else ApplicationTools::displayWarning("Parameter '" + param + "' not found.");
+                            }
+                        } catch (ParameterNotFoundException &pnfe) {
+                            ApplicationTools::displayError("Parameter '" + pnfe.getParameter() + "' not found, and so can't be ignored!");
                         }
-                    } catch (ParameterNotFoundException &pnfe) {
-                        ApplicationTools::displayError("Parameter '" + pnfe.getParameter() + "' not found, and so can't be ignored!");
                     }
+
+                    auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", jatiapp.getParams(), 1000000);
+                    ApplicationTools::displayResult("Initial tree optimization | max # ML evaluations", TextTools::toString(nbEvalMax));
+
+                    double tolerance = ApplicationTools::getDoubleParameter("optimization.tolerance", jatiapp.getParams(), .000001);
+                    ApplicationTools::displayResult("Initial tree optimization | Tolerance", TextTools::toString(tolerance));
+
+                    //Here it is:
+                    tree = Optimizators::buildDistanceTreeGeneric(distEstimation, *distMethod, parametersToIgnore, !ignoreBrLen, PAR_optim_distance,
+                                                                  tolerance, nbEvalMax, profiler, messenger,
+                                                                  optVerbose);
+
+                } else {
+                    // Fast but rough estimate of the initial tree topology (distance based without optimisation -ML)
+
+                    distEstimation.computeMatrix();
+                    DistanceMatrix *dm = distEstimation.getMatrix();
+                    distMethod->setDistanceMatrix((*dm));
+                    distMethod->computeTree();
+                    tree = distMethod->getTree();
+                    std::cout << std::endl;
+
                 }
 
-                auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", jatiapp.getParams(), 1000000);
-                ApplicationTools::displayResult("Initial tree optimization | max # ML evaluations", TextTools::toString(nbEvalMax));
-
-                double tolerance = ApplicationTools::getDoubleParameter("optimization.tolerance", jatiapp.getParams(), .000001);
-                ApplicationTools::displayResult("Initial tree optimization | Tolerance", TextTools::toString(tolerance));
-
-                //Here it is:
-                tree = OptimizationTools::buildDistanceTree(distEstimation, *distMethod, parametersToIgnore, !ignoreBrLen, PAR_optim_distance, tolerance, nbEvalMax, profiler, messenger, optVerbose);
-
-                // If the tree has multifurcation, then resolve it with midpoint rooting
-                auto ttree_ = new TreeTemplate<Node>(*tree);
-                if (ttree_->getRootNode()->getNumberOfSons() > 2) {
-                    TreeTemplateTools::midRoot(*(ttree_), TreeTemplateTools::MIDROOT_VARIANCE, false);
-                    tree = ttree_;
-                }
-
-                delete sites_bioNJ;
+                delete sitesDistMethod;
                 delete distMethod;
 
 
@@ -409,12 +475,13 @@ int main(int argc, char *argv[]) {
                 ApplicationTools::displayResult("Initial tree method", std::string("LZ compression"));
                 std::string PAR_distance_matrix;
                 try {
-                    PAR_distance_matrix = ApplicationTools::getAFilePath("init.distance.matrix.file", jatiapp.getParams(), true, true, "", false, "", 0);
+                    PAR_distance_matrix = ApplicationTools::getAFilePath("init.distance.matrix.file", jatiapp.getParams(), true, true, "", false, "",
+                                                                         0);
                 } catch (bpp::Exception &e) {
                     LOG(FATAL) << "Error when reading distance matrix file: " << e.message();
                 }
 
-                LOG(INFO) << "initial tree method from LZ compression from matrix file" << PAR_distance_matrix;
+                DLOG(INFO) << "initial tree method from LZ compression from matrix file" << PAR_distance_matrix;
                 distances = InputUtils::parseDistanceMatrix(PAR_distance_matrix);
                 bpp::BioNJ bionj(*distances, true, true, false);
                 tree = bionj.getTree();
@@ -422,11 +489,16 @@ int main(int argc, char *argv[]) {
 
         } else throw Exception("Unknown init tree method.");
 
+        // If the tree has multifurcation, then resolve it with midpoint rooting
+        auto ttree_ = new TreeTemplate<Node>(*tree);
+        if (ttree_->getRootNode()->getNumberOfSons() > 2) {
+            TreeTemplateTools::midRoot(*(ttree_), TreeTemplateTools::MIDROOT_VARIANCE, false);
+            tree = ttree_;
+        }
 
         // Rename internal nodes with standard Vxx * where xx is a progressive number
         tree->setNodeName(tree->getRootId(), "root");
         UtreeBppUtils::renameInternalNodes(tree);
-
 
         // Try to write the current tree to file. This will be overwritten by the optimized tree,
         // but allow to check file existence before running optimization!
@@ -564,13 +636,20 @@ int main(int argc, char *argv[]) {
 
             // Instatiate the corrisponding PIP model given the alphabet
             if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
+
                 smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
+
             } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
+
                 smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
+
             } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
-                smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabet), gCode.get(), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
+
+                smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabet), gCode.get(), smodel, *sequences, lambda, mu,
+                                       computeFrequenciesFromData);
+
                 ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
-                LOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
+                DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
             }
 
         } else {
@@ -591,7 +670,7 @@ int main(int argc, char *argv[]) {
 
         bpp::StdStr s1;
         bpp::PhylogeneticsApplicationTools::printParameters(smodel, s1, 1, true);
-        LOG(INFO) << s1.str();
+        DLOG(INFO) << s1.str();
 
         /////////////////////////
         // AMONG-SITE-RATE-VARIATION
@@ -617,35 +696,43 @@ int main(int argc, char *argv[]) {
             ApplicationTools::displayResult("Proportion gappy sites", TextTools::toString(PAR_proportion, 4));
             ApplicationTools::displayResult("Aligner optimised for:", PAR_alignment_version);
 
-            ApplicationTools::displayBooleanResult("Stochastic backtracking active", PAR_alignment_sbsolutions>1);
-            if (PAR_alignment_sbsolutions>1) {
+            ApplicationTools::displayBooleanResult("Stochastic backtracking active", PAR_alignment_sbsolutions > 1);
+            if (PAR_alignment_sbsolutions > 1) {
                 ApplicationTools::displayResult("Number of stochastic solutions:", TextTools::toString(PAR_alignment_sbsolutions));
             }
 
-            LOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
+            DLOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
             // Initialise alignment object
-            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),PAR_alignment_sbsolutions);
+            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(), PAR_alignment_sbsolutions);
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
             // Align sequences using the progressive 3D Dynamic Programming under PIP
-            bool flag_local = false;
-            bool flag_map = true;
-            bool flag_fv = false;
+            bool flag_local;
+            bool flag_map;
+            bool flag_fv;
 
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
-                 flag_local = true;
-                 flag_map = true;
-                 flag_fv = false;
+                flag_local = true;
+                flag_map = true;
+                flag_fv = false;
 
-            }else if (PAR_alignment_version.find("ram") != std::string::npos) {
+            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
 
-                 flag_local = true;
-                 flag_map = false;
-                 flag_fv = true;
+                flag_local = true;
+                flag_map = false;
+                flag_fv = true;
+
+            } else {
+
+                flag_local = false;
+                flag_map = true;
+                flag_fv = false;
+
+                ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
 
             }
 
@@ -680,11 +767,11 @@ int main(int argc, char *argv[]) {
             //ApplicationTools::displayResult("[Alignment sequences] MSA_t inference using Pro-PIP", "terminated successfully");
 
             // Convert PIP Aligner into bpp::sites
-            sites = pPIPUtils::pPIPmsa2Sites(alignment,0);
+            sites = pPIPUtils::pPIPmsa2Sites(alignment, 0);
 
             // Export alignment to file
             if (PAR_output_file_msa.find("none") == std::string::npos) {
-                LOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
+                DLOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
                 bpp::Fasta seqWriter;
                 seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
             }
@@ -700,7 +787,7 @@ int main(int argc, char *argv[]) {
 
             ApplicationTools::displayResult("Alignment log likelihood", TextTools::toString(score, 15));
 
-            LOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
+            DLOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
 
         }
 
@@ -732,11 +819,13 @@ int main(int argc, char *argv[]) {
         // Initialise likelihood functions
         if (!PAR_model_indels) {
             //tl = new bpp::RHomogeneousTreeLikelihood_Generic(*tree, *sites, model, rDist, false, false, false);
-            tl = new bpp::UnifiedTSHomogeneousTreeLikelihood(*tree, *sites, model, rDist, utree, &tm, true, jatiapp.getParams(), "", false, false, false);
+            tl = new bpp::UnifiedTSHomogeneousTreeLikelihood(*tree, *sites, model, rDist, utree, &tm, true, jatiapp.getParams(), "", false, false,
+                                                             false);
 
         } else {
             //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, &tm, false, false, false);
-            tl = new bpp::UnifiedTSHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, utree, &tm, true, jatiapp.getParams(), "", false, false, false);
+            tl = new bpp::UnifiedTSHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, utree, &tm, true, jatiapp.getParams(), "", false,
+                                                                 false, false);
         }
         ApplicationTools::displayResult("Tree likelihood model", std::string("Homogeneous"));
 
@@ -786,7 +875,8 @@ int main(int argc, char *argv[]) {
                         s = site.size();
                         for (size_t j = 0; j < s; j++) {
                             if (gCode->isStop(site.getValue(j))) {
-                                (*ApplicationTools::error << "Stop Codon at site " << site.getPosition() << " in sequence " << sites->getSequence(j).getName()).endLine();
+                                (*ApplicationTools::error << "Stop Codon at site " << site.getPosition() << " in sequence "
+                                                          << sites->getSequence(j).getName()).endLine();
                                 f = true;
                             }
                         }
@@ -795,7 +885,8 @@ int main(int argc, char *argv[]) {
                 if (f)
                     exit(-1);
             }
-            bool removeSaturated = ApplicationTools::getBooleanParameter("input.sequence.remove_saturated_sites", jatiapp.getParams(), false, "", true, 1);
+            bool removeSaturated = ApplicationTools::getBooleanParameter("input.sequence.remove_saturated_sites", jatiapp.getParams(), false, "",
+                                                                         true, 1);
             if (!removeSaturated) {
                 ofstream debug("DEBUG_likelihoods.txt", ios::out);
                 for (size_t i = 0; i < sites->getNumberOfSites(); i++) {
@@ -803,8 +894,10 @@ int main(int argc, char *argv[]) {
                 }
                 debug.close();
                 ApplicationTools::displayError("!!! Site-specific likelihood have been written in file DEBUG_likelihoods.txt .");
-                ApplicationTools::displayError("!!! 0 values (inf in log) may be due to computer overflow, particularily if datasets are big (>~500 sequences).");
-                ApplicationTools::displayError("!!! You may want to try input.sequence.remove_saturated_sites = yes to ignore positions with likelihood 0.");
+                ApplicationTools::displayError(
+                        "!!! 0 values (inf in log) may be due to computer overflow, particularily if datasets are big (>~500 sequences).");
+                ApplicationTools::displayError(
+                        "!!! You may want to try input.sequence.remove_saturated_sites = yes to ignore positions with likelihood 0.");
                 exit(1);
             } else {
                 ApplicationTools::displayBooleanResult("Saturated site removal enabled", true);
@@ -844,7 +937,7 @@ int main(int argc, char *argv[]) {
 
         // Overwrite the initial alignment with the optimised one  | TODO: the likelihood function should not be reimplemented here.
         if (PAR_alignment && PAR_align_optim) {
-            sites = pPIPUtils::pPIPmsa2Sites(alignment,0);
+            sites = pPIPUtils::pPIPmsa2Sites(alignment, 0);
             logL = alignment->getScore(alignment->getRootNode()).at(0);
 
             const Tree &tmpTree = tl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
@@ -859,15 +952,13 @@ int main(int argc, char *argv[]) {
             logL = tl->getLogLikelihood();
         }
 
-
-
         /////////////////////////
         // OUTPUT
 
         // Export final alignment
         if (PAR_output_file_msa.find("none") == std::string::npos) {
             ApplicationTools::displayResult("\n\nOutput alignment to file", PAR_output_file_msa);
-            LOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
+            DLOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
             bpp::Fasta seqWriter;
             seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
         }
@@ -877,7 +968,12 @@ int main(int argc, char *argv[]) {
         // Export final tree (if nexus is required, then our re-implementation of the the nexus writer is called)
         tree = new TreeTemplate<Node>(tl->getTree());
 
-        std::string PAR_output_tree_format = ApplicationTools::getStringParameter("output.tree.format", jatiapp.getParams(), "Newick", "", true, true);
+        std::string PAR_output_tree_format = ApplicationTools::getStringParameter("output.tree.format",
+                                                                                  jatiapp.getParams(),
+                                                                                  "Newick",
+                                                                                  "",
+                                                                                  true,
+                                                                                  true);
         if (PAR_output_tree_format.find("Nexus") != std::string::npos) {
             std::vector<Tree *> tmp;
             tmp.push_back(tree);
@@ -888,7 +984,14 @@ int main(int argc, char *argv[]) {
 
 
         // Export annotation file (tab separated values)
-        std::string PAR_output_annotation_file = ApplicationTools::getAFilePath("output.annotation.file", jatiapp.getParams(), false, false, "", true, "", 1);
+        std::string PAR_output_annotation_file = ApplicationTools::getAFilePath("output.annotation.file",
+                                                                                jatiapp.getParams(),
+                                                                                false,
+                                                                                false,
+                                                                                "",
+                                                                                true,
+                                                                                "",
+                                                                                1);
         if (PAR_output_annotation_file.find("none") == std::string::npos) {
             ApplicationTools::displayResult("Output annotation to file", PAR_output_annotation_file);
             OutputUtils::writeTreeAnnotations2TSV(tree, PAR_output_annotation_file);

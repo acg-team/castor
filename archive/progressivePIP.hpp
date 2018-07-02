@@ -272,7 +272,7 @@ namespace progressivePIP{
 
         if(fabs((long double)mu)<1e-8){
             //perror("ERROR in compute_nu: mu too small");
-            LOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu;
+           DLOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu;
         }
 
         return lambda*(tau+1/mu);
@@ -1944,7 +1944,7 @@ namespace progressivePIP{
         if (node->isTerminalNode()) {
 
             add_sequence_to_alignment(result, node, sequences);
-            //VLOG(2) << "[PPIP] Processing node " << node->vnode_name;
+            //DVLOG(2) << "[PPIP] Processing node " << node->vnode_name;
 
         } else{
 
@@ -1952,7 +1952,7 @@ namespace progressivePIP{
             ProgressivePIPResult result_R = compute_DP3D_PIP_tree_cross(node->getNodeRight(), tree, tm, pi, lambda, mu, sequences, alphabet, gamma_rate, local_tree);
 
             result = compute_DP3D_PIP(result_L, result_R, node, tree, tm, pi, lambda, mu, sequences, alphabet, gamma_rate, local_tree);
-            //VLOG(2) << "[PPIP] Processing node " << node->vnode_name;
+            //DVLOG(2) << "[PPIP] Processing node " << node->vnode_name;
 
         }
 

@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 18 04 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 
 #include <glog/logging.h>
@@ -160,16 +160,16 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangeme
 
         // call to function which retrieves the lk value for each site
         lk_sites[i] = log(computeLikelihoodForASite(tempExtendedNodeList, i)) * rootWeights->at(i);
-        DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
+       DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
     }
 
     // Sum all the values stored in the lk vector
     logLK = MatrixBppUtils::sumVector(&lk_sites);
-    DVLOG(2) << "LK Sites [BPP] " << std::setprecision(18) << logLK;
+   DVLOG(2) << "LK Sites [BPP] " << std::setprecision(18) << logLK;
 
     // compute PHi
     double log_phi_value = computePhi(lk_site_empty);
-    DVLOG(2) << "PHI [BPP] " << std::setprecision(18) << log_phi_value;
+   DVLOG(2) << "PHI [BPP] " << std::setprecision(18) << log_phi_value;
 
     logLK += log_phi_value;
 

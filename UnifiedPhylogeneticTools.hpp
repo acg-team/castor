@@ -22,10 +22,10 @@
  *******************************************************************************/
 
 /**
- * @file SupportMeasures.hpp
+ * @file UnifiedPhylogeneticTools.hpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
- * @date 02 05 2018
+ * @date 28 06 2018
  * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
@@ -41,33 +41,27 @@
  *
  * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
-#ifndef MINIJATI_SUPPORTMEASURES_HPP
-#define MINIJATI_SUPPORTMEASURES_HPP
+#ifndef MINIJATI_UNIFIEDPHYLOGENETICTOOLS_HPP
+#define MINIJATI_UNIFIEDPHYLOGENETICTOOLS_HPP
 
-#include <Bpp/Phyl/Likelihood/AbstractHomogeneousTreeLikelihood.h>
-#include "pPIP.hpp"
+#include <Bpp/Phyl/Model/SubstitutionModel.h>
+#include <Bpp/Seq/GeneticCode/GeneticCode.h>
+#include <Bpp/Seq/Container/SiteContainer.h>
 
-namespace bpp {
-    class Bootstrap {
+using namespace bpp;
 
-    public:
+namespace UnifiedPhylogeneticTools {
 
-        Bootstrap(AbstractHomogeneousTreeLikelihood *tl,
-                 const SiteContainer &data,
-                 DiscreteDistribution *rDist,
-                 tshlib::Utree *utree_,
-                 UtreeBppUtils::treemap *tm,
-                 std::map<std::string, std::string>& params,
-                 const std::string& suffix = "",
-                 bool suffixIsOptional = true,
-                 int warn = 0);
-
-        virtual ~Bootstrap() = default;
-
-
-    };
+    bpp::SubstitutionModel *getUnifiedSubstitutionModel(const Alphabet* alphabet,
+                                                    const GeneticCode* gCode,
+                                                    const SiteContainer* data,
+                                                    std::map<std::string, std::string>& params,
+                                                    const std::string& suffix = "",
+                                                    bool suffixIsOptional = true,
+                                                    bool verbose = true,
+                                                    int warn = 1) throw (bpp::Exception);
 
 }
 
 
-#endif //MINIJATI_SUPPORTMEASURES_HPP
+#endif //MINIJATI_UNIFIEDPHYLOGENETICTOOLS_HPP

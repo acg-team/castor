@@ -191,7 +191,7 @@ set(SOURCES
         SupportMeasures.cpp
         SupportMeasures.hpp
         progressivePIP.hpp
-        progressivePIP.cpp)
+        progressivePIP.cpp UnifiedPhylogeneticTools.cpp UnifiedPhylogeneticTools.hpp UnifiedDistanceEstimation.cpp UnifiedDistanceEstimation.hpp)
 
 
 if (STATIC GREATER 0)

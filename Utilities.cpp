@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 21 12 2017
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 #include <glog/logging.h>
 
@@ -60,6 +60,7 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/classification.hpp>
+#include <Bpp/Text/KeyvalTools.h>
 
 #include "Utilities.hpp"
 #include "Optimizators.hpp"
@@ -693,7 +694,7 @@ void OutputUtils::writeOutput2LOG(bpp::AbstractHomogeneousTreeLikelihood *tl) {
             oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";
         }
         oss << ")";
-        LOG(INFO) << oss.str();
+       DLOG(INFO) << oss.str();
     }
     oss.clear();
     oss.str("");
@@ -706,7 +707,7 @@ void OutputUtils::writeOutput2LOG(bpp::AbstractHomogeneousTreeLikelihood *tl) {
             oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";
         }
         oss << ")";
-        LOG(INFO) << oss.str();
+       DLOG(INFO) << oss.str();
     }
     oss.clear();
     oss.str("");
@@ -718,7 +719,7 @@ void OutputUtils::writeOutput2LOG(bpp::AbstractHomogeneousTreeLikelihood *tl) {
             oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";;
         }
         oss << ")";
-        LOG(INFO) << oss.str();
+       DLOG(INFO) << oss.str();
     }
     oss.clear();
     oss.str("");
@@ -1145,7 +1146,7 @@ bpp::DistanceEstimation DistanceUtils::computeDistanceMethod(std::string seqfile
     return distEstimation;
 }
 
-
+/*
 bpp::TreeTemplate<bpp::Node> *DistanceUtils::computeDistanceTree(bpp::TransitionModel *model,
                                                                  bpp::DiscreteDistribution *rDist,
                                                                  bpp::DistanceEstimation &distEstimation,
@@ -1414,7 +1415,7 @@ bpp::TreeTemplate<bpp::Node> *DistanceMethodsUtils::computeDistanceTree() {
 void DistanceMethodsUtils::setDistanceMatrix() {
 
 }
-
+*/
 
 std::string TextUtils::appendToFilePath(std::string inputFilePath, std::string string2append) {
 

@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 18 04 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 #include <Bpp/Numeric/Function/SimpleMultiDimensions.h>
 #include <Bpp/Phyl/Likelihood/PseudoNewtonOptimizer.h>
@@ -115,7 +115,7 @@ void UnifiedTSHSearchable::setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
     optimiser_->setProfiler(profiler);
     optimiser_->setMessageHandler(messageHandler);
     optimiser_->setMaximumNumberOfEvaluations(nbEvalMax);
-    optimiser_->setVerbose(1);
+    optimiser_->setVerbose(0);
 
 }
 
