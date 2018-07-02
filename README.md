@@ -2,12 +2,40 @@
 
 Authors: Lorenzo Gatti & Massimo Maiolo
 
+----
+
 ### Releases
 
-#### Version 1.0.6 / 19.06.2018
+#### Version 1.0.7 / 02.07.2018
+    
+> #### Task
+</h2>
+<ul>
+<li>[<a href='https://devops.lorenzogatti.me/browse/MIN-43'>MIN-43</a>] -         Add ML/wML to Initial tree topology estimator schemes (pairwise distances)
+</li>
+<li>[<a href='https://devops.lorenzogatti.me/browse/MIN-44'>MIN-44</a>] -         Pairwise distance estimation should be computed under nested models (+PIP)
+</li>
+</ul>
+    
+> #### Bug
+</h2>
+<ul>
+<li>[<a href='https://devops.lorenzogatti.me/browse/MIN-40'>MIN-40</a>] -         Initial likelihood value does not match with MSA score
+</li>
+<li>[<a href='https://devops.lorenzogatti.me/browse/MIN-41'>MIN-41</a>] -         Initial tree topology cannot be performed under PIP model. Distance measure is missing
+</li>
+<li>[<a href='https://devops.lorenzogatti.me/browse/MIN-42'>MIN-42</a>] -         Optimisation of branches during initial tree estimation cannot be performed under PIP
+</li>
+</ul>
+            
 > #### Story
-- [[MIN-36]](https://devops.lorenzogatti.me/browse/MIN-36) - Implementation of phyml-SPR moves using the UnifiedTreeSearch framework based on TSHLib v2.0.0
-   
+</h2>
+<ul>
+<li>[<a href='https://devops.lorenzogatti.me/browse/MIN-8'>MIN-8</a>] -         Design new parameter optimization routine to support more complex scenarios (using lk tolerance)
+</li>
+</ul>
+
+----
    
 ### Licence
 
