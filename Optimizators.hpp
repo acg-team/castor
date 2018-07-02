@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 24 02 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,12 +39,13 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 #ifndef MINIJATI_OPTIMIZATORS_HPP
 #define MINIJATI_OPTIMIZATORS_HPP
 #include <Bpp/Phyl/Distance/DistanceMethod.h>
 #include "pPIP.hpp"
+#include "UnifiedDistanceEstimation.hpp"
 
 namespace bpp {
 
@@ -155,7 +156,7 @@ namespace bpp {
        * @param verbose Verbose level.
        */
         static TreeTemplate <Node> *buildDistanceTreeGeneric(
-                DistanceEstimation &estimationMethod,
+                UnifiedDistanceEstimation &estimationMethod,
                 AgglomerativeDistanceMethod &reconstructionMethod,
                 const ParameterList &parametersToIgnore,
                 bool optimizeBrLen = false,

@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 24 02 2018
- * @version 1.0
+ * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: 
+ * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
 
 #include <glog/logging.h>
@@ -97,7 +97,8 @@ namespace bpp {
 
         // -------------------------------------------------------------------------
         //  Entry point for optimization routines (both numerical and topology)
-        std::string optimization = ApplicationTools::getStringParameter("optimization", params, "FullD(derivatives=Newton)", suffix, suffixIsOptional, warn);
+        std::string optimization = ApplicationTools::getStringParameter("optimization", params, "FullD(derivatives=Newton)", suffix, suffixIsOptional,
+                                                                        warn);
         if (optimization == "None")
             return tl;
 
@@ -113,20 +114,24 @@ namespace bpp {
 
         // -------------------------------------------------------------------------
         // Message handler
-        std::string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", params, false, false, suffix, suffixIsOptional, "none", warn + 1);
-        auto *messageHandler = static_cast<OutputStream *>((mhPath == "none") ? 0 : (mhPath == "std") ? ApplicationTools::message : new StlOutputStream(
-                new std::ofstream(mhPath.c_str(), std::ios::out)));
+        std::string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", params, false, false, suffix, suffixIsOptional, "none",
+                                                            warn + 1);
+        auto *messageHandler = static_cast<OutputStream *>((mhPath == "none") ? 0 : (mhPath == "std") ? ApplicationTools::message
+                                                                                                      : new StlOutputStream(
+                        new std::ofstream(mhPath.c_str(), std::ios::out)));
 
-        if (verbose) ApplicationTools::displayResult("Message handler", mhPath);
+        if (verbose) ApplicationTools::displayResult("Numerical opt. | Message handler", mhPath);
 
         // -------------------------------------------------------------------------
         // Profiler
-        std::string prPath = ApplicationTools::getAFilePath("optimization.profiler", params, false, false, suffix, suffixIsOptional, "none", warn + 1);
-        auto *profiler = static_cast<OutputStream *>((prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message : new StlOutputStream(
-                new std::ofstream(prPath.c_str(), std::ios::app)));
+        std::string prPath = ApplicationTools::getAFilePath("optimization.profiler", params, false, false, suffix, suffixIsOptional, "none",
+                                                            warn + 1);
+        auto *profiler = static_cast<OutputStream *>((prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message
+                                                                                                      : new StlOutputStream(
+                        new std::ofstream(prPath.c_str(), std::ios::app)));
         if (profiler) profiler->setPrecision(20);
 
-        if (verbose) ApplicationTools::displayResult("Optimizator profiler", prPath);
+        if (verbose) ApplicationTools::displayResult("Numerical opt. | Optimizator profiler", prPath);
 
         // -------------------------------------------------------------------------
         // Scaling tree topology
@@ -136,16 +141,18 @@ namespace bpp {
             if (verbose) ApplicationTools::displayMessage("Scaling the tree before optimizing each branch length separately.");
 
 
-            double tolerance = ApplicationTools::getDoubleParameter("optimization.scale_first.tolerance", params, .0001, suffix, suffixIsOptional, warn + 1);
-            if (verbose) ApplicationTools::displayResult("Scaling tolerance:", tolerance);
+            double tolerance = ApplicationTools::getDoubleParameter("optimization.scale_first.tolerance", params, .0001, suffix, suffixIsOptional,
+                                                                    warn + 1);
+            if (verbose) ApplicationTools::displayResult("Numerical opt. | Scaling tolerance:", tolerance);
 
 
-            auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.scale_first.max_number_f_eval", params, 1000000, suffix, suffixIsOptional, warn + 1);
-            if (verbose) ApplicationTools::displayResult("Scaling max # f eval:", nbEvalMax);
+            auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.scale_first.max_number_f_eval", params, 1000000, suffix,
+                                                                          suffixIsOptional, warn + 1);
+            if (verbose) ApplicationTools::displayResult("Numerical opt. | Scaling max # f eval:", nbEvalMax);
 
 
             OptimizationTools::optimizeTreeScale(tl, tolerance, nbEvalMax, messageHandler, profiler);
-            if (verbose) ApplicationTools::displayResult("New tree likelihood:", -tl->getValue());
+            if (verbose) ApplicationTools::displayResult("Numerical opt. | New tree likelihood:", -tl->getValue());
 
         }
 
@@ -164,7 +171,7 @@ namespace bpp {
                 if (param == "BrLen") {
                     vector<string> vs = tl->getBranchLengthsParameters().getParameterNames();
                     parametersToEstimate.deleteParameters(vs);
-                    if (verbose) ApplicationTools::displayResult("Parameter ignored", std::string("Branch lengths"));
+                    if (verbose) ApplicationTools::displayResult("Numerical opt. | Parameter ignored", std::string("Branch lengths"));
 
                 } else if (param == "Ancient") {
                     auto *nhtl = dynamic_cast<NonHomogeneousTreeLikelihood *>(tl);
@@ -175,7 +182,7 @@ namespace bpp {
                         vector<string> vs = nhtl->getRootFrequenciesParameters().getParameterNames();
                         parametersToEstimate.deleteParameters(vs);
                     }
-                    ApplicationTools::displayResult("Parameter ignored", string("Root frequencies"));
+                    ApplicationTools::displayResult("Numerical opt. | Parameter ignored", string("Root frequencies"));
 
                 } else if (param == "Model") {
                     vector<string> vs;
@@ -188,20 +195,20 @@ namespace bpp {
                         vs = vs1;
 
                     parametersToEstimate.deleteParameters(vs);
-                    ApplicationTools::displayResult("Parameter ignored", string("Model"));
+                    ApplicationTools::displayResult("Numerical opt. | Parameter ignored", string("Model"));
 
                 } else if (param.find('*') != string::npos) {
                     vector<string> vs = ApplicationTools::matchingParameters(param, parNames);
 
                     for (auto it = vs.begin(); it != vs.end(); it++) {
                         parametersToEstimate.deleteParameter(*it);
-                        ApplicationTools::displayResult("Parameter ignored", *it);
+                        ApplicationTools::displayResult("Numerical opt. | Parameter ignored", *it);
 
 
                     }
                 } else {
                     parametersToEstimate.deleteParameter(param);
-                    ApplicationTools::displayResult("Parameter ignored", param);
+                    ApplicationTools::displayResult("Numerical opt. | Parameter ignored", param);
 
                 }
             }
@@ -239,12 +246,10 @@ namespace bpp {
                     auto *nhtl = dynamic_cast<NonHomogeneousTreeLikelihood *>(tl);
                     if (!nhtl)
                         ApplicationTools::displayWarning("The 'Ancient' parameters do not exist in homogeneous models, and will be ignored.");
-                        //LOG(WARNING) << "[Parameter optimization]\tThe 'Ancient' parameters do not exist in homogeneous models, and will be ignored.";
 
                     else {
                         parNames2 = nhtl->getRootFrequenciesParameters().getParameterNames();
-                        ApplicationTools::displayResult("Parameter ignored", string("Root frequencies"));
-                        //LOG(INFO) << "[Parameter optimization]\tParameter ignored: Root frequencies";
+                        ApplicationTools::displayResult("Numerical opt. | Parameter ignored", string("Root frequencies"));
                     }
                 } else if (param == "Model") {
                     vector<string> vs1 = tl->getSubstitutionModelParameters().getParameterNames();
@@ -269,13 +274,11 @@ namespace bpp {
                     } else
                         par.setConstraint(ic.clone(), true);
 
-                    ApplicationTools::displayResult("Parameter constrained " + par.getName(), par.getConstraint()->getDescription());
-                    //LOG(INFO) << "[Parameter optimization]\tParameter constrained: " << par.getName() << par.getConstraint()->getDescription();
+                    ApplicationTools::displayResult("Numerical opt. | Parameter constrained " + par.getName(), par.getConstraint()->getDescription());
                 }
             }
             catch (ParameterNotFoundException &pnfe) {
                 ApplicationTools::displayWarning("Parameter '" + pnfe.getParameter() + "' not found, and so can't be constrained!");
-                //LOG(WARNING) << "[Parameter optimization]\t Parameter '" << pnfe.getParameter() << "' not found, and so can't be constrained!";
             }
             catch (ConstraintException &pnfe) {
 
@@ -290,26 +293,24 @@ namespace bpp {
         // -------------------------------------------------------------------------
 
         // Number of max likelihood evaluations
-        auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", params, 1000000, suffix, suffixIsOptional, warn + 1);
-        //LOG(INFO) << "[Parameter optimization]\tMax # ML evaluations: " << nbEvalMax;
-        ApplicationTools::displayResult("Max # ML evaluations", TextTools::toString(nbEvalMax));
+        auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval", params, 1000000, suffix, suffixIsOptional,
+                                                                      warn + 1);
+        ApplicationTools::displayResult("Numerical opt. | Max # ML evaluations", TextTools::toString(nbEvalMax));
 
         // Tolerance
         double tolerance = ApplicationTools::getDoubleParameter("optimization.tolerance", params, .000001, suffix, suffixIsOptional, warn + 1);
-        //LOG(INFO) << "[Parameter optimization]\tTolerance: " << tolerance;
-        ApplicationTools::displayResult("Tolerance", TextTools::toString(tolerance));
+        ApplicationTools::displayResult("Numerical opt. | Tolerance", TextTools::toString(tolerance));
 
         // Backing up or restoring?
         unique_ptr<BackupListener> backupListener;
-        string backupFile = ApplicationTools::getAFilePath("optimization.backup.file", params, false, false, suffix, suffixIsOptional, "none", warn + 1);
+        string backupFile = ApplicationTools::getAFilePath("optimization.backup.file", params, false, false, suffix, suffixIsOptional, "none",
+                                                           warn + 1);
         if (backupFile != "none") {
-            ApplicationTools::displayResult("Parameters will be backup to", backupFile);
-            //LOG(INFO) << "[Parameter optimization]\tParameters will be backup to: " << backupFile;
+            ApplicationTools::displayResult("Parameter opt. | Parameters will be backup to", backupFile);
 
             backupListener.reset(new BackupListener(backupFile));
             if (FileTools::fileExists(backupFile)) {
                 ApplicationTools::displayMessage("A backup file was found! Try to restore parameters from previous run...");
-                //LOG(INFO) << "[Parameter optimization]\tA backup file was found! Try to restore parameters from previous run... ";
 
                 ifstream bck(backupFile.c_str(), ios::in);
                 vector<string> lines = FileTools::putStreamIntoVectorOfStrings(bck);
@@ -332,9 +333,8 @@ namespace bpp {
                 bck.close();
                 tl->setParameters(pl);
                 if (abs(tl->getValue() - fval) > 0.000001)
-                    //LOG(WARNING) << "[Parameter optimization]\tWarning, incorrect likelihood value after restoring from backup file. ";
                     ApplicationTools::displayWarning("Warning, incorrect likelihood value after restoring from backup file.");
-                //LOG(INFO) << "[Parameter optimization]\tRestoring log-likelihood: " << -fval;
+
                 ApplicationTools::displayResult("Restoring log-likelihood", -fval);
 
             }
@@ -342,25 +342,8 @@ namespace bpp {
 
         // Topology optimisation
         bool optimizeTopo = ApplicationTools::getBooleanParameter("optimization.topology", params, false, suffix, suffixIsOptional, warn + 1);
-
-        //LOG(INFO) << "[Parameter optimization]\tOptimize topology: " << (optimizeTopo ? "yes" : "no");
-        ApplicationTools::displayResult("Optimize topology", optimizeTopo ? "yes" : "no");
-
-
-
-        /*
-        string nniMethod = ApplicationTools::getStringParameter("optimization.topology.algorithm.method", params, "greedy", suffix, suffixIsOptional, warn + 1);
-        string nniAlgo;
-        if (nniMethod == "fast") {
-            nniAlgo = NNITopologySearch::FAST;
-        } else if (nniMethod == "better") {
-            nniAlgo = NNITopologySearch::BETTER;
-        } else if (nniMethod == "phyml") {
-            nniAlgo = NNITopologySearch::PHYML;
-        } else
-            throw Exception("Unknown NNI algorithm: '" + nniMethod + "'.");
-
-        */
+        ApplicationTools::displayResult("Parameter opt. | Optimize topology", optimizeTopo ? "yes" : "no");
+        tshlib::TreeSearch *treesearch;
 
         // Derivatives
         string order = ApplicationTools::getStringParameter("derivatives", optArgs, "Newton", "", true, warn + 1);
@@ -376,17 +359,12 @@ namespace bpp {
         } else
             throw Exception("Unknown derivatives algorithm: '" + order + "'.");
 
-        if (verbose) ApplicationTools::displayResult("Optimization method", optName);
-        if (verbose) ApplicationTools::displayResult("Algorithm used for derivable parameters", order);
-        //LOG(INFO) << "[Parameter optimization]\tOptimization method: " << optName;
-        //LOG(INFO) << "[Parameter optimization]\tAlgorithm used for derivable parameters: " << order;
-
+        if (verbose) ApplicationTools::displayResult("Numerical opt. | Optimization method", optName);
+        if (verbose) ApplicationTools::displayResult("Numerical opt. | Algorithm Derivable parameters", order);
 
         // Reparametrization of the likelihood function
         bool reparam = ApplicationTools::getBooleanParameter("optimization.reparametrization", params, false, suffix, suffixIsOptional, warn + 1);
-        //LOG(INFO) << "[Parameter optimization]\tReparametrization: " << (reparam ? "yes" : "no");
-        if (verbose) ApplicationTools::displayResult("Reparametrization", (reparam ? "yes" : "no"));
-
+        if (verbose) ApplicationTools::displayResult("Numerical opt. | Reparametrization", (reparam ? "yes" : "no"));
 
         // See if we should use a molecular clock constraint:
         string clock = ApplicationTools::getStringParameter("optimization.clock", params, "None", suffix, suffixIsOptional, warn + 1);
@@ -395,8 +373,7 @@ namespace bpp {
         bool useClock = (clock == "Global");
         if (useClock && optimizeTopo)
             throw Exception("PhylogeneticsApplicationTools::optimizeParameters. Cannot optimize topology with a molecular clock.");
-        //LOG(INFO) << "[Parameter optimization]\tMolecular clock: " << clock;
-        if (verbose) ApplicationTools::displayResult("Molecular clock", clock);
+        if (verbose) ApplicationTools::displayResult("Numerical opt. | Molecular clock", clock);
 
         // Optimisation precision
         auto nstep = ApplicationTools::getParameter<unsigned int>("nstep", optArgs, 1, "", true, warn + 1);
@@ -413,22 +390,9 @@ namespace bpp {
 
             parametersToEstimate.matchParametersValues(tl->getParameters());
 
-            if ((optName == "D-Brent") || (optName == "D-BFGS")) {
-
-                n = OptimizationTools::optimizeNumericalParameters(
-                        dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl), parametersToEstimate,
-                        backupListener.get(), nstep, tolerance, nbEvalMax, messageHandler, profiler, reparam, optVerbose, optMethodDeriv, optMethodModel);
-
-            } else {
-
-                n = Optimizators::optimizeNumericalParametersUsingNumericalDerivatives(
-                        dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl), parametersToEstimate,
-                        backupListener.get(), nstep, tolerance, nbEvalMax, messageHandler, profiler, reparam, optVerbose, optMethodDeriv, optMethodModel);
-
-            }
-
             if (optimizeTopo) {
-                std::string PAR_optim_topology_algorithm = ApplicationTools::getStringParameter("optimization.topology.algorithm", params, "", suffix, suffixIsOptional, warn + 1);
+                std::string PAR_optim_topology_algorithm = ApplicationTools::getStringParameter("optimization.topology.algorithm", params, "", suffix,
+                                                                                                suffixIsOptional, warn + 1);
 
                 // Parse string with tree search algorithm details
                 std::string optTopology_MethodName;
@@ -440,41 +404,46 @@ namespace bpp {
                 std::map<std::string, std::string> optTopology_StartingNodes_MethodDetails;
 
                 // Find parameters for tree search, if not found then set to default
-                std::string PAR_optim_topology_coverage = ApplicationTools::getStringParameter("coverage", optTopology_MethodDetails, "best-search", suffix, suffixIsOptional, warn + 1);
-                std::string PAR_optim_topology_branchoptim = ApplicationTools::getStringParameter("brlen_optimisation", optTopology_MethodDetails, "Brent", suffix, suffixIsOptional, warn + 1);
-                int PAR_optim_topology_maxcycles = ApplicationTools::getIntParameter("max_cycles", optTopology_MethodDetails, 100, suffix, suffixIsOptional, warn + 1);
-                double PAR_optim_topology_tolerance = ApplicationTools::getDoubleParameter("tolerance", optTopology_MethodDetails, 0.001, suffix, suffixIsOptional, warn + 1);
+                std::string PAR_optim_topology_coverage = ApplicationTools::getStringParameter("coverage", optTopology_MethodDetails, "best-search",
+                                                                                               suffix, suffixIsOptional, warn + 1);
+                std::string PAR_optim_topology_branchoptim = ApplicationTools::getStringParameter("brlen_optimisation", optTopology_MethodDetails,
+                                                                                                  "Brent", suffix, suffixIsOptional, warn + 1);
+                int PAR_optim_topology_maxcycles = ApplicationTools::getIntParameter("max_cycles", optTopology_MethodDetails, 100, suffix,
+                                                                                     suffixIsOptional, warn + 1);
+                double PAR_optim_topology_tolerance = ApplicationTools::getDoubleParameter("tolerance", optTopology_MethodDetails, 0.001, suffix,
+                                                                                           suffixIsOptional, warn + 1);
                 std::string PAR_lkmove = ApplicationTools::getStringParameter("optimization.topology.likelihood", params, "bothways", "", true, true);
 
                 // Prepare settings for the tree-search object (method + coverage)
                 tshlib::TreeSearchHeuristics tsh = tshlib::TreeSearchHeuristics::nosearch;
 
-                if(optTopology_MethodName == "Swap"){
+                if (optTopology_MethodName == "Swap") {
                     tsh = tshlib::TreeSearchHeuristics::swap;
-                }else if (optTopology_MethodName == "Phyml"){
+                } else if (optTopology_MethodName == "Phyml") {
                     tsh = tshlib::TreeSearchHeuristics::phyml;
-                }else if (optTopology_MethodName == "Mixed"){
+                } else if (optTopology_MethodName == "Mixed") {
                     tsh = tshlib::TreeSearchHeuristics::mixed;
                 }
                 // Coverage setting
                 tshlib::TreeRearrangmentOperations tro = tshlib::TreeRearrangmentOperations::classic_Mixed;
 
-                if(PAR_optim_topology_coverage == "nni-search"){
+                if (PAR_optim_topology_coverage == "nni-search") {
                     tro = tshlib::TreeRearrangmentOperations::classic_NNI;
-                }else if (PAR_optim_topology_coverage == "spr-search" ){
+                } else if (PAR_optim_topology_coverage == "spr-search") {
                     tro = tshlib::TreeRearrangmentOperations::classic_SPR;
-                }else if (PAR_optim_topology_coverage == "tbr-search"){
+                } else if (PAR_optim_topology_coverage == "tbr-search") {
                     tro = tshlib::TreeRearrangmentOperations::classic_TBR;
-                }else{
+                } else {
                     tro = tshlib::TreeRearrangmentOperations::classic_Mixed;
                 }
 
                 // if the user requests PhyML-like moves, then the search should cover only spr-like moves
-                if(tsh == tshlib::TreeSearchHeuristics::phyml &&  tro != tshlib::TreeRearrangmentOperations::classic_SPR){
+                if (tsh == tshlib::TreeSearchHeuristics::phyml && tro != tshlib::TreeRearrangmentOperations::classic_SPR) {
                     tro = tshlib::TreeRearrangmentOperations::classic_SPR;
                     PAR_optim_topology_coverage = "spr-search";
-                    if (verbose) ApplicationTools::displayWarning("PhyML-like moves are supported only for SPR-coverage tree-search.\n           "
-                                                                  "The execution will continue with the following settings:");
+                    if (verbose)
+                        ApplicationTools::displayWarning("PhyML-like moves are supported only for SPR-coverage tree-search.\n           "
+                                                         "The execution will continue with the following settings:");
                 }
 
                 // Print on screen if verbose level is sufficient
@@ -482,9 +451,11 @@ namespace bpp {
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Moves class", PAR_optim_topology_coverage);
 
                 int PAR_optim_topology_startnodes = 1;
-                if ( optTopology_MethodDetails.find("starting_nodes") != optTopology_MethodDetails.end() ) {
-                    KeyvalTools::parseProcedure(optTopology_MethodDetails["starting_nodes"], optTopology_StartingNodes_MethodName, optTopology_StartingNodes_MethodDetails);
-                    PAR_optim_topology_startnodes = ApplicationTools::getIntParameter("n", optTopology_StartingNodes_MethodDetails, 0, suffix, suffixIsOptional, warn + 1);
+                if (optTopology_MethodDetails.find("starting_nodes") != optTopology_MethodDetails.end()) {
+                    KeyvalTools::parseProcedure(optTopology_MethodDetails["starting_nodes"], optTopology_StartingNodes_MethodName,
+                                                optTopology_StartingNodes_MethodDetails);
+                    PAR_optim_topology_startnodes = ApplicationTools::getIntParameter("n", optTopology_StartingNodes_MethodDetails, 0, suffix,
+                                                                                      suffixIsOptional, warn + 1);
                 }
 
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Node seeding", optTopology_StartingNodes_MethodName);
@@ -494,23 +465,24 @@ namespace bpp {
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Tolerance", PAR_optim_topology_tolerance);
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Initial lk ", TextTools::toString(-tl->getValue(), 15));
 
+                ApplicationTools::displayMessage("");
+
                 // Instantiate tree-search object
-                auto treesearch = new tshlib::TreeSearch;
+                treesearch = new tshlib::TreeSearch;
 
                 treesearch->setTreeSearchStrategy(tsh, tro);
 
                 // Set initial score of the reference topology (up to this point in the optimisation process)
-                treesearch->setInitialLikelihoodValue(-tl->getValue());
                 treesearch->setScoringMethod(PAR_lkmove);
 
                 // Pass the reference of the likelihood function to score the candidate topologies
                 treesearch->setLikelihoodFunc(tl);
 
                 // Set starting node method and number of nodes
-                tshlib::StartingNodeHeuristics  snh = tshlib::StartingNodeHeuristics::undef;
-                if(optTopology_StartingNodes_MethodName == "Greedy"){
+                tshlib::StartingNodeHeuristics snh = tshlib::StartingNodeHeuristics::undef;
+                if (optTopology_StartingNodes_MethodName == "Greedy") {
                     snh = tshlib::StartingNodeHeuristics::greedy;
-                }else if(optTopology_StartingNodes_MethodName == "Hillclimbing"){
+                } else if (optTopology_StartingNodes_MethodName == "Hillclimbing") {
                     snh = tshlib::StartingNodeHeuristics::hillclimbing;
                 }
                 treesearch->setStartingNodeHeuristic(snh, PAR_optim_topology_startnodes);
@@ -518,25 +490,54 @@ namespace bpp {
                 // Set stop condition and threshold to reach (either no. iterations or tolerance)
                 treesearch->setTolerance(PAR_optim_topology_tolerance);
                 treesearch->setMaxCycles(PAR_optim_topology_maxcycles);
-                //treesearch->setStopCondition(tshlib::TreeSearchStopCondition::iterations, (double) PAR_optim_topology_maxcycles);
+
+                // Execute tree-search
+                //treesearch->executeTreeSearch();
+
+                //LOG(INFO) << "[TSH Cycle] Likelihood after tree-search lk=" << std::setprecision(18) << tl->getLogLikelihood();
+            }
+
+            // Execute numopt + treesearch iteratively until convergence is reached.
+            double initScore;
+            double cycleScore;
+            double diffScore = std::abs(tl->getLogLikelihood());
+
+            while (tolerance < diffScore) {
+                initScore = tl->getLogLikelihood();
+
+                // Execute num-opt
+                if ((optName == "D-Brent") || (optName == "D-BFGS")) {
+                    n = OptimizationTools::optimizeNumericalParameters(
+                            dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl), parametersToEstimate,
+                            backupListener.get(), nstep, tolerance, nbEvalMax, messageHandler, profiler, reparam, optVerbose, optMethodDeriv,
+                            optMethodModel);
+                } else {
+
+                    n = Optimizators::optimizeNumericalParametersUsingNumericalDerivatives(
+                            dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl), parametersToEstimate,
+                            backupListener.get(), nstep, tolerance, nbEvalMax, messageHandler, profiler, reparam, optVerbose, optMethodDeriv,
+                            optMethodModel);
+                }
 
                 // Execute tree-search
                 treesearch->executeTreeSearch();
 
-
-                LOG(INFO) << "[TSH Cycle] Likelihood after tree-search lk=" << std::setprecision(18) << tl->getLogLikelihood();
-
-
-                //OutputUtils::printParametersLikelihood(flk);
+                // Recompute the difference
+                cycleScore = tl->getLogLikelihood();
+                diffScore = std::abs(initScore) - std::abs(cycleScore);
             }
 
         } else if (optName == "FullD") {
             // Uses Newton-raphson algorithm with numerical derivatives when required.
             if (optimizeTopo) {
-                bool optNumFirst = ApplicationTools::getBooleanParameter("optimization.topology.numfirst", params, true, suffix, suffixIsOptional, warn + 1);
-                auto topoNbStep = ApplicationTools::getParameter<unsigned int>("optimization.topology.nstep", params, 1, suffix, suffixIsOptional, warn + 1);
-                double tolBefore = ApplicationTools::getDoubleParameter("optimization.topology.tolerance.before", params, 100, suffix, suffixIsOptional, warn + 1);
-                double tolDuring = ApplicationTools::getDoubleParameter("optimization.topology.tolerance.during", params, 100, suffix, suffixIsOptional, warn + 1);
+                bool optNumFirst = ApplicationTools::getBooleanParameter("optimization.topology.numfirst", params, true, suffix, suffixIsOptional,
+                                                                         warn + 1);
+                auto topoNbStep = ApplicationTools::getParameter<unsigned int>("optimization.topology.nstep", params, 1, suffix, suffixIsOptional,
+                                                                               warn + 1);
+                double tolBefore = ApplicationTools::getDoubleParameter("optimization.topology.tolerance.before", params, 100, suffix,
+                                                                        suffixIsOptional, warn + 1);
+                double tolDuring = ApplicationTools::getDoubleParameter("optimization.topology.tolerance.during", params, 100, suffix,
+                                                                        suffixIsOptional, warn + 1);
                 tl = OptimizationTools::optimizeTreeNNI2(
                         dynamic_cast<NNIHomogeneousTreeLikelihood *>(tl), parametersToEstimate,
                         optNumFirst, tolBefore, tolDuring, nbEvalMax, topoNbStep, messageHandler, profiler,
@@ -551,7 +552,7 @@ namespace bpp {
             throw Exception("Unknown optimization method: " + optName);
 
         string finalMethod = ApplicationTools::getStringParameter("optimization.final", params, "none", suffix, suffixIsOptional, warn + 1);
-        //LOG(INFO) << "[Parameter optimization]\tFinal optimization step: " << finalMethod;
+
         if (verbose) ApplicationTools::displayResult("\nFinal optimization step", finalMethod);
 
         Optimizer *finalOptimizer = nullptr;
@@ -578,7 +579,7 @@ namespace bpp {
                         optVerbose,
                         optMethodDeriv,
                         OptimizationTools::OPTIMIZATION_BFGS);
-            }else{
+            } else {
                 n = Optimizators::optimizeNumericalParametersUsingNumericalDerivatives(
                         dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl), parametersToEstimate,
                         backupListener.get(),
@@ -624,10 +625,14 @@ namespace bpp {
         if (verbose) ApplicationTools::displayBooleanResult("MSA optimization", PAR_align_optim);
 
         if (PAR_align_optim) {
-            string PAR_align_algorithm = ApplicationTools::getStringParameter("optimisation.alignment.algorithm", params, "greedy", suffix, suffixIsOptional, warn + 1);
-            string PAR_align_algorithm_stopcond = ApplicationTools::getStringParameter("optimisation.alignment.algorithm.stopcondition", params, "steps", suffix, suffixIsOptional, warn + 1);
-            double PAR_align_algorithm_tolerance = ApplicationTools::getDoubleParameter("optimisation.alignment.algorithm.tolerance", params, 0.001, suffix, suffixIsOptional, warn + 1);
-            int PAR_align_algorithm_maxeval = ApplicationTools::getIntParameter("optimisation.alignment.algorithm.max_f_eval", params, 100, suffix, suffixIsOptional, warn + 1);
+            string PAR_align_algorithm = ApplicationTools::getStringParameter("optimisation.alignment.algorithm", params, "greedy", suffix,
+                                                                              suffixIsOptional, warn + 1);
+            string PAR_align_algorithm_stopcond = ApplicationTools::getStringParameter("optimisation.alignment.algorithm.stopcondition", params,
+                                                                                       "steps", suffix, suffixIsOptional, warn + 1);
+            double PAR_align_algorithm_tolerance = ApplicationTools::getDoubleParameter("optimisation.alignment.algorithm.tolerance", params, 0.001,
+                                                                                        suffix, suffixIsOptional, warn + 1);
+            int PAR_align_algorithm_maxeval = ApplicationTools::getIntParameter("optimisation.alignment.algorithm.max_f_eval", params, 100, suffix,
+                                                                                suffixIsOptional, warn + 1);
             if (verbose) ApplicationTools::displayResult("\nMSA optimization | Algorithm", PAR_align_algorithm);
             if (verbose) ApplicationTools::displayResult("MSA optimization | Stop Condition", PAR_align_algorithm_stopcond);
             if (verbose) ApplicationTools::displayResult("MSA optimization | Tolerance", PAR_align_algorithm_tolerance);
@@ -635,10 +640,10 @@ namespace bpp {
 
 
             ApplicationTools::displayMessage("\n[Alignment optimisation]");
-            LOG(INFO) << "[Alignment optimisation] pPIP("
-                      << PAR_align_algorithm << "," << PAR_align_algorithm_stopcond << ","
-                      << PAR_align_algorithm_tolerance << "," << PAR_align_algorithm_maxeval <<
-                      ")";
+            DLOG(INFO) << "[Alignment optimisation] pPIP("
+                       << PAR_align_algorithm << "," << PAR_align_algorithm_stopcond << ","
+                       << PAR_align_algorithm_tolerance << "," << PAR_align_algorithm_maxeval <<
+                       ")";
 
             // Execute alignment on post-order node list
             tshlib::Utree *utree_;
@@ -657,11 +662,11 @@ namespace bpp {
             pAlignment->setSubstModel(tu_subModel);
             pAlignment->setTree(&tl->getTree());
             // TODO: flag_RAM, flag_map
-            pAlignment->PIPAligner(ftn, true,true,true);
+            pAlignment->PIPAligner(ftn, true, true, true);
 
             double score = pAlignment->getScore(pAlignment->getRootNode()).at(0);
             ApplicationTools::displayResult("\nLog likelihood after MSA optimisation", TextTools::toString(score, 15));
-            LOG(INFO) << "[Alignment optimisation] Alignment has a new lk=" << score;
+            DLOG(INFO) << "[Alignment optimisation] Alignment has a new lk=" << score;
 
         }
 
@@ -678,7 +683,7 @@ namespace bpp {
 
 
     TreeTemplate<Node> *Optimizators::buildDistanceTreeGeneric(
-            DistanceEstimation &estimationMethod,
+            UnifiedDistanceEstimation &estimationMethod,
             AgglomerativeDistanceMethod &reconstructionMethod,
             const ParameterList &parametersToIgnore,
             bool optimizeBrLen,
@@ -688,16 +693,21 @@ namespace bpp {
             OutputStream *profiler,
             OutputStream *messenger,
             unsigned int verbose) throw(Exception) {
+
         estimationMethod.resetAdditionalParameters();
         estimationMethod.setVerbose(verbose);
+
         if (param == DISTANCEMETHOD_PAIRWISE) {
+
             ParameterList tmp = estimationMethod.getModel().getIndependentParameters();
             tmp.addParameters(estimationMethod.getRateDistribution().getIndependentParameters());
             tmp.deleteParameters(parametersToIgnore.getParameterNames());
             estimationMethod.setAdditionalParameters(tmp);
         }
+
         TreeTemplate<Node> *tree = nullptr;
         TreeTemplate<Node> *previousTree = nullptr;
+
         bool test = true;
         while (test) {
             // Compute matrice:
@@ -711,10 +721,10 @@ namespace bpp {
             // Compute tree:
             if (matrix->size() == 2) {
                 //Special case, there is only one possible tree:
-                Node *n1 = new Node(0);
-                Node *n2 = new Node(1, matrix->getName(0));
+                auto *n1 = new Node(0);
+                auto *n2 = new Node(1, matrix->getName(0));
                 n2->setDistanceToFather((*matrix)(0, 0) / 2.);
-                Node *n3 = new Node(2, matrix->getName(1));
+                auto *n3 = new Node(2, matrix->getName(1));
                 n3->setDistanceToFather((*matrix)(0, 0) / 2.);
                 n1->addSon(n2);
                 n1->addSon(n3);
@@ -742,29 +752,58 @@ namespace bpp {
             // Now, re-estimate parameters:
             unique_ptr<TransitionModel> model(estimationMethod.getModel().clone());
             unique_ptr<DiscreteDistribution> rdist(estimationMethod.getRateDistribution().clone());
-            DRHomogeneousTreeLikelihood tl(*tree,
-                                           *estimationMethod.getData(),
-                                           model.get(),
-                                           rdist.get(),
-                                           true, verbose > 1);
-            tl.initialize();
-            ParameterList parameters = tl.getParameters();
+
+            bpp::AbstractHomogeneousTreeLikelihood *tl = nullptr;
+            tshlib::Utree *utree;
+            UtreeBppUtils::treemap tm;
+
+            if (estimationMethod.getModel().getName().find("PIP") == string::npos) {
+                tl = new RHomogeneousTreeLikelihood_Generic(*tree, *estimationMethod.getData(), model.get(), rdist.get(), true, verbose > 1);
+            } else {
+                std::map<std::string, std::string> default_map;
+                tree->setNodeName(tree->getRootId(), "root");
+                UtreeBppUtils::renameInternalNodes(tree);
+                utree = new tshlib::Utree();
+                UtreeBppUtils::convertTree_b2u(tree, utree, tm);
+                utree->addVirtualRootNode();
+                // Once the tree has the root, then map it as well
+                tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode));
+
+                tl = new bpp::UnifiedTSHomogeneousTreeLikelihood_PIP(*tree, *estimationMethod.getData(), model.get(), rdist.get(), utree, &tm, true,
+                                                                     default_map, "", false, false, false);
+            }
+
+            tl->initialize();
+            ParameterList parameters = tl->getParameters();
             if (!optimizeBrLen) {
-                vector<string> vs = tl.getBranchLengthsParameters().getParameterNames();
+                vector<string> vs = tl->getBranchLengthsParameters().getParameterNames();
                 parameters.deleteParameters(vs);
             }
             parameters.deleteParameters(parametersToIgnore.getParameterNames());
-            OptimizationTools::optimizeNumericalParameters(&tl, parameters, NULL, 0, tolerance, tlEvalMax, messenger, profiler, verbose > 0 ? verbose - 1 : 0);
+            if (estimationMethod.getModel().getName().find("PIP") == string::npos) {
+                OptimizationTools::optimizeNumericalParameters(tl, parameters, NULL, 0, tolerance, tlEvalMax, messenger, profiler,
+                                                               verbose > 0 ? verbose - 1 : 0);
+            }else{
+
+                Optimizators::optimizeNumericalParametersUsingNumericalDerivatives(
+                        dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl), parameters, NULL, 0, tolerance, tlEvalMax, messenger, profiler,
+                        false, verbose > 0 ? verbose - 1 : 0, OptimizationTools::OPTIMIZATION_BFGS, OptimizationTools::OPTIMIZATION_BFGS);
+
+                //OptimizationTools::optimizeNumericalParameters(tl, parameters, NULL, 0, tolerance, tlEvalMax, messenger, profiler,
+                //                                               verbose > 0 ? verbose - 1 : 0);
+            }
             if (verbose > 0) {
-                ParameterList tmp = tl.getSubstitutionModelParameters();
+                ParameterList tmp = tl->getSubstitutionModelParameters();
                 for (unsigned int i = 0; i < tmp.size(); i++) {
                     ApplicationTools::displayResult(tmp[i].getName(), TextTools::toString(tmp[i].getValue()));
                 }
-                tmp = tl.getRateDistributionParameters();
+                tmp = tl->getRateDistribution()->getParameters();
                 for (unsigned int i = 0; i < tmp.size(); i++) {
                     ApplicationTools::displayResult(tmp[i].getName(), TextTools::toString(tmp[i].getValue()));
                 }
             }
+
+            delete utree;
         }
         return tree;
     }
@@ -846,13 +885,17 @@ namespace bpp {
         AbstractNumericalDerivative *fnum5 = new FivePointsNumericalDerivative(f);
 
         if (optMethodDeriv == OPTIMIZATION_GRADIENT)
-            desc->addOptimizer("Branch length parameters", new ConjugateGradientMultiDimensions(fnum5), tl->getBranchLengthsParameters().getParameterNames(), 2, MetaOptimizerInfos::IT_TYPE_FULL);
+            desc->addOptimizer("Branch length parameters", new ConjugateGradientMultiDimensions(fnum5),
+                               tl->getBranchLengthsParameters().getParameterNames(), 2, MetaOptimizerInfos::IT_TYPE_FULL);
         else if (optMethodDeriv == OPTIMIZATION_NEWTON)
-            desc->addOptimizer("Branch length parameters", new PseudoNewtonOptimizer(fnum), tl->getBranchLengthsParameters().getParameterNames(), 2, MetaOptimizerInfos::IT_TYPE_FULL);
+            desc->addOptimizer("Branch length parameters", new PseudoNewtonOptimizer(fnum), tl->getBranchLengthsParameters().getParameterNames(), 2,
+                               MetaOptimizerInfos::IT_TYPE_FULL);
         else if (optMethodDeriv == OPTIMIZATION_BFGS)
-            desc->addOptimizer("Branch length parameters", new BfgsMultiDimensions(fnum5), tl->getBranchLengthsParameters().getParameterNames(), 2, MetaOptimizerInfos::IT_TYPE_FULL);
+            desc->addOptimizer("Branch length parameters", new BfgsMultiDimensions(fnum5), tl->getBranchLengthsParameters().getParameterNames(), 2,
+                               MetaOptimizerInfos::IT_TYPE_FULL);
         else if (optMethodDeriv == OPTIMIZATION_BRENT)
-            desc->addOptimizer("Branch length parameters", new SimpleMultiDimensions(fnum5), tl->getBranchLengthsParameters().getParameterNames(), 2, MetaOptimizerInfos::IT_TYPE_FULL);
+            desc->addOptimizer("Branch length parameters", new SimpleMultiDimensions(fnum5), tl->getBranchLengthsParameters().getParameterNames(), 2,
+                               MetaOptimizerInfos::IT_TYPE_FULL);
         else
             throw Exception("OptimizationTools::optimizeNumericalParameters. Unknown optimization method: " + optMethodDeriv);
 
@@ -860,11 +903,13 @@ namespace bpp {
 
         if (optMethodModel == OPTIMIZATION_BRENT) {
             ParameterList plsm = parameters.getCommonParametersWith(tl->getSubstitutionModelParameters());
-            desc->addOptimizer("Substitution model parameter", new SimpleMultiDimensions(fnum5), plsm.getParameterNames(), 0, MetaOptimizerInfos::IT_TYPE_STEP);
+            desc->addOptimizer("Substitution model parameter", new SimpleMultiDimensions(fnum5), plsm.getParameterNames(), 0,
+                               MetaOptimizerInfos::IT_TYPE_STEP);
 
 
             ParameterList plrd = parameters.getCommonParametersWith(tl->getRateDistributionParameters());
-            desc->addOptimizer("Rate distribution parameter", new SimpleMultiDimensions(fnum5), plrd.getParameterNames(), 0, MetaOptimizerInfos::IT_TYPE_STEP);
+            desc->addOptimizer("Rate distribution parameter", new SimpleMultiDimensions(fnum5), plrd.getParameterNames(), 0,
+                               MetaOptimizerInfos::IT_TYPE_STEP);
             poptimizer = new MetaOptimizer(fnum5, desc, nstep);
 
         } else if (optMethodModel == OPTIMIZATION_BFGS) {
