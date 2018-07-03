@@ -519,12 +519,16 @@ namespace bpp {
                             optMethodModel);
                 }
 
-                // Execute tree-search
-                treesearch->executeTreeSearch();
+                if(optimizeTopo) {
+                    // Execute tree-search
+                    treesearch->executeTreeSearch();
+                    // Recompute the difference
+                    cycleScore = tl->getLogLikelihood();
+                    diffScore = std::abs(initScore) - std::abs(cycleScore);
+                }else{
 
-                // Recompute the difference
-                cycleScore = tl->getLogLikelihood();
-                diffScore = std::abs(initScore) - std::abs(cycleScore);
+                    break;
+                }
             }
 
         } else if (optName == "FullD") {
