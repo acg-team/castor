@@ -119,7 +119,7 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineMoves() {
 
 double tshlib::TreeSearch::executeTreeSearch() {
     double newScore = 0;
-
+    setTreeSearchStatus(false);
     // Store initial likelihood value
     setInitialLikelihoodValue(likelihoodFunc->getLogLikelihood());
     //tshinitScore =  likelihoodFunc->getLogLikelihood();
@@ -304,7 +304,9 @@ double tshlib::TreeSearch::iterate() {
         // Print winning move
         if (bestMove) {
 
-           DVLOG(1) << "[TSH Cycle - Topology] (cycle" << std::setfill('0') << std::setw(3) << performed_cycles + 1 << ")\t"
+            setTreeSearchStatus(true);
+
+            DVLOG(1) << "[TSH Cycle - Topology] (cycle" << std::setfill('0') << std::setw(3) << performed_cycles + 1 << ")\t"
                       << "lk = " << std::setprecision(12) << bestMove->getScore() << " | "
                       << bestMove->getClass() << "." << std::setfill('0') << std::setw(3) << bestMove->getUID()
                       << " [" << bestMove->getSourceNode()->getNodeName() << " -> " << bestMove->getTargetNode()->getNodeName() << "]";

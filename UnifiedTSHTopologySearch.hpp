@@ -72,7 +72,7 @@ namespace tshlib {
         int performed_cycles;
         int search_startingnodes;
         mutable tshlib::Utree *utree_;
-
+        bool tshStatus;
 
     public:
 
@@ -88,6 +88,7 @@ namespace tshlib {
             performed_cycles = 0;
             search_startingnodes = 0;
             scoringMethod = "";
+            tshStatus = false;
             utree_ = nullptr;
         };
 
@@ -100,6 +101,15 @@ namespace tshlib {
         Utree* getUtree() {
             return utree_ ?: nullptr;
         }
+
+        bool isTreeSearchSuccessful() const {
+            return tshStatus;
+        }
+
+        void setTreeSearchStatus(bool tshStatus) {
+            TreeSearch::tshStatus = tshStatus;
+        }
+
 
         void setLikelihoodFunc(bpp::AbstractHomogeneousTreeLikelihood *in_likelihoodFunc) {
             likelihoodFunc = in_likelihoodFunc;

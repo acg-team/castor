@@ -463,7 +463,7 @@ namespace bpp {
                 if (verbose) ApplicationTools::displayResult("Topology optimization | BrLen optimisation", PAR_optim_topology_branchoptim);
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Max # cycles", PAR_optim_topology_maxcycles);
                 if (verbose) ApplicationTools::displayResult("Topology optimization | Tolerance", PAR_optim_topology_tolerance);
-                if (verbose) ApplicationTools::displayResult("Topology optimization | Initial lk ", TextTools::toString(-tl->getValue(), 15));
+                //if (verbose) ApplicationTools::displayResult("Topology optimization | Initial lk ", TextTools::toString(-tl->getValue(), 15));
 
                 ApplicationTools::displayMessage("");
 
@@ -501,10 +501,14 @@ namespace bpp {
             double initScore;
             double cycleScore;
             double diffScore = std::abs(tl->getLogLikelihood());
+            bool interrupt = false;
 
             while (tolerance < diffScore) {
-                initScore = tl->getLogLikelihood();
 
+                if(interrupt == true) {break;}
+
+                initScore = tl->getLogLikelihood();
+                ApplicationTools::displayResult("Numerical opt. cycle LK", TextTools::toString(initScore, 15));
                 // Execute num-opt
                 if ((optName == "D-Brent") || (optName == "D-BFGS")) {
                     n = OptimizationTools::optimizeNumericalParameters(
@@ -522,13 +526,22 @@ namespace bpp {
                 if(optimizeTopo) {
                     // Execute tree-search
                     treesearch->executeTreeSearch();
-                    // Recompute the difference
-                    cycleScore = tl->getLogLikelihood();
-                    diffScore = std::abs(initScore) - std::abs(cycleScore);
+
+                    if(treesearch->isTreeSearchSuccessful()){
+                        // Recompute the difference
+                        cycleScore = tl->getLogLikelihood();
+                        diffScore = std::abs(initScore) - std::abs(cycleScore);
+
+                    }else{
+
+                        interrupt = true;
+                    }
+
                 }else{
 
                     break;
                 }
+
             }
 
         } else if (optName == "FullD") {
