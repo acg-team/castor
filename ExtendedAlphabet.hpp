@@ -587,7 +587,7 @@ namespace bpp {
          * @return The nucleic alphabet associated to this codon alphabet.
          */
 
-        const NucleicAlphabet *const getNucleicAlphabet() const {
+        const NucleicAlphabet *getNucleicAlphabet() const {
             return nAlph_;
         }
 
