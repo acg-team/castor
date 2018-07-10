@@ -89,8 +89,10 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, SubstitutionModel *basemodel, con
     }
 
     // Check if the sum of the frequencies is 1
-    LOG_IF(WARNING, ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies do not sum up to 1. Please review your model definition.";
+    LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
+                                                                                           "The state frequencies sum up to " <<
+                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                           " != [1.0]";
 
     updateMatrices();
 }
@@ -226,6 +228,12 @@ void PIP_Nuc::setFreqFromData(const SequenceContainer &data, double pseudoCount)
     freqs[data.getAlphabet()->getGapCharacterCode()] = 0;
     // Re-compute generator and eigen values:
     setFreq(freqs);
+
+    // Check if the sum of the frequencies is 1
+    LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
+                                                                                           "The state frequencies sum up to " <<
+                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                           " != [1.0]";
 }
 
 
@@ -290,9 +298,10 @@ void PIP_AA::updateMatrices() {
     freq_.resize(getNumberOfStates());
 
     // Check if the sum of the frequencies is 1
-    LOG_IF(WARNING, ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies do not sum up to 1. Please review your model definition.";
-
+    LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
+                                                                                           "The state frequencies sum up to " <<
+                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                           " != [1.0]";
 
     unsigned long eraseCharNum = 4; // substring="PIP."
 
@@ -393,9 +402,10 @@ void PIP_AA::setFreqFromData(const SequenceContainer &data, double pseudoCount) 
     freq_.resize(getNumberOfStates());
     freq_[data.getAlphabet()->getGapCharacterCode()] = 0;
 
-    // Check if the sum of the frequencies is 1
-    LOG_IF(WARNING, ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies do not sum up to 1. Please review your model definition.";
+    LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
+                                                                                           "The state frequencies sum up to " <<
+                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                           " != [1.0]";
 }
 
 
@@ -459,10 +469,12 @@ void PIP_Codon::updateMatrices() {
     // Reset frequency for gap character
     freq_ = freqSet_->getFrequencies();
     freq_.resize(getNumberOfStates());
-    // Check if the sum of the frequencies is 1
-    LOG_IF(WARNING, ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies do not sum up to 1. Please review your model definition.";
 
+    // Check if the sum of the frequencies is 1
+    LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
+                                                                                           "The state frequencies sum up to " <<
+                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                           " != [1.0]";
     unsigned long eraseCharNum = 4; // substring="PIP."
 
     for (int i = 0; i < getParameters().size(); i++) {
@@ -559,8 +571,10 @@ void PIP_Codon::setFreqFromData(const SequenceContainer &data, double pseudoCoun
     freq_[data.getAlphabet()->getGapCharacterCode()] = 0;
 
     // Check if the sum of the frequencies is 1
-    LOG_IF(WARNING, ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies do not sum up to 1. Please review your model definition.";
+    LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
+                                                                                           "The state frequencies sum up to " <<
+                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                           " != [1.0]";
 }
 
 
