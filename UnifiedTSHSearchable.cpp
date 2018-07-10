@@ -44,6 +44,7 @@
 #include <Bpp/Numeric/Function/SimpleMultiDimensions.h>
 #include <Bpp/Phyl/Likelihood/PseudoNewtonOptimizer.h>
 #include <glog/logging.h>
+#include <Bpp/Text/KeyvalTools.h>
 #include "UnifiedTSHSearchable.hpp"
 
 
@@ -62,7 +63,15 @@ void UnifiedTSHSearchable::setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
 
     // -------------------------------------------------------------------------
     // Optimisation algorithm
-    optMethodModel_ = ApplicationTools::getStringParameter("optimization.topology.brlen_optimization", params, "Brent", suffix, suffixIsOptional, warn);
+
+    std::string PAR_optim_topology_algorithm = ApplicationTools::getStringParameter("optimization.topology.algorithm", params, "", suffix,
+                                                                                    suffixIsOptional, warn + 1);
+    std::string optTopology_MethodName;
+    std::map<std::string, std::string> optTopology_MethodDetails;
+    KeyvalTools::parseProcedure(PAR_optim_topology_algorithm, optTopology_MethodName, optTopology_MethodDetails);
+
+    optMethodModel_ =ApplicationTools::getStringParameter("brlen_optimisation", optTopology_MethodDetails, "Brent", suffix, suffixIsOptional, warn + 1);
+
 
     // -------------------------------------------------------------------------
     // Message handler
