@@ -339,10 +339,10 @@ int main(int argc, char *argv[]) {
 
                     // Instantiation of the canonical substitution model
                     if (PAR_Alphabet.find("Codon") != std::string::npos || PAR_Alphabet.find("Protein") != std::string::npos) {
-                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(), sites, modelMap, "", true,
+                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(), sitesDistMethod, modelMap, "", true,
                                                                                           false, 0);
                     } else {
-                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetDistMethod, gCode.get(), sites, modelMap, "", true,
+                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetDistMethod, gCode.get(), sitesDistMethod, modelMap, "", true,
                                                                                           false, 0);
                     }
 
@@ -351,11 +351,11 @@ int main(int argc, char *argv[]) {
 
                     // Instatiate the corrisponding PIP model given the alphabet
                     if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
-                        smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabetDistMethod), smodel, *sequences, lambda, mu, false);
+                        smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabetDistMethod), smodel, *sitesDistMethod, lambda, mu, false);
                     } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
-                        smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabetDistMethod), smodel, *sequences, lambda, mu, false);
+                        smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabetDistMethod), smodel, *sitesDistMethod, lambda, mu, false);
                     } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
-                        smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabetDistMethod), gCode.get(), smodel, *sequences, lambda,
+                        smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabetDistMethod), gCode.get(), smodel, *sitesDistMethod, lambda,
                                                mu, false);
                         ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
                         DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
@@ -579,7 +579,7 @@ int main(int argc, char *argv[]) {
             bool computeFrequenciesFromData = false;
 
             // If frequencies are estimated from the data, but there is no alignment, then flag it.
-            if (PAR_alignment) {
+            if (!PAR_alignment) {
                 std::string baseModel;
 
                 std::map<std::string, std::string> basemodelMap;
@@ -635,21 +635,40 @@ int main(int argc, char *argv[]) {
             }
 
             // Instatiate the corrisponding PIP model given the alphabet
-            if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
+            if (PAR_alignment) {
+                if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
 
-                smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
+                    smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
 
-            } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
+                } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
 
-                smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
+                    smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sequences, lambda, mu, computeFrequenciesFromData);
 
-            } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
+                } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
 
-                smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabet), gCode.get(), smodel, *sequences, lambda, mu,
-                                       computeFrequenciesFromData);
+                    smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabet), gCode.get(), smodel, *sequences, lambda, mu,
+                                           computeFrequenciesFromData);
 
-                ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
-                DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
+                    ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
+                    DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
+                }
+            }else{
+                if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
+
+                    smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sites, lambda, mu, computeFrequenciesFromData);
+
+                } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
+
+                    smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sites, lambda, mu, computeFrequenciesFromData);
+
+                } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
+
+                    smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabet), gCode.get(), smodel, *sites, lambda, mu,
+                                           computeFrequenciesFromData);
+
+                    ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
+                    DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
+                }
             }
 
         } else {
