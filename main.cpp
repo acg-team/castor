@@ -404,13 +404,13 @@ int main(int argc, char *argv[]) {
                     // Optimisation method verbosity
                     auto optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose", jatiapp.getParams(), 2);
                     string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", jatiapp.getParams(), false, false);
-                    auto *messenger = (mhPath == "none") ? nullptr : (mhPath == "std") ? ApplicationTools::message : new StlOutputStream(
+                    auto *messenger = (mhPath == "none") ? nullptr : (mhPath == "std") ? ApplicationTools::message.get() : new StlOutputStream(
                             new ofstream(mhPath.c_str(), ios::out));
                     ApplicationTools::displayResult("Initial tree optimization handler", mhPath);
 
                     // Optimisation method profiler
                     string prPath = ApplicationTools::getAFilePath("optimization.profiler", jatiapp.getParams(), false, false);
-                    auto *profiler = (prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message : new StlOutputStream(
+                    auto *profiler = (prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message.get() : new StlOutputStream(
                             new ofstream(prPath.c_str(), ios::out));
                     if (profiler) profiler->setPrecision(20);
                     ApplicationTools::displayResult("Initial tree optimization profiler", prPath);
