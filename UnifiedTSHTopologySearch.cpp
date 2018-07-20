@@ -406,9 +406,9 @@ std::string tshlib::TreeSearch::debugStackTraceMove(Move *move, Utree *tree,
         move->getSourceNode()->getNodeName() <<" -> "<<move->getTargetNode()->getNodeName()<<") - " << move->getDirection() <<" ***"<< std::endl;
     stm << "    @        [ReferenNodeList]  " << nodepath_lni.str() << std::endl;
     stm << "    @        [UpdatedNodeList]  " << nodepath_uni.str()  << std::endl;
-    stm << "    @        [LLK.Initial]      " << TextTools::toString(initLK, 15)  << std::endl;
-    stm << "    @        [LLK.Return]       " << TextTools::toString(returnLK, 15)  << std::endl;
-    stm << "    @        [LLK.Move]         " << TextTools::toString(moveLK, 15) << std::endl;
+    stm << "    @        [LLK.Initial]      " << TextTools::toString(initLK, 25)  << std::endl;
+    stm << "    @        [LLK.Return]       " << TextTools::toString(returnLK, 25)  << std::endl;
+    stm << "    @        [LLK.Move]         " << TextTools::toString(moveLK, 25) << std::endl;
 
     //stm << "    @ [Tree] " << tree->printTreeNewick(true);
 
