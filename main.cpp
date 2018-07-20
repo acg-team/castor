@@ -571,7 +571,7 @@ int main(int argc, char *argv[]) {
 
         double lambda;
         double mu;
-        bool estimatePIPparameters;
+        bool estimatePIPparameters = false;
 
         // Instantiate a substitution model and extend it with PIP
         if (PAR_model_indels) {
