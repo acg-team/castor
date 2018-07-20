@@ -116,7 +116,7 @@ namespace bpp {
         // Message handler
         std::string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", params, false, false, suffix, suffixIsOptional, "none",
                                                             warn + 1);
-        auto *messageHandler = static_cast<OutputStream *>((mhPath == "none") ? 0 : (mhPath == "std") ? ApplicationTools::message
+        auto *messageHandler = static_cast<OutputStream *>((mhPath == "none") ? 0 : (mhPath == "std") ? ApplicationTools::message.get()
                                                                                                       : new StlOutputStream(
                         new std::ofstream(mhPath.c_str(), std::ios::out)));
 
@@ -126,7 +126,7 @@ namespace bpp {
         // Profiler
         std::string prPath = ApplicationTools::getAFilePath("optimization.profiler", params, false, false, suffix, suffixIsOptional, "none",
                                                             warn + 1);
-        auto *profiler = static_cast<OutputStream *>((prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message
+        auto *profiler = static_cast<OutputStream *>((prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message.get()
                                                                                                       : new StlOutputStream(
                         new std::ofstream(prPath.c_str(), std::ios::app)));
         if (profiler) profiler->setPrecision(20);

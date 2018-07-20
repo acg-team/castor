@@ -151,9 +151,9 @@ if (TSHLIB_FOUND)
     include_directories(${TSHLIB_INCLUDE_DIRS})
 endif ()
 
-find_package(bpp-core REQUIRED)
-find_package(bpp-seq REQUIRED)
-find_package(bpp-phyl REQUIRED)
+find_package(bpp-core 4.0.0 REQUIRED)
+find_package(bpp-seq  12.0.0 REQUIRED)
+find_package(bpp-phyl 12.0.0 REQUIRED)
 
 # @MAX: memtest
 include (CTest)
