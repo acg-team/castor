@@ -615,7 +615,14 @@ int main(int argc, char *argv[]) {
             }
 
             // If PIP, then check if lambda/mu initial values are estimated from the data
-            estimatePIPparameters = !(modelMap.find("estimated") == modelMap.end());
+            if (modelMap.find("estimated") != modelMap.end()) {
+                ApplicationTools::displayError("The use of the tag [observed] is obsolete. Use the tag [initFreqs] instead");
+                exit(1);
+            }else if(modelMap.find("initFreqs") != modelMap.end()){
+                if(modelMap["initFreqs"]=="observed"){
+                    estimatePIPparameters = true;
+                }
+            }
 
             if (estimatePIPparameters) {
 
@@ -634,7 +641,7 @@ int main(int argc, char *argv[]) {
                 mu = (modelMap.find("mu") == modelMap.end()) ? 0.2 : std::stod(modelMap["mu"]);
             }
 
-            // Instatiate the corrisponding PIP model given the alphabet
+            // Instantiate the corrisponding PIP model given the alphabet
             if (PAR_alignment) {
                 if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
 
