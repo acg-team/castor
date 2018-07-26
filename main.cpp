@@ -105,12 +105,15 @@ using namespace tshlib;
 #include "RHomogeneousTreeLikelihood_Generic.hpp"
 #include "JATIApplication.hpp"
 #include "UnifiedTSHTopologySearch.hpp"
-#include "pPIP.hpp"
 #include "Optimizators.hpp"
 #include "SupportMeasures.hpp"
-
-#include "progressivePIP.hpp"
 #include "UnifiedDistanceEstimation.hpp"
+
+
+#include "pPIP.hpp"
+#include "progressivePIP.hpp"
+#include "FactoryPIPnode.hpp"
+#include "CompositePIPnode.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -765,10 +768,16 @@ int main(int argc, char *argv[]) {
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
 
-/*
+
+
+            //===========================================================
+            //===========================================================
+            int num_sb = 1;
+
+            enumDP3Dversion DPversion = RAM;
 
             //TEST
-            progressivePIP *PIPmsa = new bpp::progressivePIP(utree,
+            progressivePIP *proPIP = new bpp::progressivePIP(utree,
                                                    tree,
                                                    smodel,
                                                    tm,
@@ -776,11 +785,14 @@ int main(int argc, char *argv[]) {
                                                    rDist,
                                                    jatiapp.getSeed());
 
-            PIPmsa->initializePIP(ftn, num_sb);
 
 
+            proPIP->initializePIP(ftn, num_sb, DPversion);
 
-*/
+            proPIP->compositePIPaligner_->PIPnodeAlign();
+            //===========================================================
+            //===========================================================
+
 
 
             alignment->PIPAligner(ftn, flag_local, flag_map, flag_fv);

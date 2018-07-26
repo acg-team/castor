@@ -45,376 +45,15 @@
 #include <chrono>
 #include <random>
 
-#include "progressivePIP.hpp"
 #include <Bpp/Numeric/Matrix/MatrixTools.h>
 #include <glog/logging.h>
 
-#define ERR_STATE (-999)
-#define DBL_EPSILON std::numeric_limits<double>::min()
-#define MATCH_STATE 1
-#define GAP_X_STATE 2
-#define GAP_Y_STATE 3
-#define STOP_STATE 4
-#define LEFT 0
-#define RIGHT 1
+#include "progressivePIP.hpp"
+#include "FactoryPIPnode.hpp"
+#include "CompositePIPnode.hpp"
 
 using namespace bpp;
 
-//***************************************************************************************
-/*
-void PIPnodeCPU:: DP3D_PIP() {
-    std::cout<<"\n aligning with PIPnodeCPU\n";
-};
-
-void PIPnodeRAM:: DP3D_PIP() {
-    std::cout<<"\n aligning with PIPnodeRAM\n";
-};
-
-void PIPnodeInterface:: DP3D_PIP() {
-
-};
-
-void PIPnodeInterface::PIPalignNodeNEW() {
-
-    DP3D_PIP();
-
-}
-*/
-//***************************************************************************************
-void CompositePIPaligner::PIPalignNode(){
-
-}
-//***************************************************************************************
-CompositePIPaligner::CompositePIPaligner(int numNodes){
-    pip_nodes_.resize(numNodes);
-}
-//***************************************************************************************
-void CompositePIPaligner::PIPalign() {
-
-    size_t num_nodes = pip_nodes_.size();
-
-    for (int k = 0; k < num_nodes; k++) {
-        // traverses the list of nodes and aligns the MSAs on the left and right side
-        // if nodeInterface is a leaf the resulting MSA is the sequence itself
-
-        ApplicationTools::displayGauge(k, num_nodes);
-
-        pip_nodes_[k]->PIPalignNode();
-
-    }
-
-}
-//***************************************************************************************
-PIPnode::PIPnode(const progressivePIP *pPIP,tshlib::VirtualNode *vnode,bpp::Node *bnode){
-
-    progressivePIP_ = pPIP;
-
-    vnode_ = vnode;
-    bnode_ = bnode;
-
-    nodeID_ = bnode->getId();
-
-}
-//***************************************************************************************
-void PIPnode::_reserve(int numCatg){
-
-    fv_empty_data_.resize(numCatg);
-
-    fv_empty_sigma_.resize(numCatg);
-
-    // insertion probabilities at the given nodeInterface with rate variation (gamma)
-    iotasNode_.resize(numCatg);
-
-    // survival probabilities at the given nodeInterface with rate variation (gamma)
-    betasNode_.resize(numCatg);
-
-    // substitution/deletion probability matrices at the given nodeInterface with rate variation (gamma)
-    prNode_.resize(numCatg);
-
-};
-//***************************************************************************************
-std::vector< std::vector<std::string> > PIPnode::getMSA() {
-    return MSA_;
-}
-//***************************************************************************************
-void PIPnode::_setMSAsequenceNames() {
-
-    std::string seqname = progressivePIP_->sequences_->getSequencesNames().at((int) vnode_->vnode_seqid);
-
-    std::vector<std::string> seqNames;
-
-    seqNames.push_back(seqname);
-
-    seqNames_ = seqNames;
-
-}
-//***************************************************************************************
-void PIPnode::_setMSAleaves() {
-
-    std::string seqname = progressivePIP_->sequences_->getSequencesNames().at((int) vnode_->vnode_seqid);
-    std::string sequence = progressivePIP_->sequences_->getSequence(seqname).toString();
-
-    /* convert a string into a vector of single char strings */
-    //std::vector<std::string> msa;
-    MSA_t msa;
-    msa.resize(sequence.size());
-    for (int i = 0; i < sequence.size(); i++) {
-        //std::string s(1, MSAin.at(i));
-        MSAcolumn_t msa_col(1, sequence.at(i));
-        msa.at(i) = msa_col;
-    }
-
-    MSA_.at(0) = msa;
-
-}
-//***************************************************************************************
-void PIPnode::_compressMSA(int idx_sb) {
-
-    MSA_t MSA = MSA_.at(idx_sb);
-
-    auto sequences = new bpp::VectorSequenceContainer(progressivePIP_->alphabet_);
-
-    std::vector<std::string> seqs = progressivePIPutils::siteContainer_2_sequence_vector(MSA);
-
-    for(int i = 0; i < seqs.size(); i++) {
-        sequences->addSequence(*(new bpp::BasicSequence(seqNames_.at(i),
-                                                        seqs.at(i),
-                                                        progressivePIP_->alphabet_)), true);
-    }
-
-    auto siteContainer = new bpp::VectorSiteContainer(*sequences);
-    auto siteContCompr = bpp::PatternTools::shrinkSiteSet(*siteContainer);
-    auto map_seqs = bpp::PatternTools::getIndexes(*siteContainer, *siteContCompr);
-
-    map_compressed_seqs_.at(idx_sb) = map_seqs;
-
-    std::vector<int> rev_map_seqs = progressivePIPutils::reverse_map(map_seqs);
-
-    rev_map_compressed_seqs_.at(idx_sb) = rev_map_seqs;
-
-}
-//***************************************************************************************
-void PIPnode::_setFVleaf() {
-
-    int idx;
-
-    MSA_t MSA = MSA_.at(0);
-
-    size_t num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
-
-    int lenComprSeqs = rev_map_compressed_seqs_.size();
-
-    fv_data_.resize(lenComprSeqs);
-
-    for (int i = 0; i < lenComprSeqs; i++) {
-        fv_data_[i].resize(num_gamma_categories);
-    }
-
-    for (int i = 0; i < lenComprSeqs; i++) {
-
-        idx = rev_map_compressed_seqs_.at(0).at(i);
-        MSAcolumn_t s = MSA.at(idx);
-
-        bpp::ColMatrix<double> fv;
-        fv.resize(progressivePIP_->extendedAlphabetSize_, 1);
-        bpp::MatrixTools::fill(fv, 0.0);
-
-        idx = progressivePIP_->alphabet_->charToInt(&s[0]);
-        idx = idx < 0 ? progressivePIP_->alphabetSize_ : idx;
-
-        fv(idx, 0) = 1.0;
-        for (int catg = 0; catg < num_gamma_categories; catg++) {
-            fv_data_.at(0).at(i).at(catg) = fv;
-        }
-
-    }
-
-}
-//***************************************************************************************
-void PIPnode::_setFVemptyLeaf() {
-
-    size_t num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
-
-    bpp::ColMatrix<double> fv;
-    fv.resize(progressivePIP_->extendedAlphabetSize_, 1);
-    bpp::MatrixTools::fill(fv, 0.0);
-    fv(progressivePIP_->alphabetSize_, 0) = 1.0;
-
-    fv_empty_data_.resize(num_gamma_categories);
-
-    for (int catg = 0; catg < num_gamma_categories; catg++) {
-        fv_empty_data_.at(catg) = fv;
-    }
-
-}
-//***************************************************************************************
-void PIPnode::_setFVsigmaLeaf() {
-
-    size_t num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
-
-    int lenComprSeqs = rev_map_compressed_seqs_.size();
-
-    fv_sigma_.resize(lenComprSeqs);
-
-    double fv0;
-    for (int site = 0; site < lenComprSeqs; site++) {
-
-        fv_sigma_.at(site).resize(num_gamma_categories);
-
-        for(int catg = 0; catg < num_gamma_categories; catg++) {
-
-            fv0 = MatrixBppUtils::dotProd(fv_data_.at(0).at(site).at(catg), progressivePIP_->pi_);
-
-            fv_sigma_.at(0).at(site).at(catg) = fv0;
-        }
-    }
-
-}
-//***************************************************************************************
-void PIPnode::_setFVsigmaEmptyLeaf() {
-
-    size_t num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
-
-    fv_empty_sigma_.resize(num_gamma_categories);
-
-    double fv0;
-
-    for(int catg = 0; catg < num_gamma_categories; catg++) {
-
-        fv0 = MatrixBppUtils::dotProd(fv_empty_data_.at(catg), progressivePIP_->pi_);
-
-        fv_empty_sigma_.at(catg) = fv0;
-    }
-
-}
-//***************************************************************************************
-void PIPnode::_setTracebackPathleaves() {
-
-    int MSAlen = MSA_.size();
-
-    traceback_path_.resize(1);
-    traceback_path_.at(0).resize(MSAlen);
-
-    traceback_map_.resize(1);
-    traceback_map_.at(0).resize(1);
-    traceback_map_.at(0).at(0).resize(MSAlen);
-
-    for(int i = 0; i < MSAlen; i++){
-        traceback_path_.at(0).at(i) = (int)MATCH_STATE;
-        traceback_map_.at(0).at(0).at(i) = i;
-    }
-
-}
-//***************************************************************************************
-void PIPnode::PIPalignNode() {
-
-   DVLOG(1) << "[progressivePIP] Processing nodeInterface " << bnode_->getId();
-
-    if (bnode_->isLeaf()) {
-        //*******************************************************************************
-        // ALIGNS LEAVES
-        //*******************************************************************************
-        // associates the sequence name to the leaf nodeInterface
-        // TODO sequence should be on the object
-        _setMSAsequenceNames();
-
-        // creates a column containing the sequence associated to the leaf nodeInterface
-        // TODO sequence should be on the object
-        _setMSAleaves();
-
-        // compresses sequence at the leaves
-        _compressMSA(0);
-
-        // computes the indicator values (fv values) at the leaves
-        _setFVleaf();
-
-        // computes the indicator value for an empty column at the leaf
-        _setFVemptyLeaf();
-
-        // computes dotprod(pi,fv)
-        _setFVsigmaLeaf();
-
-        // computes dotprod(pi,fv) for an empty column at the leaf
-        _setFVsigmaEmptyLeaf();
-
-        // sets th etraceback path at the leaf
-        _setTracebackPathleaves();
-        //*******************************************************************************
-    } else {
-/*
-
-        //*******************************************************************************
-        // ALIGNS INTERNAL NODES
-        //*******************************************************************************
-        // align using progressive 3D DP PIP
-        if(flag_fv){
-            DP3D_PIP_RAM_FAST(nodeInterface);
-        }else {
-            if (flag_RAM) {
-                // DP3D_PIP_RAM(nodeInterface, local, flag_map, flag_pattern); // local: tree rooted at the given nodeInterface
-            } else {
-                DP3D_PIP(nodeInterface, local, flag_map); // local: tree rooted at the given nodeInterface
-                // DP3D_PIP_no_gamma(nodeInterface, local, flag_map); // local: tree rooted at the given nodeInterface
-            }
-*/
-        }
-        //*******************************************************************************
-
-}
-//***************************************************************************************
-int CompositePIPaligner::getId(){
-    //TODO: understand this
-}
-//***************************************************************************************
-void CompositePIPaligner::addPIPcomponent(PIPcomponent *pip_node){
-
-    pip_nodes_.at(pip_node->getId()) = pip_node;
-
-};
-//***************************************************************************************
-void PIPnode::_computeLocalTau() {
-
-    if(vnode_->isTerminalNode()){
-        tau_ = 0.0;
-    }else{
-
-//        b0 = tree_->getNode(treemap_.right.at(vnode->getNodeLeft()), false)->getDistanceToFather() +\
-                tree_->getNode(treemap_.right.at(vnode->getNodeRight()), false)->getDistanceToFather();
-
-        //tau = _computeTauRecursive(vnode_);
-    }
-
-
-}
-//***************************************************************************************
-void PIPnode::_computeLocalNu(int numCategories) {
-
-    nu_.resize(numCategories);
-
-    for (int catg = 0; catg < numCategories; catg++) {
-        // computes the normalizing constant with discrete rate variation (gamma distribution)
-        // nu(r) = lambda * r * (tau + 1/(mu *r))
-        nu_.at(catg) = progressivePIP_->lambda_.at(catg) * (tau_ + 1 / progressivePIP_->mu_.at(catg));
-    }
-
-}
-//***************************************************************************************
-void PIPnode::_getPrFromSubstutionModel() {
-
-    if (!bnode_->hasFather()) {
-        // root nodeInterface doesn't have Pr
-    } else {
-
-        for (int i = 0; i < progressivePIP_->rDist_->getNumberOfCategories(); i++) {
-            // substitution/deletion probabilities with rate variation (gamma)
-            // Pr = exp( branchLength * rateVariation * Q )
-            prNode_.at(i) = progressivePIP_->substModel_->getPij_t(bnode_->getDistanceToFather() * \
-                            progressivePIP_->rDist_->getCategory(i));
-        }
-    }
-
-}
-//***************************************************************************************
 progressivePIP::progressivePIP(tshlib::Utree *utree,
                                bpp::Tree *tree,
                                bpp::SubstitutionModel *smodel,
@@ -423,113 +62,20 @@ progressivePIP::progressivePIP(tshlib::Utree *utree,
                                bpp::DiscreteDistribution *rDist,
                                long seed) {
 
-    utree_ = utree;
-    _setTree(tree);
-    substModel_ = smodel;
-    treemap_ = inTreeMap;
-    sequences_ = sequences;
-    rDist_ = rDist;
-    alphabet_ = substModel_->getAlphabet();
-    alphabetSize_ = alphabet_->getSize() - 1;
-    extendedAlphabetSize_ = alphabetSize_ + 1;
-    seed_ = seed;
+    utree_ = utree; // tshlib tree
+    tree_ = new TreeTemplate<Node>(*tree);  // bpp tree
+    substModel_ = smodel;   // substitution model
+    treemap_ = inTreeMap;   // tree map
+    sequences_ = sequences; // sequences
+    rDist_ = rDist; // gamma distribution
+    alphabet_ = substModel_->getAlphabet(); // alphabet
+    alphabetSize_ = alphabet_->getSize() - 1;   // original alphabet size
+    extendedAlphabetSize_ = alphabet_->getSize();   // extended alphabet size
+    seed_ = seed;   // seed for random number generation
 
 };
 
-void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-                                   int num_sb) {
 
-    //***************************************************************************************
-    int numNodes = list_vnode_to_root.size();
-    int numCatg = rDist_->getNumberOfCategories();
-    //***************************************************************************************
-    progressivePIP::_reserve(numCatg);
-    //***************************************************************************************
-    // COMPUTES LAMBDA AND MU WITH GAMMA
-    //***************************************************************************************
-    // set lambdas with rate variation (gamma distribution)
-    _setLambda(substModel_->getParameter("lambda").getValue());
-    // set mus with rate variation (gamma distribution)
-    _setMu(substModel_->getParameter("mu").getValue());
-    //***************************************************************************************
-    // SET PI
-    //***************************************************************************************
-    // copy pi
-    _setPi(substModel_->getFrequencies());
-    //***************************************************************************************
-
-    compositePIPaligner_ = new CompositePIPaligner(numNodes);
-
-
-
-
-
-    nodeFactory *nodeFactory = new bpp::nodeFactory();
-
-    nodeInterface *node1 = nodeFactory->getNode(CPU,1);
-    nodeInterface *node2 = nodeFactory->getNode(CPU,2);
-    nodeInterface *node3 = nodeFactory->getNode(RAM,3);
-
-    CompositeInterface* clientComposite = new Composite(3);
-
-    clientComposite->Add(node1,0);
-    clientComposite->Add(node2,1);
-    clientComposite->Add(node3,2);
-
-    clientComposite->Align();
-
-
-
-
-
-    for (auto &vnode:list_vnode_to_root) {
-
-        auto bnode = tree_->getNode(treemap_.right.at(vnode), false);
-
-        PIPnode * pip_node = new PIPnode(this,vnode,bnode);
-
-        pip_node->_reserve(numCatg);
-
-        //***************************************************************************************
-        // COMPUTE ALL LOCAL TREE LENGHTS
-        //***************************************************************************************
-        pip_node->_computeLocalTau();
-        //***************************************************************************************
-        // COMPUTE ALL LOCAL POISSON NORMALIZING CONSTANTS
-        //***************************************************************************************
-        pip_node->_computeLocalNu(numCatg);
-        //***************************************************************************************
-        // GET Qs
-        //***************************************************************************************
-        // set substitution/deletion probabilities with rate variation (gamma distribution)
-        pip_node->_getPrFromSubstutionModel();
-        //***************************************************************************************
-
-        compositePIPaligner_->addPIPcomponent(pip_node);
-
-    }
-    //***************************************************************************************
-
-    compositePIPaligner_->PIPalign();
-
-    //compositePIPalignerNEW_->PIPalignNEW();
-
-
-}
-
-void progressivePIP::_setTree(const Tree *tree) {
-    tree_ = new TreeTemplate<Node>(*tree);
-}
-
-void progressivePIP::_reserve(int numCatg) {
-
-    // insertion rate with rate variation (gamma)
-    lambda_.resize(numCatg);
-
-    // deletion rate with rate variation (gamma)
-    mu_.resize(numCatg);
-
-}
 
 void progressivePIP::_setLambda(double lambda) {
 
@@ -537,6 +83,7 @@ void progressivePIP::_setLambda(double lambda) {
     lambda0_ = lambda;
 
     // insertion rate with rate variation among site r
+    lambda_.resize(numCatg_);
     for (int i = 0; i < rDist_->getNumberOfCategories(); i++) {
         // lambda(r) = lambda * r
         lambda_.at(i) = lambda * rDist_->getCategories().at(i);
@@ -555,6 +102,7 @@ void progressivePIP::_setMu(double mu) {
     mu0_ = mu;
 
     // deletion rate with rate variation among site r
+    mu_.resize(numCatg_);
     for (int i = 0; i < rDist_->getCategories().size(); i++) {
         // mu(r) = mu *r
         mu_.at(i) = mu * rDist_->getCategories().at(i);
@@ -573,42 +121,172 @@ void progressivePIP::_setPi(const Vdouble &pi) {
 
 }
 
-const Alphabet *progressivePIP::getAlphabet() const {
-    return alphabet_;
+void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
+                                   int num_sb,
+                                   enumDP3Dversion DPversion) {
+
+    //***************************************************************************************
+    // GET DIMENSIONS
+    numNodes_ = list_vnode_to_root.size();
+    numCatg_ = rDist_->getNumberOfCategories();
+    //***************************************************************************************
+    // COMPUTES LAMBDA AND MU WITH GAMMA
+    // set lambdas with rate variation (gamma distribution)
+    _setLambda(substModel_->getParameter("lambda").getValue());
+    // set mus with rate variation (gamma distribution)
+    _setMu(substModel_->getParameter("mu").getValue());
+    //***************************************************************************************
+    // SET PI
+    // local copy of steady state frequency (Pi)
+    _setPi(substModel_->getFrequencies());
+    //***************************************************************************************
+
+    nodeFactory *nodeFactory = new bpp::nodeFactory(); // Factory pattern for DP3D-CPU, DP3D-RAM,...
+
+    compositePIPaligner_ = new CompositePIPnode(numNodes_); // Composite pattern with array of PIPnodes
+
+    for (auto &vnode:list_vnode_to_root) {
+
+        auto bnode = tree_->getNode(treemap_.right.at(vnode), false);
+
+        PIPnode * pip_node = nodeFactory->getPIPnode(DPversion,this,vnode,bnode);
+
+        pip_node->_reserve(numCatg_); // allocate memory
+
+        //***************************************************************************************
+        // GET Qs
+        // set substitution/deletion probabilities with rate variation (gamma distribution)
+        pip_node->_getPrFromSubstitutionModel();
+        //***************************************************************************************
+
+        compositePIPaligner_->addPIPnode(pip_node); // add PIPnode to composite array of PIPnodes
+
+    }
+    //***************************************************************************************
+
+    // TODO:
+    // - costruire albero PIPnode
+    // - calcolare tau e nu globali
+
+    //***************************************************************************************
+    // COMPUTE SUBTREE LENGHTS
+    //***************************************************************************************
+    //pip_node->_computeSubtreeTau();
+    //pip_node->_computeSubtreeTau();
+    //***************************************************************************************
+    // COMPUTE ALL LOCAL POISSON NORMALIZING CONSTANTS
+    //***************************************************************************************
+    //pip_node->_computeNu(numCatg_);
+
 }
 
-bpp::Node *progressivePIP::getRootNode() {
-    return tree_->getRootNode();
-}
-
-bpp::SiteContainer *progressivePIPutils::pPIPmsa2Sites(bpp::progressivePIP *progressivePIP,bpp::PIPnode *pip_node,int idx_sb) {
-
-//    progressivePIP->getRootNode()
+//void progressivePIP::_computeLocalTau() {
 //
-//    auto MSAs = pip_node->getMSA();
+//    if(vnode_->isTerminalNode()){
+//        tau_ = 0.0;
+//    }else{
 //
-//    auto MSA = MSAs.at(idx_sb);
+////        b0 = tree_->getNode(treemap_.right.at(vnode->getNodeLeft()), false)->getDistanceToFather() +\
+//                tree_->getNode(treemap_.right.at(vnode->getNodeRight()), false)->getDistanceToFather();
 //
-//    auto sequences = new bpp::VectorSequenceContainer(progressivePIP->getAlphabet());
-//
-//    auto seqNames = progressivePIP->getSeqnames(progressivePIP->getRootNode());
-//
-//    int msaLen = MSA.size();
-//
-//    int numLeaves = seqNames.size();
-//    for (int j = 0; j < numLeaves; j++) {
-//        std::string seqname = seqNames.at(j);
-//        std::string seqdata;
-//        seqdata.resize(msaLen);
-//        for (int i = 0; i < msaLen; i++) {
-//            seqdata.at(i) = MSA.at(i).at(j);
-//        }
-//        sequences->addSequence(*(new bpp::BasicSequence(seqname, seqdata, progressivePIP->getAlphabet())), true);
+//        //tau = _computeTauRecursive(vnode_);
 //    }
 //
-//    return new bpp::VectorSiteContainer(*sequences);
+//
+//}
+
+void progressivePIP::_buildPIPnodeTree() {
+
+    for (auto &node:compositePIPaligner_->pip_nodes_) {
+
+        bpp::Node *bnode = node->bnode_;
+
+        int bnodeId = bnode->getId();
+
+        if(bnode->hasFather()){
+            int bnodeFatherId = bnode->getFatherId();
+            node->parent = compositePIPaligner_->pip_nodes_.at(bnodeFatherId);
+        }else{
+            node->parent = nullptr;
+        }
+
+        if(!bnode->isLeaf()){
+            std::vector<int> bnodeSonsId = bnode->getSonsId();
+            node->childL = compositePIPaligner_->pip_nodes_.at(bnodeSonsId.at(LEFT));
+            node->childR = compositePIPaligner_->pip_nodes_.at(bnodeSonsId.at(RIGHT));
+        }else{
+            node->childL = nullptr;
+            node->childR = nullptr;
+        }
+
+    }
+
 }
 
+void progressivePIP::_computeTauRec_(PIPnode *pipnode) {
+
+    if(pipnode== nullptr){
+
+        pipnode->subTreeLenL_ = 0.0;
+        pipnode->subTreeLenR_ = 0.0;
+
+    }else{
+
+        _computeTauRec_(pipnode->childL);
+        _computeTauRec_(pipnode->childR);
+
+        pipnode->subTreeLenL_ = pipnode->childL->subTreeLenL_ + \
+                                pipnode->childL->subTreeLenR_ + \
+                                pipnode->childL->bnode_->getDistanceToFather();
+
+        pipnode->subTreeLenR_ = pipnode->childR->subTreeLenL_ + \
+                                pipnode->childR->subTreeLenR_ + \
+                                pipnode->childR->bnode_->getDistanceToFather();
+
+        tau_ += pipnode->childL->bnode_->getDistanceToFather() +\
+                pipnode->childR->bnode_->getDistanceToFather();
+
+    }
+
+}
+
+void progressivePIP::_computeTau_() {
+
+   int rootId = getRootNode()->getId();
+
+   PIPnode * rootPIPnode = compositePIPaligner_->pip_nodes_.at(rootId);
+
+   tau_ = 0.0;
+   progressivePIP::_computeTauRec_(rootPIPnode);
+
+}
+
+//void progressivePIP::_computeTau() {
+//
+//    tau_ = 0.0;
+//    for (auto &node:compositePIPaligner_->pip_nodes_) {
+//
+//        tau_ += node->bnode_->getDistanceToFather();
+//
+//    }
+//
+//}
+
+void progressivePIP::_computeNu() {
+
+    nu_.resize(numCatg_);
+
+    for (int catg = 0; catg < numCatg_; catg++) {
+        // computes the normalizing constant with discrete rate variation (gamma distribution)
+        // nu(r) = lambda * r * (tau + 1/(mu *r))
+        nu_.at(catg) = lambda_.at(catg) * (tau_ + 1 / mu_.at(catg));
+    }
+
+}
+
+//***********************************************************************************************
+//***********************************************************************************************
+//***********************************************************************************************
 double progressivePIPutils::add_lns(double a_ln, double b_ln) {
     //ln(a + b) = ln{exp[ln(a) - ln(b)] + 1} + ln(b)
 
@@ -630,56 +308,6 @@ double progressivePIPutils::add_lns(double a_ln, double b_ln) {
 
     return R;
 }
-
-void progressivePIPutils::max_val_in_column(double ***M, int depth, int height, int width, double &val, int &level) {
-
-    val = -std::numeric_limits<double>::infinity();
-    level = 0;
-
-    for (int k = 0; k < depth; k++) {
-        if (M[k][height - 1][width - 1] > val) {
-            val = M[k][height - 1][width - 1];
-            level = k;
-        }
-    }
-
-
-}
-
-std::vector<std::string> progressivePIPutils::siteContainer_2_sequence_vector(std::vector<bpp::MSAcolumn_t> &MSA){
-
-    std::vector<std::string> seqs;
-
-    int len = MSA.size();
-    int nseq = MSA.at(0).size();
-
-    seqs.resize(nseq);
-    for(int i=0;i<nseq;i++){
-        std::string s;
-        s.resize(len);
-        for(int j=0;j<len;j++){
-            s.at(j)=MSA.at(j).at(i);
-        }
-        seqs[i]=s;
-    }
-
-    return seqs;
-
-};
-
-std::vector<int> progressivePIPutils::reverse_map(std::vector<int> &m){
-
-    std::vector<int> rev_m;
-
-    for(int i=0;i<m.size();i++){
-        if( (m.at(i)+1) > rev_m.size()){
-            if(m.at(i)-rev_m.size() > 0){
-                LOG(FATAL) << "\nERROR in reverse_map";
-            }
-            rev_m.push_back(i);
-        }
-    }
-
-    return rev_m;
-}
-
+//***********************************************************************************************
+//***********************************************************************************************
+//***********************************************************************************************
