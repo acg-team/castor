@@ -42,6 +42,8 @@
  * @see For more information visit:
  */
 
+#include "PIPnode.hpp"
+
 #ifndef MINIJATI_COMPOSITEPIPMSA_HPP
 #define MINIJATI_COMPOSITEPIPMSA_HPP
 
@@ -87,7 +89,7 @@ namespace bpp {
 
         void _setSeqNameLeaf(std::string &seqName);
 
-        void _setMSAleaf(bpp::Sequence &sequence);
+        void _setMSAleaf(const bpp::Sequence *sequence);
 
         void _setSeqNameNode(std::vector<std::string> &seqNamesL,
                              std::vector<std::string> &seqNamesR);
@@ -95,6 +97,8 @@ namespace bpp {
         int getNumSites();
 
         void _setTracebackPathleaves();
+
+        std::vector<string> getSequenceNames(){ return seqNames_; };
 
     };
     //*******************************************************************************************
@@ -108,7 +112,7 @@ namespace bpp {
 
         void _setMSAleaves(bpp::Sequence &sequence, std::string &seqName);
 
-        void Add(PIPmsa *msa) {}
+        void add(PIPmsa *msa) {};
 
     };
     //*******************************************************************************************
@@ -148,15 +152,12 @@ namespace bpp {
 
         int getCompressedMSAlength();
 
-        PIPmsa *getMSA(){ return pipmsa; }
+        PIPmsa *_getMSA(){ return pipmsa; }
 
         void add(PIPmsa *x);
 
         void _compress_lk_components( std::vector<double> &lk_down_not_compressed,
                                                     std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
-
-//        bpp::SiteContainer *pPIPmsa2Sites(bpp::progressivePIP *progressivePIP,
-//                                                        bpp::PIPnode *pip_node);
 
         ~PIPmsaSingle() {
             delete pipmsa;
@@ -196,7 +197,7 @@ namespace bpp {
 
         int getCompressedMSAlength(int idx);
 
-        PIPmsa *getMSA(int idx){ return pipmsa.at(idx); }
+        PIPmsa *_getMSA(int idx){ return pipmsa.at(idx); }
 
         void add(PIPmsa *x);
 
@@ -221,6 +222,10 @@ namespace compositePIPmsaUtils {
     std::vector<std::string> siteContainer2sequenceVector(std::vector<bpp::MSAcolumn_t> &MSA);
 
     std::vector<int> reverse_map(std::vector<int> &m);
+
+    bpp::SiteContainer *pPIPmsa2Sites(const bpp::Alphabet *alphabet,
+                                      std::vector<std::string> &seqNames,
+                                      std::vector<std::string> &MSA);
 
 }
 //***********************************************************************************************

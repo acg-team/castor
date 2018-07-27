@@ -52,7 +52,7 @@
 
 namespace bpp {
 
-    class nodeFactory {
+    class nodeFactory { // PIPnode Factory class
 
     public:
 
@@ -60,6 +60,7 @@ namespace bpp {
         // PUBLIC METHODS
         //***************************************************************************************
 
+        // factory methd
         PIPnode *getPIPnode(enumDP3Dversion DPversion,
                             const progressivePIP *pPIP,
                             tshlib::VirtualNode *vnode,

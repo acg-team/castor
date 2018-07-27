@@ -51,10 +51,14 @@
 
 using namespace bpp;
 
+void nodeSB::DP3D_PIP_leaf() {
+
+}
+
 void nodeSB::DP3D_PIP() {
 
     if (bnode_->isLeaf()) {
-        PIPnode::DP3D_PIP_leaf();
+        nodeSB::DP3D_PIP_leaf();
     }else{
 
     }

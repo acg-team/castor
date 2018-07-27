@@ -63,33 +63,32 @@ using namespace bpp;
 void PIPmsa::_setSeqNameLeaf(std::string &seqName) {
 
     // leaf has only one sequence
-    seqNames_.resize(1);
-    seqNames_.at(0) = seqName;
+    seqNames_.push_back(seqName);
 
 }
 
-void PIPmsa::_setMSAleaf(bpp::Sequence &sequence) {
+void PIPmsa::_setMSAleaf(const bpp::Sequence *sequence) {
 
-
-    std::string sequenceString = sequence.toString();
+    // convert from Sequence to string
+    std::string sequenceString = sequence->toString();
 
     /* convert a string into a vector of single char strings */
-    //std::vector<std::string> msa;
-    MSA_t msa;
-    msa.resize(sequence.size());
-    for (int i = 0; i < sequence.size(); i++) {
+    msa_.resize(sequenceString.size());
+    for (int i = 0; i < sequenceString.size(); i++) {
 
         const char ch = sequenceString.at(i);
 
+        // check sequence content: if 'X', ' ' or '-' exit with error
         if(ch=='X' || ch==' ' || ch=='-'){
             LOG(FATAL) << "\nERROR sequence contains 'X' or ' ' or '-'";
         }
 
+        // convert character to string column vector
         MSAcolumn_t msa_col(1, ch);
+
+        // assign MSA column to MSA
         msa_.at(i) = msa_col;
     }
-
-    msa_ = msa;
 
 }
 
@@ -116,6 +115,9 @@ void PIPmsaSingle::_compressMSA(const bpp::Alphabet *alphabet) {
         sequences->addSequence(*(new bpp::BasicSequence(pipmsa->seqNames_.at(i),
                                                         seqs.at(i),
                                                         alphabet)), true);
+
+        std::cout<<"["<<seqs.at(i)<<"]\n";
+
     }
 
     auto siteContainer = new bpp::VectorSiteContainer(*sequences);
@@ -158,33 +160,48 @@ void PIPmsaSingle::_build_MSA(MSA_t &msaL,MSA_t &msaR) {
 
     // convert traceback path into an MSA
 
-    int lenColL = msaL.size();
-    int lenColR = msaR.size();
+    // get dimension of the left/right MSA column
+    int lenColL = msaL.at(0).size();
+    int lenColR = msaR.at(0).size();
 
     int idx_i = 0;
     int idx_j = 0;
     for (int j = 0; j < pipmsa->traceback_path_.size(); j++) {
 
         if (pipmsa->traceback_path_.at(j) == (int)MATCH_STATE) {
+
+            // in MATCH case concatenate left_column (from seq1) with right_column (from seq2)
             pipmsa->msa_.push_back(msaL.at(idx_i) + msaR.at(idx_j));
             idx_i++;
             idx_j++;
 
         } else if (pipmsa->traceback_path_.at(j) == (int)GAP_X_STATE) {
+
+            // in GAPX case concatenate left_column (from seq1) with a column full of gaps (right)
             std::string gapCol(lenColR, GAP_CHAR);
             pipmsa->msa_.push_back(msaL.at(idx_i) + gapCol);
             idx_i++;
 
         } else if (pipmsa->traceback_path_.at(j) == GAP_Y_STATE) {
 
+            // in GAPY case concatenate a column (left) full of gaps with right_column (from seq2)
             std::string gapCol(lenColL, GAP_CHAR);
             pipmsa->msa_.push_back(gapCol + msaR.at(idx_j));
             idx_j++;
 
         } else {
-            LOG(FATAL) << "\nSomething went wrong during the traceback in function pPIP::_build_MSA. Check call stack below.";
+            LOG(FATAL) << "\nSomething went wrong during the traceback in function "
+                          "pPIP::_build_MSA. Check call stack below.";
         }
     }
+
+    //======== DEBUG =========================================//
+    std::cout<<"\n\nMSA\n";
+    for (int j = 0; j < pipmsa->traceback_path_.size(); j++) {
+        std::cout<<pipmsa->msa_.at(j)<<"\n";
+    }
+    std::cout<<"\n\n";
+    //======== DEBUG =========================================//
 
 }
 
@@ -282,14 +299,20 @@ void PIPmsaComp::_compress_lk_components(   std::vector<double> &lk_down_not_com
 
 void PIPmsa::_setTracebackPathleaves() {
 
+    // get the MSA size
     int MSAlen = msa_.size();
 
+    // resize traceback path
     traceback_path_.resize(MSAlen);
 
+    // resize the traceback map
     traceback_map_.resize(MSAlen);
 
     for(int i = 0; i < MSAlen; i++){
+        // assign MATCH STATE to all the sites
         traceback_path_.at(i) = (int)MATCH_STATE;
+
+        // assign the corresponding position in the sequences
         traceback_map_.at(i) = i;
     }
 
@@ -337,35 +360,6 @@ void PIPmsaComp::add(PIPmsa *x) {
 
 }
 
-//bpp::SiteContainer *PIPmsaSingle::pPIPmsa2Sites(bpp::progressivePIP *progressivePIP,
-//                                                        bpp::PIPnode *pip_node) {
-//
-////    progressivePIP->getRootNode()
-////
-////    auto MSAs = pip_node->getMSA();
-////
-////    auto MSA = MSAs.at(idx_sb);
-//
-//    auto sequences = new bpp::VectorSequenceContainer(progressivePIP->getAlphabet());
-//
-//    auto seqNames = progressivePIP->getSeqnames(progressivePIP->getRootNode());
-//
-//    int msaLen = MSA.size();
-//
-//    int numLeaves = seqNames.size();
-//    for (int j = 0; j < numLeaves; j++) {
-//        std::string seqname = seqNames.at(j);
-//        std::string seqdata;
-//        seqdata.resize(msaLen);
-//        for (int i = 0; i < msaLen; i++) {
-//            seqdata.at(i) = MSA.at(i).at(j);
-//        }
-//        sequences->addSequence(*(new bpp::BasicSequence(seqname, seqdata, progressivePIP->getAlphabet())), true);
-//    }
-//
-//    return new bpp::VectorSiteContainer(*sequences);
-//}
-
 //***********************************************************************************************
 //***********************************************************************************************
 //***********************************************************************************************
@@ -404,6 +398,36 @@ std::vector<int> compositePIPmsaUtils::reverse_map(std::vector<int> &m){
     }
 
     return rev_m;
+}
+
+bpp::SiteContainer *compositePIPmsaUtils::pPIPmsa2Sites(const bpp::Alphabet *alphabet,
+                                                        std::vector<std::string> &seqNames,
+                                                        std::vector<std::string> &MSA) {
+
+//    progressivePIP->getRootNode()
+//
+//    auto MSAs = pip_node->getMSA();
+//
+//    auto MSA = MSAs.at(idx_sb);
+
+    auto sequences = new bpp::VectorSequenceContainer(alphabet);
+//
+//    auto seqNames = progressivePIP->getSeqnames(PIPnodeRoot);
+
+    int msaLen = MSA.size();
+
+    int numLeaves = seqNames.size();
+    for (int j = 0; j < numLeaves; j++) {
+        std::string seqname = seqNames.at(j);
+        std::string seqdata;
+        seqdata.resize(msaLen);
+        for (int i = 0; i < msaLen; i++) {
+            seqdata.at(i) = MSA.at(i).at(j);
+        }
+        sequences->addSequence(*(new bpp::BasicSequence(seqname, seqdata,alphabet)), true);
+    }
+
+    return new bpp::VectorSiteContainer(*sequences);
 }
 //***********************************************************************************************
 //***********************************************************************************************

@@ -91,6 +91,7 @@ namespace bpp {
         mutable UtreeBppUtils::treemap treemap_; // bpp::Node * <-> tshlib::VirtualNode *
         double lambda0_; // original lambda (no Gamma distribution)
         double mu0_; // original mu (no Gamma distribution)
+        PIPnode *PIPnodeRoot;
 
         //***************************************************************************************
         // PRIVATE METHODS
@@ -126,6 +127,7 @@ namespace bpp {
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
+        // constructor
         progressivePIP(tshlib::Utree *utree,              // tshlib:: tree
                        bpp::Tree *tree,                   // bpp::tree
                        bpp::SubstitutionModel *smodel,    // extended substitution model
@@ -135,25 +137,30 @@ namespace bpp {
                        long seed);                         // seed for the random numbers generation
 
 
-        ~progressivePIP(){};
+        ~progressivePIP(){}; // destructor
 
         void initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, // list of nodes
-                           int num_sb,  // number of sub. optimal solutions (MSAs)
-                           enumDP3Dversion DPversion); // DP3D version
+                           enumDP3Dversion DPversion, // DP3D version
+                           int num_sb);  // number of sub. optimal solutions (MSAs)
 
         long getSeed() const { return seed_; }; // return seed for the random number generation
 
+        void _setAllIotas(); // compute all the insertion probabilities (iota function)
 
+        void _setAllBetas(); // compute all the survival probabilities (beta function)
 
-        bpp::Node *getRootNode(){ return tree_->getRootNode(); }; // get the root of the tree
+        bpp::Node *getBPProotNode(){ return tree_->getRootNode(); }; // get the root of the tree
+
+        PIPnode *getPIPnodeRootNode(){ return PIPnodeRoot; }; // get the PIPnodeRoot of the PIPnode tree
 
         const Alphabet *getAlphabet() const { return alphabet_; }; // get the alphabet
 
-        void _buildPIPnodeTree();
+        void _buildPIPnodeTree(); // build a binary tree of PIPnode that dictates the alignmanet order
 
-        void _computeTau_();
+        void _computeTau_(); // compute the total tree length and the length of the left/right subtree
+                             // of the tree rooted at a given PIPnode
 
-        void _computeNu();
+        void _computeNu(); // compute the normalizing Poisson intensity (expected MSA length)
 
     };
 

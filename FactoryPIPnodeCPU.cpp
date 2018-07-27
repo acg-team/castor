@@ -51,16 +51,6 @@
 
 using namespace bpp;
 
-void nodeCPU::DP3D_PIP() {
-
-    if (bnode_->isLeaf()) {
-        DP3D_PIP_leaf();
-    }else{
-        DP3D_PIP_node();
-    }
-
-}
-
 bool nodeCPU::_index_of_max(double m,
                             double x,
                             double y,
@@ -782,9 +772,9 @@ std::vector<double> nodeCPU::computeLK_GapColumn_local(int nodeID,
         // lk at the actual node (considered as root node => beta = 1.0)
         p0 = iotasNode_[catg] * fv0;
 
-        pL=childL->log_lk_empty_down_[catg];
+//sis        pL=childL->log_lk_empty_down_[catg];
 
-        pR=childR->log_lk_empty_down_[catg];
+//sis        pR=childR->log_lk_empty_down_[catg];
 
         pc0.at(catg) = p0 + pL + pR;
     }
@@ -881,6 +871,265 @@ double nodeCPU::computeLK_Y_local(double NU,
     }
 
     return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+}
+
+bpp::ColMatrix<double> PIPnode::computeFVrec(MSAcolumn_t &s, int &idx, int catg) {
+
+    bpp::ColMatrix<double> fv;
+
+    if (bnode_->isLeaf()) {
+
+        //aggiustare
+         //fv = fv_observed(s, idx);
+
+    } else {
+
+        bpp::Node *sonLeft = childL->_getBnode();
+        int sonLeftID = sonLeft->getId();
+
+        bpp::Node *sonRight = childR->_getBnode();
+        int sonRightID = sonRight->getId();
+
+        // computes the recursive Felsenstein's peeling weight on the left subtree
+        bpp::ColMatrix<double> fvL = childL->computeFVrec(s, idx, catg);
+
+        // computes the recursive Felsenstein's peeling weight on the right subtree
+        bpp::ColMatrix<double> fvR = childR->computeFVrec(s, idx, catg);
+
+        // PrfvL = Pr_L * fv_L
+        bpp::ColMatrix<double> PrfvL;
+        bpp::MatrixTools::mult(childL->prNode_.at(catg), fvL, PrfvL);
+
+        // PrfvR = Pr_R * fv_R
+        bpp::ColMatrix<double> PrfvR;
+        bpp::MatrixTools::mult(childR->prNode_.at(catg), fvR, PrfvR);
+
+        // fv = PrfvL * PrfvR
+        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+    }
+
+    return fv;
+}
+
+void PIPnode::allgaps(std::string &s, int &idx, bool &flag) {
+
+    // flag is true if all the leaves of the subtree rooted in node contain a gap
+
+    if (bnode_->isLeaf()) {
+        char ch = s[idx];
+
+        idx++;
+
+        if (ch != '-') {
+            flag = false;
+        }
+
+    } else {
+
+        bpp::Node *sonLeft = childL->_getBnode();
+        int sonLeftID = sonLeft->getId();
+
+        bpp::Node *sonRight = childR->_getBnode();
+        int sonRightID = sonRight->getId();
+
+        childL->allgaps(s, idx, flag);
+        childR->allgaps(s, idx, flag);
+    }
+
+}
+
+double PIPnode::compute_lk_gap_down(MSAcolumn_t &s, int catg) {
+
+    int idx;
+
+    if (bnode_->isLeaf()) {
+
+        idx = 0;
+        bpp::ColMatrix<double> fv = computeFVrec(s, idx, catg);
+
+        // fv0 = pi * fv
+        double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
+
+        // lk of non survival till the leaves
+        // lk = iota(v,r) - iota(v,r)*beta(v,r) + iota(v,r)*beta(v,r)*fv
+        double pr = iotasNode_[catg] - \
+             iotasNode_[catg] * betasNode_[catg] + \
+             iotasNode_[catg] * betasNode_[catg] * fv0;
+
+        return pr;
+
+    }
+
+    bpp::Node *sonLeft = childL->_getBnode();
+    int sonLeftID = sonLeft->getId();
+
+    bpp::Node *sonRight = childR->_getBnode();
+    int sonRightID = sonRight->getId();
+
+    idx = 0;
+    bpp::ColMatrix<double> fv = computeFVrec(s, idx, catg);
+
+    // fv0 = pi * fv
+    double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
+
+    // lk of non survival till the leaves
+    // lk = iota(v,r) - iota(v,r)*beta(v,r) + iota(v,r)*beta(v,r)*fv
+    double pr = iotasNode_[catg] - \
+         iotasNode_[catg] * betasNode_[catg] + \
+         iotasNode_[catg] * betasNode_[catg] * fv0;
+
+
+    bool flagL = true;
+    bool flagR = true;
+    idx = 0;
+    childL->allgaps(s, idx, flagL);
+
+    int ixx = idx;
+    childR->allgaps(s, idx, flagR);
+
+    int len;
+
+    MSAcolumn_t sL;
+    len = ixx;
+    sL = s.substr(0, len);
+    double pL = childL->compute_lk_gap_down(sL, catg);
+
+    MSAcolumn_t sR;
+    sR = s.substr(ixx);
+    double pR = childR->compute_lk_gap_down(sR, catg);
+
+    return pr + pL + pR;
+}
+
+double PIPnode::_compute_lk_down_rec(int idx,double lk){
+
+    int num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
+
+    for (int catg=0; catg<num_gamma_categories; catg++) {
+        lk = lk + progressivePIP_->rDist_->getProbability((size_t)catg) * \
+             iotasNode_.at(catg) * \
+             betasNode_.at(catg) * \
+             fv_sigma_.at(idx).at(catg);
+    }
+
+    if (!bnode_->isLeaf()) {
+
+        int idx_tr = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.at(idx);
+
+        int tr = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_path_.at(idx_tr);
+
+        if(tr == (int)GAP_X_STATE){
+
+            bpp::Node *sonLeft = childL->_getBnode();
+            int sonLeftID = sonLeft->getId();
+
+            idx = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_mapL_.at(idx_tr);
+
+            //int sub_i;// = subMSAidx_.at(LEFT).at(position);
+
+            idx = static_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->map_compressed_seqs_.at(idx);
+
+            idx = static_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->map_compressed_seqs_.at(idx);
+
+            lk = childL->_compute_lk_down_rec(idx,lk);
+
+        }else if(tr == (int)GAP_Y_STATE) {
+
+            bpp::Node *sonRight = childR->_getBnode();
+            int sonRightID = sonRight->getId();
+
+            idx = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_mapR_.at(idx_tr);
+
+            //lk = childL->_compute_lk_down_rec(idx,lk);int sub_i;// = subMSAidx_.at(RIGHT).at(position);
+
+            idx = static_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->map_compressed_seqs_.at(idx);
+
+            idx = static_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->map_compressed_seqs_.at(idx);
+
+            lk = childR->_compute_lk_down_rec(idx,lk);
+
+        }
+
+    }
+
+    return lk;
+}
+
+double PIPnode::_compute_lk_down(MSAcolumn_t &s, int catg) {
+
+    int idx;
+
+    if (bnode_->isLeaf()) {
+
+        idx = 0;
+        bpp::ColMatrix<double> fv = computeFVrec(s, idx, catg);
+
+        // fv0 = pi * fv
+        double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
+
+        double pr = iotasNode_[catg] * betasNode_[catg] * fv0;
+
+        return pr;
+
+    }
+
+    bpp::Node *sonLeft = childL->_getBnode();
+    int sonLeftID = sonLeft->getId();
+
+    bpp::Node *sonRight = childR->_getBnode();
+    int sonRightID = sonRight->getId();
+
+    idx = 0;
+    bpp::ColMatrix<double> fv = computeFVrec(s, idx, catg);
+
+    // fv0 = pi * fv
+    double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
+
+    double pr = iotasNode_[catg] * betasNode_[catg] * fv0;
+
+    bool flagL = true;
+    bool flagR = true;
+    idx = 0;
+    childL->allgaps(s, idx, flagL);
+    int ixx = idx;
+    childR->allgaps(s, idx, flagR);
+
+    int len;
+    if (flagR) {
+        std::string sL;
+        len = ixx;
+        sL = s.substr(0, len);
+        return pr + childL->_compute_lk_down(sL, catg);
+    }
+
+    if (flagL) {
+        std::string sR;
+        sR = s.substr(ixx);
+        return pr + childR->_compute_lk_down(sR, catg);
+    }
+
+    return pr;
+}
+
+std::vector<double> PIPnode::_compute_lk_down(){
+
+    std::vector<double> lk_down;
+
+    int MSAlen = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.size();
+
+    lk_down.resize(MSAlen);
+
+    for(int idx=0;idx<MSAlen;idx++){
+        double lk = 0.0;
+        lk_down.at(idx) = _compute_lk_down_rec(idx,lk);
+    }
+
+    return lk_down;
+}
+
+void nodeCPU::DP3D_PIP_leaf() {
+
 }
 
 void nodeCPU::DP3D_PIP_node() {
@@ -1562,8 +1811,8 @@ void nodeCPU::DP3D_PIP_node() {
     }
 
     // converts traceback path into an MSA
-    PIPmsa *msaL = static_cast<PIPmsaSingle *>(childL->MSA_)->getMSA();
-    PIPmsa *msaR = static_cast<PIPmsaSingle *>(childR->MSA_)->getMSA();
+    PIPmsa *msaL = static_cast<PIPmsaSingle *>(childL->MSA_)->_getMSA();
+    PIPmsa *msaR = static_cast<PIPmsaSingle *>(childR->MSA_)->_getMSA();
     static_cast<PIPmsaSingle *>(MSA_)->_build_MSA(msaL->msa_,msaR->msa_);
 
     // assigns the sequence names of the new alligned sequences to the current MSA
@@ -1574,257 +1823,12 @@ void nodeCPU::DP3D_PIP_node() {
 
 }
 
-bpp::ColMatrix<double> PIPnode::computeFVrec(MSAcolumn_t &s, int &idx, int catg) {
+void nodeCPU::DP3D_PIP() {
 
-    bpp::ColMatrix<double> fv;
-
-    if (bnode_->isLeaf()) {
-
-        //aggiustare
-         //fv = fv_observed(s, idx);
-
-    } else {
-
-        bpp::Node *sonLeft = childL->_getBnode();
-        int sonLeftID = sonLeft->getId();
-
-        bpp::Node *sonRight = childR->_getBnode();
-        int sonRightID = sonRight->getId();
-
-        // computes the recursive Felsenstein's peeling weight on the left subtree
-        bpp::ColMatrix<double> fvL = childL->computeFVrec(s, idx, catg);
-
-        // computes the recursive Felsenstein's peeling weight on the right subtree
-        bpp::ColMatrix<double> fvR = childR->computeFVrec(s, idx, catg);
-
-        // PrfvL = Pr_L * fv_L
-        bpp::ColMatrix<double> PrfvL;
-        bpp::MatrixTools::mult(childL->prNode_.at(catg), fvL, PrfvL);
-
-        // PrfvR = Pr_R * fv_R
-        bpp::ColMatrix<double> PrfvR;
-        bpp::MatrixTools::mult(childR->prNode_.at(catg), fvR, PrfvR);
-
-        // fv = PrfvL * PrfvR
-        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
-
+    if (_isTerminalNode()) {
+        DP3D_PIP_leaf();
+    }else{
+        DP3D_PIP_node();
     }
 
-    return fv;
-}
-
-void PIPnode::allgaps(std::string &s, int &idx, bool &flag) {
-
-    // flag is true if all the leaves of the subtree rooted in node contain a gap
-
-    if (bnode_->isLeaf()) {
-        char ch = s[idx];
-
-        idx++;
-
-        if (ch != '-') {
-            flag = false;
-        }
-
-    } else {
-
-        bpp::Node *sonLeft = childL->_getBnode();
-        int sonLeftID = sonLeft->getId();
-
-        bpp::Node *sonRight = childR->_getBnode();
-        int sonRightID = sonRight->getId();
-
-        childL->allgaps(s, idx, flag);
-        childR->allgaps(s, idx, flag);
-    }
-
-}
-
-double PIPnode::compute_lk_gap_down(MSAcolumn_t &s, int catg) {
-
-    int idx;
-
-    if (bnode_->isLeaf()) {
-
-        idx = 0;
-        bpp::ColMatrix<double> fv = computeFVrec(s, idx, catg);
-
-        // fv0 = pi * fv
-        double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
-
-        // lk of non survival till the leaves
-        // lk = iota(v,r) - iota(v,r)*beta(v,r) + iota(v,r)*beta(v,r)*fv
-        double pr = iotasNode_[catg] - \
-             iotasNode_[catg] * betasNode_[catg] + \
-             iotasNode_[catg] * betasNode_[catg] * fv0;
-
-        return pr;
-
-    }
-
-    bpp::Node *sonLeft = childL->_getBnode();
-    int sonLeftID = sonLeft->getId();
-
-    bpp::Node *sonRight = childR->_getBnode();
-    int sonRightID = sonRight->getId();
-
-    idx = 0;
-    bpp::ColMatrix<double> fv = computeFVrec(s, idx, catg);
-
-    // fv0 = pi * fv
-    double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
-
-    // lk of non survival till the leaves
-    // lk = iota(v,r) - iota(v,r)*beta(v,r) + iota(v,r)*beta(v,r)*fv
-    double pr = iotasNode_[catg] - \
-         iotasNode_[catg] * betasNode_[catg] + \
-         iotasNode_[catg] * betasNode_[catg] * fv0;
-
-
-    bool flagL = true;
-    bool flagR = true;
-    idx = 0;
-    childL->allgaps(s, idx, flagL);
-
-    int ixx = idx;
-    childR->allgaps(s, idx, flagR);
-
-    int len;
-
-    MSAcolumn_t sL;
-    len = ixx;
-    sL = s.substr(0, len);
-    double pL = childL->compute_lk_gap_down(sL, catg);
-
-    MSAcolumn_t sR;
-    sR = s.substr(ixx);
-    double pR = childR->compute_lk_gap_down(sR, catg);
-
-    return pr + pL + pR;
-}
-
-double PIPnode::_compute_lk_down_rec(int idx,double lk){
-
-    int num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
-
-    for (int catg=0; catg<num_gamma_categories; catg++) {
-        lk = lk + progressivePIP_->rDist_->getProbability((size_t)catg) * \
-             iotasNode_.at(catg) * \
-             betasNode_.at(catg) * \
-             fv_sigma_.at(idx).at(catg);
-    }
-
-    if (!bnode_->isLeaf()) {
-
-        int idx_tr = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.at(idx);
-
-        int tr = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_path_.at(idx_tr);
-
-        if(tr == (int)GAP_X_STATE){
-
-            bpp::Node *sonLeft = childL->_getBnode();
-            int sonLeftID = sonLeft->getId();
-
-            idx = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_mapL_.at(idx_tr);
-
-            //int sub_i;// = subMSAidx_.at(LEFT).at(position);
-
-            idx = static_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->map_compressed_seqs_.at(idx);
-
-            idx = static_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->map_compressed_seqs_.at(idx);
-
-            lk = childL->_compute_lk_down_rec(idx,lk);
-
-        }else if(tr == (int)GAP_Y_STATE) {
-
-            bpp::Node *sonRight = childR->_getBnode();
-            int sonRightID = sonRight->getId();
-
-            idx = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_mapR_.at(idx_tr);
-
-            //lk = childL->_compute_lk_down_rec(idx,lk);int sub_i;// = subMSAidx_.at(RIGHT).at(position);
-
-            idx = static_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->map_compressed_seqs_.at(idx);
-
-            idx = static_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->map_compressed_seqs_.at(idx);
-
-            lk = childR->_compute_lk_down_rec(idx,lk);
-
-        }
-
-    }
-
-    return lk;
-}
-
-double PIPnode::_compute_lk_down(MSAcolumn_t &s, int catg) {
-
-    int idx;
-
-    if (bnode_->isLeaf()) {
-
-        idx = 0;
-        bpp::ColMatrix<double> fv = computeFVrec(s, idx, catg);
-
-        // fv0 = pi * fv
-        double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
-
-        double pr = iotasNode_[catg] * betasNode_[catg] * fv0;
-
-        return pr;
-
-    }
-
-    bpp::Node *sonLeft = childL->_getBnode();
-    int sonLeftID = sonLeft->getId();
-
-    bpp::Node *sonRight = childR->_getBnode();
-    int sonRightID = sonRight->getId();
-
-    idx = 0;
-    bpp::ColMatrix<double> fv = computeFVrec(s, idx, catg);
-
-    // fv0 = pi * fv
-    double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
-
-    double pr = iotasNode_[catg] * betasNode_[catg] * fv0;
-
-    bool flagL = true;
-    bool flagR = true;
-    idx = 0;
-    childL->allgaps(s, idx, flagL);
-    int ixx = idx;
-    childR->allgaps(s, idx, flagR);
-
-    int len;
-    if (flagR) {
-        std::string sL;
-        len = ixx;
-        sL = s.substr(0, len);
-        return pr + childL->_compute_lk_down(sL, catg);
-    }
-
-    if (flagL) {
-        std::string sR;
-        sR = s.substr(ixx);
-        return pr + childR->_compute_lk_down(sR, catg);
-    }
-
-    return pr;
-}
-
-std::vector<double> PIPnode::_compute_lk_down(){
-
-    std::vector<double> lk_down;
-
-    int MSAlen = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.size();
-
-    lk_down.resize(MSAlen);
-
-    for(int idx=0;idx<MSAlen;idx++){
-        double lk = 0.0;
-        lk_down.at(idx) = _compute_lk_down_rec(idx,lk);
-    }
-
-    return lk_down;
 }

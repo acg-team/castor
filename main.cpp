@@ -109,8 +109,7 @@ using namespace tshlib;
 #include "SupportMeasures.hpp"
 #include "UnifiedDistanceEstimation.hpp"
 
-
-#include "pPIP.hpp"
+#include "pPIP.hpp" // obsolete
 #include "progressivePIP.hpp"
 #include "FactoryPIPnode.hpp"
 #include "CompositePIPnode.hpp"
@@ -732,12 +731,24 @@ int main(int argc, char *argv[]) {
 
             DLOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
+            //===== OBSOLETE ===========================================================
             // Initialise alignment object
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(), PAR_alignment_sbsolutions);
+            //===== OBSOLETE ===========================================================
+
+
+
+
 
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
+
+
+
+
+
+            //===== OBSOLETE ===========================================================
             // Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_local;
             bool flag_map;
@@ -764,38 +775,83 @@ int main(int argc, char *argv[]) {
                 ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
 
             }
+            //===== OBSOLETE ===========================================================
+
+
+
+
 
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
 
 
 
+
+
             //===========================================================
             //===========================================================
-            int num_sb = 1;
+            int num_sb; // number of sub-optimal MSAs
 
-            enumDP3Dversion DPversion = RAM;
+            enumDP3Dversion DPversion; // DP3D version
 
-            //TEST
-            progressivePIP *proPIP = new bpp::progressivePIP(utree,
-                                                   tree,
-                                                   smodel,
-                                                   tm,
-                                                   sequences,
-                                                   rDist,
-                                                   jatiapp.getSeed());
+            if (PAR_alignment_version.find("cpu") != std::string::npos) {
+                DPversion = CPU; // slower but uses less memory
+                num_sb = 1;
+            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
+                DPversion = RAM; // faster but uses more memory
+                num_sb = 1;
+            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
+                DPversion = SB;  // stochastic backtracking version
+                num_sb = 4;
+            } else {
+                ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
+            }
+
+            progressivePIP *proPIP = new bpp::progressivePIP(utree,     // tshlib tree
+                                                   tree,                // bpp tree
+                                                   smodel,              // substitution model
+                                                   tm,                  // tree-map
+                                                   sequences,           // un-aligned input sequences
+                                                   rDist,               // rate-variation among site distribution
+                                                   jatiapp.getSeed());  // seed for random number generation
 
 
 
-            proPIP->initializePIP(ftn, num_sb, DPversion);
+            proPIP->initializePIP(ftn, // list of tshlib nodes in on post-order (correct order of execution)
+                                  DPversion, // version of the alignment algorithm
+                                  num_sb);  // number of suboptimal MSAs
 
             proPIP->compositePIPaligner_->PIPnodeAlign();
+
+            sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
+                                                        static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->seqNames_,
+                                                        static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->msa_);
+
+            // Export alignment to file
+            if (PAR_output_file_msa.find("none") == std::string::npos) {
+                DLOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
+                bpp::Fasta seqWriter;
+                seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
+            }
+
+            double MSAscore;
+            MSAscore = static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->score_;
+
+            std::ofstream lkFile;
+            lkFile << std::setprecision(18);
+            lkFile.open(PAR_output_file_lk);
+            lkFile << MSAscore;
+            lkFile.close();
+
+
+            //exit(EXIT_SUCCESS);
             //===========================================================
             //===========================================================
 
 
-
+            //===== OBSOLETE ===========================================================
             alignment->PIPAligner(ftn, flag_local, flag_map, flag_fv);
+            //===== OBSOLETE ===========================================================
 
             std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
@@ -803,6 +859,13 @@ int main(int argc, char *argv[]) {
             std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
             //ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
             //ApplicationTools::displayResult("[Alignment sequences] MSA_t inference using Pro-PIP", "terminated successfully");
+
+
+
+
+
+
+
 
             // Convert PIP Aligner into bpp::sites
             sites = pPIPUtils::pPIPmsa2Sites(alignment, 0);
@@ -817,11 +880,17 @@ int main(int argc, char *argv[]) {
             double score;
             score = alignment->getScore(alignment->getRootNode()).at(0);
 
-            std::ofstream lkFile;
-            lkFile << std::setprecision(18);
-            lkFile.open(PAR_output_file_lk);
-            lkFile << score;
-            lkFile.close();
+            std::ofstream LogLkFile;
+            LogLkFile << std::setprecision(18);
+            LogLkFile.open(PAR_output_file_lk);
+            LogLkFile << score;
+            LogLkFile.close();
+
+
+
+
+
+
 
             ApplicationTools::displayResult("Alignment log likelihood", TextTools::toString(score, 15));
 

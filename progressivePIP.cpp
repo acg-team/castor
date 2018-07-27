@@ -67,7 +67,7 @@ progressivePIP::progressivePIP(tshlib::Utree *utree,
     substModel_ = smodel;   // substitution model
     treemap_ = inTreeMap;   // tree map
     sequences_ = sequences; // sequences
-    rDist_ = rDist; // gamma distribution
+    rDist_ = rDist; // rate-variation among site distribution
     alphabet_ = substModel_->getAlphabet(); // alphabet
     alphabetSize_ = alphabet_->getSize() - 1;   // original alphabet size
     extendedAlphabetSize_ = alphabet_->getSize();   // extended alphabet size
@@ -121,9 +121,105 @@ void progressivePIP::_setPi(const Vdouble &pi) {
 
 }
 
+void progressivePIP::_setAllIotas() {
+
+    // compute all the insertion probabilities (iota function)
+    // N.B. the insertion probability at the root is different
+    // from any other internal node
+
+    double T;
+
+    for(auto &node:compositePIPaligner_->pip_nodes_){
+
+        if(node->_isRootNode()){
+
+            // formula for the root PIPnode
+
+            for (int catg = 0; catg < numCatg_; catg++) {
+
+                // T(r) = tau + 1/ (mu * r)
+                T = tau_ + 1 / mu_.at(catg);
+
+                // checks division by 0 or too small number
+                if (fabs(T) < SMALL_DOUBLE) {
+                    PLOG(WARNING) << "ERROR in _setAllIotas: T too small";
+                }
+
+                // iota(root,r) = (lambda * r)/ (mu * r) / (lambda * r * (tau + 1/ (mu * r) ) )
+                //              = 1 / (mu * r) / (tau + 1/ (mu *r) )
+                node->iotasNode_.at(catg) =  (1 / mu_.at(catg)) / T;
+
+            }
+
+        }else{
+
+            // formula for an internal PIPnode
+
+            for (int catg = 0; catg < numCatg_; catg++) {
+
+                // T(r) = tau + 1/(mu * r)
+                T = tau_ + 1 / mu_.at(catg);
+
+                // checks division by 0 or too small number
+                if (fabs(T) < SMALL_DOUBLE) {
+                    PLOG(WARNING) << "ERROR in _setAllIotas: T too small";
+                }
+
+                //iotasNode_[node->getId()][catg] = (node->getDistanceToFather() * rDist_->getCategory(catg) ) / T;
+                // iota(v,r) = ( lambda * r * b(v) ) / (lambda * r * (tau + 1/ (mu *r) ) )
+                //           = b(v) / (tau + 1/ (mu *r) )
+                node->iotasNode_.at(catg) = node->bnode_->getDistanceToFather() / T;
+
+            }
+
+        }
+    }
+
+}
+
+void progressivePIP::_setAllBetas() {
+
+    // compute all the survival probabilities (beta function)
+    // N.B. the survival probability at the root is different
+    // from any other internal node
+
+    for(auto &node:compositePIPaligner_->pip_nodes_){
+
+        if(node->_isRootNode()){
+
+            // formula for the root PIPnode
+
+            for (int catg = 0; catg < rDist_->getNumberOfCategories(); catg++) {
+                // by definition at the root (ev. local root) the survival probability is 1
+                node->betasNode_.at(catg) = 1.0;
+            }
+
+        }else{
+
+            // formula for an internal PIPnode
+
+            for (int catg = 0; catg < rDist_->getCategories().size(); catg++) {
+
+                // muT(r) = r * mu * b(v)
+                double muT = rDist_->getCategory(catg) * mu_.at(catg) * node->bnode_->getDistanceToFather();
+
+                // checks division by 0 or too small value
+                if (fabs(muT) < SMALL_DOUBLE) {
+                    perror("ERROR mu * T is too small");
+                }
+                // survival probability on node v (different from (local)-root)
+                // beta(v,r) = (1 - exp( -mu * r * b(v) )) / (mu * r * b(v))
+                node->betasNode_.at(catg) = (1.0 - exp(-muT)) / muT;
+            }
+
+        }
+    }
+
+}
+
 void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-                                   int num_sb,
-                                   enumDP3Dversion DPversion) {
+                                   enumDP3Dversion DPversion,
+                                   int num_sb) {
 
     //***************************************************************************************
     // GET DIMENSIONS
@@ -147,11 +243,15 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
 
     for (auto &vnode:list_vnode_to_root) {
 
-        auto bnode = tree_->getNode(treemap_.right.at(vnode), false);
+        auto bnode = tree_->getNode(treemap_.right.at(vnode), false); // get bnode from vnode through the tree-map
 
-        PIPnode * pip_node = nodeFactory->getPIPnode(DPversion,this,vnode,bnode);
+        // create a PIPnode
+        PIPnode * pip_node = nodeFactory->getPIPnode(DPversion, // PIPnode of type CPU, RAM, SB,... to access the correct DP version
+                                                     this,      // PIPnode has access to progressivePIP fields through this pointer
+                                                     vnode,     // PIPnode store the correponding vnode and
+                                                     bnode);    // the bnode
 
-        pip_node->_reserve(numCatg_); // allocate memory
+        pip_node->_reserve(numCatg_); // allocate some memory
 
         //***************************************************************************************
         // GET Qs
@@ -164,38 +264,25 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
     }
     //***************************************************************************************
 
-    // TODO:
-    // - costruire albero PIPnode
-    // - calcolare tau e nu globali
+    _buildPIPnodeTree(); // build a tree of PIPnodes
 
-    //***************************************************************************************
-    // COMPUTE SUBTREE LENGHTS
-    //***************************************************************************************
-    //pip_node->_computeSubtreeTau();
-    //pip_node->_computeSubtreeTau();
-    //***************************************************************************************
-    // COMPUTE ALL LOCAL POISSON NORMALIZING CONSTANTS
-    //***************************************************************************************
-    //pip_node->_computeNu(numCatg_);
+    _computeTau_(); // compute the total tree length and the left/right subtree length
+                    // (length of the left/right subtree rooted at the given node) at each PIPnode
+
+    _computeNu();   // compute the Poisson normalizing intensity (corresponds to the expected MSA length)
+
+    _setAllIotas(); // set iota (survival probability) on all nodes
+
+    _setAllBetas(); // set beta (survival probability) on all nodes
 
 }
 
-//void progressivePIP::_computeLocalTau() {
-//
-//    if(vnode_->isTerminalNode()){
-//        tau_ = 0.0;
-//    }else{
-//
-////        b0 = tree_->getNode(treemap_.right.at(vnode->getNodeLeft()), false)->getDistanceToFather() +\
-//                tree_->getNode(treemap_.right.at(vnode->getNodeRight()), false)->getDistanceToFather();
-//
-//        //tau = _computeTauRecursive(vnode_);
-//    }
-//
-//
-//}
-
 void progressivePIP::_buildPIPnodeTree() {
+
+    // build a binary tree of PIPnode that dictates the alignmanet order
+
+    // this method build a PIPnode binary tree with the same structure (same relations)
+    // to the bpp tree
 
     for (auto &node:compositePIPaligner_->pip_nodes_) {
 
@@ -204,17 +291,22 @@ void progressivePIP::_buildPIPnodeTree() {
         int bnodeId = bnode->getId();
 
         if(bnode->hasFather()){
+            // internal node
             int bnodeFatherId = bnode->getFatherId();
             node->parent = compositePIPaligner_->pip_nodes_.at(bnodeFatherId);
         }else{
+            // root node
             node->parent = nullptr;
+            PIPnodeRoot = node;
         }
 
         if(!bnode->isLeaf()){
+            // internal node
             std::vector<int> bnodeSonsId = bnode->getSonsId();
             node->childL = compositePIPaligner_->pip_nodes_.at(bnodeSonsId.at(LEFT));
             node->childR = compositePIPaligner_->pip_nodes_.at(bnodeSonsId.at(RIGHT));
         }else{
+            // leaf node
             node->childL = nullptr;
             node->childR = nullptr;
         }
@@ -225,7 +317,10 @@ void progressivePIP::_buildPIPnodeTree() {
 
 void progressivePIP::_computeTauRec_(PIPnode *pipnode) {
 
-    if(pipnode== nullptr){
+    // recursive computation of the total tree length and
+    // of the total left/right subtree length
+
+    if(pipnode->_isTerminalNode()){
 
         pipnode->subTreeLenL_ = 0.0;
         pipnode->subTreeLenR_ = 0.0;
@@ -252,28 +347,28 @@ void progressivePIP::_computeTauRec_(PIPnode *pipnode) {
 
 void progressivePIP::_computeTau_() {
 
-   int rootId = getRootNode()->getId();
+    // compute the total tree length and the length of the left/right subtree
+    // of the tree rooted at a given PIPnode
 
-   PIPnode * rootPIPnode = compositePIPaligner_->pip_nodes_.at(rootId);
+    // get the root Id
+    int rootId = getBPProotNode()->getId();
 
-   tau_ = 0.0;
-   progressivePIP::_computeTauRec_(rootPIPnode);
+    // get the root node
+    PIPnode * rootPIPnode = compositePIPaligner_->pip_nodes_.at(rootId);
+
+    // init the total tree length
+    tau_ = 0.0;
+
+    // compute the total tree length by means of a recursive method
+    progressivePIP::_computeTauRec_(rootPIPnode);
 
 }
 
-//void progressivePIP::_computeTau() {
-//
-//    tau_ = 0.0;
-//    for (auto &node:compositePIPaligner_->pip_nodes_) {
-//
-//        tau_ += node->bnode_->getDistanceToFather();
-//
-//    }
-//
-//}
-
 void progressivePIP::_computeNu() {
 
+    // compute the normalizing Poisson intensity (expected MSA length)
+
+    // get the number of gamma categories
     nu_.resize(numCatg_);
 
     for (int catg = 0; catg < numCatg_; catg++) {

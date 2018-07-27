@@ -67,6 +67,8 @@ namespace bpp {
         // PRIVATE METHODS
         //***************************************************************************************
 
+        void DP3D_PIP_leaf();
+
         void DP3D_PIP_node();
 
         bool _index_of_max(double m,

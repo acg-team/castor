@@ -67,6 +67,8 @@ namespace bpp {
         // PRIVATE METHODS
         //***************************************************************************************
 
+        void DP3D_PIP_leaf();
+
         void DP3D_PIP_node();
 
         bool _index_of_max(double m,
@@ -80,36 +82,45 @@ namespace bpp {
 
         double max_of_three(double a, double b, double c, double epsilon);
 
-        std::vector<double> computeLK_GapColumn_local(std::vector<bpp::ColMatrix<double> > &fvL,
-                                                      std::vector<bpp::ColMatrix<double> > &fvR,
-                                                      std::vector<bpp::ColMatrix<double> > &Fv_gap,
-                                                      std::vector<double> &fv_empty_sigma_,
-                                                      std::vector<double> &lk_empty_down_L,
-                                                      std::vector<double> &lk_empty_down_R);
+        void _compute_lk_empty_leaf_();
 
-        double computeLK_M_local(std::vector<bpp::ColMatrix<double> > &fvL,
-                                 std::vector<bpp::ColMatrix<double> > &fvR,
-                                 std::vector<bpp::ColMatrix<double> > &Fv_M_ij,
-                                 std::vector<double> &Fv_sigma_M_ij);
+        void _compute_lk_leaf_();
 
-        double computeLK_X_local(std::vector<bpp::ColMatrix<double> > &fvL,
-                                 std::vector<bpp::ColMatrix<double> > &fvR,
-                                 std::vector<bpp::ColMatrix<double> > &Fv_X_ij,
-                                 std::vector<double> &Fv_sigma_X_ij);
+        void _compress_lk_components(std::vector<double> &lk_down_not_compressed,
+                                     std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
 
-        double computeLK_Y_local(std::vector<bpp::ColMatrix<double> > &fvL,
-                                 std::vector<bpp::ColMatrix<double> > &fvR,
-                                 std::vector<bpp::ColMatrix<double> > &Fv_Y_ij,
-                                 std::vector<double> &Fv_sigma_Y_ij);
+        std::vector<double> _computeLK_empty(std::vector<bpp::ColMatrix<double> > &fvL,
+                                             std::vector<bpp::ColMatrix<double> > &fvR,
+                                             std::vector<bpp::ColMatrix<double> > &Fv_gap,
+                                             std::vector<double> &fv_empty_sigma_,
+                                             std::vector<double> &lk_empty_down_L,
+                                             std::vector<double> &lk_empty_down_R);
 
-        double computeLK_MXY_local(double log_phi_gamma,
-                                   double valM,
-                                   double valX,
-                                   double valY,
-                                   double log_pr);
+        double _computeLK_M(std::vector<bpp::ColMatrix<double> > &fvL,
+                            std::vector<bpp::ColMatrix<double> > &fvR,
+                            std::vector<bpp::ColMatrix<double> > &Fv_M_ij,
+                            std::vector<double> &Fv_sigma_M_ij);
+
+        double _computeLK_X(std::vector<bpp::ColMatrix<double> > &fvL,
+                            std::vector<bpp::ColMatrix<double> > &fvR,
+                            std::vector<bpp::ColMatrix<double> > &Fv_X_ij,
+                            std::vector<double> &Fv_sigma_X_ij);
+
+        double _computeLK_Y(std::vector<bpp::ColMatrix<double> > &fvL,
+                            std::vector<bpp::ColMatrix<double> > &fvR,
+                            std::vector<bpp::ColMatrix<double> > &Fv_Y_ij,
+                            std::vector<double> &Fv_sigma_Y_ij);
+
+        double _computeLK_MXY(double log_phi_gamma,
+                              double valM,
+                              double valX,
+                              double valY,
+                              double log_pr);
 
         void _compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compressed,
                           std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
+
+        void _compute_lk_empty_down_rec(std::vector<double> &lk);
 
     public:
 

@@ -75,6 +75,8 @@ namespace bpp {
 
         //void max_val_in_column(double ***M,int depth, int height, int width, double &val, int &level);
 
+        void DP3D_PIP_leaf();
+
         void DP3D_PIP_node();
 
     public:

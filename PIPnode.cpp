@@ -70,8 +70,8 @@ PIPnode::PIPnode(const progressivePIP *pPIP,
 
     progressivePIP_ = pPIP;
 
-    vnode_ = vnode;
-    bnode_ = bnode;
+    vnode_ = vnode; // tshlib node
+    bnode_ = bnode; // bpp node
 
     nodeID_ = bnode->getId();
 
@@ -96,33 +96,46 @@ void PIPnode::_reserve(int numCatg){
 
 };
 
-void PIPnode::_setFVleaf(MSA_t *MSA) {
+//TODO: change this method to PIPmsaSingle and re-implement for PIPmsaComp
+void PIPnode::_setFVleaf(MSA_t &MSA) {
 
-    int idx;
+    // get the number of gamma categories
+    size_t num_gamma_categories = progressivePIP_->numCatg_;
 
-    size_t num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
+    // get the number of compressed sites
+    int lenComprSeqs = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.size();
 
-    int lenComprSeqs;// = rev_map_compressed_seqs_.size();
-
+    // resize fv data([site][catg][states])
     fv_data_.resize(lenComprSeqs);
-
     for (int i = 0; i < lenComprSeqs; i++) {
         fv_data_[i].resize(num_gamma_categories);
     }
 
+    int idx;
+    // go through all the sites
     for (int i = 0; i < lenComprSeqs; i++) {
 
-        idx;// = rev_map_compressed_seqs_.at(0).at(i);
-        MSAcolumn_t s = MSA->at(idx);
+        // get the index in the compressed map
+        idx = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.at(i);
+        MSAcolumn_t s = MSA.at(idx);
 
+        // allocate fv column to the ext. alphabet size
         bpp::ColMatrix<double> fv;
-        fv.resize(progressivePIP_->extendedAlphabetSize_, 1);
-        bpp::MatrixTools::fill(fv, 0.0);
+        fv.resize(progressivePIP_->extendedAlphabetSize_, 1); // ColMatrix as Nx1 matrix
+        bpp::MatrixTools::fill(fv, 0.0); // all zeros
 
+        // check if the sequence contains a "forbidden" char
+        if(s[0]=='X' || s[0]==' ' || s[0]=='-'){
+            LOG(FATAL) << "\nERROR sequence contains either 'X' or ' ' or '-'";
+        }
+
+        // get the char position in the alphabet
         idx = progressivePIP_->alphabet_->charToInt(&s[0]);
-        idx = idx < 0 ? progressivePIP_->alphabetSize_ : idx;
 
+        // set to 1 the indicator array at the position of the observed char
         fv(idx, 0) = 1.0;
+
+        // assign the indicator array to all the gamma categories
         for (int catg = 0; catg < num_gamma_categories; catg++) {
             fv_data_.at(i).at(catg) = fv;
         }
@@ -131,17 +144,50 @@ void PIPnode::_setFVleaf(MSA_t *MSA) {
 
 }
 
+bool PIPnode::_isRootNode(){
+
+    // true if PIPnode is the root node
+    // (the last node to be aligned) otherwise false
+    if(parent == nullptr){
+        return true;
+    }else{
+        return false;
+    }
+
+}
+
+bool PIPnode::_isTerminalNode(){
+
+    // true if PIPnode is a leaf node
+    // (a leaf node doesn't need to be aligned) otherwise false
+    if(childL == nullptr || childR == nullptr){
+        return true;
+    }else{
+        return false;
+    }
+
+}
+
 void PIPnode::_setFVemptyLeaf() {
 
-    size_t num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
+    // get number of gamma categories
+    size_t num_gamma_categories = progressivePIP_->numCatg_;
 
+    // indicator array (all zeros except the observed character)
     bpp::ColMatrix<double> fv;
     fv.resize(progressivePIP_->extendedAlphabetSize_, 1);
-    bpp::MatrixTools::fill(fv, 0.0);
-    fv(progressivePIP_->alphabetSize_, 0) = 1.0;
+    bpp::MatrixTools::fill(fv, 0.0); // all zeros
 
+    // get the gap position in the alphabet
+    std::string ch(1, GAP_CHAR);
+    int gapIndex = progressivePIP_->alphabet_->charToInt(ch);
+
+    fv(gapIndex, 0) = 1.0; // set gap position to 1
+
+    // for all the gamma categories an array of fv values
     fv_empty_data_.resize(num_gamma_categories);
 
+    // assign the indicator array to all gamma categories
     for (int catg = 0; catg < num_gamma_categories; catg++) {
         fv_empty_data_.at(catg) = fv;
     }
@@ -150,19 +196,25 @@ void PIPnode::_setFVemptyLeaf() {
 
 void PIPnode::_setFVsigmaLeaf() {
 
-    size_t num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
+    // get the number of gamma categories
+    size_t num_gamma_categories = progressivePIP_->numCatg_;
 
-    int lenComprSeqs;// = rev_map_compressed_seqs_.size();
+    // get the length of the compressed input sequences
+    int lenComprSeqs = static_cast<PIPmsaSingle *>(MSA_)->getCompressedMSAlength();
 
+    // resize the array ([site][numCatg])
     fv_sigma_.resize(lenComprSeqs);
 
     double fv0;
+    // go through all the sites
     for (int site = 0; site < lenComprSeqs; site++) {
 
         fv_sigma_.at(site).resize(num_gamma_categories);
 
+        // go through all the gamma categories
         for(int catg = 0; catg < num_gamma_categories; catg++) {
 
+            // compute fv_sigma = fv dot pi
             fv0 = MatrixBppUtils::dotProd(fv_data_.at(site).at(catg), progressivePIP_->pi_);
 
             fv_sigma_.at(site).at(catg) = fv0;
@@ -173,32 +225,21 @@ void PIPnode::_setFVsigmaLeaf() {
 
 void PIPnode::_setFVsigmaEmptyLeaf() {
 
-    size_t num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
+    // get the number of gamma categories
+    size_t num_gamma_categories = progressivePIP_->numCatg_;
 
+    // allocate memory ([numCatg] x 1)
     fv_empty_sigma_.resize(num_gamma_categories);
 
     double fv0;
 
     for(int catg = 0; catg < num_gamma_categories; catg++) {
 
+        // compute fv_empty_sigma = fv_empty dot pi
         fv0 = MatrixBppUtils::dotProd(fv_empty_data_.at(catg), progressivePIP_->pi_);
 
         fv_empty_sigma_.at(catg) = fv0;
     }
-
-}
-
-double PIPnode::_computeSubtreeTau() {
-
-//    if (vnode_->isTerminalNode()) {
-//        subTreeLenL_ = 0.0;
-//        subTreeLenR_ = 0.0;
-////        tau_ = 0.0;
-//    }else{
-//        subTreeLenL_ = childL->tau_ + childL->bnode_->getDistanceToFather();
-//        subTreeLenR_ = childR->tau_ + childR->bnode_->getDistanceToFather();
-//        tau_ = subTreeLenL_ + subTreeLenR_;
-//    }
 
 }
 
@@ -221,47 +262,5 @@ void PIPnode::_getPrFromSubstitutionModel() {
                             progressivePIP_->rDist_->getCategory(i));
         }
     }
-
-}
-
-void PIPnode::DP3D_PIP_leaf() {
-
-/*
-
-    //*******************************************************************************
-    // ALIGNS LEAVES
-    //*******************************************************************************
-    std::string seqname = sequences_->getSequencesNames().at((int) vnode->vnode_seqid);
-
-    // associates the sequence name to the leaf node
-    _setMSAsequenceNames(node, seqname);
-
-    // creates a column containing the sequence associated to the leaf node
-    _setMSAleaves(node, sequences_->getSequence(seqname).toString());
-
-    // compresses sequence at the leaves
-    map_compressed_seqs_.at(node->getId()).resize(1);
-    rev_map_compressed_seqs_.at(node->getId()).resize(1);
-    _compressMSA(node, 0);
-*/
-    // computes the indicator values (fv values) at the leaves
-    //_setFVleaf();
-
-    // computes the indicator value for an empty column at the leaf
-    _setFVemptyLeaf();
-
-    // computes dotprod(pi,fv)
-    _setFVsigmaLeaf();
-
-    // computes dotprod(pi,fv) for an empty column at the leaf
-    _setFVsigmaEmptyLeaf();
-
-    /*
-    // sets th etraceback path at the leaf
-    _setTracebackPathleaves(node);
-
-    _setSubMSAindexLeaves(node);
-
-     */
 
 }

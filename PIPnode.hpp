@@ -58,7 +58,7 @@
 
 namespace bpp {
 
-    class PIPnode{
+    class PIPnode{ // pure virtual class
 
     private:
 
@@ -74,13 +74,17 @@ namespace bpp {
         // PUBLIC FIELDS
         //***************************************************************************************
 
+        // pointers that build a binary tree of PIPnodes
+        // each PIPnode has a father and two children (left and right)
+        // the parent node of the root is NULL
+        // the children nodes of a leaf node are both NULL
         PIPnode *parent;
         PIPnode *childL;
         PIPnode *childR;
 
         const progressivePIP *progressivePIP_; // pointer to progressivePIP
 
-        iPIPmsa *MSA_;
+        iPIPmsa *MSA_; //contains the MSA
 
         tshlib::VirtualNode *vnode_; // pointer to vnode
         bpp:: Node *bnode_; // pointer to bnode
@@ -92,8 +96,8 @@ namespace bpp {
         std::vector<double> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
         std::vector<bpp::RowMatrix<double> > prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
 
-        vector<double> log_lk_down_; //each nodeInterface a vector of lk
-        vector<double> log_lk_empty_down_; //each nodeInterface a vector of lk_empty (for each gamma category)
+        std::vector<double> log_lk_down_; //each node a vector of lk
+        std::vector<double> lk_empty_; //each node a vector of lk_empty (for each gamma category)
 
         std::vector< std::vector< bpp::ColMatrix<double> > > fv_data_; // [site][catg][fv]
         std::vector< bpp::ColMatrix<double> > fv_empty_data_; // [catg][fv]
@@ -106,24 +110,28 @@ namespace bpp {
         //***************************************************************************************
         PIPnode(const progressivePIP *pPIP,
                 tshlib::VirtualNode *vnode,
-                bpp::Node *bnode);
+                bpp::Node *bnode); // constructor
 
-        int _getId(){ return nodeID_; };
+        int _getId(){ return nodeID_; }; // get the Id of the node
 
-        tshlib::VirtualNode *_getVnode(){ return vnode_; };
-        bpp:: Node *_getBnode(){ return bnode_; };
+        tshlib::VirtualNode *_getVnode(){ return vnode_; }; // get the tshlib node pointer
+        bpp:: Node *_getBnode(){ return bnode_; }; // get the bpp node pointer
 
-        void _setFVemptyLeaf();
-        void _setFVsigmaLeaf();
+        bool _isRootNode(); // true if is the PIPnode root, false otherwise
 
-        void _setFVsigmaEmptyLeaf();
-        void _setFVleaf(MSA_t *MSA);
+        bool _isTerminalNode(); // true if is a PIPnode leaf, false otherwise
 
-        void _reserve(int numCatg);
+        void _setFVemptyLeaf(); // compute the fv array at leaf (indicator array) for an empty column
 
-        double _computeSubtreeTau();
+        void _setFVsigmaEmptyLeaf(); // compute fv_sigma = fv dot pi for an empty column
 
-        void _getPrFromSubstitutionModel();
+        void _setFVleaf(MSA_t &MSA); // compute the fv array at leaf (indicator array)
+
+        void _setFVsigmaLeaf(); // compute fv_sigma = fv dot pi
+
+        void _reserve(int numCatg); // allocate memory
+
+        void _getPrFromSubstitutionModel(); // compute exp(br_len * Q)
 
         //-----------------------------------------------------------
         // TODO: remove from here??? used only by nodeCPU
@@ -146,11 +154,11 @@ namespace bpp {
         std::vector<double> _compute_lk_down();
         //-----------------------------------------------------------
 
-        void DP3D_PIP_leaf();
+        void DP3D_PIP_leaf(); // align a leaf PIPnode
 
-        void DP3D_PIP_node();
+        void DP3D_PIP_node(); // align an internal PIPnode
 
-        void DP3D_PIP(){};
+        virtual void DP3D_PIP() = 0; // pure virtual method
         //***************************************************************************************
 
     };

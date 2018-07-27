@@ -67,7 +67,7 @@ void CompositePIPnode::PIPnodeAlign() {
 
         ApplicationTools::displayGauge(k, num_nodes);
 
-        pip_nodes_[k]->DP3D_PIP();
+        pip_nodes_[k]->DP3D_PIP(); // align the input sequences under the PIP model
 
     }
 
