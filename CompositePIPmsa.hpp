@@ -74,8 +74,8 @@ namespace bpp {
         std::vector<int>  traceback_path_;
 
         std::vector<int> traceback_map_;
-        std::vector<int> traceback_mapL_;
-        std::vector<int> traceback_mapR_;
+//        std::vector<int> traceback_mapL_;
+//        std::vector<int> traceback_mapR_;
 
         std::vector<int> map_compressed_seqs_;
 
@@ -132,16 +132,16 @@ namespace bpp {
 
         PIPmsa *pipmsa;
 
-        int subMSAidxL_;
-        int subMSAidxR_;
+//        int subMSAidxL_;
+//        int subMSAidxR_;
 
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
 
         PIPmsaSingle(){
-            subMSAidxL_ = 0;
-            subMSAidxR_ = 0;
+//            subMSAidxL_ = 0;
+//            subMSAidxR_ = 0;
         }
 
         void _compressMSA(const bpp::Alphabet *alphabet);

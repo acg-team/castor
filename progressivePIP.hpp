@@ -100,6 +100,7 @@ namespace bpp {
         void _setMu(double mu); // set mu for different rates
         void _setPi(const Vdouble &pi); // set Pi
         void _computeTauRec_(PIPnode *pipnode);
+        void _computeAllLkemptyRec(bpp::PIPnode *node);
         //***************************************************************************************
 
     public:
@@ -139,15 +140,17 @@ namespace bpp {
 
         ~progressivePIP(){}; // destructor
 
-        void initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, // list of nodes
-                           enumDP3Dversion DPversion, // DP3D version
-                           int num_sb);  // number of sub. optimal solutions (MSAs)
+        void _initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, // list of nodes
+                            enumDP3Dversion DPversion, // DP3D version
+                            int num_sb);  // number of sub. optimal solutions (MSAs)
 
         long getSeed() const { return seed_; }; // return seed for the random number generation
 
         void _setAllIotas(); // compute all the insertion probabilities (iota function)
 
         void _setAllBetas(); // compute all the survival probabilities (beta function)
+
+        void _setAllAlphas();
 
         bpp::Node *getBPProotNode(){ return tree_->getRootNode(); }; // get the root of the tree
 
@@ -160,7 +163,11 @@ namespace bpp {
         void _computeTau_(); // compute the total tree length and the length of the left/right subtree
                              // of the tree rooted at a given PIPnode
 
+        //void _computeLengthPathToRoot();
+
         void _computeNu(); // compute the normalizing Poisson intensity (expected MSA length)
+
+        void _computeAllFvEmptySigma();
 
     };
 

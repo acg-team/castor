@@ -733,7 +733,7 @@ int main(int argc, char *argv[]) {
 
             //===== OBSOLETE ===========================================================
             // Initialise alignment object
-            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(), PAR_alignment_sbsolutions);
+            //alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(), PAR_alignment_sbsolutions);
             //===== OBSOLETE ===========================================================
 
 
@@ -750,31 +750,31 @@ int main(int argc, char *argv[]) {
 
             //===== OBSOLETE ===========================================================
             // Align sequences using the progressive 3D Dynamic Programming under PIP
-            bool flag_local;
-            bool flag_map;
-            bool flag_fv;
-
-            if (PAR_alignment_version.find("cpu") != std::string::npos) {
-
-                flag_local = true;
-                flag_map = true;
-                flag_fv = false;
-
-            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
-
-                flag_local = true;
-                flag_map = false;
-                flag_fv = true;
-
-            } else {
-
-                flag_local = false;
-                flag_map = true;
-                flag_fv = false;
-
-                ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
-
-            }
+//            bool flag_local;
+//            bool flag_map;
+//            bool flag_fv;
+//
+//            if (PAR_alignment_version.find("cpu") != std::string::npos) {
+//
+//                flag_local = true;
+//                flag_map = true;
+//                flag_fv = false;
+//
+//            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
+//
+//                flag_local = true;
+//                flag_map = false;
+//                flag_fv = true;
+//
+//            } else {
+//
+//                flag_local = false;
+//                flag_map = true;
+//                flag_fv = false;
+//
+//                ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
+//
+//            }
             //===== OBSOLETE ===========================================================
 
 
@@ -817,9 +817,9 @@ int main(int argc, char *argv[]) {
 
 
 
-            proPIP->initializePIP(ftn, // list of tshlib nodes in on post-order (correct order of execution)
-                                  DPversion, // version of the alignment algorithm
-                                  num_sb);  // number of suboptimal MSAs
+            proPIP->_initializePIP(ftn, // list of tshlib nodes in on post-order (correct order of execution)
+                                   DPversion, // version of the alignment algorithm
+                                   num_sb);  // number of suboptimal MSAs
 
             proPIP->compositePIPaligner_->PIPnodeAlign();
 
@@ -842,16 +842,25 @@ int main(int argc, char *argv[]) {
             lkFile.open(PAR_output_file_lk);
             lkFile << MSAscore;
             lkFile.close();
-
-
-            //exit(EXIT_SUCCESS);
             //===========================================================
             //===========================================================
 
 
+
+
+
+
+
+
+
+
             //===== OBSOLETE ===========================================================
-            alignment->PIPAligner(ftn, flag_local, flag_map, flag_fv);
+            //alignment->PIPAligner(ftn, flag_local, flag_map, flag_fv);
             //===== OBSOLETE ===========================================================
+
+
+
+
 
             std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
@@ -866,35 +875,30 @@ int main(int argc, char *argv[]) {
 
 
 
-
+            //===== OBSOLETE ===========================================================
             // Convert PIP Aligner into bpp::sites
-            sites = pPIPUtils::pPIPmsa2Sites(alignment, 0);
-
-            // Export alignment to file
-            if (PAR_output_file_msa.find("none") == std::string::npos) {
-                DLOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
-                bpp::Fasta seqWriter;
-                seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
-            }
-
-            double score;
-            score = alignment->getScore(alignment->getRootNode()).at(0);
-
-            std::ofstream LogLkFile;
-            LogLkFile << std::setprecision(18);
-            LogLkFile.open(PAR_output_file_lk);
-            LogLkFile << score;
-            LogLkFile.close();
-
-
-
-
-
-
-
-            ApplicationTools::displayResult("Alignment log likelihood", TextTools::toString(score, 15));
-
-            DLOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
+//            sites = pPIPUtils::pPIPmsa2Sites(alignment, 0);
+//
+//            // Export alignment to file
+//            if (PAR_output_file_msa.find("none") == std::string::npos) {
+//                DLOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
+//                bpp::Fasta seqWriter;
+//                seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
+//            }
+//
+//            double score;
+//            score = alignment->getScore(alignment->getRootNode()).at(0);
+//
+//            std::ofstream LogLkFile;
+//            LogLkFile << std::setprecision(18);
+//            LogLkFile.open(PAR_output_file_lk);
+//            LogLkFile << score;
+//            LogLkFile.close();
+//
+//            ApplicationTools::displayResult("Alignment log likelihood", TextTools::toString(score, 15));
+//
+//            DLOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
+            //===== OBSOLETE ===========================================================
 
         }
 

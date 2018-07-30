@@ -96,6 +96,8 @@ namespace bpp {
         std::vector<double> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
         std::vector<bpp::RowMatrix<double> > prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
 
+        std::vector<double> alphaNode_;
+
         std::vector<double> log_lk_down_; //each node a vector of lk
         std::vector<double> lk_empty_; //each node a vector of lk_empty (for each gamma category)
 
@@ -104,6 +106,11 @@ namespace bpp {
 
         std::vector< std::vector<double> > fv_sigma_; // [site][catg]
         std::vector<double>  fv_empty_sigma_; // [catg]
+
+        //std::vector<double> lk_empty__;
+        //std::vector<double>  fv_empty_sigma__; // [catg]
+
+        //double distanceToRoot; // length of the path from this node to root (sum of branch length)
 
         //***************************************************************************************
         // PUBLIC METHODS
@@ -125,11 +132,15 @@ namespace bpp {
 
         void _setFVsigmaEmptyLeaf(); // compute fv_sigma = fv dot pi for an empty column
 
+        void _setFVsigmaEmptyNode();
+
+        void _setFVemptyNode();
+
         void _setFVleaf(MSA_t &MSA); // compute the fv array at leaf (indicator array)
 
         void _setFVsigmaLeaf(); // compute fv_sigma = fv dot pi
 
-        void _reserve(int numCatg); // allocate memory
+        //void _reserve(int numCatg); // allocate memory
 
         void _getPrFromSubstitutionModel(); // compute exp(br_len * Q)
 

@@ -82,34 +82,42 @@ namespace bpp {
 
         double max_of_three(double a, double b, double c, double epsilon);
 
-        void _compute_lk_empty_leaf_();
+        //void _compute_lk_empty_leaf_();
 
-        void _compute_lk_leaf_();
+        void _computeLkLeaf();
+
+        void _computeLkEmptyLeaf();
 
         void _compress_lk_components(std::vector<double> &lk_down_not_compressed,
                                      std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
 
-        std::vector<double> _computeLK_empty(std::vector<bpp::ColMatrix<double> > &fvL,
-                                             std::vector<bpp::ColMatrix<double> > &fvR,
-                                             std::vector<bpp::ColMatrix<double> > &Fv_gap,
-                                             std::vector<double> &fv_empty_sigma_,
-                                             std::vector<double> &lk_empty_down_L,
-                                             std::vector<double> &lk_empty_down_R);
+//        std::vector<double> _computeLK_empty(std::vector<bpp::ColMatrix<double> > &fvL,
+//                                             std::vector<bpp::ColMatrix<double> > &fvR,
+//                                             std::vector<bpp::ColMatrix<double> > &Fv_gap,
+//                                             std::vector<double> &fv_empty_sigma_,
+//                                             std::vector<double> &lk_empty_down_L,
+//                                             std::vector<double> &lk_empty_down_R);
+
+
+        std::vector<double> _computeLkEmptyNode();
 
         double _computeLK_M(std::vector<bpp::ColMatrix<double> > &fvL,
                             std::vector<bpp::ColMatrix<double> > &fvR,
                             std::vector<bpp::ColMatrix<double> > &Fv_M_ij,
-                            std::vector<double> &Fv_sigma_M_ij);
+                            std::vector<double> &Fv_sigma_M_ij,
+                            double &pr_match_full_path);
 
         double _computeLK_X(std::vector<bpp::ColMatrix<double> > &fvL,
                             std::vector<bpp::ColMatrix<double> > &fvR,
                             std::vector<bpp::ColMatrix<double> > &Fv_X_ij,
-                            std::vector<double> &Fv_sigma_X_ij);
+                            std::vector<double> &Fv_sigma_X_ij,
+                            double &pr_gapx_full_path);
 
         double _computeLK_Y(std::vector<bpp::ColMatrix<double> > &fvL,
                             std::vector<bpp::ColMatrix<double> > &fvR,
                             std::vector<bpp::ColMatrix<double> > &Fv_Y_ij,
-                            std::vector<double> &Fv_sigma_Y_ij);
+                            std::vector<double> &Fv_sigma_Y_ij,
+                            double &pr_gapy_full_path);
 
         double _computeLK_MXY(double log_phi_gamma,
                               double valM,

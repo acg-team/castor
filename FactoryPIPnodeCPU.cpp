@@ -1024,7 +1024,7 @@ double PIPnode::_compute_lk_down_rec(int idx,double lk){
             bpp::Node *sonLeft = childL->_getBnode();
             int sonLeftID = sonLeft->getId();
 
-            idx = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_mapL_.at(idx_tr);
+//            idx = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_mapL_.at(idx_tr);
 
             //int sub_i;// = subMSAidx_.at(LEFT).at(position);
 
@@ -1039,7 +1039,7 @@ double PIPnode::_compute_lk_down_rec(int idx,double lk){
             bpp::Node *sonRight = childR->_getBnode();
             int sonRightID = sonRight->getId();
 
-            idx = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_mapR_.at(idx_tr);
+//            idx = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_mapR_.at(idx_tr);
 
             //lk = childL->_compute_lk_down_rec(idx,lk);int sub_i;// = subMSAidx_.at(RIGHT).at(position);
 

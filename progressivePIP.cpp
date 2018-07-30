@@ -131,6 +131,8 @@ void progressivePIP::_setAllIotas() {
 
     for(auto &node:compositePIPaligner_->pip_nodes_){
 
+        node->iotasNode_.resize(numCatg_);
+
         if(node->_isRootNode()){
 
             // formula for the root PIPnode
@@ -177,6 +179,47 @@ void progressivePIP::_setAllIotas() {
 
 }
 
+void progressivePIP::_setAllAlphas() {
+
+    for(auto &node:compositePIPaligner_->pip_nodes_){
+
+        node->alphaNode_.resize(numCatg_);
+
+        double zeta = 1.0;
+        for(int catg=0;catg<numCatg_;catg++){
+            //
+            node->alphaNode_.at(catg) = node->iotasNode_.at(catg) * node->betasNode_.at(catg) * zeta;
+        }
+
+        bpp::PIPnode *tmpPIPnode = node;
+
+        double T;
+
+        if( !tmpPIPnode->_isRootNode() ) {
+            T = tmpPIPnode->bnode_->getDistanceToFather();
+        }
+
+        while( !tmpPIPnode->_isRootNode() ){
+
+            tmpPIPnode = tmpPIPnode->parent;
+
+            for(int catg=0;catg<numCatg_;catg++) {
+
+                zeta = exp(-mu_.at(catg)*T);
+
+                node->alphaNode_.at(catg) += tmpPIPnode->iotasNode_.at(catg) * tmpPIPnode->betasNode_.at(catg) * zeta;
+
+            }
+
+            if( !tmpPIPnode->_isRootNode() ){
+                T += tmpPIPnode->bnode_->getDistanceToFather();
+            }
+        }
+
+    }
+
+}
+
 void progressivePIP::_setAllBetas() {
 
     // compute all the survival probabilities (beta function)
@@ -184,6 +227,8 @@ void progressivePIP::_setAllBetas() {
     // from any other internal node
 
     for(auto &node:compositePIPaligner_->pip_nodes_){
+
+        node->betasNode_.resize(numCatg_);
 
         if(node->_isRootNode()){
 
@@ -217,9 +262,77 @@ void progressivePIP::_setAllBetas() {
 
 }
 
-void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-                                   enumDP3Dversion DPversion,
-                                   int num_sb) {
+//void progressivePIP::_computeAllLkemptyRec(bpp::PIPnode *node) {
+//
+//    if(node->_isTerminalNode()){
+//
+//        node->fv_empty_sigma__.resize(numCatg_);
+//
+//        for(int catg=0;catg<numCatg_;catg++){
+//            node->fv_empty_sigma__.at(catg) = 0.0;
+//        }
+//
+//    }else{
+//
+//        _computeAllLkemptyRec(node->childL);
+//        _computeAllLkemptyRec(node->childR);
+//
+//        double bL = node->childL->bnode_->getDistanceToFather();
+//        double bR = node->childR->bnode_->getDistanceToFather();
+//        double zetaL;
+//        double zetaR;
+//
+//        node->fv_empty_sigma__.resize(numCatg_);
+//
+//        for(int catg=0;catg<numCatg_;catg++){
+//
+//            zetaL = exp(-mu_.at(catg) * bL);
+//            zetaR = exp(-mu_.at(catg) * bR);
+//
+//            node->fv_empty_sigma__.at(catg) = \
+//                    (1 - zetaL) * (1 - zetaR) + \
+//                    (1 - zetaL) * zetaR * node->childR->fv_empty_sigma__.at(catg) + \
+//                    zetaL * node->childL->fv_empty_sigma__.at(catg)* (1 - zetaR) + \
+//                    zetaL * node->childL->fv_empty_sigma__.at(catg) * zetaR * node->childR->fv_empty_sigma__.at(catg);
+//
+//        }
+//
+//    }
+//
+//}
+
+void progressivePIP::_computeAllLkemptyRec(bpp::PIPnode *node) {
+
+    if(node->_isTerminalNode()){
+
+        node->_setFVsigmaEmptyLeaf();
+
+        node->_setFVemptyLeaf();
+
+    }else{
+
+        _computeAllLkemptyRec(node->childL);
+        _computeAllLkemptyRec(node->childR) ;
+
+        node->_setFVsigmaEmptyNode();
+
+        node->_setFVemptyNode();
+
+    }
+
+}
+
+void progressivePIP::_computeAllFvEmptySigma() {
+
+    bpp::PIPnode *PIPnodeRoot = getPIPnodeRootNode();
+
+    _computeAllLkemptyRec(PIPnodeRoot);
+
+}
+
+void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
+                                    enumDP3Dversion DPversion,
+                                    int num_sb) {
 
     //***************************************************************************************
     // GET DIMENSIONS
@@ -251,7 +364,7 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
                                                      vnode,     // PIPnode store the correponding vnode and
                                                      bnode);    // the bnode
 
-        pip_node->_reserve(numCatg_); // allocate some memory
+        //pip_node->_reserve(numCatg_); // allocate some memory
 
         //***************************************************************************************
         // GET Qs
@@ -269,11 +382,18 @@ void progressivePIP::initializePIP(std::vector<tshlib::VirtualNode *> &list_vnod
     _computeTau_(); // compute the total tree length and the left/right subtree length
                     // (length of the left/right subtree rooted at the given node) at each PIPnode
 
+    //_computeLengthPathToRoot(); // at each node compute the length of the path from that node to
+                                // the root. The length from the root to the root is 0
+
     _computeNu();   // compute the Poisson normalizing intensity (corresponds to the expected MSA length)
 
     _setAllIotas(); // set iota (survival probability) on all nodes
 
     _setAllBetas(); // set beta (survival probability) on all nodes
+
+    _setAllAlphas();
+
+    _computeAllFvEmptySigma();
 
 }
 
@@ -363,6 +483,36 @@ void progressivePIP::_computeTau_() {
     progressivePIP::_computeTauRec_(rootPIPnode);
 
 }
+
+//void progressivePIP::_computeLengthPathToRoot(){
+//
+//    // get through the list of all the PIPnodes
+//    for (auto &node:compositePIPaligner_->pip_nodes_) {
+//
+//        // get the bnode associated to the PIPnode
+//        bpp::Node *bnode = node->bnode_;
+//
+//        // initialize the path length
+//        double T = 0.0;
+//
+//        // climb the PIPnode tree
+//        // the root skips this loop
+//        while(bnode->hasFather()){
+//
+//            // sum the branch length
+//            T += bnode->getDistanceToFather();
+//
+//            // get the parent bnode
+//            bnode = bnode->getFather();
+//        }
+//
+//        // save the path length at the given node
+//        // the path length from root to root is 0.0
+//        node->distanceToRoot = T;
+//
+//    }
+//
+//}
 
 void progressivePIP::_computeNu() {
 
