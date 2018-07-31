@@ -61,6 +61,17 @@ bool nodeRAM::_index_of_max(double m,
                             int &index,
                             double &val) {
 
+    // get the index and the max value among the three input values (m,x,y)
+
+    // m:  match value
+    // x:  gapx value
+    // y:   gapy value
+    // epsilon: small number for the comparison between to numbers
+    // generator: random number generator (when two or three numbers have the same value)
+    // distribution: uniform distribution
+    // index: index of max (1: MATCH, 2: GAPX, 3: GAPY)
+    // val: max value between the three (m,x,y)
+
     double random_number;
 
     if (std::isinf(m) & std::isinf(x) & std::isinf(y)){
@@ -183,38 +194,50 @@ bool nodeRAM::_index_of_max(double m,
 
 }
 
-double nodeRAM::max_of_three(double a, double b, double c, double epsilon) {
+double nodeRAM::max_of_three(double m,
+                             double x,
+                             double y,
+                             double epsilon) {
 
-    if (fabs(a) < epsilon) {
-        a = -std::numeric_limits<double>::infinity();
+    // get max value among the three input values (m,x,y)
+
+    if (fabs(m) < epsilon) { // if a cell has been initialized to 0 then its lk is -inf
+        m = -std::numeric_limits<double>::infinity();
     }
-    if (fabs(b) < epsilon) {
-        b = -std::numeric_limits<double>::infinity();
+    if (fabs(x) < epsilon) { // if a cell has been initialized to 0 then its lk is -inf
+        x = -std::numeric_limits<double>::infinity();
     }
-    if (fabs(c) < epsilon) {
-        c = -std::numeric_limits<double>::infinity();
+    if (fabs(y) < epsilon) { // if a cell has been initialized to 0 then its lk is -inf
+        y = -std::numeric_limits<double>::infinity();
     }
 
-    if (std::isinf(a) && std::isinf(b) && std::isinf(c)) {
+    if (std::isinf(m) && std::isinf(x) && std::isinf(y)) {
+        // if all the three values are -inf then the max value is also -inf
         return -std::numeric_limits<double>::infinity();
     }
 
-    if (a > b) {
-        if (a > c) {
-            return a;
+    if (m > x) {
+        if (m > y) {
+            // m greater than x and y
+            return m;
         }
-        return c;
+        // m greater than x but y greater than m
+        return y;
     } else {
-        if (b > c) {
-            return b;
+        if (x > y) {
+            // x greater than m and y
+            return x;
         }
-        return c;
+        // x greater than m but y greater than x
+        return y;
     }
 
 }
 
 void nodeRAM::_compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compressed,
                            std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed){
+
+    // compress an array of fv values and fv_sigma values
 
     int comprMSAlen = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.size();
 
@@ -240,6 +263,18 @@ void nodeRAM::_computeLK_M(std::vector<bpp::ColMatrix<double> > &fvL,
                              std::vector<double> &Fv_sigma_M_ij,
                              double &pr_match,
                              double &pr_match_full_path) {
+
+
+    // COMPUTE THE MATCH LK
+
+    // fvL: fv array of the left child
+    // fvR: fv array of the right child
+    // Fv_M_ij: result of Fv_M_ij = Pr_R * fv_R hadamard_prod Pr_L * fv_L
+    // Fv_sigma_M_ij: result of Fv_M_ij dot pi
+    // pr_match: match probability (stored for the next layer)
+    // pr_match_full_path: full match probability (used at this layer)
+    // it encompasses the probability of an insertion along
+    // the whole path between the root and this node
 
     // number of discrete gamma categories
     int num_gamma_categories = progressivePIP_->numCatg_;
@@ -286,6 +321,17 @@ void nodeRAM::_computeLK_X(std::vector<bpp::ColMatrix<double> > &fvL,
                              double &pr_gapx,
                              double &pr_gapx_full_path) {
 
+    // COMPUTE THE GAPX LK
+
+    // fvL: fv array of the left child
+    // fvR: fv array of the right child
+    // Fv_X_ij: result of Fv_X_ij = Pr_R * fv_R hadamard_prod Pr_L * fv_L
+    // Fv_sigma_X_ij: result of Fv_sigma_X_ij dot pi
+    // pr_gapx: gapx probability (stored for the next layer)
+    // pr_gapx_full_path: full gapx probability (used at this layer)
+    // it encompasses the probability of an insertion along
+    // the whole path between the root and this node
+
     // number of discrete gamma categories
     int numCatg = progressivePIP_->numCatg_;
 
@@ -331,6 +377,17 @@ void nodeRAM::_computeLK_Y(std::vector<bpp::ColMatrix<double> > &fvL,
                              double &pr_gapy,
                              double &pr_gapy_full_path) {
 
+    // COMPUTE THE GAPY LK
+
+    // fvL: fv array of the left child
+    // fvR: fv array of the right child
+    // Fv_Y_ij: result of Fv_Y_ij = Pr_R * fv_R hadamard_prod Pr_L * fv_L
+    // Fv_sigma_Y_ij: result of Fv_sigma_Y_ij dot pi
+    // pr_gapy: gapx probability (stored for the next layer)
+    // pr_gapy_full_path: full gapx probability (used at this layer)
+    // it encompasses the probability of an insertion along
+    // the whole path between the root and this node
+
     // number of discrete gamma categories
     int numCatg = progressivePIP_->numCatg_;
 
@@ -375,6 +432,10 @@ double nodeRAM::_computeLK_MXY(double log_phi_gamma,
                                double valX,
                                double valY,
                                double log_pr) {
+
+    // compute the lk at a given matrix entry extending the previous best
+    // lk (valM,valX,valY) together with the actual lk value (log_pr) and
+    // the marginal lk of an empty column
 
     return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 }
@@ -493,8 +554,7 @@ std::vector<double> nodeRAM::_computeLkEmptyNode(){
 
 
 
-void nodeRAM::_compute_lk_empty_down_rec(std::vector<double> &lk){
-
+//void nodeRAM::_compute_lk_empty_down_rec(std::vector<double> &lk){
 //    int num_gamma_categories = rDist_->getNumberOfCategories();
 //
 //    for (int catg=0; catg<num_gamma_categories; catg++) {
@@ -519,8 +579,7 @@ void nodeRAM::_compute_lk_empty_down_rec(std::vector<double> &lk){
 //        _compute_lk_empty_down_rec(sonRight,lk);
 //
 //    }
-
-}
+//}
 
 //void nodeRAM::_compute_lk_empty_leaf_() {
 //
@@ -544,6 +603,8 @@ void nodeRAM::_compute_lk_empty_down_rec(std::vector<double> &lk){
 
 void nodeRAM::_computeLkEmptyLeaf(){
 
+    // compute the lk of an empty column at the leaf
+
     // get the number of gamma categories
     int numCatg = progressivePIP_->numCatg_;
 
@@ -560,6 +621,8 @@ void nodeRAM::_computeLkEmptyLeaf(){
 }
 
 void nodeRAM::_computeLkLeaf(){
+
+    // compute the lk at the leaf
 
     // get the number of gamma categories
     int numCatg = progressivePIP_->numCatg_;
@@ -586,6 +649,8 @@ void nodeRAM::_computeLkLeaf(){
 }
 
 void nodeRAM::_compressLK(std::vector<double> &lk_down_not_compressed){
+
+    // compress an array of lk values
 
     int comprMSAlen = static_cast<PIPmsaSingle *>(MSA_)->getCompressedMSAlength();
 

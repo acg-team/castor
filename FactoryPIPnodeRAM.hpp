@@ -67,70 +67,76 @@ namespace bpp {
         // PRIVATE METHODS
         //***************************************************************************************
 
-        void DP3D_PIP_leaf();
+        void DP3D_PIP_leaf(); // DP method to align a sequence at a leaf PIPnode
+                              // (which reduces to data preparation)
 
-        void DP3D_PIP_node();
+        void DP3D_PIP_node(); // DP method to align 2 MSAs at an internal node
 
-        bool _index_of_max(double m,
-                                    double x,
-                                    double y,
-                                    double epsilon,
-                                    std::default_random_engine &generator,
-                                    std::uniform_real_distribution<double> &distribution,
-                                    int &index,
-                                    double &val);
+        // get the index and the max value among the three input values (m,x,y)
+        bool _index_of_max(double m,            // match value
+                           double x,            // gapx value
+                           double y,            // gapy value
+                           double epsilon,      // small number for the comparison between to numbers
+                           std::default_random_engine &generator,   // random number generator (when two or three numbers have the same value)
+                           std::uniform_real_distribution<double> &distribution,    // uniform distribution
+                           int &index,          // index of max (1: MATCH, 2: GAPX, 3: GAPY)
+                           double &val);        // max value between the three (m,x,y)
 
-        double max_of_three(double a, double b, double c, double epsilon);
+        // get max value among the three input values (m,x,y)
+        double max_of_three(double m,           // match value
+                            double x,           // gapx value
+                            double y,           // gapy value
+                            double epsilon);    // small number for the comparison between to numbers
 
-        //void _compute_lk_empty_leaf_();
+        void _computeLkLeaf(); // compute the lk at the leaf
 
-        void _computeLkLeaf();
+        void _computeLkEmptyLeaf(); // compute the lk of an empty column at the leaf
 
-        void _computeLkEmptyLeaf();
+        std::vector<double> _computeLkEmptyNode(); // compute the lk of an empty column at an internal node
 
-        void _compressLK(std::vector<double> &lk_down_not_compressed);
+        void _compressLK(std::vector<double> &lk_down_not_compressed);  // compress an array of lk values
 
-//        std::vector<double> _computeLK_empty(std::vector<bpp::ColMatrix<double> > &fvL,
-//                                             std::vector<bpp::ColMatrix<double> > &fvR,
-//                                             std::vector<bpp::ColMatrix<double> > &Fv_gap,
-//                                             std::vector<double> &fv_empty_sigma_,
-//                                             std::vector<double> &lk_empty_down_L,
-//                                             std::vector<double> &lk_empty_down_R);
+        // compress an array of fv values and fv_sigma values
+        void _compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compressed,
+                          std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
 
+        // compute the MATCH lk
+        void _computeLK_M(std::vector<bpp::ColMatrix<double> > &fvL, // fv array of the left child
+                                   std::vector<bpp::ColMatrix<double> > &fvR, // fv array of the right child
+                                   std::vector<bpp::ColMatrix<double> > &Fv_M_ij, // result of Fv_M_ij = Pr_R * fv_R hadamard_prod Pr_L * fv_L
+                                   std::vector<double> &Fv_sigma_M_ij, // result of Fv_M_ij dot pi
+                                   double &pr_match, // match probability (stored for the next layer)
+                                   double &pr_match_full_path); // full match probability (used at this layer)
+                                                                // it encompasses the probability of an insertion along
+                                                                // the whole path between the root and this node
 
-        std::vector<double> _computeLkEmptyNode();
+        // compute the GAPX lk
+        void _computeLK_X(std::vector<bpp::ColMatrix<double> > &fvL, // fv array of the left child
+                                   std::vector<bpp::ColMatrix<double> > &fvR, // fv array of the right child
+                                   std::vector<bpp::ColMatrix<double> > &Fv_X_ij, // result of Fv_X_ij = Pr_R * fv_R hadamard_prod Pr_L * fv_L
+                                   std::vector<double> &Fv_sigma_X_ij, // result of Fv_sigma_X_ij dot pi
+                                   double &pr_gapx, // gapx probability (stored for the next layer)
+                                   double &pr_gapx_full_path); // full gapx probability (used at this layer)
+                                                               // it encompasses the probability of an insertion along
+                                                               // the whole path between the root and this node
 
-        void _computeLK_M(std::vector<bpp::ColMatrix<double> > &fvL,
-                                   std::vector<bpp::ColMatrix<double> > &fvR,
-                                   std::vector<bpp::ColMatrix<double> > &Fv_M_ij,
-                                   std::vector<double> &Fv_sigma_M_ij,
-                                   double &pr_match,
-                                   double &pr_match_full_path);
+        // compute the GAPY lk
+        void _computeLK_Y(std::vector<bpp::ColMatrix<double> > &fvL, // fv array of the left child
+                                   std::vector<bpp::ColMatrix<double> > &fvR, // fv array of the right child
+                                   std::vector<bpp::ColMatrix<double> > &Fv_Y_ij, // result of Fv_Y_ij = Pr_R * fv_R hadamard_prod Pr_L * fv_L
+                                   std::vector<double> &Fv_sigma_Y_ij, // result of Fv_sigma_Y_ij dot pi
+                                   double &pr_gapy, // gapy probability (stored for the next layer)
+                                   double &pr_gapy_full_path); // full gapy probability (used at this layer)
+                                                               // it encompasses the probability of an insertion along
+                                                               // the whole path between the root and this node
 
-        void _computeLK_X(std::vector<bpp::ColMatrix<double> > &fvL,
-                                   std::vector<bpp::ColMatrix<double> > &fvR,
-                                   std::vector<bpp::ColMatrix<double> > &Fv_X_ij,
-                                   std::vector<double> &Fv_sigma_X_ij,
-                                   double &pr_gapx,
-                                   double &pr_gapx_full_path);
-
-        void _computeLK_Y(std::vector<bpp::ColMatrix<double> > &fvL,
-                                   std::vector<bpp::ColMatrix<double> > &fvR,
-                                   std::vector<bpp::ColMatrix<double> > &Fv_Y_ij,
-                                   std::vector<double> &Fv_sigma_Y_ij,
-                                   double &pr_gapy,
-                                   double &pr_gapy_full_path);
-
+        // compute the lk at a given matrix entry extending the previous best lk (valM,valX,valY) together with the
+        // actual lk value (log_pr) and the marginal lk of an empty column
         double _computeLK_MXY(double log_phi_gamma,
                               double valM,
                               double valX,
                               double valY,
                               double log_pr);
-
-        void _compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compressed,
-                          std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
-
-        void _compute_lk_empty_down_rec(std::vector<double> &lk);
 
     public:
 
@@ -138,11 +144,12 @@ namespace bpp {
         // PUBLIC METHODS
         //***************************************************************************************
 
+        // constructor
         nodeRAM(const progressivePIP *pPIP, tshlib::VirtualNode *vnode, bpp::Node *bnode) : PIPnode(pPIP, vnode,
                                                                                                     bnode) {
         }
 
-        void DP3D_PIP();
+        void DP3D_PIP(); // DP algorithm to align (leaf/internal node) under the PIP model
 
     };
 
