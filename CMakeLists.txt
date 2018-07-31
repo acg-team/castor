@@ -191,7 +191,24 @@ set(SOURCES
         SupportMeasures.cpp
         SupportMeasures.hpp
         progressivePIP.hpp
-        progressivePIP.cpp UnifiedPhylogeneticTools.cpp UnifiedPhylogeneticTools.hpp UnifiedDistanceEstimation.cpp UnifiedDistanceEstimation.hpp)
+        progressivePIP.cpp
+        UnifiedPhylogeneticTools.cpp
+        UnifiedPhylogeneticTools.hpp
+        UnifiedDistanceEstimation.cpp
+        UnifiedDistanceEstimation.hpp
+        PIPnode.hpp
+        PIPnode.cpp
+        FactoryPIPnodeCPU.cpp
+        FactoryPIPnodeRAM.cpp
+        FactoryPIPnodeSB.cpp
+        CompositePIPmsa.hpp
+        CompositePIPmsa.cpp
+        FactoryPIPnodeCPU.hpp
+        FactoryPIPnodeRAM.hpp
+        FactoryPIPnodeSB.hpp
+        FactoryPIPnode.hpp
+        CompositePIPnode.hpp
+        CompositePIPnode.cpp)
 
 
 if (STATIC GREATER 0)

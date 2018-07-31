@@ -44,7 +44,7 @@
 #ifndef MINIJATI_OPTIMIZATORS_HPP
 #define MINIJATI_OPTIMIZATORS_HPP
 #include <Bpp/Phyl/Distance/DistanceMethod.h>
-#include "pPIP.hpp"
+#include "progressivePIP.hpp"
 #include "UnifiedDistanceEstimation.hpp"
 
 namespace bpp {
@@ -79,7 +79,7 @@ namespace bpp {
        */
         static TreeLikelihood *optimizeParameters(
                 bpp::AbstractHomogeneousTreeLikelihood *inTL,
-                pPIP *pAlignment,
+                progressivePIP *proPIP,
                 const ParameterList &parameters,
                 std::map<std::string, std::string> &params,
                 const std::string &suffix = "",

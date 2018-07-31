@@ -1650,7 +1650,7 @@ double pPIP::computeLK_M_local(double NU,
             it = lkM.find(s);
             is_found = (it == lkM.end());
         } else {
-            is_found = true;
+            is_found = false;
         }
     }
 
