@@ -75,21 +75,29 @@ bool nodeRAM::_index_of_max(double m,
     double random_number;
 
     if (std::isinf(m) & std::isinf(x) & std::isinf(y)){
+        // if the three values are -inf than this cell is marked as
+        // non-valid (STOP_STATE) and the max val is -inf
         index = int(STOP_STATE);
         val = -std::numeric_limits<double>::infinity();
         return true;
     }
 
     if (not(std::isinf(m)) & not(std::isinf(x)) & (fabs((m - x)) < epsilon)) {
-        x = m;
+        // m and x are both not -inf
+        // they are identical (their difference is smaller than epsilon)
+        x = m; // x is exactly equal to m
     }
 
     if (not(std::isinf(m)) & not(std::isinf(y)) & (fabs((m - y)) < epsilon)) {
-        y = m;
+        // y and m are both not -inf
+        // they are identical (their difference is smaller than epsilon)
+        y = m; // y is exactly equal to m
     }
 
     if (not(std::isinf(x)) & not(std::isinf(y)) & (fabs((x - y)) < epsilon)) {
-        y = x;
+        // y and x are both not -inf
+        // they are identical (their difference is smaller than epsilon)
+        y = x; // y is exactly equal to x
     }
 
     if (m > x) {
@@ -105,6 +113,9 @@ bool nodeRAM::_index_of_max(double m,
             if (abs(m - y) < epsilon) {
                 //m or y
                 random_number = distribution(generator);
+                // m and y are equal and have the same value,
+                // the state is selected with a uniform random
+                // distribution with 50% probability each
                 if (random_number < (1.0 / 2.0)) {
                     index = int(MATCH_STATE);
                     val = m;
@@ -133,6 +144,9 @@ bool nodeRAM::_index_of_max(double m,
             if (abs(x - y) < epsilon) {
                 //x or y
                 random_number = distribution(generator);
+                // x and y are equal and have the same value,
+                // the state is selected with a uniform random
+                // distribution with 50% probability each
                 if (random_number < (1.0 / 2.0)) {
                     index = int(GAP_X_STATE);
                     val = x;
@@ -154,6 +168,9 @@ bool nodeRAM::_index_of_max(double m,
         if (mx > y) {
             //m or x
             random_number = distribution(generator);
+            // m and x are equal and have the same value,
+            // the state is selected with a uniform random
+            // distribution with 50% probability each
             if (random_number < (1.0 / 2.0)) {
                 index = int(MATCH_STATE);
                 val = m;
@@ -170,6 +187,9 @@ bool nodeRAM::_index_of_max(double m,
         } else {
             if (abs(mx - y) < epsilon) {
                 //m or x or y
+                // m,x and y are equal and have the same value,
+                // the state is selected with a uniform random
+                // distribution with 1/3 probability each
                 random_number = distribution(generator);
                 if (random_number < (1.0 / 3.0)) {
                     index = int(MATCH_STATE);

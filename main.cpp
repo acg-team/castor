@@ -732,15 +732,6 @@ int main(int argc, char *argv[]) {
 
             DLOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
 
-            //===== OBSOLETE ===========================================================
-            // Initialise alignment object
-            //alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(), PAR_alignment_sbsolutions);
-            //===== OBSOLETE ===========================================================
-
-
-
-
-
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
@@ -749,40 +740,7 @@ int main(int argc, char *argv[]) {
 
 
 
-            //===== OBSOLETE ===========================================================
-            // Align sequences using the progressive 3D Dynamic Programming under PIP
-//            bool flag_local;
-//            bool flag_map;
-//            bool flag_fv;
-//
-//            if (PAR_alignment_version.find("cpu") != std::string::npos) {
-//
-//                flag_local = true;
-//                flag_map = true;
-//                flag_fv = false;
-//
-//            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
-//
-//                flag_local = true;
-//                flag_map = false;
-//                flag_fv = true;
-//
-//            } else {
-//
-//                flag_local = false;
-//                flag_map = true;
-//                flag_fv = false;
-//
-//                ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
-//
-//            }
-            //===== OBSOLETE ===========================================================
 
-
-
-
-
-            std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
 
 
@@ -808,6 +766,8 @@ int main(int argc, char *argv[]) {
                 ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
             }
 
+            std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
             proPIP = new bpp::progressivePIP(utree,     // tshlib tree
                                                    tree,                // bpp tree
                                                    smodel,              // substitution model
@@ -823,6 +783,12 @@ int main(int argc, char *argv[]) {
                                    num_sb);  // number of suboptimal MSAs
 
             proPIP->compositePIPaligner_->PIPnodeAlign(); // align input sequences with a DP algorithm under PIP
+
+            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+            std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
+            ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
 
             // convert PIPmsa into a sites objects
             sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
@@ -857,19 +823,51 @@ int main(int argc, char *argv[]) {
 
 
             //===== OBSOLETE ===========================================================
-            //alignment->PIPAligner(ftn, flag_local, flag_map, flag_fv);
+            //Align sequences using the progressive 3D Dynamic Programming under PIP
+            bool flag_local;
+            bool flag_map;
+            bool flag_fv;
+
+            if (PAR_alignment_version.find("cpu") != std::string::npos) {
+
+                flag_local = true;
+                flag_map = true;
+                flag_fv = false;
+
+            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
+
+                flag_local = true;
+                flag_map = false;
+                flag_fv = true;
+
+            } else {
+
+                flag_local = false;
+                flag_map = true;
+                flag_fv = false;
+
+                ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
+
+            }
+
+            std::chrono::high_resolution_clock::time_point t3 = std::chrono::high_resolution_clock::now();
+            // Initialise alignment object
+            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(), PAR_alignment_sbsolutions);
+
+            alignment->PIPAligner(ftn, flag_local, flag_map, flag_fv);
+
+            std::chrono::high_resolution_clock::time_point t4 = std::chrono::high_resolution_clock::now();
+
+            duration = std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
+            std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
+            ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
             //===== OBSOLETE ===========================================================
 
 
 
 
 
-//            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
-//            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-//            std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
-            //ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
-            //ApplicationTools::displayResult("[Alignment sequences] MSA_t inference using Pro-PIP", "terminated successfully");
 
 
 
