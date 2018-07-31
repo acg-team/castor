@@ -116,7 +116,10 @@ void PIPmsaSingle::_compressMSA(const bpp::Alphabet *alphabet) {
                                                         seqs.at(i),
                                                         alphabet)), true);
 
-        std::cout<<"["<<seqs.at(i)<<"]\n";
+
+        //======= DEBUG ====================
+        //std::cout<<"["<<seqs.at(i)<<"]\n";
+        //======= DEBUG ====================
 
     }
 
@@ -196,11 +199,11 @@ void PIPmsaSingle::_build_MSA(MSA_t &msaL,MSA_t &msaR) {
     }
 
     //======== DEBUG =========================================//
-    std::cout<<"\n\nMSA\n";
-    for (int j = 0; j < pipmsa->traceback_path_.size(); j++) {
-        std::cout<<pipmsa->msa_.at(j)<<"\n";
-    }
-    std::cout<<"\n\n";
+//    std::cout<<"\n\nMSA\n";
+//    for (int j = 0; j < pipmsa->traceback_path_.size(); j++) {
+//        std::cout<<pipmsa->msa_.at(j)<<"\n";
+//    }
+//    std::cout<<"\n\n";
     //======== DEBUG =========================================//
 
 }

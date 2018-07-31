@@ -58,6 +58,7 @@ CompositePIPnode::CompositePIPnode(int numNodes){
 
 void CompositePIPnode::PIPnodeAlign() {
 
+    // get the number of PIPnodes
     size_t num_nodes = pip_nodes_.size();
 
     for (int k = 0; k < num_nodes; k++) {

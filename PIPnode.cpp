@@ -234,18 +234,9 @@ void PIPnode::_setFVemptyNode(){
     // number of discrete gamma categories
     int numCatg = progressivePIP_->numCatg_;
 
-    //Fv_gap.resize(numCatg);
-
     fv_empty_data_.resize(numCatg);
 
-//    double fv0;
-//    double p0;
-//    double pL,pR;
-
     // array of lk (for each gamma rate) of a single column full of gaps
-//    std::vector<double> pc0;
-//    pc0.resize(num_gamma_categories);
-
     for (int catg = 0; catg < numCatg; catg++) {
 
         // PrfvL = Pr_L * fv_L
@@ -260,34 +251,9 @@ void PIPnode::_setFVemptyNode(){
         bpp::ColMatrix<double> fv;
         bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
 
-        //Fv_gap.at(catg) = fv;
-
         fv_empty_data_.at(catg) = fv;
-
-//        // fv0 = pi * fv
-//        fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
-//
-//        fv_empty_sigma_.at(catg) = fv0;
-//
-//        if(_isRootNode()){
-//            // lk at root node (beta = 1.0)
-//            p0 = iotasNode_.at(catg) * fv0;
-//        }else{
-//            p0 = ( iotasNode_.at(catg) - \
-//                   iotasNode_.at(catg) * betasNode_.at(catg) + \
-//                   iotasNode_.at(catg) * betasNode_.at(catg) * fv0 );
-//        }
-//
-//        pL = lk_empty_down_L.at(catg);
-//        pR = lk_empty_down_R.at(catg);
-//
-//        // TODO: remove this use instead lk_empty_down_
-//        pc0.at(catg) = p0 + pL + pR;
-//
-//        lk_empty_.at(catg) = p0 + pL + pR;
     }
 
-//    return pc0;
 }
 
 void PIPnode::_setFVsigmaEmptyLeaf() {
@@ -298,19 +264,9 @@ void PIPnode::_setFVsigmaEmptyLeaf() {
     // allocate memory ([numCatg] x 1)
     fv_empty_sigma_.resize(numCatg);
 
-//    double fv0;
-//
-//    for(int catg = 0; catg < num_gamma_categories; catg++) {
-//
-//        // compute fv_empty_sigma = fv_empty dot pi
-//        fv0 = MatrixBppUtils::dotProd(fv_empty_data_.at(catg), progressivePIP_->pi_);
-//
-//        fv_empty_sigma_.at(catg) = fv0;
-//    }
-//
-//    fv_empty_sigma_.resize(numCatg);
-
     for(int catg=0;catg<numCatg;catg++){
+        // fv_empty_sigma = fv dot pi
+        // fv_empty_sigma is always 0 at the leaves
         fv_empty_sigma_.at(catg) = 0.0;
     }
 
@@ -318,21 +274,29 @@ void PIPnode::_setFVsigmaEmptyLeaf() {
 
 void PIPnode::_setFVsigmaEmptyNode() {
 
+    // get the number of categories
     int numCatg = progressivePIP_->numCatg_;
 
-    double bL = childL->bnode_->getDistanceToFather();
-    double bR = childR->bnode_->getDistanceToFather();
+    double bL = childL->bnode_->getDistanceToFather(); // left child branch length
+    double bR = childR->bnode_->getDistanceToFather(); // right child branch length
 
     double zetaL;
     double zetaR;
 
+    // resize to the number of categories
     fv_empty_sigma_.resize(numCatg);
 
     for(int catg=0;catg<numCatg;catg++){
 
-        zetaL = exp(-progressivePIP_->mu_.at(catg) * bL);
-        zetaR = exp(-progressivePIP_->mu_.at(catg) * bR);
+        zetaL = exp(-progressivePIP_->mu_.at(catg) * bL); // pure survival probability on the left child
+        zetaR = exp(-progressivePIP_->mu_.at(catg) * bR); // pure survival probability on the right child
 
+        // fv_empty_sigma = dot(fv_empty,pi)
+        // which corresponds to
+        // fv_empty_sigma = not_survival_L * not_survival_R +
+        //                  not_survival_L * survival_R * not_survival_below_R +
+        //                  survival_L * not_survival_below_L * not_survival_R +
+        //                  survival_L * not_survival_below_L * not_survival_R * not_survival_below_R
         fv_empty_sigma_.at(catg) = \
                             (1 - zetaL) * (1 - zetaR) + \
                             (1 - zetaL) * zetaR * childR->fv_empty_sigma_.at(catg) + \

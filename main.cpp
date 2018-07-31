@@ -716,6 +716,7 @@ int main(int argc, char *argv[]) {
         /////////////////////////
         // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
         pPIP *alignment = nullptr;
+        progressivePIP *proPIP = nullptr;
         if (PAR_alignment) {
             std::string PAR_alignment_version = ApplicationTools::getStringParameter("alignment.version", jatiapp.getParams(), "cpu", "", true, 0);
             int PAR_alignment_sbsolutions = ApplicationTools::getIntParameter("alignment.sb_solutions", jatiapp.getParams(), 1, "", true, 0);
@@ -807,7 +808,7 @@ int main(int argc, char *argv[]) {
                 ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
             }
 
-            progressivePIP *proPIP = new bpp::progressivePIP(utree,     // tshlib tree
+            proPIP = new bpp::progressivePIP(utree,     // tshlib tree
                                                    tree,                // bpp tree
                                                    smodel,              // substitution model
                                                    tm,                  // tree-map
@@ -821,8 +822,9 @@ int main(int argc, char *argv[]) {
                                    DPversion, // version of the alignment algorithm
                                    num_sb);  // number of suboptimal MSAs
 
-            proPIP->compositePIPaligner_->PIPnodeAlign();
+            proPIP->compositePIPaligner_->PIPnodeAlign(); // align input sequences with a DP algorithm under PIP
 
+            // convert PIPmsa into a sites objects
             sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
                                                         static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->seqNames_,
                                                         static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->msa_);
@@ -862,10 +864,10 @@ int main(int argc, char *argv[]) {
 
 
 
-            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+//            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-            std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
+//            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+//            std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
             //ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
             //ApplicationTools::displayResult("[Alignment sequences] MSA_t inference using Pro-PIP", "terminated successfully");
 
@@ -1037,7 +1039,7 @@ int main(int argc, char *argv[]) {
         ApplicationTools::displayMessage("\n[Executing numerical parameters and topology optimization]");
 
         tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl,
-                                                                                                alignment,
+                                                                                                proPIP,
                                                                                                 tl->getParameters(),
                                                                                                 jatiapp.getParams(),
                                                                                                 "",

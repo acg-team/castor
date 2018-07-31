@@ -181,38 +181,49 @@ void progressivePIP::_setAllIotas() {
 
 void progressivePIP::_setAllAlphas() {
 
+    // alpha(v) = sum_from_v_to_root ( iota * beta * zeta )
+    // zeta = exp(- mu *b ) is the "pure" survival probability
+
     for(auto &node:compositePIPaligner_->pip_nodes_){
 
+        // resize for each gamma category
         node->alphaNode_.resize(numCatg_);
 
+        // zeta = exp(- mu * b ) is 1 at the starting node
         double zeta = 1.0;
         for(int catg=0;catg<numCatg_;catg++){
-            //
+            // initialize alpha with the probability at the starting node which is
+            // alpha(v) = iota * beta
             node->alphaNode_.at(catg) = node->iotasNode_.at(catg) * node->betasNode_.at(catg) * zeta;
         }
 
+        // climb the tree from the starting node towards the root
         bpp::PIPnode *tmpPIPnode = node;
 
-        double T;
+        double T; // path length from the starting node to the node below the insertion point
 
-        if( !tmpPIPnode->_isRootNode() ) {
+        if( !tmpPIPnode->_isRootNode() ) { // root node doesn't have distanceToFather
             T = tmpPIPnode->bnode_->getDistanceToFather();
         }
 
         while( !tmpPIPnode->_isRootNode() ){
 
+            // get the parent node
             tmpPIPnode = tmpPIPnode->parent;
 
             for(int catg=0;catg<numCatg_;catg++) {
 
+                // zeta(v) = "pure" survival probability from the starting node
+                // and the node below the insertion point
                 zeta = exp(-mu_.at(catg)*T);
 
+                // alpha(v) = sum_from_v_to_root ( iota * beta * zeta )
                 node->alphaNode_.at(catg) += tmpPIPnode->iotasNode_.at(catg) * tmpPIPnode->betasNode_.at(catg) * zeta;
 
             }
 
             if( !tmpPIPnode->_isRootNode() ){
-                T += tmpPIPnode->bnode_->getDistanceToFather();
+                T += tmpPIPnode->bnode_->getDistanceToFather(); // increase the path length from starting node and root
             }
         }
 
@@ -301,32 +312,34 @@ void progressivePIP::_setAllBetas() {
 //
 //}
 
-void progressivePIP::_computeAllLkemptyRec(bpp::PIPnode *node) {
+void progressivePIP::_computeAllFvEmptySigmaRec(bpp::PIPnode *node) {
 
-    if(node->_isTerminalNode()){
+    if(node->_isTerminalNode()){ // leaf
 
-        node->_setFVsigmaEmptyLeaf();
+        node->_setFVemptyLeaf(); // set fv_empty
 
-        node->_setFVemptyLeaf();
+        node->_setFVsigmaEmptyLeaf(); // set fv_sigma_empty = fv_empty dot pi
 
-    }else{
+    }else{ // internal node
 
-        _computeAllLkemptyRec(node->childL);
-        _computeAllLkemptyRec(node->childR) ;
+        // recursive call
+        _computeAllFvEmptySigmaRec(node->childL);
+        _computeAllFvEmptySigmaRec(node->childR) ;
 
-        node->_setFVsigmaEmptyNode();
+        node->_setFVemptyNode(); // set fv_empty
 
-        node->_setFVemptyNode();
-
+        node->_setFVsigmaEmptyNode(); // set fv_sigma_empty = fv_empty dot pi
     }
 
 }
 
 void progressivePIP::_computeAllFvEmptySigma() {
 
+    // get the root PIPnode
     bpp::PIPnode *PIPnodeRoot = getPIPnodeRootNode();
 
-    _computeAllLkemptyRec(PIPnodeRoot);
+    // recursive call
+    _computeAllFvEmptySigmaRec(PIPnodeRoot);
 
 }
 
@@ -335,17 +348,17 @@ void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vno
                                     int num_sb) {
 
     //***************************************************************************************
-    // GET DIMENSIONS
+    // get dimensions
     numNodes_ = list_vnode_to_root.size();
     numCatg_ = rDist_->getNumberOfCategories();
     //***************************************************************************************
-    // COMPUTES LAMBDA AND MU WITH GAMMA
+    // computes lambda and mu with gamma
     // set lambdas with rate variation (gamma distribution)
     _setLambda(substModel_->getParameter("lambda").getValue());
     // set mus with rate variation (gamma distribution)
     _setMu(substModel_->getParameter("mu").getValue());
     //***************************************************************************************
-    // SET PI
+    // set Pi
     // local copy of steady state frequency (Pi)
     _setPi(substModel_->getFrequencies());
     //***************************************************************************************
@@ -363,11 +376,8 @@ void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vno
                                                      this,      // PIPnode has access to progressivePIP fields through this pointer
                                                      vnode,     // PIPnode store the correponding vnode and
                                                      bnode);    // the bnode
-
-        //pip_node->_reserve(numCatg_); // allocate some memory
-
         //***************************************************************************************
-        // GET Qs
+        // get Qs
         // set substitution/deletion probabilities with rate variation (gamma distribution)
         pip_node->_getPrFromSubstitutionModel();
         //***************************************************************************************
@@ -391,9 +401,10 @@ void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vno
 
     _setAllBetas(); // set beta (survival probability) on all nodes
 
-    _setAllAlphas();
+    _setAllAlphas(); // alpha(v) = sum_from_v_to_root ( iota * beta * zeta )
+                     // zeta = exp(- mu *b ) is the "pure" survival probability
 
-    _computeAllFvEmptySigma();
+    _computeAllFvEmptySigma(); // compute all fv_empty and fv_empty_sigma values
 
 }
 

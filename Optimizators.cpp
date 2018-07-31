@@ -83,7 +83,7 @@ namespace bpp {
 
     TreeLikelihood *Optimizators::optimizeParameters(
             bpp::AbstractHomogeneousTreeLikelihood *inTL,
-            pPIP *pAlignment,
+            progressivePIP *proPIP,
             const ParameterList &parameters,
             std::map<std::string, std::string> &params,
             const std::string &suffix,
@@ -676,14 +676,17 @@ namespace bpp {
             // getting rid of const
             auto tu_subModel = const_cast<SubstitutionModel *>(tl->getSubstitutionModel());
 
+            /*
             pAlignment->setSubstModel(tu_subModel);
             pAlignment->setTree(&tl->getTree());
-            // TODO: flag_RAM, flag_map
             pAlignment->PIPAligner(ftn, true, true, true);
 
             double score = pAlignment->getScore(pAlignment->getRootNode()).at(0);
             ApplicationTools::displayResult("\nLog likelihood after MSA optimisation", TextTools::toString(score, 15));
             DLOG(INFO) << "[Alignment optimisation] Alignment has a new lk=" << score;
+
+            */
+
 
         }
 
