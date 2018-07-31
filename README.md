@@ -1,33 +1,16 @@
-## miniJATI - Phylogenetic inference and multi-sequence alignment under the Poisson Indel Process
+## miniJATI - Phylogenetic Tree Inference and Multiple Sequence Alignment under Indel models
 
 Authors: Lorenzo Gatti & Massimo Maiolo
 
-----
+Build on commit: refs/heads/develop a5c173949e465945497fecd02d8f3c0ceeeb5109
 
-### Releases
+On date: 31 Jul 2018, 16:00:20
 
-#### Version 1.0.7 / 02.07.2018
-    
-> #### Task
-
-- [[MIN-43](https://devops.lorenzogatti.me/browse/MIN-43)] -         Add ML/wML to Initial tree topology estimator schemes (pairwise distances)
-- [[MIN-44](https://devops.lorenzogatti.me/browse/MIN-44)] -         Pairwise distance estimation should be computed under nested models (+PIP)
-    
-> #### Bug
-
-- [[MIN-40](https://devops.lorenzogatti.me/browse/MIN-40)] -         Initial likelihood value does not match with MSA score
-- [[MIN-41](https://devops.lorenzogatti.me/browse/MIN-41)] -         Initial tree topology cannot be performed under PIP model. Distance measure is missing
-- [[MIN-42](https://devops.lorenzogatti.me/browse/MIN-42)] -         Optimisation of branches during initial tree estimation cannot be performed under PIP
-            
-> #### Story
-
-- [[MIN-8](https://devops.lorenzogatti.me/browse/MIN-8)] -         Design new parameter optimization routine to support more complex scenarios (using lk tolerance)
-
-----
+---- 
+> #### Documentation
+[Wiki](https://bitbucket.org/acg-team/minijati/wiki)
    
-### Licence
-
-
+> #### Licence
     * MiniJATI is a computer program whose purpose is to infer phylogentic trees 
     * and multi-sequence alignments under the Poisson Indel Process.
     *
