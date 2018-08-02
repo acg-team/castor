@@ -71,7 +71,7 @@ namespace bpp {
         mutable std::map<int, std::pair<std::vector<int>, bool>> descGapCountData_;           // Counts the number of gaps in the descending nodes
         mutable std::map<int, int> evolutionaryEvents_;                                       // Evolutionary events counts the number of possible evolutionary events happened on the node
         mutable std::map<int, double> evolutionaryEventsWeighted_;                            // Evolutionary events counts the number of possible evolutionary events happened on the node
-                                                                                              // weighted them by the number of nodes in the clade
+        // weighted them by the number of nodes in the clade
         mutable std::map<int, double> iotasData_;
         mutable std::map<int, double> betasData_;
         mutable std::map<int, std::vector<std::vector<double>>> indicatorFun_;
@@ -285,7 +285,8 @@ namespace bpp {
          */
         double getSecondOrderDerivative(const std::string &variable) const throw(Exception);
 
-        double getSecondOrderDerivative(const std::string &variable1, const std::string &variable2) const throw(Exception) { return 0; } // Not implemented for now.
+        double getSecondOrderDerivative(const std::string &variable1,
+                                        const std::string &variable2) const throw(Exception) { return 0; } // Not implemented for now.
         /** @} */
 
     public:    // Specific methods:
