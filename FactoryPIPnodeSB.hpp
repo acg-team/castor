@@ -52,7 +52,6 @@
 
 #include "progressivePIP.hpp"
 #include "FactoryPIPnode.hpp"
-#include "CompositePIPmsa.hpp"
 
 #ifndef MINIJATI_FACTORYNODESB_HPP
 #define MINIJATI_FACTORYNODESB_HPP
@@ -64,31 +63,53 @@ namespace bpp {
     private:
 
         //***************************************************************************************
-        // PUBLIC FIELDS
+        // PRIVATE FIELDS
         //***************************************************************************************
 
-        PIPmsaComp *MSA_;
+        std::vector<int> subMSAidx_;
+
 
         //***************************************************************************************
         // PRIVATE METHODS
         //***************************************************************************************
 
-        //void max_val_in_column(double ***M,int depth, int height, int width, double &val, int &level);
+        void DP3D_PIP_leaf(); // DP method to align a sequence at a leaf PIPnode
+                              // (which reduces to data preparation)
 
-        void DP3D_PIP_leaf();
+        void DP3D_PIP_node(); // DP method to align 2 MSAs at an internal node
 
-        void DP3D_PIP_node();
+        void _computeLkEmptyLeaf();
+
+        void _computeLkLeaf();
 
     public:
+
+        //***************************************************************************************
+        // PUBLIC FIELDS
+        //***************************************************************************************
+
+        nodeSB *parent;
+        nodeSB *childL;
+        nodeSB *childR;
+
+        PIPmsaComp *MSA_; //contains the MSA
 
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
 
-        nodeSB(const progressivePIP *pPIP, tshlib::VirtualNode *vnode, bpp::Node *bnode) : PIPnode(pPIP, vnode, bnode) {
+        // constructor
+        nodeSB(const progressivePIP *pPIP, tshlib::VirtualNode *vnode, bpp::Node *bnode) : PIPnode(pPIP, vnode,
+                                                                                                    bnode) {
         }
 
+
+        virtual ~nodeSB() = default;
+
         void DP3D_PIP();
+
+        void _computeAllFvEmptySigmaRec();
+
     };
 
 }

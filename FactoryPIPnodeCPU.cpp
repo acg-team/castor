@@ -623,11 +623,11 @@ double nodeCPU::computeLK_X_local(double NU,
         int idx;
 
         // number of discrete gamma categories
-        int num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
+        int numCatg = progressivePIP_->numCatg_;
 
         double pL;
         double pr = 0.0;
-        for (int catg = 0; catg < num_gamma_categories; catg++) {
+        for (int catg = 0; catg < numCatg; catg++) {
 
             // computes the recursive Felsenstein's peeling weight on the left subtree
             idx = 0;
@@ -873,7 +873,7 @@ double nodeCPU::computeLK_Y_local(double NU,
     return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 }
 
-bpp::ColMatrix<double> PIPnode::computeFVrec(MSAcolumn_t &s, int &idx, int catg) {
+bpp::ColMatrix<double> nodeCPU::computeFVrec(MSAcolumn_t &s, int &idx, int catg) {
 
     bpp::ColMatrix<double> fv;
 
@@ -912,7 +912,7 @@ bpp::ColMatrix<double> PIPnode::computeFVrec(MSAcolumn_t &s, int &idx, int catg)
     return fv;
 }
 
-void PIPnode::allgaps(std::string &s, int &idx, bool &flag) {
+void nodeCPU::allgaps(std::string &s, int &idx, bool &flag) {
 
     // flag is true if all the leaves of the subtree rooted in node contain a gap
 
@@ -939,7 +939,7 @@ void PIPnode::allgaps(std::string &s, int &idx, bool &flag) {
 
 }
 
-double PIPnode::compute_lk_gap_down(MSAcolumn_t &s, int catg) {
+double nodeCPU::compute_lk_gap_down(MSAcolumn_t &s, int catg) {
 
     int idx;
 
@@ -1002,7 +1002,9 @@ double PIPnode::compute_lk_gap_down(MSAcolumn_t &s, int catg) {
     return pr + pL + pR;
 }
 
-double PIPnode::_compute_lk_down_rec(int idx,double lk){
+double nodeCPU::_compute_lk_down_rec(int idx,double lk){
+
+    /*
 
     int num_gamma_categories = progressivePIP_->rDist_->getNumberOfCategories();
 
@@ -1054,9 +1056,15 @@ double PIPnode::_compute_lk_down_rec(int idx,double lk){
     }
 
     return lk;
+
+     */
 }
 
-double PIPnode::_compute_lk_down(MSAcolumn_t &s, int catg) {
+void nodeCPU::_computeAllFvEmptySigmaRec(){
+
+}
+
+double nodeCPU::_compute_lk_down(MSAcolumn_t &s, int catg) {
 
     int idx;
 
@@ -1112,11 +1120,11 @@ double PIPnode::_compute_lk_down(MSAcolumn_t &s, int catg) {
     return pr;
 }
 
-std::vector<double> PIPnode::_compute_lk_down(){
+std::vector<double> nodeCPU::_compute_lk_down(){
 
     std::vector<double> lk_down;
 
-    int MSAlen = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.size();
+    int MSAlen = MSA_->pipmsa->rev_map_compressed_seqs_.size();
 
     lk_down.resize(MSAlen);
 
@@ -1153,8 +1161,8 @@ void nodeCPU::DP3D_PIP_node() {
     int sonRightID = sonRight->getId();
 
     // Compute dimensions of the 3D block at current internal node.
-    h = static_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->msa_.size() + 1; // dimension of the alignment on the left side
-    w = static_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->msa_.size() + 1; // dimension of the alignment on the riht side
+    h = childL->MSA_->pipmsa->msa_.size() + 1; // dimension of the alignment on the left side
+    w = childR->MSA_->pipmsa->msa_.size() + 1; // dimension of the alignment on the riht side
 
     int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
 
@@ -1167,8 +1175,8 @@ void nodeCPU::DP3D_PIP_node() {
     MSAcolumn_t col_gap_Ls; // left column full of gaps
     MSAcolumn_t col_gap_Rs; //right column full of gaps
 
-    int numLeavesLeft = static_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->seqNames_.size(); // number of leaves in the left sub-tree
-    int numLeavesRight = static_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->seqNames_.size(); // number of leaves in the right sub-tree
+    int numLeavesLeft = childL->MSA_->pipmsa->seqNames_.size(); // number of leaves in the left sub-tree
+    int numLeavesRight = childR->MSA_->pipmsa->seqNames_.size(); // number of leaves in the right sub-tree
 
     col_gap_Ls = createGapCol(numLeavesLeft); // create column of gaps for the left sub-tree
     col_gap_Rs = createGapCol(numLeavesRight); // create column of gaps for the right sub-tree
@@ -1349,7 +1357,7 @@ void nodeCPU::DP3D_PIP_node() {
                 coordTriangle_prev_i = coordTriangle_this_i - 1;
 
                 // get left MSA column
-                sLs = static_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->msa_.at(coordSeq_1);
+                sLs = childL->MSA_->pipmsa->msa_.at(coordSeq_1);
 
                 for (int j = 0; j <= lw; j++) {
 
@@ -1358,7 +1366,7 @@ void nodeCPU::DP3D_PIP_node() {
                     coordTriangle_prev_j = coordTriangle_this_j - 1;
 
                     // get right MSA column
-                    sRs = static_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->msa_.at(coordSeq_2);
+                    sRs = childR->MSA_->pipmsa->msa_.at(coordSeq_2);
 
                     idx = get_indices_M(coordTriangle_prev_i,
                                         coordTriangle_prev_j,
@@ -1462,7 +1470,7 @@ void nodeCPU::DP3D_PIP_node() {
                 coordSeq_1 = coordTriangle_this_i - 1;
 
                 // get left MSA column
-                sLs = static_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->msa_.at(coordSeq_1);
+                sLs = childL->MSA_->pipmsa->msa_.at(coordSeq_1);
 
                 for (int j = 0; j <= lw; j++) {
 
@@ -1575,7 +1583,7 @@ void nodeCPU::DP3D_PIP_node() {
                     coordSeq_2 = coordTriangle_this_j - 1;
 
                     // get right MSA column
-                    sRs = static_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->msa_.at(coordSeq_2);
+                    sRs = childR->MSA_->pipmsa->msa_.at(coordSeq_2);
 
                     idx = get_indices_M(coordTriangle_prev_i,
                                         coordTriangle_prev_j,
@@ -1781,10 +1789,10 @@ void nodeCPU::DP3D_PIP_node() {
     // level (k position) in the DP matrix that contains the highest lk value
     depth = level_max_lk;
 
-    static_cast<PIPmsaSingle *>(MSA_)->pipmsa->score_ = score;
+    MSA_->pipmsa->score_ = score;
     //==========================================================================================
     // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
-    static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_path_.resize(depth);
+    MSA_->pipmsa->traceback_path_.resize(depth);
     int id1 = h - 1;
     int id2 = w - 1;
     for (int lev = depth; lev > 0; lev--) {
@@ -1795,15 +1803,15 @@ void nodeCPU::DP3D_PIP_node() {
             case MATCH_STATE:
                 id1 = id1 - 1;
                 id2 = id2 - 1;
-                static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_path_.at(lev - 1) = (int)MATCH_STATE;
+                MSA_->pipmsa->traceback_path_.at(lev - 1) = (int)MATCH_STATE;
                 break;
             case GAP_X_STATE:
                 id1 = id1 - 1;
-                static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_path_.at(lev - 1) = (int)GAP_X_STATE;
+                MSA_->pipmsa->traceback_path_.at(lev - 1) = (int)GAP_X_STATE;
                 break;
             case GAP_Y_STATE:
                 id2 = id2 - 1;
-                static_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_path_.at(lev - 1) = (int)GAP_Y_STATE;
+                MSA_->pipmsa->traceback_path_.at(lev - 1) = (int)GAP_Y_STATE;
                 break;
             default:
                 LOG(FATAL) << "\nSomething went wrong during the alignment reconstruction in function pPIP::DP3D_PIP. Check call stack below.";
@@ -1811,14 +1819,14 @@ void nodeCPU::DP3D_PIP_node() {
     }
 
     // converts traceback path into an MSA
-    PIPmsa *msaL = static_cast<PIPmsaSingle *>(childL->MSA_)->_getMSA();
-    PIPmsa *msaR = static_cast<PIPmsaSingle *>(childR->MSA_)->_getMSA();
-    static_cast<PIPmsaSingle *>(MSA_)->_build_MSA(msaL->msa_,msaR->msa_);
+    PIPmsa *msaL = childL->MSA_->_getMSA();
+    PIPmsa *msaR = childR->MSA_->_getMSA();
+    MSA_->_build_MSA(msaL->msa_,msaR->msa_);
 
     // assigns the sequence names of the new alligned sequences to the current MSA
-    std::vector<string> *seqNameL = &static_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->seqNames_;
-    std::vector<string> *seqNameR = &static_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->seqNames_;
-    static_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setSeqNameNode(*seqNameL,*seqNameR);
+    std::vector<string> *seqNameL = &childL->MSA_->pipmsa->seqNames_;
+    std::vector<string> *seqNameR = &childR->MSA_->pipmsa->seqNames_;
+    MSA_->pipmsa->_setSeqNameNode(*seqNameL,*seqNameR);
     //==========================================================================================
 
 }
@@ -1832,3 +1840,5 @@ void nodeCPU::DP3D_PIP() {
     }
 
 }
+
+

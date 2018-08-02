@@ -312,26 +312,26 @@ void progressivePIP::_setAllBetas() {
 //
 //}
 
-void progressivePIP::_computeAllFvEmptySigmaRec(bpp::PIPnode *node) {
-
-    if(node->_isTerminalNode()){ // leaf
-
-        node->_setFVemptyLeaf(); // set fv_empty
-
-        node->_setFVsigmaEmptyLeaf(); // set fv_sigma_empty = fv_empty dot pi
-
-    }else{ // internal node
-
-        // recursive call
-        _computeAllFvEmptySigmaRec(node->childL);
-        _computeAllFvEmptySigmaRec(node->childR) ;
-
-        node->_setFVemptyNode(); // set fv_empty
-
-        node->_setFVsigmaEmptyNode(); // set fv_sigma_empty = fv_empty dot pi
-    }
-
-}
+//void progressivePIP::_computeAllFvEmptySigmaRec(bpp::PIPnode *node) {
+//
+//    if(node->_isTerminalNode()){ // leaf
+//
+//        node->_setFVemptyLeaf(); // set fv_empty
+//
+//        node->_setFVsigmaEmptyLeaf(); // set fv_sigma_empty = fv_empty dot pi
+//
+//    }else{ // internal node
+//
+//        // recursive call
+//        _computeAllFvEmptySigmaRec(node->childL);
+//        _computeAllFvEmptySigmaRec(node->childR) ;
+//
+//        node->_setFVemptyNode(); // set fv_empty
+//
+//        node->_setFVsigmaEmptyNode(); // set fv_sigma_empty = fv_empty dot pi
+//    }
+//
+//}
 
 void progressivePIP::_computeAllFvEmptySigma() {
 
@@ -339,7 +339,7 @@ void progressivePIP::_computeAllFvEmptySigma() {
     bpp::PIPnode *PIPnodeRoot = getPIPnodeRootNode();
 
     // recursive call
-    _computeAllFvEmptySigmaRec(PIPnodeRoot);
+    PIPnodeRoot->_computeAllFvEmptySigmaRec();
 
 }
 

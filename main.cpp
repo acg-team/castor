@@ -791,9 +791,9 @@ int main(int argc, char *argv[]) {
             ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
 
             // convert PIPmsa into a sites objects
-            sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
-                                                        static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->seqNames_,
-                                                        static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->msa_);
+            sites;// = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
+//                                                        static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->seqNames_,
+//                                                        static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->msa_);
 
             // Export alignment to file
             if (PAR_output_file_msa.find("none") == std::string::npos) {
@@ -803,7 +803,7 @@ int main(int argc, char *argv[]) {
             }
 
             double MSAscore;
-            MSAscore = static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->score_;
+            MSAscore;// = static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->score_;
 
             std::ofstream lkFile;
             lkFile << std::setprecision(18);

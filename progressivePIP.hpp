@@ -100,7 +100,7 @@ namespace bpp {
         void _setMu(double mu); // set mu for different rates
         void _setPi(const Vdouble &pi); // set Pi
         void _computeTauRec_(PIPnode *pipnode);
-        void _computeAllFvEmptySigmaRec(bpp::PIPnode *node);
+        //void _computeAllFvEmptySigmaRec(bpp::PIPnode *node);
         //***************************************************************************************
 
     public:

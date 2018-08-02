@@ -105,6 +105,224 @@ void PIPmsa::_setSeqNameNode(std::vector<std::string> &seqNamesL,
 
 }
 
+void PIPmsa::_setFVleaf(int numCatg,const bpp::Alphabet *alphabet) {
+
+    // get the number of gamma categories
+    //size_t num_gamma_categories = progressivePIP_->numCatg_;
+
+    // get the number of compressed sites
+    int lenComprSeqs = rev_map_compressed_seqs_.size();
+
+    int lenAlphabet = alphabet->getSize();
+
+    // resize fv data([site][catg][states])
+    fv_data_.resize(lenComprSeqs);
+    for (int i = 0; i < lenComprSeqs; i++) {
+        fv_data_[i].resize(numCatg);
+    }
+
+    int idx;
+    // go through all the sites
+    for (int i = 0; i < lenComprSeqs; i++) {
+
+        // get the index in the compressed map
+        idx = rev_map_compressed_seqs_.at(i);
+        MSAcolumn_t s = this->msa_.at(idx);
+
+        // allocate fv column to the ext. alphabet size
+        bpp::ColMatrix<double> fv;
+        fv.resize(lenAlphabet, 1); // ColMatrix as Nx1 matrix
+        bpp::MatrixTools::fill(fv, 0.0); // all zeros
+
+        // check if the sequence contains a "forbidden" char
+        if(s[0]=='X' || s[0]==' ' || s[0]=='-'){
+            LOG(FATAL) << "\nERROR sequence contains either 'X' or ' ' or '-'";
+        }
+
+        // get the char position in the alphabet
+        idx = alphabet->charToInt(&s[0]);
+
+        // set to 1 the indicator array at the position of the observed char
+        fv(idx, 0) = 1.0;
+
+        // assign the indicator array to all the gamma categories
+        for (int catg = 0; catg < numCatg; catg++) {
+            fv_data_.at(i).at(catg) = fv;
+        }
+
+    }
+
+}
+
+void PIPmsa::_setFVsigmaLeaf(int lenComprSeqs,
+                             int numCatg,
+                             const bpp::ColMatrix<double> &pi) {
+
+    // get the number of gamma categories
+    //size_t numCatg = progressivePIP_->numCatg_;
+
+    // get the length of the compressed input sequences
+    //int lenComprSeqs = getCompressedMSAlength();
+
+    // resize the array ([site][numCatg])
+    fv_sigma_.resize(lenComprSeqs);
+
+    double fv0;
+    // go through all the sites
+    for (int site = 0; site < lenComprSeqs; site++) {
+
+        fv_sigma_.at(site).resize(numCatg);
+
+        // go through all the gamma categories
+        for(int catg = 0; catg < numCatg; catg++) {
+
+            // compute fv_sigma = fv dot pi
+            fv0 = MatrixBppUtils::dotProd(fv_data_.at(site).at(catg),pi);
+
+            fv_sigma_.at(site).at(catg) = fv0;
+        }
+    }
+
+}
+
+void PIPmsa::_setFVemptyLeaf(int numCatg,const bpp::Alphabet *alphabet) {
+
+    // get number of gamma categories
+    //size_t numCatg = progressivePIP_->numCatg_;
+
+    int lenAlphabet = alphabet->getSize();
+
+    // indicator array (all zeros except the observed character)
+    bpp::ColMatrix<double> fv;
+    fv.resize(lenAlphabet, 1);
+    bpp::MatrixTools::fill(fv, 0.0); // all zeros
+
+    // get the gap position in the alphabet
+    std::string ch(1, GAP_CHAR);
+    int gapIndex = alphabet->charToInt(ch);
+
+    fv(gapIndex, 0) = 1.0; // set gap position to 1
+
+    // for all the gamma categories an array of fv values
+    fv_empty_data_.resize(numCatg);
+
+    // assign the indicator array to all gamma categories
+    for (int catg = 0; catg < numCatg; catg++) {
+        fv_empty_data_.at(catg) = fv;
+    }
+
+}
+
+void PIPmsa::_setFVemptyNode(int numCatg,
+                             PIPmsa *childL,
+                             PIPmsa *childR,
+                             std::vector<bpp::RowMatrix<double> > &PrL,
+                             std::vector<bpp::RowMatrix<double> > &PrR){
+
+    // number of discrete gamma categories
+    //int numCatg = progressivePIP_->numCatg_;
+
+    fv_empty_data_.resize(numCatg);
+
+    // array of lk (for each gamma rate) of a single column full of gaps
+    for (int catg = 0; catg < numCatg; catg++) {
+
+        // PrfvL = Pr_L * fv_L
+        bpp::ColMatrix<double> PrfvL;
+        bpp::MatrixTools::mult(PrL.at(catg), childL->fv_empty_data_.at(catg), PrfvL);
+
+        // PrfvR = Pr_R * fv_R
+        bpp::ColMatrix<double> PrfvR;
+        bpp::MatrixTools::mult(PrR.at(catg), childR->fv_empty_data_.at(catg), PrfvR);
+
+        // fv = PrfvL * PrfvR
+        bpp::ColMatrix<double> fv;
+        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+        fv_empty_data_.at(catg) = fv;
+    }
+
+}
+
+void PIPmsa::_setFVsigmaEmptyLeaf(int numCatg) {
+
+    // get the number of gamma categories
+    //size_t numCatg = progressivePIP_->numCatg_;
+
+    // allocate memory ([numCatg] x 1)
+    fv_empty_sigma_.resize(numCatg);
+
+    for(int catg=0;catg<numCatg;catg++){
+        // fv_empty_sigma = fv dot pi
+        // fv_empty_sigma is always 0 at the leaves
+        fv_empty_sigma_.at(catg) = 0.0;
+    }
+
+}
+
+void PIPmsaSingle::_setFVsigmaEmptyNode(int numCatg,
+                                        PIPmsa *childL,
+                                        PIPmsa *childR,
+                                        double bL,
+                                        double bR,
+                                        const std::vector<double> &mu) {
+
+    // get the number of categories
+    //int numCatg = progressivePIP_->numCatg_;
+
+    //double bL = childL->bnode_->getDistanceToFather(); // left child branch length
+    //double bR = childR->bnode_->getDistanceToFather(); // right child branch length
+
+    double zetaL;
+    double zetaR;
+
+    // resize to the number of categories
+    pipmsa->fv_empty_sigma_.resize(numCatg);
+
+    for(int catg=0;catg<numCatg;catg++){
+
+        zetaL = exp(-mu.at(catg) * bL); // pure survival probability on the left child
+        zetaR = exp(-mu.at(catg) * bR); // pure survival probability on the right child
+
+        // fv_empty_sigma = dot(fv_empty,pi)
+        // which corresponds to
+        // fv_empty_sigma = not_survival_L * not_survival_R +
+        //                  not_survival_L * survival_R * not_survival_below_R +
+        //                  survival_L * not_survival_below_L * not_survival_R +
+        //                  survival_L * not_survival_below_L * not_survival_R * not_survival_below_R
+        pipmsa->fv_empty_sigma_.at(catg) = \
+                            (1 - zetaL) * (1 - zetaR) + \
+                            (1 - zetaL) * zetaR * childR->fv_empty_sigma_.at(catg) + \
+                            zetaL * childL->fv_empty_sigma_.at(catg)* (1 - zetaR) + \
+                            zetaL * childL->fv_empty_sigma_.at(catg) * zetaR * childR->fv_empty_sigma_.at(catg);
+
+    }
+
+}
+
+void PIPmsa::_compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compressed,
+                           std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed){
+
+    // compress an array of fv values and fv_sigma values
+
+    int comprMSAlen = rev_map_compressed_seqs_.size();
+
+    int id_map;
+
+    fv_data_.resize(comprMSAlen);
+
+    fv_sigma_.resize(comprMSAlen);
+
+    for(int i=0;i<comprMSAlen;i++){
+        id_map = rev_map_compressed_seqs_.at(i);
+
+        fv_data_.at(i)=fv_data_not_compressed.at(id_map);
+
+        fv_sigma_.at(i)=fv_sigma_not_compressed.at(id_map);
+    }
+
+}
+
 void PIPmsaSingle::_compressMSA(const bpp::Alphabet *alphabet) {
 
     auto sequences = new bpp::VectorSequenceContainer(alphabet);
@@ -137,25 +355,31 @@ void PIPmsaSingle::_compressMSA(const bpp::Alphabet *alphabet) {
 
 void PIPmsaComp::_compressMSA(const bpp::Alphabet *alphabet,int idx_sb) {
 
-//    auto sequences = new bpp::VectorSequenceContainer(alphabet);
-//
-//    std::vector<std::string> seqs = compositePIPmsaUtils::siteContainer2sequenceVector(pipmsa->msa_);
-//
-//    for(int i = 0; i < seqs.size(); i++) {
-//        sequences->addSequence(*(new bpp::BasicSequence(pipmsa->seqNames_.at(i),
-//                                                        seqs.at(i),
-//                                                        alphabet)), true);
-//    }
-//
-//    auto siteContainer = new bpp::VectorSiteContainer(*sequences);
-//    auto siteContCompr = bpp::PatternTools::shrinkSiteSet(*siteContainer);
-//    auto map_seqs = bpp::PatternTools::getIndexes(*siteContainer, *siteContCompr);
-//
-//    map_compressed_seqs_.at(idx_sb) = map_seqs;
-//
-//    std::vector<int> rev_map_seqs = compositePIPmsaUtils::reverse_map(map_seqs);
-//
-//    rev_map_compressed_seqs_.at(idx_sb) = rev_map_seqs;
+    auto sequences = new bpp::VectorSequenceContainer(alphabet);
+
+    std::vector<std::string> seqs = compositePIPmsaUtils::siteContainer2sequenceVector(pipmsa.at(idx_sb)->msa_);
+
+    for(int i = 0; i < seqs.size(); i++) {
+        sequences->addSequence(*(new bpp::BasicSequence(pipmsa.at(idx_sb)->seqNames_.at(i),
+                                                        seqs.at(i),
+                                                        alphabet)), true);
+
+
+        //======= DEBUG ====================
+        //std::cout<<"["<<seqs.at(i)<<"]\n";
+        //======= DEBUG ====================
+
+    }
+
+    auto siteContainer = new bpp::VectorSiteContainer(*sequences);
+    auto siteContCompr = bpp::PatternTools::shrinkSiteSet(*siteContainer);
+    auto map_seqs = bpp::PatternTools::getIndexes(*siteContainer, *siteContCompr);
+
+    pipmsa.at(idx_sb)->map_compressed_seqs_ = map_seqs;
+
+    std::vector<int> rev_map_seqs = compositePIPmsaUtils::reverse_map(map_seqs);
+
+    pipmsa.at(idx_sb)->rev_map_compressed_seqs_ = rev_map_seqs;
 
 }
 
@@ -339,17 +563,23 @@ int PIPmsaSingle::getCompressedMSAlength(){
 
 }
 
+int PIPmsaComp::getCompressedMSAlength(int idx){
+
+    return pipmsa.at(idx)->rev_map_compressed_seqs_.size();
+
+}
+
 int PIPmsaComp::getMSAlength(int idx){
 
     return pipmsa.at(idx)->getNumSites();
 
 }
 
-int PIPmsaComp::getCompressedMSAlength(int idx){
-
-    //return pipmsa->rev_map_compressed_seqs_.size();
-
-}
+//int PIPmsaComp::getCompressedMSAlength(int idx){
+//
+//    //return pipmsa->rev_map_compressed_seqs_.size();
+//
+//}
 
 void PIPmsaSingle::add(PIPmsa *x) {
 
