@@ -208,7 +208,10 @@ set(SOURCES
         FactoryPIPnodeSB.hpp
         FactoryPIPnode.hpp
         CompositePIPnode.hpp
-        CompositePIPnode.cpp)
+        CompositePIPnode.cpp
+        Horner.h
+        LambertW.cc
+        LambertW.h)
 
 
 if (STATIC GREATER 0)

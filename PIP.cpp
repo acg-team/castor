@@ -43,6 +43,7 @@
  */
 #include "PIP.hpp"
 #include "Utilities.hpp"
+#include "LambertW.h"
 #include <Bpp/Numeric/Matrix/MatrixTools.h>
 #include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
 #include <Bpp/Seq/Container/SequenceContainerTools.h>
@@ -90,9 +91,9 @@ PIP_Nuc::PIP_Nuc(const NucleicAlphabet *alpha, SubstitutionModel *basemodel, con
 
     // Check if the sum of the frequencies is 1
     LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies sum up to " <<
-                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
-                                                                                           " != [1.0]";
+                                                                                            "The state frequencies sum up to " <<
+                                                                                            TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                            " != [1.0]";
 
     updateMatrices();
 }
@@ -231,9 +232,9 @@ void PIP_Nuc::setFreqFromData(const SequenceContainer &data, double pseudoCount)
 
     // Check if the sum of the frequencies is 1
     LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies sum up to " <<
-                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
-                                                                                           " != [1.0]";
+                                                                                            "The state frequencies sum up to " <<
+                                                                                            TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                            " != [1.0]";
 }
 
 
@@ -299,9 +300,9 @@ void PIP_AA::updateMatrices() {
 
     // Check if the sum of the frequencies is 1
     LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies sum up to " <<
-                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
-                                                                                           " != [1.0]";
+                                                                                            "The state frequencies sum up to " <<
+                                                                                            TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                            " != [1.0]";
 
     unsigned long eraseCharNum = 4; // substring="PIP."
 
@@ -403,9 +404,9 @@ void PIP_AA::setFreqFromData(const SequenceContainer &data, double pseudoCount) 
     freq_[data.getAlphabet()->getGapCharacterCode()] = 0;
 
     LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies sum up to " <<
-                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
-                                                                                           " != [1.0]";
+                                                                                            "The state frequencies sum up to " <<
+                                                                                            TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                            " != [1.0]";
 }
 
 
@@ -472,9 +473,9 @@ void PIP_Codon::updateMatrices() {
 
     // Check if the sum of the frequencies is 1
     LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies sum up to " <<
-                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
-                                                                                           " != [1.0]";
+                                                                                            "The state frequencies sum up to " <<
+                                                                                            TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                            " != [1.0]";
     unsigned long eraseCharNum = 4; // substring="PIP."
 
     for (int i = 0; i < getParameters().size(); i++) {
@@ -572,9 +573,9 @@ void PIP_Codon::setFreqFromData(const SequenceContainer &data, double pseudoCoun
 
     // Check if the sum of the frequencies is 1
     LOG_IF(WARNING, !ComparisonUtils::areLogicallyEqual(bpp::VectorTools::sum(freq_), 1.0)) <<
-                                                                                           "The state frequencies sum up to " <<
-                                                                                           TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
-                                                                                           " != [1.0]";
+                                                                                            "The state frequencies sum up to " <<
+                                                                                            TextTools::toString(bpp::VectorTools::sum(freq_), 15) <<
+                                                                                            " != [1.0]";
 }
 
 
@@ -612,6 +613,7 @@ double bpp::estimateMuFromData(Tree *tree, double proportion) {
     return mu;
 }
 
+/*
 double bpp::estimateLambdaFromData(Tree *tree, SiteContainer *alignment) {
     double N = 0;
     double M = 0;
@@ -650,4 +652,44 @@ double bpp::estimateMuFromData(Tree *tree, SiteContainer *alignment) {
     N = N / alignment->getNumberOfSequences();
 
     return (M - N) / (tree->getTotalLength() * N);
+}
+
+*/
+
+double bpp::computeNH(SiteContainer *alignment){
+    double nH = 0;
+    for (int i = 0; i < alignment->getNumberOfSites(); i++) {
+        bool containsGap = false;
+        for (auto &seqName : alignment->getSequencesNames()) {
+            if (alignment->getSequence(seqName)[i] == alignment->getAlphabet()->getGapCharacterCode()) {
+                containsGap = true;
+                break;
+            }
+        }
+        if (!containsGap) nH++;
+    }
+
+    if (nH <= 0) nH = 1;
+    return nH;
+}
+
+double bpp::estimateMuFromData(Tree *tree, SiteContainer *alignment) {
+
+    double nH = computeNH(alignment);
+    double nG = alignment->getNumberOfSites() - nH;
+
+    double tmp = exp(1) * (nG / nH + 1);
+    double t1 = MathUtils::LambertW(0, tmp);
+    return (t1 - 1) / tree->getTotalLength();
+
+}
+
+double bpp::estimateLambdaFromData(Tree *tree, SiteContainer *alignment) {
+    double nH = computeNH(alignment);
+    double nG = alignment->getNumberOfSites() - nH;
+
+    double tmp = MathUtils::LambertW(0,exp(1) * (nG / nH + 1));
+
+    return (nH*exp(tmp-1 ) * (tmp-1))/tree->getTotalLength();
+
 }

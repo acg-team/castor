@@ -63,7 +63,9 @@ namespace bpp {
     class TwoTreeLikelihood_PIP :
             public AbstractDiscreteRatesAcrossSitesTreeLikelihood {
 
-        enum class PairwiseSeqStates { cc, cg, gc, gg };
+        enum class PairwiseSeqStates {
+            cc, cg, gc, gg
+        };
     private:
         SiteContainer *shrunkData_;
         std::vector<std::string> seqnames_;
@@ -119,7 +121,7 @@ namespace bpp {
                 const SiteContainer &data,
                 TransitionModel *model,
                 DiscreteDistribution *rDist,
-                bool verbose)  throw(Exception);
+                bool verbose) throw(Exception);
 
         TwoTreeLikelihood_PIP(const TwoTreeLikelihood_PIP &lik);
 
@@ -293,6 +295,7 @@ namespace bpp {
         virtual void computeTreeD2Likelihood();
 
         virtual double computeEmptyColumnLikelihood() const;
+
         /**
          * @brief This builds the <i>parameters</i> list from all parametrizable objects,
          * <i>i.e.</i> substitution model, rate distribution and tree.
@@ -454,10 +457,18 @@ namespace bpp {
 
     private:
         void init_() {
+
+
             MetaOptimizerInfos *desc = new MetaOptimizerInfos();
             std::vector<std::string> name;
             name.push_back("BrLen");
-            desc->addOptimizer("Branch length", new PseudoNewtonOptimizer(0), name, 2, MetaOptimizerInfos::IT_TYPE_FULL);
+
+            if (model_->getName().find("PIP") != string::npos) {
+                desc->addOptimizer("Branch length", new SimpleMultiDimensions(0), name, 0, MetaOptimizerInfos::IT_TYPE_STEP);
+            } else {
+                desc->addOptimizer("Branch length", new PseudoNewtonOptimizer(0), name, 2, MetaOptimizerInfos::IT_TYPE_FULL);
+            }
+
             ParameterList tmp = model_->getParameters();
             tmp.addParameters(rateDist_->getParameters());
             desc->addOptimizer("substitution model and rate distribution", new SimpleMultiDimensions(0), tmp.getParameterNames(), 0,

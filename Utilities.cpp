@@ -1482,6 +1482,7 @@ bool ComparisonUtils::areLogicallyEqual(double a, double b) {
     //return a == b || std::abs(a - b) < std::abs(std::min(a, b)) * std::numeric_limits<double>::epsilon();
     return std::abs(a - b) < 0.00001 * std::max(std::abs(a), std::abs(b));
 
-
 }
+
+
 

@@ -533,10 +533,12 @@ void TwoTreeLikelihood_PIP::computeTreeLikelihood() {
             Vdouble *leafLikelihoods1_i = &leafLikelihoods1_[i];
             double leaflk = 0;
             double rootlk = 0;
-            for (size_t x = 0; x < nbStates_; x++) {
-                leaflk += fr[x] * (*leafLikelihoods1_i)[x];
-            }
-            leaflk = betaBranch * iotaBranch * leaflk;
+            //for (size_t x = 0; x < nbStates_; x++) {
+            //    leaflk += fr[x] * (*leafLikelihoods1_i)[x];
+            //  }
+            //leaflk = betaBranch * iotaBranch * leaflk;
+
+            //leaflk = iotaBranch * (1-betaBranch);
             rootlk = betaRoot * iotaRoot * rootLikelihoodsSR_[i];
 
             rootLikelihoodsSR_[i] = rootlk + leaflk;
@@ -548,11 +550,12 @@ void TwoTreeLikelihood_PIP::computeTreeLikelihood() {
                 leaflk += fr[x] * (*leafLikelihoods2_i)[x];
             }
             leaflk = betaBranch * iotaBranch * leaflk;
-            rootlk = betaRoot * iotaRoot * rootLikelihoodsSR_[i];
+            //rootlk = betaRoot * iotaRoot * rootLikelihoodsSR_[i];
 
             rootLikelihoodsSR_[i] = rootlk + leaflk;
+            //rootLikelihoodsSR_[i] = betaRoot * iotaRoot * rootLikelihoodsSR_[i];
         }else{
-            rootLikelihoodsSR_[i] = 1;
+            rootLikelihoodsSR_[i] = iotaBranch * (1-betaBranch);
         }
     }
 }
@@ -708,6 +711,8 @@ void UnifiedDistanceEstimation::computeMatrix() throw(NullPointerException) {
             optimizer_->optimize();
             // Store results:
             (*dist_)(i, j) = (*dist_)(j, i) = lik->getParameterValue("BrLen");
+
+
             delete lik;
         }
         if (verbose_ > 1 && ApplicationTools::message) ApplicationTools::message->endLine();

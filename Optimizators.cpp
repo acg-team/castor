@@ -505,7 +505,7 @@ namespace bpp {
 
             while (tolerance < diffScore) {
 
-                if(interrupt == true) {break;}
+                if (interrupt == true) { break; }
 
                 initScore = tl->getLogLikelihood();
                 ApplicationTools::displayResult("Numerical opt. cycle LK", TextTools::toString(initScore, 15));
@@ -523,21 +523,21 @@ namespace bpp {
                             optMethodModel);
                 }
 
-                if(optimizeTopo) {
+                if (optimizeTopo) {
                     // Execute tree-search
                     treesearch->executeTreeSearch();
 
-                    if(treesearch->isTreeSearchSuccessful()){
+                    if (treesearch->isTreeSearchSuccessful()) {
                         // Recompute the difference
                         cycleScore = tl->getLogLikelihood();
                         diffScore = std::abs(initScore) - std::abs(cycleScore);
 
-                    }else{
+                    } else {
 
                         interrupt = true;
                     }
 
-                }else{
+                } else {
 
                     break;
                 }
@@ -803,7 +803,7 @@ namespace bpp {
             if (estimationMethod.getModel().getName().find("PIP") == string::npos) {
                 OptimizationTools::optimizeNumericalParameters(tl, parameters, NULL, 0, tolerance, tlEvalMax, messenger, profiler,
                                                                verbose > 0 ? verbose - 1 : 0);
-            }else{
+            } else {
 
                 Optimizators::optimizeNumericalParametersUsingNumericalDerivatives(
                         dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl), parameters, NULL, 0, tolerance, tlEvalMax, messenger, profiler,

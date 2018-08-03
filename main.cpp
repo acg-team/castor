@@ -562,7 +562,7 @@ int main(int argc, char *argv[]) {
         // Once the tree has the root, then map it as well
         tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode));
 
-
+        ApplicationTools::displayResult("Initial tree total length", TextTools::toString(tree->getTotalLength(), 6));
         /////////////////////////
         // SUBSTITUTION MODEL
 

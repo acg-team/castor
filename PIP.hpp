@@ -255,6 +255,8 @@ namespace bpp {
 
     double estimateMuFromData(Tree *tree, SiteContainer *alignment);
 
+    double computeNH(SiteContainer *alignment);
+
 }
 #endif //MINIJATI_PIP_HPP
 
