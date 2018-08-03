@@ -69,17 +69,19 @@ namespace bpp {
         // PUBLIC FIELDS
         //***************************************************************************************
 
-        std::vector<PIPnode *> pip_nodes_;
+        std::vector<PIPnode *> pip_nodes_; // array of PIPnodes
 
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
 
-        CompositePIPnode(int numNodes);
+        CompositePIPnode(int numNodes); // constructor
 
-        void addPIPnode(PIPnode *pip_node);
+        void addPIPnode(PIPnode *pip_node); // put the PIPnode in the array at the position indicated
+                                            // by the PIPnode Id (same as bpp Node Id). The array
+                                            // of PIPnodes is pre-allocated in the constructor
 
-        void PIPnodeAlign();
+        void PIPnodeAlign(PIPnode *root_pip_node); // align all the input sequences under the PIP model
 
     };
 

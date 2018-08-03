@@ -88,7 +88,7 @@ namespace bpp {
 
         const progressivePIP *progressivePIP_; // pointer to progressivePIP
 
-        //iPIPmsa *MSA_; //contains the MSA
+        iPIPmsa *MSA_; //contains the MSA
 
         tshlib::VirtualNode *vnode_; // pointer to vnode
         bpp:: Node *bnode_; // pointer to bnode

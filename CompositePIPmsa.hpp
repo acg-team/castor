@@ -42,10 +42,13 @@
  * @see For more information visit:
  */
 
-#include "PIPnode.hpp"
-
 #ifndef MINIJATI_COMPOSITEPIPMSA_HPP
 #define MINIJATI_COMPOSITEPIPMSA_HPP
+#include <string>
+#include <vector>
+#include <Bpp/Numeric/Matrix/Matrix.h>
+#include <Bpp/Seq/Sequence.h>
+#include <Bpp/Seq/Container/SiteContainer.h>
 
 namespace bpp {
 
@@ -67,11 +70,11 @@ namespace bpp {
 
         double score_;
 
-        std::vector<std::string>  seqNames_; // vector of strings (sequence names)
+        std::vector<std::string> seqNames_; // vector of strings (sequence names)
 
         MSA_t msa_;
 
-        std::vector<int>  traceback_path_;
+        std::vector<int> traceback_path_;
 
         std::vector<int> traceback_map_;
 //        std::vector<int> traceback_mapL_;
@@ -81,13 +84,16 @@ namespace bpp {
 
         std::vector<int> rev_map_compressed_seqs_;
 
-        std::vector< std::vector< bpp::ColMatrix<double> > > fv_data_; // [site][catg][fv]
-        std::vector< bpp::ColMatrix<double> > fv_empty_data_; // [catg][fv]
+        std::vector<std::vector<bpp::ColMatrix<double>>> fv_data_; // [site][catg][fv]
 
-        std::vector< std::vector<double> > fv_sigma_; // [site][catg]
-        std::vector<double>  fv_empty_sigma_; // [catg]
+        std::vector<std::vector<double> > fv_sigma_; // [site][catg]
+
+        std::vector<bpp::ColMatrix<double> > fv_empty_data_; // [catg][fv]
+
+        std::vector<double> fv_empty_sigma_; // [catg]
 
         std::vector<double> log_lk_down_; //each node a vector of lk
+
         std::vector<double> lk_empty_; //each node a vector of lk_empty (for each gamma category)
 
         //***************************************************************************************
@@ -107,9 +113,9 @@ namespace bpp {
 
         void _setTracebackPathleaves();
 
-        std::vector<string> getSequenceNames(){ return seqNames_; };
+        std::vector<std::string> getSequenceNames() { return seqNames_; };
 
-        void _setFVleaf(int numCatg,const bpp::Alphabet *alphabet);
+        void _setFVleaf(int numCatg, const bpp::Alphabet *alphabet);
 
         void _setFVsigmaLeaf(int lenComprSeqs,
                              int numCatg,
@@ -123,12 +129,20 @@ namespace bpp {
 
         void _setFVsigmaEmptyLeaf(int numCatg);
 
-        void _setFVemptyLeaf(int numCatg,const bpp::Alphabet *alphabet);
+        void _setFVsigmaEmptyNode(int numCatg,
+                                  PIPmsa *childL,
+                                  PIPmsa *childR,
+                                  double bL,
+                                  double bR,
+                                  const std::vector<double> &mu);
+
+        void _setFVemptyLeaf(int numCatg, const bpp::Alphabet *alphabet);
 
         void _compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compressed,
-                           std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
+                          std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
 
     };
+
     //*******************************************************************************************
     class iPIPmsa {
 
@@ -138,28 +152,28 @@ namespace bpp {
         // PUBLIC METHODS
         //***************************************************************************************
 
-        void _setMSAleaves(bpp::Sequence &sequence, std::string &seqName);
+        iPIPmsa() {}; // constructor
 
-        void add(PIPmsa *msa) {};
+        virtual ~iPIPmsa() {}; // destructor
 
-        virtual void _setFVemptyLeaf(int numCatg,const bpp::Alphabet *alphabet){};
+//        void _setMSAleaves(bpp::Sequence &sequence,
+//                           std::string &seqName);
 
-        virtual void _setFVemptyNode(int numCatg,
-                             PIPmsa *childL,
-                             PIPmsa *childR,
-                             std::vector<bpp::RowMatrix<double> > &PrL,
-                             std::vector<bpp::RowMatrix<double> > &PrR);
+        virtual void add(PIPmsa *msa) {};
 
-        virtual void _setFVsigmaEmptyNode(int numCatg,
-                                    PIPmsa *childL,
-                                    PIPmsa *childR,
-                                    double bL,
-                                    double bR,
-                                    const std::vector<double> &mu){};
+//        virtual void _setFVemptyLeaf(int numCatg,
+//                                     const bpp::Alphabet *alphabet){};
 
-        virtual int getCompressedMSAlength();
+        virtual int getCompressedMSAlength() {};
+
+        virtual MSA_t *_getMSA() {};
+
+        virtual std::vector<std::string> *_getseqNames() {};
+
+        virtual double _getScore() {};
 
     };
+
     //*******************************************************************************************
     class PIPmsaSingle : public iPIPmsa {
 
@@ -184,37 +198,42 @@ namespace bpp {
         // PUBLIC METHODS
         //***************************************************************************************
 
-        PIPmsaSingle(){
+        PIPmsaSingle() {
 //            subMSAidxL_ = 0;
 //            subMSAidxR_ = 0;
         }
 
         void _compressMSA(const bpp::Alphabet *alphabet);
 
-        void _build_MSA(MSA_t &msaL,MSA_t &msaR);
+        void _build_MSA(MSA_t &msaL, MSA_t &msaR);
 
         int getMSAlength();
 
-        PIPmsa *_getMSA(){ return pipmsa; }
+        MSA_t *_getMSA(int idx=0) { return &(pipmsa->msa_); }
+
+        std::vector<std::string> *_getseqNames(int idx=0) { return &(pipmsa->seqNames_); };
+
+        double _getScore(int idx=0) { return pipmsa->score_; }
 
         void add(PIPmsa *x);
 
-        void _compress_lk_components( std::vector<double> &lk_down_not_compressed,
-                                                    std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
+        void _compress_lk_components(std::vector<double> &lk_down_not_compressed,
+                                     std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
 
         void _setFVsigmaEmptyNode(int numCatg,
-                                    PIPmsa *childL,
-                                    PIPmsa *childR,
-                                    double bL,
-                                    double bR,
-                                    const std::vector<double> &mu);
+                                  PIPmsa *childL,
+                                  PIPmsa *childR,
+                                  double bL,
+                                  double bR,
+                                  const std::vector<double> &mu);
 
-        int getCompressedMSAlength();
+        int getCompressedMSAlength(int idx=0);
 
         ~PIPmsaSingle() {
             delete pipmsa;
         }
     };
+
     //*******************************************************************************************
     class PIPmsaComp : public iPIPmsa {
 
@@ -239,17 +258,21 @@ namespace bpp {
         // PUBLIC METHODS
         //***************************************************************************************
 
-        PIPmsaComp(){}
+        PIPmsaComp(int size) { pipmsa.resize(size); }
 
-        void _compressMSA(const bpp::Alphabet *alphabet,int idx_sb);
+        void _compressMSA(const bpp::Alphabet *alphabet, int idx_sb);
 
-        void _build_MSA(MSA_t &msaL,MSA_t &msaR,int idx_sb);
+        void _build_MSA(MSA_t &msaL, MSA_t &msaR, int idx_sb);
 
         int getMSAlength(int idx);
 
         int getCompressedMSAlength(int idx);
 
-        PIPmsa *_getMSA(int idx){ return pipmsa.at(idx); }
+        MSA_t *_getMSA(int idx) { return &(pipmsa.at(idx)->msa_); }
+
+        std::vector<std::string> *_getseqNames(int idx) { return &(pipmsa.at(idx)->seqNames_); };
+
+        double _getScore(int idx) { return pipmsa.at(idx)->score_; }
 
         void add(PIPmsa *x);
 
@@ -257,14 +280,14 @@ namespace bpp {
                                      std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
                                      int idx_sb);
 
-        void _setFVsigmaEmptyNode(int numCatg,
-                                    PIPmsa *childL,
-                                    PIPmsa *childR,
-                                    double bL,
-                                    double bR,
-                                    const std::vector<double> &mu);
+//        void _setFVsigmaEmptyNode(int numCatg,
+//                                    PIPmsa *childL,
+//                                    PIPmsa *childR,
+//                                    double bL,
+//                                    double bR,
+//                                    const std::vector<double> &mu);
 
-        int getCompressedMSAlength();
+//        int getCompressedMSAlength();
 
         ~PIPmsaComp() {
             for (std::vector<PIPmsa *>::const_iterator iter = pipmsa.begin(); iter != pipmsa.end(); ++iter) {

@@ -759,7 +759,7 @@ int main(int argc, char *argv[]) {
             } else if (PAR_alignment_version.find("ram") != std::string::npos) {
                 DPversion = RAM; // faster but uses more memory
                 num_sb = 1;
-            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
+            } else if (PAR_alignment_version.find("sb") != std::string::npos) {
                 DPversion = SB;  // stochastic backtracking version
                 num_sb = 4;
             } else {
@@ -768,21 +768,19 @@ int main(int argc, char *argv[]) {
 
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
-            proPIP = new bpp::progressivePIP(utree,     // tshlib tree
-                                                   tree,                // bpp tree
-                                                   smodel,              // substitution model
-                                                   tm,                  // tree-map
-                                                   sequences,           // un-aligned input sequences
-                                                   rDist,               // rate-variation among site distribution
-                                                   jatiapp.getSeed());  // seed for random number generation
+            proPIP = new bpp::progressivePIP(utree,               // tshlib tree
+                                             tree,                // bpp tree
+                                             smodel,              // substitution model
+                                             tm,                  // tree-map
+                                             sequences,           // un-aligned input sequences
+                                             rDist,               // rate-variation among site distribution
+                                             jatiapp.getSeed());  // seed for random number generation
 
-
-
-            proPIP->_initializePIP(ftn, // list of tshlib nodes in on post-order (correct order of execution)
+            proPIP->_initializePIP(ftn,       // list of tshlib nodes in on post-order (correct order of execution)
                                    DPversion, // version of the alignment algorithm
-                                   num_sb);  // number of suboptimal MSAs
+                                   num_sb);   // number of suboptimal MSAs
 
-            proPIP->compositePIPaligner_->PIPnodeAlign(); // align input sequences with a DP algorithm under PIP
+            proPIP->compositePIPaligner_->PIPnodeAlign(proPIP->getPIPnodeRootNode()); // align input sequences with a DP algorithm under PIP
 
             std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
@@ -790,10 +788,37 @@ int main(int argc, char *argv[]) {
             std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
             ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
 
-            // convert PIPmsa into a sites objects
-            sites;// = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
-//                                                        static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->seqNames_,
-//                                                        static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->msa_);
+
+
+
+            if (PAR_alignment_version.find("cpu") != std::string::npos) {
+
+                // convert PIPmsa into a sites objects
+                sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
+                                                            *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getseqNames()),
+                                                            *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getMSA()));
+
+            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
+
+                // convert PIPmsa into a sites objects
+                sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
+                                                            *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getseqNames()),
+                                                            *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getMSA()));
+
+            } else if (PAR_alignment_version.find("sb") != std::string::npos) {
+
+                // convert PIPmsa into a sites objects
+                sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
+                                                            *(dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->_getseqNames(0)),
+                                                            *(dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->_getMSA(0)));
+
+            }
+
+
+
+
+
+
 
             // Export alignment to file
             if (PAR_output_file_msa.find("none") == std::string::npos) {
@@ -803,7 +828,20 @@ int main(int argc, char *argv[]) {
             }
 
             double MSAscore;
-            MSAscore;// = static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->score_;
+
+            if (PAR_alignment_version.find("cpu") != std::string::npos) {
+
+                MSAscore = dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getScore();
+
+            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
+
+                MSAscore = dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getScore();
+
+            } else if (PAR_alignment_version.find("sb") != std::string::npos) {
+
+                MSAscore = dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->_getScore(0);
+            }
+
 
             std::ofstream lkFile;
             lkFile << std::setprecision(18);

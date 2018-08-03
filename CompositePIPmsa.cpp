@@ -79,7 +79,7 @@ void PIPmsa::_setMSAleaf(const bpp::Sequence *sequence) {
         const char ch = sequenceString.at(i);
 
         // check sequence content: if 'X', ' ' or '-' exit with error
-        if(ch=='X' || ch==' ' || ch=='-'){
+        if (ch == 'X' || ch == ' ' || ch == '-') {
             LOG(FATAL) << "\nERROR sequence contains 'X' or ' ' or '-'";
         }
 
@@ -93,7 +93,7 @@ void PIPmsa::_setMSAleaf(const bpp::Sequence *sequence) {
 }
 
 void PIPmsa::_setSeqNameNode(std::vector<std::string> &seqNamesL,
-                                  std::vector<std::string> &seqNamesR) {
+                             std::vector<std::string> &seqNamesR) {
 
     for (int i = 0; i < seqNamesL.size(); i++) {
         seqNames_.push_back(seqNamesL.at(i));
@@ -105,7 +105,7 @@ void PIPmsa::_setSeqNameNode(std::vector<std::string> &seqNamesL,
 
 }
 
-void PIPmsa::_setFVleaf(int numCatg,const bpp::Alphabet *alphabet) {
+void PIPmsa::_setFVleaf(int numCatg, const bpp::Alphabet *alphabet) {
 
     // get the number of gamma categories
     //size_t num_gamma_categories = progressivePIP_->numCatg_;
@@ -135,7 +135,7 @@ void PIPmsa::_setFVleaf(int numCatg,const bpp::Alphabet *alphabet) {
         bpp::MatrixTools::fill(fv, 0.0); // all zeros
 
         // check if the sequence contains a "forbidden" char
-        if(s[0]=='X' || s[0]==' ' || s[0]=='-'){
+        if (s[0] == 'X' || s[0] == ' ' || s[0] == '-') {
             LOG(FATAL) << "\nERROR sequence contains either 'X' or ' ' or '-'";
         }
 
@@ -174,10 +174,10 @@ void PIPmsa::_setFVsigmaLeaf(int lenComprSeqs,
         fv_sigma_.at(site).resize(numCatg);
 
         // go through all the gamma categories
-        for(int catg = 0; catg < numCatg; catg++) {
+        for (int catg = 0; catg < numCatg; catg++) {
 
             // compute fv_sigma = fv dot pi
-            fv0 = MatrixBppUtils::dotProd(fv_data_.at(site).at(catg),pi);
+            fv0 = MatrixBppUtils::dotProd(fv_data_.at(site).at(catg), pi);
 
             fv_sigma_.at(site).at(catg) = fv0;
         }
@@ -185,7 +185,8 @@ void PIPmsa::_setFVsigmaLeaf(int lenComprSeqs,
 
 }
 
-void PIPmsa::_setFVemptyLeaf(int numCatg,const bpp::Alphabet *alphabet) {
+void PIPmsa::_setFVemptyLeaf(int numCatg,
+                             const bpp::Alphabet *alphabet) {
 
     // get number of gamma categories
     //size_t numCatg = progressivePIP_->numCatg_;
@@ -217,7 +218,7 @@ void PIPmsa::_setFVemptyNode(int numCatg,
                              PIPmsa *childL,
                              PIPmsa *childR,
                              std::vector<bpp::RowMatrix<double> > &PrL,
-                             std::vector<bpp::RowMatrix<double> > &PrR){
+                             std::vector<bpp::RowMatrix<double> > &PrR) {
 
     // number of discrete gamma categories
     //int numCatg = progressivePIP_->numCatg_;
@@ -252,7 +253,7 @@ void PIPmsa::_setFVsigmaEmptyLeaf(int numCatg) {
     // allocate memory ([numCatg] x 1)
     fv_empty_sigma_.resize(numCatg);
 
-    for(int catg=0;catg<numCatg;catg++){
+    for (int catg = 0; catg < numCatg; catg++) {
         // fv_empty_sigma = fv dot pi
         // fv_empty_sigma is always 0 at the leaves
         fv_empty_sigma_.at(catg) = 0.0;
@@ -260,12 +261,12 @@ void PIPmsa::_setFVsigmaEmptyLeaf(int numCatg) {
 
 }
 
-void PIPmsaSingle::_setFVsigmaEmptyNode(int numCatg,
-                                        PIPmsa *childL,
-                                        PIPmsa *childR,
-                                        double bL,
-                                        double bR,
-                                        const std::vector<double> &mu) {
+void PIPmsa::_setFVsigmaEmptyNode(int numCatg,
+                                  PIPmsa *childL,
+                                  PIPmsa *childR,
+                                  double bL,
+                                  double bR,
+                                  const std::vector<double> &mu) {
 
     // get the number of categories
     //int numCatg = progressivePIP_->numCatg_;
@@ -277,9 +278,9 @@ void PIPmsaSingle::_setFVsigmaEmptyNode(int numCatg,
     double zetaR;
 
     // resize to the number of categories
-    pipmsa->fv_empty_sigma_.resize(numCatg);
+    fv_empty_sigma_.resize(numCatg);
 
-    for(int catg=0;catg<numCatg;catg++){
+    for (int catg = 0; catg < numCatg; catg++) {
 
         zetaL = exp(-mu.at(catg) * bL); // pure survival probability on the left child
         zetaR = exp(-mu.at(catg) * bR); // pure survival probability on the right child
@@ -290,10 +291,10 @@ void PIPmsaSingle::_setFVsigmaEmptyNode(int numCatg,
         //                  not_survival_L * survival_R * not_survival_below_R +
         //                  survival_L * not_survival_below_L * not_survival_R +
         //                  survival_L * not_survival_below_L * not_survival_R * not_survival_below_R
-        pipmsa->fv_empty_sigma_.at(catg) = \
+        fv_empty_sigma_.at(catg) = \
                             (1 - zetaL) * (1 - zetaR) + \
                             (1 - zetaL) * zetaR * childR->fv_empty_sigma_.at(catg) + \
-                            zetaL * childL->fv_empty_sigma_.at(catg)* (1 - zetaR) + \
+                            zetaL * childL->fv_empty_sigma_.at(catg) * (1 - zetaR) + \
                             zetaL * childL->fv_empty_sigma_.at(catg) * zetaR * childR->fv_empty_sigma_.at(catg);
 
     }
@@ -301,7 +302,7 @@ void PIPmsaSingle::_setFVsigmaEmptyNode(int numCatg,
 }
 
 void PIPmsa::_compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compressed,
-                           std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed){
+                          std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed) {
 
     // compress an array of fv values and fv_sigma values
 
@@ -313,12 +314,12 @@ void PIPmsa::_compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compres
 
     fv_sigma_.resize(comprMSAlen);
 
-    for(int i=0;i<comprMSAlen;i++){
+    for (int i = 0; i < comprMSAlen; i++) {
         id_map = rev_map_compressed_seqs_.at(i);
 
-        fv_data_.at(i)=fv_data_not_compressed.at(id_map);
+        fv_data_.at(i) = fv_data_not_compressed.at(id_map);
 
-        fv_sigma_.at(i)=fv_sigma_not_compressed.at(id_map);
+        fv_sigma_.at(i) = fv_sigma_not_compressed.at(id_map);
     }
 
 }
@@ -329,7 +330,7 @@ void PIPmsaSingle::_compressMSA(const bpp::Alphabet *alphabet) {
 
     std::vector<std::string> seqs = compositePIPmsaUtils::siteContainer2sequenceVector(pipmsa->msa_);
 
-    for(int i = 0; i < seqs.size(); i++) {
+    for (int i = 0; i < seqs.size(); i++) {
         sequences->addSequence(*(new bpp::BasicSequence(pipmsa->seqNames_.at(i),
                                                         seqs.at(i),
                                                         alphabet)), true);
@@ -353,13 +354,13 @@ void PIPmsaSingle::_compressMSA(const bpp::Alphabet *alphabet) {
 
 }
 
-void PIPmsaComp::_compressMSA(const bpp::Alphabet *alphabet,int idx_sb) {
+void PIPmsaComp::_compressMSA(const bpp::Alphabet *alphabet, int idx_sb) {
 
     auto sequences = new bpp::VectorSequenceContainer(alphabet);
 
     std::vector<std::string> seqs = compositePIPmsaUtils::siteContainer2sequenceVector(pipmsa.at(idx_sb)->msa_);
 
-    for(int i = 0; i < seqs.size(); i++) {
+    for (int i = 0; i < seqs.size(); i++) {
         sequences->addSequence(*(new bpp::BasicSequence(pipmsa.at(idx_sb)->seqNames_.at(i),
                                                         seqs.at(i),
                                                         alphabet)), true);
@@ -383,7 +384,7 @@ void PIPmsaComp::_compressMSA(const bpp::Alphabet *alphabet,int idx_sb) {
 
 }
 
-void PIPmsaSingle::_build_MSA(MSA_t &msaL,MSA_t &msaR) {
+void PIPmsaSingle::_build_MSA(MSA_t &msaL, MSA_t &msaR) {
 
     // convert traceback path into an MSA
 
@@ -395,14 +396,14 @@ void PIPmsaSingle::_build_MSA(MSA_t &msaL,MSA_t &msaR) {
     int idx_j = 0;
     for (int j = 0; j < pipmsa->traceback_path_.size(); j++) {
 
-        if (pipmsa->traceback_path_.at(j) == (int)MATCH_STATE) {
+        if (pipmsa->traceback_path_.at(j) == (int) MATCH_STATE) {
 
             // in MATCH case concatenate left_column (from seq1) with right_column (from seq2)
             pipmsa->msa_.push_back(msaL.at(idx_i) + msaR.at(idx_j));
             idx_i++;
             idx_j++;
 
-        } else if (pipmsa->traceback_path_.at(j) == (int)GAP_X_STATE) {
+        } else if (pipmsa->traceback_path_.at(j) == (int) GAP_X_STATE) {
 
             // in GAPX case concatenate left_column (from seq1) with a column full of gaps (right)
             std::string gapCol(lenColR, GAP_CHAR);
@@ -432,7 +433,7 @@ void PIPmsaSingle::_build_MSA(MSA_t &msaL,MSA_t &msaR) {
 
 }
 
-void PIPmsaComp::_build_MSA(MSA_t &msaL,MSA_t &msaR,int idx_sb) {
+void PIPmsaComp::_build_MSA(MSA_t &msaL, MSA_t &msaR, int idx_sb) {
 
     // convert traceback path into an MSA
 
@@ -478,8 +479,8 @@ void PIPmsaComp::_build_MSA(MSA_t &msaL,MSA_t &msaR,int idx_sb) {
 //    MSA_.at(idx_sb) = MSA;
 }
 
-void PIPmsaSingle::_compress_lk_components( std::vector<double> &lk_down_not_compressed,
-                                            std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed){
+void PIPmsaSingle::_compress_lk_components(std::vector<double> &lk_down_not_compressed,
+                                           std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed) {
 
 
     int comprMSAlen = pipmsa->rev_map_compressed_seqs_.size();
@@ -490,7 +491,7 @@ void PIPmsaSingle::_compress_lk_components( std::vector<double> &lk_down_not_com
 
     //fv_data_[nodeID].resize(comprMSAlen);
 
-    for(int i=0;i<comprMSAlen;i++){
+    for (int i = 0; i < comprMSAlen; i++) {
         id_map = pipmsa->rev_map_compressed_seqs_.at(i);
 
         //log_lk_down_.at(i)=lk_down_not_compressed.at(id_map);
@@ -500,9 +501,9 @@ void PIPmsaSingle::_compress_lk_components( std::vector<double> &lk_down_not_com
 
 }
 
-void PIPmsaComp::_compress_lk_components(   std::vector<double> &lk_down_not_compressed,
-                                            std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
-                                            int idx_sb){
+void PIPmsaComp::_compress_lk_components(std::vector<double> &lk_down_not_compressed,
+                                         std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
+                                         int idx_sb) {
 
 //    int nodeID = node->getId();
 //
@@ -535,9 +536,9 @@ void PIPmsa::_setTracebackPathleaves() {
     // resize the traceback map
     traceback_map_.resize(MSAlen);
 
-    for(int i = 0; i < MSAlen; i++){
+    for (int i = 0; i < MSAlen; i++) {
         // assign MATCH STATE to all the sites
-        traceback_path_.at(i) = (int)MATCH_STATE;
+        traceback_path_.at(i) = (int) MATCH_STATE;
 
         // assign the corresponding position in the sequences
         traceback_map_.at(i) = i;
@@ -545,31 +546,31 @@ void PIPmsa::_setTracebackPathleaves() {
 
 }
 
-int PIPmsa::getNumSites(){
+int PIPmsa::getNumSites() {
 
     return msa_.size();
 
 }
 
-int PIPmsaSingle::getMSAlength(){
+int PIPmsaSingle::getMSAlength() {
 
     return pipmsa->getNumSites();
 
 }
 
-int PIPmsaSingle::getCompressedMSAlength(){
+int PIPmsaSingle::getCompressedMSAlength(int idx) {
 
     return pipmsa->rev_map_compressed_seqs_.size();
 
 }
 
-int PIPmsaComp::getCompressedMSAlength(int idx){
+int PIPmsaComp::getCompressedMSAlength(int idx) {
 
     return pipmsa.at(idx)->rev_map_compressed_seqs_.size();
 
 }
 
-int PIPmsaComp::getMSAlength(int idx){
+int PIPmsaComp::getMSAlength(int idx) {
 
     return pipmsa.at(idx)->getNumSites();
 
@@ -596,7 +597,7 @@ void PIPmsaComp::add(PIPmsa *x) {
 //***********************************************************************************************
 //***********************************************************************************************
 //***********************************************************************************************
-std::vector<std::string> compositePIPmsaUtils::siteContainer2sequenceVector(std::vector<bpp::MSAcolumn_t> &MSA){
+std::vector<std::string> compositePIPmsaUtils::siteContainer2sequenceVector(std::vector<bpp::MSAcolumn_t> &MSA) {
 
     std::vector<std::string> seqs;
 
@@ -604,26 +605,26 @@ std::vector<std::string> compositePIPmsaUtils::siteContainer2sequenceVector(std:
     int nseq = MSA.at(0).size();
 
     seqs.resize(nseq);
-    for(int i=0;i<nseq;i++){
+    for (int i = 0; i < nseq; i++) {
         std::string s;
         s.resize(len);
-        for(int j=0;j<len;j++){
-            s.at(j)=MSA.at(j).at(i);
+        for (int j = 0; j < len; j++) {
+            s.at(j) = MSA.at(j).at(i);
         }
-        seqs[i]=s;
+        seqs[i] = s;
     }
 
     return seqs;
 
 };
 
-std::vector<int> compositePIPmsaUtils::reverse_map(std::vector<int> &m){
+std::vector<int> compositePIPmsaUtils::reverse_map(std::vector<int> &m) {
 
     std::vector<int> rev_m;
 
-    for(int i=0;i<m.size();i++){
-        if( (m.at(i)+1) > rev_m.size()){
-            if(m.at(i)-rev_m.size() > 0){
+    for (int i = 0; i < m.size(); i++) {
+        if ((m.at(i) + 1) > rev_m.size()) {
+            if (m.at(i) - rev_m.size() > 0) {
                 LOG(FATAL) << "\nERROR in reverse_map";
             }
             rev_m.push_back(i);
@@ -657,7 +658,7 @@ bpp::SiteContainer *compositePIPmsaUtils::pPIPmsa2Sites(const bpp::Alphabet *alp
         for (int i = 0; i < msaLen; i++) {
             seqdata.at(i) = MSA.at(i).at(j);
         }
-        sequences->addSequence(*(new bpp::BasicSequence(seqname, seqdata,alphabet)), true);
+        sequences->addSequence(*(new bpp::BasicSequence(seqname, seqdata, alphabet)), true);
     }
 
     return new bpp::VectorSiteContainer(*sequences);

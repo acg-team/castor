@@ -529,12 +529,12 @@ void nodeRAM::_computeLkEmptyLeaf(){
     int numCatg = progressivePIP_->numCatg_;
 
     // allocate memory ([numCatg] x 1)
-    MSA_->pipmsa->lk_empty_.resize(numCatg);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.resize(numCatg);
 
     // only 1 column
     for (int catg=0; catg<numCatg; catg++) {
         // compute the lk of an empty column at the leaf
-        MSA_->pipmsa->lk_empty_.at(catg) = progressivePIP_->rDist_->getProbability((size_t) catg) * \
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.at(catg) = progressivePIP_->rDist_->getProbability((size_t) catg) * \
             iotasNode_.at(catg) * (1 - betasNode_.at(catg));
     }
 
@@ -549,7 +549,7 @@ std::vector<double> nodeRAM::_computeLkEmptyNode(){
     double pL,pR;
 
     // resize array ([numCatg] x 1)
-    MSA_->pipmsa->lk_empty_.resize(numCatg);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.resize(numCatg);
 
     // array of lk (for each gamma rate) of a single column full of gaps
     std::vector<double> pc0;
@@ -563,29 +563,29 @@ std::vector<double> nodeRAM::_computeLkEmptyNode(){
 
         if(_isRootNode()){ // root
             // lk at root node (beta = 1.0)
-            p0 = iotasNode_.at(catg) * MSA_->pipmsa->fv_empty_sigma_.at(catg);
+            p0 = iotasNode_.at(catg) * dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.at(catg);
         }else{ // internal node
             p0 = ( iotasNode_.at(catg) - \
                    iotasNode_.at(catg) * betasNode_.at(catg) + \
-                   iotasNode_.at(catg) * betasNode_.at(catg) * MSA_->pipmsa->fv_empty_sigma_.at(catg) );
+                   iotasNode_.at(catg) * betasNode_.at(catg) * dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.at(catg) );
 
             // climb the tree and compute the probability UP
             bpp::PIPnode *tmpNode = this->parent;
             while(tmpNode){
                 pr_up += tmpNode->iotasNode_.at(catg) - \
                          tmpNode->iotasNode_.at(catg) * tmpNode->betasNode_.at(catg) + \
-                         tmpNode->iotasNode_.at(catg) * tmpNode->betasNode_.at(catg) * MSA_->pipmsa->fv_empty_sigma_.at(catg);
+                         tmpNode->iotasNode_.at(catg) * tmpNode->betasNode_.at(catg) * dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.at(catg);
                 tmpNode = tmpNode->parent;
             }
 
         }
 
-        pL = childL->MSA_->pipmsa->lk_empty_.at(catg); // lk_empty DOWN left
-        pR = childR->MSA_->pipmsa->lk_empty_.at(catg); // lk_empty DOWN right
+        pL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->lk_empty_.at(catg); // lk_empty DOWN left
+        pR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->lk_empty_.at(catg); // lk_empty DOWN right
 
         pc0.at(catg) = pr_up + p0 + pL + pR; // this lk_empty is used at this layer
 
-        MSA_->pipmsa->lk_empty_.at(catg) = p0 + pL + pR; // here store the lk for the next layer (probability UP is not added here)
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.at(catg) = p0 + pL + pR; // here store the lk for the next layer (probability UP is not added here)
     }
 
     return pc0;
@@ -668,22 +668,22 @@ void nodeRAM::_computeLkLeaf(){
     int numCatg = progressivePIP_->numCatg_;
 
     // get the size of the compressed sequences
-    int msaLen = MSA_->getCompressedMSAlength();
+    int msaLen = dynamic_cast<PIPmsaSingle *>(MSA_)->getCompressedMSAlength();
 
     // allocate memory ([site])
-    MSA_->pipmsa->log_lk_down_.resize(msaLen);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.resize(msaLen);
 
     // compute the marginal lk over all the gamma categories
     for(int site=0;site<msaLen;site++){
         // init to 0.0
-        MSA_->pipmsa->log_lk_down_.at(site) = 0.0;
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.at(site) = 0.0;
         for (int catg=0; catg<numCatg; catg++) {
-            MSA_->pipmsa->log_lk_down_.at(site) += progressivePIP_->rDist_->getProbability((size_t) catg) * \
+            dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.at(site) += progressivePIP_->rDist_->getProbability((size_t) catg) * \
                                      iotasNode_.at(catg) * betasNode_.at(catg) * \
-                                    MSA_->pipmsa->fv_sigma_.at(site).at(catg);
+                                    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_sigma_.at(site).at(catg);
         }
         // compute the log lk
-        MSA_->pipmsa->log_lk_down_.at(site) = log(MSA_->pipmsa->log_lk_down_.at(site));
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.at(site) = log(dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.at(site));
     }
 
 }
@@ -692,15 +692,15 @@ void nodeRAM::_compressLK(std::vector<double> &lk_down_not_compressed){
 
     // compress an array of lk values
 
-    int comprMSAlen = MSA_->getCompressedMSAlength();
+    int comprMSAlen = dynamic_cast<PIPmsaSingle *>(MSA_)->getCompressedMSAlength();
 
     int id_map;
 
-    MSA_->pipmsa->log_lk_down_.resize(comprMSAlen);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.resize(comprMSAlen);
 
     for(int i=0;i<comprMSAlen;i++){
-        id_map = MSA_->pipmsa->rev_map_compressed_seqs_.at(i);
-        MSA_->pipmsa->log_lk_down_.at(i)=lk_down_not_compressed.at(id_map);
+        id_map = dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.at(i);
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.at(i)=lk_down_not_compressed.at(id_map);
     }
 
 }
@@ -709,10 +709,39 @@ void nodeRAM::_computeAllFvEmptySigmaRec() {
 
     if(childL == nullptr && childR == nullptr){ // leaf
 
-        MSA_->pipmsa->_setFVemptyLeaf(progressivePIP_->numCatg_,
-                                                                   progressivePIP_->alphabet_); // set fv_empty
 
-        MSA_->pipmsa->_setFVsigmaEmptyLeaf(progressivePIP_->numCatg_); // set fv_sigma_empty = fv_empty dot pi
+
+
+
+        // get vnode Id
+        int vnodeId = (int) vnode_->vnode_seqid;
+
+        // get sequence name from vnodeId
+        std::string seqname = progressivePIP_->sequences_->getSequencesNames().at(vnodeId);
+
+        // associates the sequence name to the leaf node
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setSeqNameLeaf(seqname);
+
+        // get sequence from sequence name
+        const bpp::Sequence *sequence = &progressivePIP_->sequences_->getSequence(seqname);
+
+        // creates a column containing the sequence associated to the leaf node
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setMSAleaf(sequence);
+
+        // compresses sequence at the leaves
+        dynamic_cast<PIPmsaSingle *>(MSA_)->_compressMSA(progressivePIP_->alphabet_);
+
+
+
+
+
+
+        // set fv_empty
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVemptyLeaf(progressivePIP_->numCatg_,
+                                      progressivePIP_->alphabet_);
+
+        // set fv_sigma_empty = fv_empty dot pi
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaEmptyLeaf(progressivePIP_->numCatg_);
 
     }else{ // internal node
 
@@ -720,18 +749,20 @@ void nodeRAM::_computeAllFvEmptySigmaRec() {
         childL->_computeAllFvEmptySigmaRec();
         childR->_computeAllFvEmptySigmaRec();
 
-        MSA_->_setFVemptyNode(progressivePIP_->numCatg_,
-                              childL->MSA_->pipmsa,
-                              childR->MSA_->pipmsa,
-                              childL->prNode_,
-                              childR->prNode_); // set fv_empty
+        // set fv_empty
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVemptyNode(progressivePIP_->numCatg_,
+                                                                    dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa,
+                                                                    dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa,
+                                                                    childL->prNode_,
+                                                                    childR->prNode_);
 
-        MSA_->_setFVsigmaEmptyNode(progressivePIP_->numCatg_,
-                                   childL->MSA_->pipmsa,
-                                   childR->MSA_->pipmsa,
-                                   childL->bnode_->getDistanceToFather(),
-                                   childR->bnode_->getDistanceToFather(),
-                                   progressivePIP_->mu_); // set fv_sigma_empty = fv_empty dot pi
+        // set fv_sigma_empty = fv_empty dot pi
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaEmptyNode(progressivePIP_->numCatg_,
+                                                                         dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa,
+                                                                         dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa,
+                                                                         childL->bnode_->getDistanceToFather(),
+                                                                         childR->bnode_->getDistanceToFather(),
+                                                                         progressivePIP_->mu_);
     }
 
 }
@@ -742,35 +773,31 @@ void nodeRAM::DP3D_PIP_leaf() {
     // ALIGNS LEAVES
     //*******************************************************************************
 
-    // get vnode Id
-    int vnodeId = (int) vnode_->vnode_seqid;
-
-    // get sequence name from vnodeId
-    std::string seqname = progressivePIP_->sequences_->getSequencesNames().at(vnodeId);
-
-    // create a PIPmsaSingle object
-    MSA_  = new PIPmsaSingle();
-
-    // create a new PIPmsa
-    MSA_->pipmsa = new PIPmsa();
-
-    // associates the sequence name to the leaf node
-    MSA_->pipmsa->_setSeqNameLeaf(seqname);
-
-    // get sequence from sequence name
-    const bpp::Sequence *sequence = &progressivePIP_->sequences_->getSequence(seqname);
-
-    // creates a column containing the sequence associated to the leaf node
-    MSA_->pipmsa->_setMSAleaf(sequence);
-
-    // compresses sequence at the leaves
-    MSA_->_compressMSA(progressivePIP_->alphabet_);
+//    // get vnode Id
+//    int vnodeId = (int) vnode_->vnode_seqid;
+//
+//    // get sequence name from vnodeId
+//    std::string seqname = progressivePIP_->sequences_->getSequencesNames().at(vnodeId);
+//
+//    // associates the sequence name to the leaf node
+//    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setSeqNameLeaf(seqname);
+//
+//    // get sequence from sequence name
+//    const bpp::Sequence *sequence = &progressivePIP_->sequences_->getSequence(seqname);
+//
+//    // creates a column containing the sequence associated to the leaf node
+//    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setMSAleaf(sequence);
+//
+//    // compresses sequence at the leaves
+//    dynamic_cast<PIPmsaSingle *>(MSA_)->_compressMSA(progressivePIP_->alphabet_);
 
     // computes the indicator values (fv values) at the leaves
-    MSA_->pipmsa->_setFVleaf(progressivePIP_->numCatg_,progressivePIP_->alphabet_);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVleaf(progressivePIP_->numCatg_,
+                             progressivePIP_->alphabet_);
 
     // computes dotprod(pi,fv)
-    MSA_->pipmsa->_setFVsigmaLeaf(MSA_->getCompressedMSAlength(),
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaLeaf(
+                                  dynamic_cast<PIPmsaSingle *>(MSA_)->getCompressedMSAlength(),
                                   progressivePIP_->numCatg_,
                                   progressivePIP_->pi_);
 
@@ -781,7 +808,7 @@ void nodeRAM::DP3D_PIP_leaf() {
     _computeLkLeaf();
 
     // sets the traceback path at the leaf
-    MSA_->pipmsa->_setTracebackPathleaves();
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setTracebackPathleaves();
 
 }
 
@@ -831,8 +858,8 @@ void nodeRAM::DP3D_PIP_node() {
     bpp::Node *sonLeft = childL->_getBnode(); // bnode of the left child
     bpp::Node *sonRight = childR->_getBnode(); // bnode of the right child
 
-    std::vector<int> *map_compr_L = &(childL->MSA_->pipmsa->map_compressed_seqs_);
-    std::vector<int> *map_compr_R = &(childR->MSA_->pipmsa->map_compressed_seqs_);
+    std::vector<int> *map_compr_L = &(dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->map_compressed_seqs_);
+    std::vector<int> *map_compr_R = &(dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->map_compressed_seqs_);
 
     //======= DEBUG ==================================================================================================//
 //    std::vector<int> *rev_map_compr_L = &(static_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->rev_map_compressed_seqs_);
@@ -862,16 +889,16 @@ void nodeRAM::DP3D_PIP_node() {
     //======= DEBUG ==================================================================================================//
 
     //***************************************************************************************
-    MSA_ = new PIPmsaSingle(); // object that store the MSA
+    //MSA_ = new PIPmsaSingle(); // object that store the MSA
     //***************************************************************************************
     // DP SIZES
     //***************************************************************************************
     // Compute dimensions of the 3D block at current internal node.
-    int h = childL->MSA_->getMSAlength() + 1; // dimension of the alignment on the left side
-    int w = childR->MSA_->getMSAlength() + 1; // dimension of the alignment on the right side
+    int h = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->getMSAlength() + 1; // dimension of the alignment on the left side
+    int w = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->getMSAlength() + 1; // dimension of the alignment on the right side
     int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
-    int h_compr = childL->MSA_->getCompressedMSAlength(); // dimension of the compressed alignment on the left side
-    int w_compr = childR->MSA_->getCompressedMSAlength(); // dimension of the compressed alignment on the right side
+    int h_compr = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->getCompressedMSAlength(); // dimension of the compressed alignment on the left side
+    int w_compr = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->getCompressedMSAlength(); // dimension of the compressed alignment on the right side
     //***************************************************************************************
     // WORKING VARIABLES
     //***************************************************************************************
@@ -1004,8 +1031,8 @@ void nodeRAM::DP3D_PIP_node() {
     // 2D LK COMPUTATION
     //***************************************************************************************
     // computes the lk in the two subtrees
-    std::vector<double> &lk_down_L = childL->MSA_->pipmsa->log_lk_down_;
-    std::vector<double> &lk_down_R = childR->MSA_->pipmsa->log_lk_down_;
+    std::vector<double> &lk_down_L = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->log_lk_down_;
+    std::vector<double> &lk_down_R = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->log_lk_down_;
 
     //======= DEBUG ==================================================================================================//
 //    std::cout<<"\nlk_down_L\n";
@@ -1026,8 +1053,8 @@ void nodeRAM::DP3D_PIP_node() {
     for (i = 0; i < h_compr; i++) {
         for (j = 0; j < w_compr; j++) {
 
-            _computeLK_M(childL->MSA_->pipmsa->fv_data_.at(i),
-                         childR->MSA_->pipmsa->fv_data_.at(j),
+            _computeLK_M(dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->fv_data_.at(i),
+                         dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->fv_data_.at(j),
                          Fv_M[i][j],
                          Fv_sigma_M[i][j],
                          pr_m,
@@ -1043,8 +1070,8 @@ void nodeRAM::DP3D_PIP_node() {
     double pr_x_fp;
     for (i = 0; i < h_compr; i++) {
 
-        _computeLK_X(childL->MSA_->pipmsa->fv_data_.at(i),
-                     childR->MSA_->pipmsa->fv_empty_data_,
+        _computeLK_X(dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->fv_data_.at(i),
+                     dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->fv_empty_data_,
                      Fv_X[i],
                      Fv_sigma_X[i],
                      pr_x,
@@ -1059,8 +1086,8 @@ void nodeRAM::DP3D_PIP_node() {
     double pr_y_fp;
     for (j = 0; j < w_compr; j++) {
 
-        _computeLK_Y(childL->MSA_->pipmsa->fv_empty_data_,
-                     childR->MSA_->pipmsa->fv_data_.at(j),
+        _computeLK_Y(dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->fv_empty_data_,
+                     dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->fv_data_.at(j),
                      Fv_Y[j],
                      Fv_sigma_Y[j],
                      pr_y,
@@ -1212,12 +1239,12 @@ void nodeRAM::DP3D_PIP_node() {
     // level (k position) in the DP matrix that contains the highest lk value
 
     // create a new iPIPmsa object of type PIPmsaSingle
-    MSA_  = new PIPmsaSingle();
+    //MSA_  = new PIPmsaSingle();
 
     // create a new PIPmsa
-    MSA_->pipmsa = new PIPmsa();
+    //MSA_->pipmsa = new PIPmsa();
 
-    MSA_->pipmsa->score_ = curr_best_score;
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->score_ = curr_best_score;
     //***************************************************************************************
     // TRACEBACK ALGORITHM
     //***************************************************************************************
@@ -1231,7 +1258,7 @@ void nodeRAM::DP3D_PIP_node() {
     lk_down_not_compressed.resize(level_max_lk);
 
     // start backtracing the 3 matrices (MATCH, GAPX, GAPY)
-    MSA_->pipmsa->traceback_path_.resize(level_max_lk);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_path_.resize(level_max_lk);
 
     i = h - 1;
     j = w - 1;
@@ -1252,7 +1279,7 @@ void nodeRAM::DP3D_PIP_node() {
                 i = i - 1;
                 j = j - 1;
 
-                MSA_->pipmsa->traceback_path_.at(lev - 1) = (int)MATCH_STATE;
+                dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_path_.at(lev - 1) = (int)MATCH_STATE;
 
                 break;
             case GAP_X_STATE:
@@ -1265,7 +1292,7 @@ void nodeRAM::DP3D_PIP_node() {
 
                 i = i - 1;
 
-                MSA_->pipmsa->traceback_path_.at(lev - 1) = (int)GAP_X_STATE;
+                dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_path_.at(lev - 1) = (int)GAP_X_STATE;
 
                 break;
             case GAP_Y_STATE:
@@ -1278,7 +1305,7 @@ void nodeRAM::DP3D_PIP_node() {
 
                 j = j - 1;
 
-                MSA_->pipmsa->traceback_path_.at(lev - 1) = (int)GAP_Y_STATE;
+                dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->traceback_path_.at(lev - 1) = (int)GAP_Y_STATE;
 
                 break;
             default:
@@ -1301,24 +1328,24 @@ void nodeRAM::DP3D_PIP_node() {
     // BUILD NEW MSA
     //***************************************************************************************
     // converts traceback path into an MSA
-    PIPmsa *msaL = childL->MSA_->_getMSA();
-    PIPmsa *msaR = childR->MSA_->_getMSA();
-    MSA_->_build_MSA(msaL->msa_,msaR->msa_);
+    MSA_t *msaL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->_getMSA();
+    MSA_t *msaR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->_getMSA();
+    dynamic_cast<PIPmsaSingle *>(MSA_)->_build_MSA(*msaL,*msaR);
 
     // assigns the sequence names of the new alligned sequences to the current MSA
-    std::vector<string> *seqNameL = &childL->MSA_->pipmsa->seqNames_;
-    std::vector<string> *seqNameR = &childR->MSA_->pipmsa->seqNames_;
-    MSA_->pipmsa->_setSeqNameNode(*seqNameL,*seqNameR);
+    std::vector<string> *seqNameL = &dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->seqNames_;
+    std::vector<string> *seqNameR = &dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->seqNames_;
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setSeqNameNode(*seqNameL,*seqNameR);
 
     //***************************************************************************************
     // COMPRESS INFO
     //***************************************************************************************
     // compress the MSA
-    MSA_->_compressMSA(progressivePIP_->alphabet_);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->_compressMSA(progressivePIP_->alphabet_);
 
     // compress fv values and lk_down
     _compressLK(lk_down_not_compressed);
-    MSA_->pipmsa->_compress_Fv(fv_sigma_not_compressed, fv_data_not_compressed);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_compress_Fv(fv_sigma_not_compressed, fv_data_not_compressed);
 
 }
 

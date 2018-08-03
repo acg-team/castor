@@ -333,15 +333,15 @@ void progressivePIP::_setAllBetas() {
 //
 //}
 
-void progressivePIP::_computeAllFvEmptySigma() {
-
-    // get the root PIPnode
-    bpp::PIPnode *PIPnodeRoot = getPIPnodeRootNode();
-
-    // recursive call
-    PIPnodeRoot->_computeAllFvEmptySigmaRec();
-
-}
+//void progressivePIP::_computeAllFvEmptySigma() {
+//
+//    // get the root PIPnode
+//    bpp::PIPnode *PIPnodeRoot = getPIPnodeRootNode();
+//
+//    // recursive call
+//    PIPnodeRoot->_computeAllFvEmptySigmaRec();
+//
+//}
 
 void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
                                     enumDP3Dversion DPversion,
@@ -349,8 +349,9 @@ void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vno
 
     //***************************************************************************************
     // get dimensions
-    numNodes_ = list_vnode_to_root.size();
-    numCatg_ = rDist_->getNumberOfCategories();
+    numNodes_ = list_vnode_to_root.size(); // total number of nodes
+    numCatg_ = rDist_->getNumberOfCategories(); // number of gamma categories
+    num_sb_ = num_sb; // number of sub-optimal solutions
     //***************************************************************************************
     // computes lambda and mu with gamma
     // set lambdas with rate variation (gamma distribution)
@@ -392,9 +393,6 @@ void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vno
     _computeTau_(); // compute the total tree length and the left/right subtree length
                     // (length of the left/right subtree rooted at the given node) at each PIPnode
 
-    //_computeLengthPathToRoot(); // at each node compute the length of the path from that node to
-                                // the root. The length from the root to the root is 0
-
     _computeNu();   // compute the Poisson normalizing intensity (corresponds to the expected MSA length)
 
     _setAllIotas(); // set iota (survival probability) on all nodes
@@ -403,9 +401,6 @@ void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vno
 
     _setAllAlphas(); // alpha(v) = sum_from_v_to_root ( iota * beta * zeta )
                      // zeta = exp(- mu *b ) is the "pure" survival probability
-
-    _computeAllFvEmptySigma(); // compute all fv_empty and fv_empty_sigma values
-
 }
 
 void progressivePIP::_buildPIPnodeTree() {
@@ -494,36 +489,6 @@ void progressivePIP::_computeTau_() {
     progressivePIP::_computeTauRec_(rootPIPnode);
 
 }
-
-//void progressivePIP::_computeLengthPathToRoot(){
-//
-//    // get through the list of all the PIPnodes
-//    for (auto &node:compositePIPaligner_->pip_nodes_) {
-//
-//        // get the bnode associated to the PIPnode
-//        bpp::Node *bnode = node->bnode_;
-//
-//        // initialize the path length
-//        double T = 0.0;
-//
-//        // climb the PIPnode tree
-//        // the root skips this loop
-//        while(bnode->hasFather()){
-//
-//            // sum the branch length
-//            T += bnode->getDistanceToFather();
-//
-//            // get the parent bnode
-//            bnode = bnode->getFather();
-//        }
-//
-//        // save the path length at the given node
-//        // the path length from root to root is 0.0
-//        node->distanceToRoot = T;
-//
-//    }
-//
-//}
 
 void progressivePIP::_computeNu() {
 

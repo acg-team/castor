@@ -66,8 +66,8 @@ namespace bpp {
         // PRIVATE FIELDS
         //***************************************************************************************
 
-        std::vector<int> subMSAidx_;
-
+        std::vector<int> subMSAidxL_;
+        std::vector<int> subMSAidxR_;
 
         //***************************************************************************************
         // PRIVATE METHODS
@@ -77,6 +77,8 @@ namespace bpp {
                               // (which reduces to data preparation)
 
         void DP3D_PIP_node(); // DP method to align 2 MSAs at an internal node
+
+        std::vector<double> _computeLkEmptyNode();
 
         void _computeLkEmptyLeaf();
 
@@ -88,21 +90,41 @@ namespace bpp {
         // PUBLIC FIELDS
         //***************************************************************************************
 
-        nodeSB *parent;
-        nodeSB *childL;
-        nodeSB *childR;
+//        nodeSB *parent;
+//        nodeSB *childL;
+//        nodeSB *childR;
 
-        PIPmsaComp *MSA_; //contains the MSA
+        //PIPmsaComp *MSA_; //contains the MSA
 
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
 
         // constructor
-        nodeSB(const progressivePIP *pPIP, tshlib::VirtualNode *vnode, bpp::Node *bnode) : PIPnode(pPIP, vnode,
-                                                                                                    bnode) {
-        }
+        nodeSB(const progressivePIP *pPIP, tshlib::VirtualNode *vnode, bpp::Node *bnode) : PIPnode(pPIP,
+                                                                                                   vnode,
+                                                                                                   bnode) {
+            if(bnode->isLeaf()){
 
+                // create a PIPmsaComp object
+                MSA_  = new PIPmsaComp(1);
+
+                // create a new PIPmsa
+                dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0) = new PIPmsa();
+
+            }else{
+
+                // create a PIPmsaComp object
+                MSA_  = new PIPmsaComp(progressivePIP_->num_sb_);
+
+                for(int i=0;i<progressivePIP_->num_sb_;i++){
+                    // create a new PIPmsa
+                    dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(i) = new PIPmsa();
+                }
+
+            }
+
+        }
 
         virtual ~nodeSB() = default;
 

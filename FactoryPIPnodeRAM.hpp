@@ -144,20 +144,25 @@ namespace bpp {
         // PUBLIC FIELDS
         //***************************************************************************************
 
-        nodeRAM *parent;
-        nodeRAM *childL;
-        nodeRAM *childR;
+//        nodeRAM *parent;
+//        nodeRAM *childL;
+//        nodeRAM *childR;
 
-        PIPmsaSingle *MSA_; //contains the MSA
+        //PIPmsaSingle *MSA_; //contains the MSA
 
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
 
         // constructor
-        nodeRAM(const progressivePIP *pPIP, tshlib::VirtualNode *vnode, bpp::Node *bnode) : PIPnode(pPIP, vnode,
+        nodeRAM(const progressivePIP *pPIP, tshlib::VirtualNode *vnode, bpp::Node *bnode) : PIPnode(pPIP,
+                                                                                                    vnode,
                                                                                                     bnode) {
+                // create a PIPmsaSingle object
+                MSA_  = new PIPmsaSingle();
 
+                // create a new PIPmsa
+                dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa = new PIPmsa();
 
         }
         virtual ~nodeRAM() = default;

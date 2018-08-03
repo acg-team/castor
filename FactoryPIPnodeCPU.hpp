@@ -259,11 +259,11 @@ namespace bpp {
         // PUBLIC FIELDS
         //***************************************************************************************
 
-        nodeCPU *parent;
-        nodeCPU *childL;
-        nodeCPU *childR;
+//        nodeCPU *parent;
+//        nodeCPU *childL;
+//        nodeCPU *childR;
 
-        PIPmsaSingle *MSA_; //contains the MSA
+        //PIPmsaSingle *MSA_; //contains the MSA
 
         //***************************************************************************************
         // PUBLIC METHODS
