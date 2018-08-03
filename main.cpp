@@ -118,7 +118,6 @@ int main(int argc, char *argv[]) {
 
     //FLAGS_logtostderr = 1;
     FLAGS_log_dir = ".";
-    int OMP_max_avail_threads = 1;
     google::InitGoogleLogging(software::name.c_str());
     google::InstallFailureSignalHandler();
 
@@ -144,8 +143,6 @@ int main(int argc, char *argv[]) {
 
         //////////////////////////////////////////////
         // CLI ARGUMENTS
-
-        int PAR_execution_numthreads = ApplicationTools::getIntParameter("exec_numthreads", jatiapp.getParams(), OMP_max_avail_threads, "", true, 0);
 
         bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", jatiapp.getParams(), false);
         bool PAR_align_optim = ApplicationTools::getBooleanParameter("optimisation.alignment", jatiapp.getParams(), false);
@@ -341,10 +338,12 @@ int main(int argc, char *argv[]) {
 
                     // Instantiation of the canonical substitution model
                     if (PAR_Alphabet.find("Codon") != std::string::npos || PAR_Alphabet.find("Protein") != std::string::npos) {
-                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(), sitesDistMethod, modelMap, "", true,
+                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(), sitesDistMethod, modelMap, "",
+                                                                                          true,
                                                                                           false, 0);
                     } else {
-                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetDistMethod, gCode.get(), sitesDistMethod, modelMap, "", true,
+                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetDistMethod, gCode.get(), sitesDistMethod, modelMap,
+                                                                                          "", true,
                                                                                           false, 0);
                     }
 
@@ -357,7 +356,8 @@ int main(int argc, char *argv[]) {
                     } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
                         smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabetDistMethod), smodel, *sitesDistMethod, lambda, mu, false);
                     } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
-                        smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabetDistMethod), gCode.get(), smodel, *sitesDistMethod, lambda,
+                        smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabetDistMethod), gCode.get(), smodel, *sitesDistMethod,
+                                               lambda,
                                                mu, false);
                         ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
                         DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
@@ -620,8 +620,8 @@ int main(int argc, char *argv[]) {
             if (modelMap.find("estimated") != modelMap.end()) {
                 ApplicationTools::displayError("The use of the tag [observed] is obsolete. Use the tag [initFreqs] instead");
                 exit(1);
-            }else if(modelMap.find("initFreqs") != modelMap.end()){
-                if(modelMap["initFreqs"]=="observed"){
+            } else if (modelMap.find("initFreqs") != modelMap.end()) {
+                if (modelMap["initFreqs"] == "observed") {
                     estimatePIPparameters = true;
                 }
             }
@@ -631,17 +631,21 @@ int main(int argc, char *argv[]) {
                 if (PAR_alignment) {
                     lambda = bpp::estimateLambdaFromData(tree, sequences, PAR_proportion);
                     mu = bpp::estimateMuFromData(tree, PAR_proportion);
-                    DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input sequences (lambda=" << lambda << ",mu=" << mu << ")";
+
                 } else {
                     lambda = bpp::estimateLambdaFromData(tree, sites);
                     mu = bpp::estimateMuFromData(tree, sites);
-                    DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input alignment (lambda=" << lambda << ",mu=" << mu << ")";
                 }
+
+                DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input sequences (lambda=" <<
+                           lambda <<  ",mu=" << mu << "," "I=" << lambda * mu << ")";
 
             } else {
                 lambda = (modelMap.find("lambda") == modelMap.end()) ? 0.1 : std::stod(modelMap["lambda"]);
                 mu = (modelMap.find("mu") == modelMap.end()) ? 0.2 : std::stod(modelMap["mu"]);
             }
+
+            DLOG(INFO) << "[PIP model] Fixed PIP parameters to (lambda=" << lambda <<  ",mu=" << mu << "," "I=" << lambda * mu << ")";
 
             // Instantiate the corrisponding PIP model given the alphabet
             if (PAR_alignment) {
@@ -661,7 +665,7 @@ int main(int argc, char *argv[]) {
                     ApplicationTools::displayWarning("Codon models are experimental in the current version... use with caution!");
                     DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
                 }
-            }else{
+            } else {
                 if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
 
                     smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sites, lambda, mu, computeFrequenciesFromData);
@@ -694,6 +698,11 @@ int main(int argc, char *argv[]) {
         ParameterList parameters = smodel->getParameters();
         for (size_t i = 0; i < parameters.size(); i++) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
+        }
+
+        if(PAR_model_indels){
+            double pip_intensity = parameters.getParameter("PIP.lambda").getValue() * parameters.getParameter("PIP.mu").getValue();
+            ApplicationTools::displayResult("PIP.intensity", TextTools::toString(pip_intensity));
         }
 
         bpp::StdStr s1;
@@ -749,9 +758,9 @@ int main(int argc, char *argv[]) {
 
             //===========================================================
             //===========================================================
-            int num_sb; // number of sub-optimal MSAs
+            int num_sb = 0; // number of sub-optimal MSAs
 
-            enumDP3Dversion DPversion; // DP3D version
+            enumDP3Dversion DPversion = CPU; // DP3D version
 
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
                 DPversion = CPU; // slower but uses less memory
@@ -786,7 +795,7 @@ int main(int argc, char *argv[]) {
 
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
             std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
-            ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
+            ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration, 4));
 
 
 
@@ -898,7 +907,7 @@ int main(int argc, char *argv[]) {
 
             duration = std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
             std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
-            ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration,4));
+            ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration, 4));
             //===== OBSOLETE ===========================================================
 
 

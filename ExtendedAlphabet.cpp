@@ -121,7 +121,8 @@ std::vector<std::string> DNA_EXTENDED::getAlias(const std::string &state) const 
 int DNA_EXTENDED::getGeneric(const std::vector<int> &states) const throw(BadIntException) {
     int v = 0;
     for (size_t i = 0; i < states.size(); ++i) {
-        if (!isIntInAlphabet(states[i])) throw BadIntException(states[i], "DNA_EXTENDED::getGeneric(const vector<int>& states): Specified base unknown.");
+        if (!isIntInAlphabet(states[i]))
+            throw BadIntException(states[i], "DNA_EXTENDED::getGeneric(const vector<int>& states): Specified base unknown.");
         v |= getState(states[i]).getBinaryCode();
     }
     return getStateByBinCode(v).getNum();
@@ -131,7 +132,8 @@ int DNA_EXTENDED::getGeneric(const std::vector<int> &states) const throw(BadIntE
 std::string DNA_EXTENDED::getGeneric(const std::vector<std::string> &states) const throw(BadCharException) {
     vector<int> vi;
     for (unsigned int i = 0; i < states.size(); ++i) {
-        if (!isCharInAlphabet(states[i])) throw BadCharException(states[i], "DNA_EXTENDED::getGeneric(const vector<string>& states): Specified base unknown.");
+        if (!isCharInAlphabet(states[i]))
+            throw BadCharException(states[i], "DNA_EXTENDED::getGeneric(const vector<string>& states): Specified base unknown.");
         vi.push_back(this->charToInt(states[i]));
     }
     return intToChar(getGeneric(vi));
@@ -171,10 +173,8 @@ ProteicAlphabet_Extended::ProteicAlphabet_Extended() {
     registerState(new ProteicAlphabetState(23, "0", "0", "Unresolved amino acid"));
     registerState(new ProteicAlphabetState(23, "?", "?", "Unresolved amino acid"));
     registerState(new ProteicAlphabetState(-1, "*", "STOP", "Stop"));
-    //setState(22, new ProteicAlphabetState(22, "-", "GAP", "Gap"));
 
 }
-
 
 
 string ProteicAlphabet_Extended::getAbbr(const string &aa) const throw(AlphabetException) {
@@ -192,18 +192,15 @@ vector<int> ProteicAlphabet_Extended::getAlias(int state) const throw(BadIntExce
     if (!isIntInAlphabet(state))
         throw BadIntException(state, "ProteicAlphabet_Extended::getAlias(int): Specified base unknown.");
     vector<int> v;
-    if (state == 21)  // N or D
-    {
+    if (state == 21) {          // N or D
         v.resize(2);
         v[0] = 2;
         v[1] = 3;
-    } else if (state == 22)  // Q or E
-    {
+    } else if (state == 22) {   // Q or E
         v.resize(2);
         v[0] = 5;
         v[1] = 6;
-    } else if (state == 23)  // all!
-    {
+    } else if (state == 23) {   // all!
         v.resize(21);
         for (size_t i = 0; i < 21; i++) {
             v[i] = static_cast<int>(i);
@@ -221,21 +218,19 @@ vector<string> ProteicAlphabet_Extended::getAlias(const string &state) const thr
     if (!isCharInAlphabet(locstate))
         throw BadCharException(locstate, "ProteicAlphabet_Extended::getAlias(int): Specified base unknown.");
     vector<string> v;
-    if (locstate == "B")  // N or D
-    {
+
+    if (locstate == "B") {          // N or D
         v.resize(2);
         v[0] = "N";
         v[1] = "D";
-    } else if (locstate == "Z")  // Q or E
-    {
+    } else if (locstate == "Z") {   // Q or E
         v.resize(2);
         v[0] = "Q";
         v[1] = "E";
     } else if (locstate == "X"
                || locstate == "O"
                || locstate == "0"
-               || locstate == "?")  // all!
-    {
+               || locstate == "?") {   // all!
         v.resize(21);
         for (int i = 0; i < 21; i++) {
             v[static_cast<size_t>(i)] = getState(i).getLetter();

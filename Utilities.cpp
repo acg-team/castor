@@ -350,7 +350,8 @@ void UtreeBppUtils::renameInternalNodes(bpp::Tree *in_tree, std::string prefix) 
 }
 
 
-std::vector<bpp::Node *> UtreeBppUtils::remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm) {
+std::vector<bpp::Node *>
+UtreeBppUtils::remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm) {
 
     std::vector<bpp::Node *> newList;
 
@@ -694,7 +695,7 @@ void OutputUtils::writeOutput2LOG(bpp::AbstractHomogeneousTreeLikelihood *tl) {
             oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";
         }
         oss << ")";
-       DLOG(INFO) << oss.str();
+        DLOG(INFO) << oss.str();
     }
     oss.clear();
     oss.str("");
@@ -707,7 +708,7 @@ void OutputUtils::writeOutput2LOG(bpp::AbstractHomogeneousTreeLikelihood *tl) {
             oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";
         }
         oss << ")";
-       DLOG(INFO) << oss.str();
+        DLOG(INFO) << oss.str();
     }
     oss.clear();
     oss.str("");
@@ -719,7 +720,7 @@ void OutputUtils::writeOutput2LOG(bpp::AbstractHomogeneousTreeLikelihood *tl) {
             oss << parameterName << "=" << parModel.getParameter(parameterName).getValue() << ",";;
         }
         oss << ")";
-       DLOG(INFO) << oss.str();
+        DLOG(INFO) << oss.str();
     }
     oss.clear();
     oss.str("");
@@ -764,6 +765,14 @@ void OutputUtils::writeOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl,
             for (auto &parameterName:parModel.getParameterNames()) {
                 pt.put("Model." + parameterName, parModel.getParameter(parameterName).getValue());
             }
+
+        }
+
+        // Add PIP intensity to the list of parameters to output (PIP.Intensity is a pseudo-parameter)
+        if (tl->getSubstitutionModel()->getName().find("PIP") != std::string::npos) {
+            double pip_intensity = tl->getSubstitutionModelParameters().getParameter("PIP.lambda").getValue() *
+                                   tl->getSubstitutionModelParameters().getParameter("PIP.mu").getValue();
+            pt.put("Model.PIP.intensity", pip_intensity);
         }
 
         parModel = tl->getRateDistributionParameters();
@@ -782,14 +791,6 @@ void OutputUtils::writeOutput2JSON(bpp::AbstractHomogeneousTreeLikelihood *tl,
         }
 
         pt.put("Final.LogLikelihood", tl->getLogLikelihood());
-
-        /*
-        boost::filesystem::path p(prefix);
-
-        std::string path = p.parent_path().string();
-        std::string stem = p.stem().string();
-        std::string filename = path + "/" + stem + ".json";
-        */
 
         boost::property_tree::write_json(estimate_filename, pt);
 
@@ -819,9 +820,9 @@ void OutputUtils::writeTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfi
     for (auto &nodeID:tree->getNodesId()) {
         outfile << tree->getNodeName(nodeID) << "\t";
         for (auto &attributeName:tree->getBranchPropertyNames(tree->getInnerNodesId().at(1))) {
-            if(tree->hasBranchProperty(nodeID, attributeName)) {
+            if (tree->hasBranchProperty(nodeID, attributeName)) {
                 outfile << dynamic_cast<const BppString *>(tree->getBranchProperty(nodeID, attributeName))->toSTL() << "\t";
-            }else{
+            } else {
                 outfile << "\t";
             }
         }
@@ -832,7 +833,8 @@ void OutputUtils::writeTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfi
 }
 
 
-void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree *> trees, std::map<std::string, std::string> &params, const std::string &suffix, bool suffixIsOptional, bool verbose, int warn) {
+void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree *> trees, std::map<std::string, std::string> &params, const std::string &suffix,
+                                     bool suffixIsOptional, bool verbose, int warn) {
 
     std::string PAR_output_tree_filename = ApplicationTools::getAFilePath("output.tree.file", params, false, false, "", true, "", 1);
     std::string PAR_output_tree_attributes = ApplicationTools::getStringParameter("output.tree.attributes", params, "", "", true, true);
@@ -878,14 +880,14 @@ void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree *> trees, std::map<st
         names = VectorTools::vectorUnion(names, trees[i]->getLeavesNames());
     }
     //... and create a translation map:
-    map <string, size_t> translation;
+    map<string, size_t> translation;
     size_t code = 1;
     for (size_t i = 0; i < names.size(); i++) {
         translation[names[i]] = code++;
     }
 
     //Second we translate all leaf names to their corresponding code:
-    vector < Tree * > translatedTrees(trees.size());
+    vector<Tree *> translatedTrees(trees.size());
     for (size_t i = 0; i < trees.size(); i++) {
         vector<int> leavesId = trees[i]->getLeavesId();
         Tree *tree = dynamic_cast<Tree *>(trees[i]->clone());
@@ -908,7 +910,8 @@ void OutputUtils::writeNexusMetaTree(std::vector<bpp::Tree *> trees, std::map<st
 
     //Finally we print all tree descriptions:
     for (size_t i = 0; i < trees.size(); i++) {
-        out << endl << "  TREE tree" << (i + 1) << " = " << OutputUtils::TreeTools::treeToParenthesis(*translatedTrees[i], internaNodeNames, attributeNames);
+        out << endl << "  TREE tree" << (i + 1) << " = "
+            << OutputUtils::TreeTools::treeToParenthesis(*translatedTrees[i], internaNodeNames, attributeNames);
     }
     out << "END;" << endl;
 
@@ -929,9 +932,8 @@ void OutputUtils::exportOutput(bpp::AbstractHomogeneousTreeLikelihood *tl,
                                int warn) {
 
 
-
     std::string estimate_filename = ApplicationTools::getAFilePath("output.estimates.file", params, false, false, "none", true);
-    std::string estimate_format = ApplicationTools::getStringParameter("output.estimates.format", params, "json",  "", true, true);
+    std::string estimate_format = ApplicationTools::getStringParameter("output.estimates.format", params, "json", "", true, true);
 
     if (estimate_filename.find("none") == std::string::npos) {
 
@@ -948,7 +950,7 @@ void OutputUtils::exportOutput(bpp::AbstractHomogeneousTreeLikelihood *tl,
             writeOutput2JSON(tl, sites, params);
 
 
-        }else {
+        } else {
             ApplicationTools::displayResult("Output estimates format", TextTools::toString("human-readable text"));
 
             rawname = rawname + ".log";
@@ -1012,7 +1014,8 @@ void OutputUtils::writeOutput2Text(bpp::AbstractHomogeneousTreeLikelihood *tl,
 
 }
 
-std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree &tree, int nodeId, bool internalNodesNames, std::vector<std::string> attributeNames) throw(NodeNotFoundException) {
+std::string OutputUtils::TreeTools::nodeToParenthesis(const Tree &tree, int nodeId, bool internalNodesNames,
+                                                      std::vector<std::string> attributeNames) throw(NodeNotFoundException) {
 
     if (!tree.hasNode(nodeId))
         throw NodeNotFoundException("OutputUtils::TreeTools::nodeToParenthesis", nodeId);
@@ -1116,10 +1119,11 @@ std::string OutputUtils::TreeTools::treeToParenthesis(const Tree &tree, bool int
 }
 
 
-bpp::DistanceEstimation DistanceUtils::computeDistanceMethod(std::string seqfilename, bpp::Alphabet *alphabet, bpp::GeneticCode *gCode, std::map<std::string, std::string> &params) {
+bpp::DistanceEstimation DistanceUtils::computeDistanceMethod(std::string seqfilename, bpp::Alphabet *alphabet, bpp::GeneticCode *gCode,
+                                                             std::map<std::string, std::string> &params) {
 
     // Create a map containing the required parameters passed by the user
-    map <std::string, std::string> parmap;
+    map<std::string, std::string> parmap;
     parmap = params;
     // Overwrite the model parameter
     parmap["model"] = "JC69";
@@ -1466,7 +1470,8 @@ void AlignmentUtils::checkAlignmentConsistency(bpp::SiteContainer &sites) {
 
         }
 
-        LOG_IF(FATAL, !nonGapSeen || !nonUnkownSeen) << "Column #" << i + 1 << " of the alignment contains only gaps. Please remove it and try again!";
+        LOG_IF(FATAL, !nonGapSeen || !nonUnkownSeen)
+        << "Column #" << i + 1 << " of the alignment contains only gaps. Please remove it and try again!";
 
     }
 }
@@ -1475,7 +1480,7 @@ void AlignmentUtils::checkAlignmentConsistency(bpp::SiteContainer &sites) {
 bool ComparisonUtils::areLogicallyEqual(double a, double b) {
     //return std::abs(a - b) < std::numeric_limits<double>::epsilon();
     //return a == b || std::abs(a - b) < std::abs(std::min(a, b)) * std::numeric_limits<double>::epsilon();
-    return std::abs(a-b)<0.00001*std::max(std::abs(a),std::abs(b));
+    return std::abs(a - b) < 0.00001 * std::max(std::abs(a), std::abs(b));
 
 
 }
