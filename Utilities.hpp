@@ -81,7 +81,8 @@ namespace UtreeBppUtils {
 
     void renameInternalNodes(bpp::Tree *in_tree, std::string prefix = "V");
 
-    std::vector<bpp::Node *> remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm);
+    std::vector<bpp::Node *>
+    remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm);
 
 
 }
@@ -154,7 +155,7 @@ namespace OutputUtils {
 
     void writeTreeAnnotations2TSV(bpp::Tree *tree, std::string outputfile);
 
-    void writeNexusMetaTree(std::vector<bpp::Tree*> trees,
+    void writeNexusMetaTree(std::vector<bpp::Tree *> trees,
                             std::map<std::string, std::string> &params,
                             const std::string &suffix = "",
                             bool suffixIsOptional = true,
@@ -164,8 +165,11 @@ namespace OutputUtils {
     namespace TreeTools {
 
         std::string writeTree2String(bpp::Tree *tree);
-        std::string treeToParenthesis(const bpp::Tree& tree, bool internalNodesNames, std::vector<std::string> attributeNames);
-        std::string nodeToParenthesis(const bpp::Tree& tree, int nodeId, bool internalNodesNames, std::vector<std::string> attributeNames) throw (bpp::NodeNotFoundException);
+
+        std::string treeToParenthesis(const bpp::Tree &tree, bool internalNodesNames, std::vector<std::string> attributeNames);
+
+        std::string nodeToParenthesis(const bpp::Tree &tree, int nodeId, bool internalNodesNames,
+                                      std::vector<std::string> attributeNames) throw(bpp::NodeNotFoundException);
 
     }
 
@@ -173,22 +177,25 @@ namespace OutputUtils {
 
 namespace DistanceUtils {
 
-    bpp::DistanceEstimation computeDistanceMethod(std::string seqfilename, bpp::Alphabet *alphabet, bpp::GeneticCode *gCode, std::map<std::string, std::string> &params);
+    bpp::DistanceEstimation
+    computeDistanceMethod(std::string seqfilename, bpp::Alphabet *alphabet, bpp::GeneticCode *gCode, std::map<std::string, std::string> &params);
 
-    bpp::TreeTemplate<bpp::Node> *computeDistanceTree(bpp::TransitionModel *model, bpp::DiscreteDistribution *rDist, bpp::DistanceEstimation &distEstimation, std::map<std::string, std::string> &
-    params);
+    bpp::TreeTemplate<bpp::Node> *
+    computeDistanceTree(bpp::TransitionModel *model, bpp::DiscreteDistribution *rDist, bpp::DistanceEstimation &distEstimation,
+                        std::map<std::string, std::string> &
+                        params);
 
 }
 
 
-namespace AlignmentUtils{
+namespace AlignmentUtils {
 
     void checkAlignmentConsistency(bpp::SiteContainer &sites);
 
 }
 
 
-namespace ComparisonUtils{
+namespace ComparisonUtils {
 
     bool areLogicallyEqual(double a, double b);
 }
@@ -212,9 +219,9 @@ public:
             seqfilename_(seqfilename),
             alphabet_(alphabet),
             gCode_(gCode),
-            params_(params),
+            distEstimation_(nullptr),
             distMatrix_(nullptr),
-            distEstimation_(nullptr) {}
+            params_(params) {}
 
     ~DistanceMethodsUtils() {
         delete model_;
@@ -230,7 +237,6 @@ public:
 
 
 };
-
 
 
 #endif //MINIJATI_UTILS_HPP
