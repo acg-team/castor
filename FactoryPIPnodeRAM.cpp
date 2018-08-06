@@ -547,6 +547,7 @@ std::vector<double> nodeRAM::_computeLkEmptyNode(){
 
     double p0;
     double pL,pR;
+    double fv0;
 
     // resize array ([numCatg] x 1)
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.resize(numCatg);
@@ -555,20 +556,44 @@ std::vector<double> nodeRAM::_computeLkEmptyNode(){
     std::vector<double> pc0;
     pc0.resize(numCatg);
 
+    std::vector<bpp::ColMatrix<double> > &fvL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->fv_empty_data_;
+    std::vector<bpp::ColMatrix<double> > &fvR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->fv_empty_data_;
+
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_data_.resize(numCatg);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.resize(numCatg);
+
     for (int catg = 0; catg < numCatg; catg++) {
 
-        //double fv0 = fv_empty_sigma_.at(catg);
+        // PrfvL = Pr_L * fv_L
+        bpp::ColMatrix<double> PrfvL;
+        bpp::MatrixTools::mult(childL->prNode_.at(catg), fvL.at(catg), PrfvL);
 
-        double pr_up = 0.0; // lk_empty UP (from the actual node to the root)
+        // PrfvR = Pr_R * fv_R
+        bpp::ColMatrix<double> PrfvR;
+        bpp::MatrixTools::mult(childR->prNode_.at(catg), fvR.at(catg), PrfvR);
+
+        // fv = PrfvL * PrfvR
+        bpp::ColMatrix<double> fv;
+        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_data_.at(catg) = fv;
+
+        // fv0 = pi * fv
+        fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
+
+        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.at(catg) = fv0;
+
+        //double pr_up = 0.0; // lk_empty UP (from the actual node to the root)
 
         if(_isRootNode()){ // root
             // lk at root node (beta = 1.0)
-            p0 = iotasNode_.at(catg) * dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.at(catg);
+            p0 = iotasNode_.at(catg) * fv0;
         }else{ // internal node
             p0 = ( iotasNode_.at(catg) - \
                    iotasNode_.at(catg) * betasNode_.at(catg) + \
-                   iotasNode_.at(catg) * betasNode_.at(catg) * dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.at(catg) );
+                   iotasNode_.at(catg) * betasNode_.at(catg) * fv0 );
 
+            /*
             // climb the tree and compute the probability UP
             bpp::PIPnode *tmpNode = this->parent;
             while(tmpNode){
@@ -577,8 +602,13 @@ std::vector<double> nodeRAM::_computeLkEmptyNode(){
                          tmpNode->iotasNode_.at(catg) * tmpNode->betasNode_.at(catg) * dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.at(catg);
                 tmpNode = tmpNode->parent;
             }
+            */
+
+            //pr_up = etaNode_.at(catg);
 
         }
+
+        double pr_up = etaNode_.at(catg);
 
         pL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->lk_empty_.at(catg); // lk_empty DOWN left
         pR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->lk_empty_.at(catg); // lk_empty DOWN right
@@ -705,13 +735,10 @@ void nodeRAM::_compressLK(std::vector<double> &lk_down_not_compressed){
 
 }
 
+/*
 void nodeRAM::_computeAllFvEmptySigmaRec() {
 
     if(childL == nullptr && childR == nullptr){ // leaf
-
-
-
-
 
         // get vnode Id
         int vnodeId = (int) vnode_->vnode_seqid;
@@ -730,11 +757,6 @@ void nodeRAM::_computeAllFvEmptySigmaRec() {
 
         // compresses sequence at the leaves
         dynamic_cast<PIPmsaSingle *>(MSA_)->_compressMSA(progressivePIP_->alphabet_);
-
-
-
-
-
 
         // set fv_empty
         dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVemptyLeaf(progressivePIP_->numCatg_,
@@ -767,29 +789,44 @@ void nodeRAM::_computeAllFvEmptySigmaRec() {
 
 }
 
+*/
+
 void nodeRAM::DP3D_PIP_leaf() {
 
     //*******************************************************************************
     // ALIGNS LEAVES
     //*******************************************************************************
 
-//    // get vnode Id
-//    int vnodeId = (int) vnode_->vnode_seqid;
-//
-//    // get sequence name from vnodeId
-//    std::string seqname = progressivePIP_->sequences_->getSequencesNames().at(vnodeId);
-//
-//    // associates the sequence name to the leaf node
-//    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setSeqNameLeaf(seqname);
-//
-//    // get sequence from sequence name
-//    const bpp::Sequence *sequence = &progressivePIP_->sequences_->getSequence(seqname);
-//
-//    // creates a column containing the sequence associated to the leaf node
-//    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setMSAleaf(sequence);
-//
-//    // compresses sequence at the leaves
-//    dynamic_cast<PIPmsaSingle *>(MSA_)->_compressMSA(progressivePIP_->alphabet_);
+
+
+    //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+    // get vnode Id
+    int vnodeId = (int) vnode_->vnode_seqid;
+
+    // get sequence name from vnodeId
+    std::string seqname = progressivePIP_->sequences_->getSequencesNames().at(vnodeId);
+
+    // associates the sequence name to the leaf node
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setSeqNameLeaf(seqname);
+
+    // get sequence from sequence name
+    const bpp::Sequence *sequence = &progressivePIP_->sequences_->getSequence(seqname);
+
+    // creates a column containing the sequence associated to the leaf node
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setMSAleaf(sequence);
+
+    // compresses sequence at the leaves
+    dynamic_cast<PIPmsaSingle *>(MSA_)->_compressMSA(progressivePIP_->alphabet_);
+
+    // set fv_empty
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVemptyLeaf(progressivePIP_->numCatg_,
+                                                                progressivePIP_->alphabet_);
+
+    // set fv_sigma_empty = fv_empty dot pi
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaEmptyLeaf(progressivePIP_->numCatg_);
+    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
 
     // computes the indicator values (fv values) at the leaves
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVleaf(progressivePIP_->numCatg_,

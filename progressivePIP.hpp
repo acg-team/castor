@@ -182,6 +182,8 @@ namespace bpp {
         void _setAllAlphas(); // alpha(v) = sum_from_v_to_root ( iota * beta * zeta )
                               // zeta = exp(- mu *b ) is the "pure" survival probability
 
+        void _setAllEtas();
+
         bpp::Node *getBPProotNode(){ return tree_->getRootNode(); }; // get the root of the tree
 
         PIPnode *getPIPnodeRootNode(){ return PIPnodeRoot; }; // get the PIPnodeRoot of the PIPnode tree
@@ -194,6 +196,8 @@ namespace bpp {
                              // of the tree rooted at a given PIPnode
 
         void _computeNu(); // compute the normalizing Poisson intensity (expected MSA length)
+
+        void _computeLengthPathToRoot(); // compute the distance from any node to the root
 
     };
 

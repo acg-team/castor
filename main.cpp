@@ -755,9 +755,9 @@ int main(int argc, char *argv[]) {
 
 
 
-
-            //===========================================================
-            //===========================================================
+            //**********************************************************************************************************
+            // ********  3D DP PIP  ************************************************************************************
+            //**********************************************************************************************************
             int num_sb = 0; // number of sub-optimal MSAs
 
             enumDP3Dversion DPversion = CPU; // DP3D version
@@ -772,7 +772,8 @@ int main(int argc, char *argv[]) {
                 DPversion = SB;  // stochastic backtracking version
                 num_sb = 4;
             } else {
-                ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
+                ApplicationTools::displayError("The user specified an unknown alignment.version. "
+                                               "The execution will not continue.");
             }
 
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
@@ -789,16 +790,14 @@ int main(int argc, char *argv[]) {
                                    DPversion, // version of the alignment algorithm
                                    num_sb);   // number of suboptimal MSAs
 
-            proPIP->compositePIPaligner_->PIPnodeAlign(proPIP->getPIPnodeRootNode()); // align input sequences with a DP algorithm under PIP
+            proPIP->compositePIPaligner_->PIPnodeAlign(proPIP->getPIPnodeRootNode()); // align input sequences with a
+                                                                                      // DP algorithm under PIP
 
             std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
             std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
             ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration, 4));
-
-
-
 
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
@@ -823,12 +822,6 @@ int main(int argc, char *argv[]) {
 
             }
 
-
-
-
-
-
-
             // Export alignment to file
             if (PAR_output_file_msa.find("none") == std::string::npos) {
                 DLOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
@@ -851,14 +844,14 @@ int main(int argc, char *argv[]) {
                 MSAscore = dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->_getScore(0);
             }
 
-
             std::ofstream lkFile;
             lkFile << std::setprecision(18);
             lkFile.open(PAR_output_file_lk);
             lkFile << MSAscore;
             lkFile.close();
-            //===========================================================
-            //===========================================================
+            //**********************************************************************************************************
+            // ********  3D DP PIP  ************************************************************************************
+            //**********************************************************************************************************
 
 
 

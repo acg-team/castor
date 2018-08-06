@@ -112,6 +112,7 @@ void nodeSB::_computeLkLeaf(){
 
 }
 
+/*
 void nodeSB::_computeAllFvEmptySigmaRec(){
 
     if(childL == nullptr && childR == nullptr){ // leaf
@@ -149,6 +150,7 @@ void nodeSB::_computeAllFvEmptySigmaRec(){
     }
 
 }
+*/
 
 std::vector<double> nodeSB::_computeLkEmptyNode(){
 

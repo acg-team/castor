@@ -96,11 +96,13 @@ namespace bpp {
         double subTreeLenL_; // left subtree length (subtree rooted at this node)
         double subTreeLenR_; // right subtree length (subtree rooted at this node)
 
-        std::vector<double> iotasNode_; //map of nodeIDs and vector of iotas (1 for each rate (Gamma,...) category
-        std::vector<double> betasNode_; //map of nodeIDs and vector of betas (1 for each rate (Gamma,...) category
-        std::vector<bpp::RowMatrix<double> > prNode_; // map of NodeIDs of Pr = exp(branchLength * rate * Q), rate under Gamma distribution
+        std::vector<double> iotasNode_; // vector of iotas (1 for each rate (Gamma,...) category
+        std::vector<double> betasNode_; // vector of betas (1 for each rate (Gamma,...) category
+        std::vector<bpp::RowMatrix<double> > prNode_; // Pr = exp(branchLength * rate * Q), rate under Gamma distribution
 
         std::vector<double> alphaNode_;
+
+        std::vector<double> etaNode_;
 
 //        std::vector<double> log_lk_down_; //each node a vector of lk
 //        std::vector<double> lk_empty_; //each node a vector of lk_empty (for each gamma category)
@@ -111,7 +113,7 @@ namespace bpp {
 //        std::vector< std::vector<double> > fv_sigma_; // [site][catg]
 //        std::vector<double>  fv_empty_sigma_; // [catg]
 
-        //double distanceToRoot; // length of the path from this node to root (sum of branch length)
+        double distanceToRoot; // length of the path from this node to root (sum of branch length)
 
         //***************************************************************************************
         // PUBLIC METHODS
@@ -178,7 +180,7 @@ namespace bpp {
 
         void _computeLkEmptyLeaf();
 
-        virtual void _computeAllFvEmptySigmaRec() {};
+        //virtual void _computeAllFvEmptySigmaRec() {};
 
         virtual void DP3D_PIP_leaf(){}; // align a leaf PIPnode
 

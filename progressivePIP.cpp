@@ -189,6 +189,15 @@ void progressivePIP::_setAllAlphas() {
         // resize for each gamma category
         node->alphaNode_.resize(numCatg_);
 
+
+        for(int catg=0;catg<numCatg_;catg++){
+            // initialize alpha with the probability at the starting node which is
+            // alpha(v) = iota * beta
+            node->alphaNode_.at(catg) = (1.0/mu_.at(catg)) / (tau_ + 1/mu_.at(catg));
+        }
+
+        /*
+
         // zeta = exp(- mu * b ) is 1 at the starting node
         double zeta = 1.0;
         for(int catg=0;catg<numCatg_;catg++){
@@ -224,6 +233,33 @@ void progressivePIP::_setAllAlphas() {
 
             if( !tmpPIPnode->_isRootNode() ){
                 T += tmpPIPnode->bnode_->getDistanceToFather(); // increase the path length from starting node and root
+            }
+        }
+
+
+        */
+
+    }
+
+}
+
+void progressivePIP::_setAllEtas() {
+
+    for(auto &node:compositePIPaligner_->pip_nodes_){
+
+        // resize for each gamma category
+        node->etaNode_.resize(numCatg_);
+
+
+        for(int catg=0;catg<numCatg_;catg++) {
+
+            if (node->_isRootNode()) {
+                node->etaNode_.at(catg) = 0.0;
+            } else {
+                node->etaNode_.at(catg) = node->alphaNode_.at(catg) * (1 - exp(-mu_.at(catg) * node->distanceToRoot)) +
+                                          (node->distanceToRoot / (tau_ + 1 / mu_.at(catg))) * \
+                                          (1 - (1 - exp(-mu_.at(catg) * node->distanceToRoot)) /
+                                               (mu_.at(catg) * node->distanceToRoot));
             }
         }
 
@@ -343,64 +379,34 @@ void progressivePIP::_setAllBetas() {
 //
 //}
 
-void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
-                                    enumDP3Dversion DPversion,
-                                    int num_sb) {
+void progressivePIP::_computeLengthPathToRoot(){
 
-    //***************************************************************************************
-    // get dimensions
-    numNodes_ = list_vnode_to_root.size(); // total number of nodes
-    numCatg_ = rDist_->getNumberOfCategories(); // number of gamma categories
-    num_sb_ = num_sb; // number of sub-optimal solutions
-    //***************************************************************************************
-    // computes lambda and mu with gamma
-    // set lambdas with rate variation (gamma distribution)
-    _setLambda(substModel_->getParameter("lambda").getValue());
-    // set mus with rate variation (gamma distribution)
-    _setMu(substModel_->getParameter("mu").getValue());
-    //***************************************************************************************
-    // set Pi
-    // local copy of steady state frequency (Pi)
-    _setPi(substModel_->getFrequencies());
-    //***************************************************************************************
+    // get through the list of all the PIPnodes
+    for (auto &node:compositePIPaligner_->pip_nodes_) {
 
-    nodeFactory *nodeFactory = new bpp::nodeFactory(); // Factory pattern for DP3D-CPU, DP3D-RAM,...
+        // get the bnode associated to the PIPnode
+        bpp::Node *bnode = node->bnode_;
 
-    compositePIPaligner_ = new CompositePIPnode(numNodes_); // Composite pattern with array of PIPnodes
+        // initialize the path length
+        double T = 0.0;
 
-    for (auto &vnode:list_vnode_to_root) {
+        // climb the PIPnode tree
+        // the root skips this loop
+        while(bnode->hasFather()){
 
-        auto bnode = tree_->getNode(treemap_.right.at(vnode), false); // get bnode from vnode through the tree-map
+            // sum the branch length
+            T += bnode->getDistanceToFather();
 
-        // create a PIPnode
-        PIPnode * pip_node = nodeFactory->getPIPnode(DPversion, // PIPnode of type CPU, RAM, SB,... to access the correct DP version
-                                                     this,      // PIPnode has access to progressivePIP fields through this pointer
-                                                     vnode,     // PIPnode store the correponding vnode and
-                                                     bnode);    // the bnode
-        //***************************************************************************************
-        // get Qs
-        // set substitution/deletion probabilities with rate variation (gamma distribution)
-        pip_node->_getPrFromSubstitutionModel();
-        //***************************************************************************************
+            // get the parent bnode
+            bnode = bnode->getFather();
+        }
 
-        compositePIPaligner_->addPIPnode(pip_node); // add PIPnode to composite array of PIPnodes
+        // save the path length at the given node
+        // the path length from root to root is 0.0
+        node->distanceToRoot = T;
 
     }
-    //***************************************************************************************
 
-    _buildPIPnodeTree(); // build a tree of PIPnodes
-
-    _computeTau_(); // compute the total tree length and the left/right subtree length
-                    // (length of the left/right subtree rooted at the given node) at each PIPnode
-
-    _computeNu();   // compute the Poisson normalizing intensity (corresponds to the expected MSA length)
-
-    _setAllIotas(); // set iota (survival probability) on all nodes
-
-    _setAllBetas(); // set beta (survival probability) on all nodes
-
-    _setAllAlphas(); // alpha(v) = sum_from_v_to_root ( iota * beta * zeta )
-                     // zeta = exp(- mu *b ) is the "pure" survival probability
 }
 
 void progressivePIP::_buildPIPnodeTree() {
@@ -505,6 +511,69 @@ void progressivePIP::_computeNu() {
 
 }
 
+void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
+                                    enumDP3Dversion DPversion,
+                                    int num_sb) {
+
+    //***************************************************************************************
+    // get dimensions
+    numNodes_ = list_vnode_to_root.size(); // total number of nodes
+    numCatg_ = rDist_->getNumberOfCategories(); // number of gamma categories
+    num_sb_ = num_sb; // number of sub-optimal solutions
+    //***************************************************************************************
+    // computes lambda and mu with gamma
+    // set lambdas with rate variation (gamma distribution)
+    _setLambda(substModel_->getParameter("lambda").getValue());
+    // set mus with rate variation (gamma distribution)
+    _setMu(substModel_->getParameter("mu").getValue());
+    //***************************************************************************************
+    // set Pi
+    // local copy of steady state frequency (Pi)
+    _setPi(substModel_->getFrequencies());
+    //***************************************************************************************
+
+    nodeFactory *nodeFactory = new bpp::nodeFactory(); // Factory pattern for DP3D-CPU, DP3D-RAM,...
+
+    compositePIPaligner_ = new CompositePIPnode(numNodes_); // Composite pattern with array of PIPnodes
+
+    for (auto &vnode:list_vnode_to_root) {
+
+        auto bnode = tree_->getNode(treemap_.right.at(vnode), false); // get bnode from vnode through the tree-map
+
+        // create a PIPnode
+        PIPnode * pip_node = nodeFactory->getPIPnode(DPversion, // PIPnode of type CPU, RAM, SB,... to access the correct DP version
+                                                     this,      // PIPnode has access to progressivePIP fields through this pointer
+                                                     vnode,     // PIPnode store the correponding vnode and
+                                                     bnode);    // the bnode
+        //***************************************************************************************
+        // get Qs
+        // set substitution/deletion probabilities with rate variation (gamma distribution)
+        pip_node->_getPrFromSubstitutionModel();
+        //***************************************************************************************
+
+        compositePIPaligner_->addPIPnode(pip_node); // add PIPnode to composite array of PIPnodes
+
+    }
+    //***************************************************************************************
+
+    _buildPIPnodeTree(); // build a tree of PIPnodes
+
+    _computeTau_(); // compute the total tree length and the left/right subtree length
+    // (length of the left/right subtree rooted at the given node) at each PIPnode
+
+    _computeNu();   // compute the Poisson normalizing intensity (corresponds to the expected MSA length)
+
+    _setAllIotas(); // set iota (survival probability) on all nodes
+
+    _setAllBetas(); // set beta (survival probability) on all nodes
+
+    _setAllAlphas(); // alpha(v) = sum_from_v_to_root ( iota * beta * zeta )
+    // zeta = exp(- mu *b ) is the "pure" survival probability
+
+    _computeLengthPathToRoot();
+
+    _setAllEtas();
+}
 //***********************************************************************************************
 //***********************************************************************************************
 //***********************************************************************************************

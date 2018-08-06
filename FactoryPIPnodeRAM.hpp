@@ -169,7 +169,7 @@ namespace bpp {
 
         void DP3D_PIP(); // DP algorithm to align (leaf/internal node) under the PIP model
 
-        void _computeAllFvEmptySigmaRec();
+        //void _computeAllFvEmptySigmaRec();
 
     };
 
