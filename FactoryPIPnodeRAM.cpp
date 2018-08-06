@@ -608,12 +608,16 @@ std::vector<double> nodeRAM::_computeLkEmptyNode(){
 
         }
 
-        double pr_up = etaNode_.at(catg);
+        //double pr_up = etaNode_.at(catg);
 
         pL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->lk_empty_.at(catg); // lk_empty DOWN left
         pR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->lk_empty_.at(catg); // lk_empty DOWN right
 
-        pc0.at(catg) = pr_up + p0 + pL + pR; // this lk_empty is used at this layer
+        //double p0_fp = etaNode_.at(catg) + alphaNode_.at(catg) * fv0 + ;
+
+        pc0.at(catg) = etaNode_.at(catg) + \
+                       alphaNode_.at(catg) * fv0 + \
+                       pL + pR; // this lk_empty is used at this layer
 
         dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.at(catg) = p0 + pL + pR; // here store the lk for the next layer (probability UP is not added here)
     }

@@ -561,6 +561,8 @@ void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vno
     _computeTau_(); // compute the total tree length and the left/right subtree length
     // (length of the left/right subtree rooted at the given node) at each PIPnode
 
+    _computeLengthPathToRoot();
+
     _computeNu();   // compute the Poisson normalizing intensity (corresponds to the expected MSA length)
 
     _setAllIotas(); // set iota (survival probability) on all nodes
@@ -569,8 +571,6 @@ void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vno
 
     _setAllAlphas(); // alpha(v) = sum_from_v_to_root ( iota * beta * zeta )
     // zeta = exp(- mu *b ) is the "pure" survival probability
-
-    _computeLengthPathToRoot();
 
     _setAllEtas();
 }
