@@ -50,6 +50,9 @@
 #include <Bpp/Numeric/Matrix/Matrix.h>
 #include <Bpp/Seq/Sequence.h>
 #include <Bpp/Seq/Container/SiteContainer.h>
+#include <Bpp/Numeric/VectorTools.h>
+#include <Bpp/Phyl/Node.h>
+#include "progressivePIP.hpp"
 
 namespace bpp {
 
@@ -153,6 +156,14 @@ namespace bpp {
         void _setFVemptyLeaf(int numCatg,
                              const bpp::Alphabet *alphabet);
 
+        void _computeLkEmptyLeaf(const bpp::progressivePIP *pPIP,
+                                 std::vector<double> &iotasNode,
+                                 std::vector<double> &betasNode);
+
+        void _computeLkLeaf(const bpp::progressivePIP *pPIP,
+                                    std::vector<double> &iotasNode,
+                                    std::vector<double> &betasNode);
+
         void _compressFv(std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed); // compress an array of fv values
 
         void _compressFvSigma(std::vector<std::vector<double>> &fv_sigma_not_compressed); // compress an array of fv_sigma values
@@ -181,7 +192,7 @@ namespace PIPmsaUtils {
                                      std::vector<std::string> &seqNames,
                                      std::vector<std::string> &MSA);
 
-    bool sortByScore(const bpp::PIPmsa *msa1, const bpp::PIPmsa *msa2);
+    //bool sortByScore(const bpp::PIPmsa *msa1, const bpp::PIPmsa *msa2);
 
 }
 //***********************************************************************************************

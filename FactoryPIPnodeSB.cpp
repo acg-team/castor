@@ -128,53 +128,6 @@ void nodeSB::startingLevelSB(std::vector< vector< vector<double> > > &Log3DM,
 
 }
 
-void nodeSB::_computeLkEmptyLeaf(){
-
-    // compute the lk of an empty column at the leaf
-
-    // get the number of gamma categories
-    int numCatg = progressivePIP_->numCatg_;
-
-    // allocate memory ([numCatg] x 1)
-    dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->lk_empty_.resize(numCatg);
-
-    // only 1 column
-    for (int catg=0; catg<numCatg; catg++) {
-        // compute the lk of an empty column at the leaf
-        dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->lk_empty_.at(catg) = progressivePIP_->rDist_->getProbability((size_t) catg) * \
-            iotasNode_.at(catg) * (1 - betasNode_.at(catg));
-    }
-
-}
-
-void nodeSB::_computeLkLeaf(){
-
-    // compute the lk at the leaf
-
-    // get the number of gamma categories
-    int numCatg = progressivePIP_->numCatg_;
-
-    // get the size of the compressed sequences
-    int msaLen = dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->_getCompressedMSAlength();
-
-    // allocate memory ([site])
-    dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->log_lk_down_.resize(msaLen);
-
-    // compute the marginal lk over all the gamma categories
-    for(int site=0;site<msaLen;site++){
-        // init to 0.0
-        dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->log_lk_down_.at(site) = 0.0;
-        for (int catg=0; catg<numCatg; catg++) {
-            dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->log_lk_down_.at(site) += progressivePIP_->rDist_->getProbability((size_t) catg) * \
-                                     iotasNode_.at(catg) * betasNode_.at(catg) * \
-                                     dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->fv_sigma_.at(site).at(catg);
-        }
-        // compute the log lk
-        dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->log_lk_down_.at(site) = log(dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->log_lk_down_.at(site));
-    }
-
-}
-
 void nodeSB::DP3D_PIP_leaf() {
 
     //*******************************************************************************
@@ -216,10 +169,14 @@ void nodeSB::DP3D_PIP_leaf() {
                                                                     progressivePIP_->pi_);
 
     // compute the lk of an empty column
-    _computeLkEmptyLeaf();
+    dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->_computeLkEmptyLeaf(progressivePIP_,
+                                                                        iotasNode_,
+                                                                        betasNode_);
 
     // computes the lk for all the characters at the leaf
-    _computeLkLeaf();
+    dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->_computeLkLeaf(progressivePIP_,
+                                                                   iotasNode_,
+                                                                   betasNode_);
 
     // sets the traceback path at the leaf
     dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0)->_setTracebackPathLeaf();
@@ -902,9 +859,9 @@ void nodeSB::DP3D_PIP_node(int msa_idx_L,int msa_idx_R,int &position) {
 
 }
 
-//bool sortByScore(const bpp::PIPmsa *msa1, const bpp::PIPmsa *msa2) {
-//    return msa1->score_ > msa2->score_;
-//}
+bool sortByScore(const bpp::PIPmsa *msa1, const bpp::PIPmsa *msa2) {
+    return msa1->score_ > msa2->score_;
+}
 
 void nodeSB::DP3D_PIP() {
 
@@ -969,7 +926,7 @@ void nodeSB::DP3D_PIP() {
 
             sort(static_cast<PIPmsaComp *>(SBnode->MSA_)->pipmsa.begin(),
                  static_cast<PIPmsaComp *>(SBnode->MSA_)->pipmsa.end(),
-                 PIPmsaUtils::sortByScore);
+                 sortByScore);
 
 
             for(int i=0;i<progressivePIP_->num_sb_;i++){

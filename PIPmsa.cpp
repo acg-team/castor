@@ -385,6 +385,54 @@ void PIPmsa::_build_MSA(MSA_t &msaL, MSA_t &msaR) {
 
 }
 
+void PIPmsa::_computeLkEmptyLeaf(const bpp::progressivePIP *pPIP,
+                                 std::vector<double> &iotasNode,
+                                 std::vector<double> &betasNode){
+
+    // compute the lk of an empty column at the leaf
+
+    // allocate memory ([numCatg] x 1)
+    lk_empty_.resize(pPIP->numCatg_);
+
+    // only 1 column
+    for (int catg=0; catg<pPIP->numCatg_; catg++) {
+        // compute the lk of an empty column at the leaf
+        lk_empty_.at(catg) = pPIP->rDist_->getProbability((size_t) catg) * \
+                             iotasNode.at(catg) * (1 - betasNode.at(catg));
+    }
+
+}
+
+void PIPmsa::_computeLkLeaf(const bpp::progressivePIP *pPIP,
+                            std::vector<double> &iotasNode,
+                            std::vector<double> &betasNode){
+
+    // compute the lk at the leaf
+
+    // get the number of gamma categories
+    int numCatg = pPIP->numCatg_;
+
+    // get the size of the compressed sequences
+    int msaLen = _getCompressedMSAlength();
+
+    // allocate memory ([site])
+    log_lk_down_.resize(msaLen);
+
+    // compute the marginal lk over all the gamma categories
+    for(int site=0;site<msaLen;site++){
+        // init to 0.0
+        log_lk_down_.at(site) = 0.0;
+        for (int catg=0; catg<numCatg; catg++) {
+            log_lk_down_.at(site) += pPIP->rDist_->getProbability((size_t) catg) * \
+                                     iotasNode.at(catg) * betasNode.at(catg) * \
+                                     fv_sigma_.at(site).at(catg);
+        }
+        // compute the log lk
+        log_lk_down_.at(site) = log(log_lk_down_.at(site));
+    }
+
+}
+
 void PIPmsa::_compressLK(std::vector<double> &lk_down_not_compressed){
 
     // compress an array of lk values
@@ -480,9 +528,9 @@ bpp::SiteContainer *PIPmsaUtils::PIPmsa2Sites(const bpp::Alphabet *alphabet,
     return new bpp::VectorSiteContainer(*sequences);
 }
 
-bool sortByScore(const bpp::PIPmsa *msa1, const bpp::PIPmsa *msa2) {
-    return msa1->score_ > msa2->score_;
-}
+//bool sortByScore(const bpp::PIPmsa *msa1, const bpp::PIPmsa *msa2) {
+//    return msa1->score_ > msa2->score_;
+//}
 //***********************************************************************************************
 //***********************************************************************************************
 //***********************************************************************************************

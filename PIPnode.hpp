@@ -175,8 +175,6 @@ namespace bpp {
 
         void _getPrFromSubstitutionModel(); // compute exp(br_len * Q)
 
-        virtual void _computeLkEmptyLeaf() {};
-
         virtual void DP3D_PIP_leaf(){}; // align a leaf PIPnode
 
         virtual void DP3D_PIP_node(){}; // align an internal PIPnode

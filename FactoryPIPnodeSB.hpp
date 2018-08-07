@@ -80,10 +80,6 @@ namespace bpp {
                            int msa_idx_R,
                            int &position); // DP method to align 2 MSAs at an internal node
 
-        void _computeLkEmptyLeaf();
-
-        void _computeLkLeaf();
-
         void startingLevelSB(std::vector< vector< vector<double> > > &Log3DM,
                                      std::vector< vector< vector<double> > > &Log3DX,
                                      std::vector< vector< vector<double> > > &Log3DY,

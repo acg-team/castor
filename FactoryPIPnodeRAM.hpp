@@ -78,10 +78,6 @@ namespace bpp {
                             double y,           // gapy value
                             double epsilon);    // small number for the comparison between to numbers
 
-        void _computeLkLeaf(); // compute the lk at the leaf
-
-        void _computeLkEmptyLeaf(); // compute the lk of an empty column at the leaf
-
         // compute the lk at a given matrix entry extending the previous best lk (valM,valX,valY) together with the
         // actual lk value (log_pr) and the marginal lk of an empty column
         double _computeLK_MXY(double log_phi_gamma,
