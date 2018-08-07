@@ -515,3 +515,238 @@ void PIPnode::_computeLK_Y(std::vector<bpp::ColMatrix<double> > &fvL,
     }
 
 }
+
+std::vector<double> PIPnode::_computeLkEmptyNode(std::vector<bpp::ColMatrix<double> > &fvL,
+                                                 std::vector<bpp::ColMatrix<double> > &fvR,
+                                                 std::vector<bpp::ColMatrix<double> > &fv_empty_data,
+                                                 std::vector<double> &fv_empty_sigma,
+                                                 std::vector<double> &lk_emptyL,
+                                                 std::vector<double> &lk_emptyR,
+                                                 std::vector<double> &lk_empty){
+
+    // number of discrete gamma categories
+    int numCatg = progressivePIP_->numCatg_;
+
+    double p0;
+    double pL,pR;
+    double fv0;
+
+    // resize array ([numCatg] x 1)
+    //dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.resize(numCatg);
+
+    // array of lk (for each gamma rate) of a single column full of gaps
+    std::vector<double> pc0;
+    pc0.resize(numCatg);
+
+    //std::vector<bpp::ColMatrix<double> > &fvL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->fv_empty_data_;
+    //std::vector<bpp::ColMatrix<double> > &fvR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->fv_empty_data_;
+
+    //dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_data_.resize(numCatg);
+    //dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.resize(numCatg);
+
+    for (int catg = 0; catg < numCatg; catg++) {
+
+        // PrfvL = Pr_L * fv_L
+        bpp::ColMatrix<double> PrfvL;
+        bpp::MatrixTools::mult(childL->prNode_.at(catg), fvL.at(catg), PrfvL);
+
+        // PrfvR = Pr_R * fv_R
+        bpp::ColMatrix<double> PrfvR;
+        bpp::MatrixTools::mult(childR->prNode_.at(catg), fvR.at(catg), PrfvR);
+
+        // fv = PrfvL * PrfvR
+        bpp::ColMatrix<double> fv;
+        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
+
+        fv_empty_data.at(catg) = fv;
+
+        // fv0 = pi * fv
+        fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
+
+        fv_empty_sigma.at(catg) = fv0;
+
+        if(_isRootNode()){ // root
+            // lk at root node (beta = 1.0)
+            p0 = iotasNode_.at(catg) * fv0;
+        }else{ // internal node
+            p0 = ( iotasNode_.at(catg) - \
+                   iotasNode_.at(catg) * betasNode_.at(catg) + \
+                   iotasNode_.at(catg) * betasNode_.at(catg) * fv0 );
+        }
+
+        pL = lk_emptyL.at(catg); // lk_empty DOWN left
+        pR = lk_emptyR.at(catg); // lk_empty DOWN right
+
+        pc0.at(catg) = etaNode_.at(catg) + \
+                       alphaNode_.at(catg) * fv0 + \
+                       pL + pR; // this lk_empty is used at this layer
+
+        lk_empty.at(catg) = p0 + pL + pR; // here store the lk for the next layer (probability UP is not added here)
+    }
+
+    return pc0;
+
+}
+
+// TODO:re-implement this method for nodeCPU
+bool PIPnode::_index_of_max(double m,
+                            double x,
+                            double y,
+                            double epsilon,
+                            std::default_random_engine &generator,
+                            std::uniform_real_distribution<double> &distribution,
+                            int &index,
+                            double &val) {
+
+    // get the index and the max value among the three input values (m,x,y)
+
+    // m:  match value
+    // x:  gapx value
+    // y:   gapy value
+    // epsilon: small number for the comparison between to numbers
+    // generator: random number generator (when two or three numbers have the same value)
+    // distribution: uniform distribution
+    // index: index of max (1: MATCH, 2: GAPX, 3: GAPY)
+    // val: max value between the three (m,x,y)
+
+    double random_number;
+
+    if (std::isinf(m) & std::isinf(x) & std::isinf(y)){
+        // if the three values are -inf than this cell is marked as
+        // non-valid (STOP_STATE) and the max val is -inf
+        index = int(STOP_STATE);
+        val = -std::numeric_limits<double>::infinity();
+        return true;
+    }
+
+    if (not(std::isinf(m)) & not(std::isinf(x)) & (fabs((m - x)) < epsilon)) {
+        // m and x are both not -inf
+        // they are identical (their difference is smaller than epsilon)
+        x = m; // x is exactly equal to m
+    }
+
+    if (not(std::isinf(m)) & not(std::isinf(y)) & (fabs((m - y)) < epsilon)) {
+        // y and m are both not -inf
+        // they are identical (their difference is smaller than epsilon)
+        y = m; // y is exactly equal to m
+    }
+
+    if (not(std::isinf(x)) & not(std::isinf(y)) & (fabs((x - y)) < epsilon)) {
+        // y and x are both not -inf
+        // they are identical (their difference is smaller than epsilon)
+        y = x; // y is exactly equal to x
+    }
+
+    if (m > x) {
+        if (m > y) {
+            index = int(MATCH_STATE);
+            val = m;
+            return true;
+        } else if (y > m) {
+            index = int(GAP_Y_STATE);
+            val = y;
+            return true;
+        } else {
+            if (abs(m - y) < epsilon) {
+                //m or y
+                random_number = distribution(generator);
+                // m and y are equal and have the same value,
+                // the state is selected with a uniform random
+                // distribution with 50% probability each
+                if (random_number < (1.0 / 2.0)) {
+                    index = int(MATCH_STATE);
+                    val = m;
+                    return true;
+                } else {
+                    index = int(GAP_Y_STATE);
+                    val = y;
+                    return true;
+                }
+            } else {
+                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
+                              "pPIP::_index_of_max. Check call stack below.";
+                return false;
+            }
+        }
+    } else if (x > m) {
+        if (x > y) {
+            index = int(GAP_X_STATE);
+            val = x;
+            return true;
+        } else if (y > x) {
+            index = int(GAP_Y_STATE);
+            val = y;
+            return true;
+        } else {
+            if (abs(x - y) < epsilon) {
+                //x or y
+                random_number = distribution(generator);
+                // x and y are equal and have the same value,
+                // the state is selected with a uniform random
+                // distribution with 50% probability each
+                if (random_number < (1.0 / 2.0)) {
+                    index = int(GAP_X_STATE);
+                    val = x;
+                    return true;
+                } else {
+                    index = int(GAP_Y_STATE);
+                    val = y;
+                    return true;
+                }
+            } else {
+                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
+                              "pPIP::_index_of_max. Check call stack below.";
+                return false;
+            }
+        }
+    } else {
+
+        double mx = x;
+        if (mx > y) {
+            //m or x
+            random_number = distribution(generator);
+            // m and x are equal and have the same value,
+            // the state is selected with a uniform random
+            // distribution with 50% probability each
+            if (random_number < (1.0 / 2.0)) {
+                index = int(MATCH_STATE);
+                val = m;
+                return true;
+            } else {
+                index = int(GAP_X_STATE);
+                val = x;
+                return true;
+            }
+        } else if (y > mx) {
+            index = int(GAP_Y_STATE);
+            val = y;
+            return true;
+        } else {
+            if (abs(mx - y) < epsilon) {
+                //m or x or y
+                // m,x and y are equal and have the same value,
+                // the state is selected with a uniform random
+                // distribution with 1/3 probability each
+                random_number = distribution(generator);
+                if (random_number < (1.0 / 3.0)) {
+                    index = int(MATCH_STATE);
+                    val = m;
+                    return true;
+                } else if (random_number < (2.0 / 3.0)) {
+                    index = int(GAP_X_STATE);
+                    val = x;
+                    return true;
+                } else {
+                    index = int(GAP_Y_STATE);
+                    val = y;
+                    return true;
+                }
+            } else {
+                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
+                              "pPIP::_index_of_max. Check call stack below.";
+                return false;
+            }
+        }
+    }
+
+}

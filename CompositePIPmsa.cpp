@@ -154,8 +154,7 @@ void PIPmsa::_setFVleaf(int numCatg, const bpp::Alphabet *alphabet) {
 
 }
 
-void PIPmsa::_setFVsigmaLeaf(int lenComprSeqs,
-                             int numCatg,
+void PIPmsa::_setFVsigmaLeaf(int numCatg,
                              const bpp::ColMatrix<double> &pi) {
 
     // get the number of gamma categories
@@ -163,6 +162,8 @@ void PIPmsa::_setFVsigmaLeaf(int lenComprSeqs,
 
     // get the length of the compressed input sequences
     //int lenComprSeqs = getCompressedMSAlength();
+
+    int lenComprSeqs = fv_data_.size();
 
     // resize the array ([site][numCatg])
     fv_sigma_.resize(lenComprSeqs);
@@ -324,6 +325,7 @@ void PIPmsa::_compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compres
 
 }
 
+/*
 void PIPmsaSingle::_compressMSA(const bpp::Alphabet *alphabet) {
 
     auto sequences = new bpp::VectorSequenceContainer(alphabet);
@@ -353,7 +355,8 @@ void PIPmsaSingle::_compressMSA(const bpp::Alphabet *alphabet) {
     pipmsa->rev_map_compressed_seqs_ = rev_map_seqs;
 
 }
-
+*/
+/*
 void PIPmsaComp::_compressMSA(const bpp::Alphabet *alphabet, int idx_sb) {
 
     auto sequences = new bpp::VectorSequenceContainer(alphabet);
@@ -383,7 +386,33 @@ void PIPmsaComp::_compressMSA(const bpp::Alphabet *alphabet, int idx_sb) {
     pipmsa.at(idx_sb)->rev_map_compressed_seqs_ = rev_map_seqs;
 
 }
+*/
 
+void PIPmsa::_compressMSA(const bpp::Alphabet *alphabet) {
+
+    auto sequences = new bpp::VectorSequenceContainer(alphabet);
+
+    std::vector<std::string> seqs = compositePIPmsaUtils::siteContainer2sequenceVector(msa_);
+
+    for (int i = 0; i < seqs.size(); i++) {
+        sequences->addSequence(*(new bpp::BasicSequence(seqNames_.at(i),
+                                                        seqs.at(i),
+                                                        alphabet)), true);
+    }
+
+    auto siteContainer = new bpp::VectorSiteContainer(*sequences);
+    auto siteContCompr = bpp::PatternTools::shrinkSiteSet(*siteContainer);
+    auto map_seqs = bpp::PatternTools::getIndexes(*siteContainer, *siteContCompr);
+
+    map_compressed_seqs_ = map_seqs;
+
+    std::vector<int> rev_map_seqs = compositePIPmsaUtils::reverse_map(map_seqs);
+
+    rev_map_compressed_seqs_ = rev_map_seqs;
+
+}
+
+/*
 void PIPmsaSingle::_build_MSA(MSA_t &msaL, MSA_t &msaR) {
 
     // convert traceback path into an MSA
@@ -432,8 +461,58 @@ void PIPmsaSingle::_build_MSA(MSA_t &msaL, MSA_t &msaR) {
     //======== DEBUG =========================================//
 
 }
+*/
 
-void PIPmsaComp::_build_MSA(MSA_t &msaL, MSA_t &msaR, int idx_sb) {
+void PIPmsa::_build_MSA(MSA_t &msaL, MSA_t &msaR) {
+
+    // convert traceback path into an MSA
+
+    // get dimension of the left/right MSA column
+    int lenColL = msaL.at(0).size();
+    int lenColR = msaR.at(0).size();
+
+    int idx_i = 0;
+    int idx_j = 0;
+    for (int j = 0; j < traceback_path_.size(); j++) {
+
+        if (traceback_path_.at(j) == (int) MATCH_STATE) {
+
+            // in MATCH case concatenate left_column (from seq1) with right_column (from seq2)
+            msa_.push_back(msaL.at(idx_i) + msaR.at(idx_j));
+            idx_i++;
+            idx_j++;
+
+        } else if (traceback_path_.at(j) == (int) GAP_X_STATE) {
+
+            // in GAPX case concatenate left_column (from seq1) with a column full of gaps (right)
+            std::string gapCol(lenColR, GAP_CHAR);
+            msa_.push_back(msaL.at(idx_i) + gapCol);
+            idx_i++;
+
+        } else if (traceback_path_.at(j) == GAP_Y_STATE) {
+
+            // in GAPY case concatenate a column (left) full of gaps with right_column (from seq2)
+            std::string gapCol(lenColL, GAP_CHAR);
+            msa_.push_back(gapCol + msaR.at(idx_j));
+            idx_j++;
+
+        } else {
+            LOG(FATAL) << "\nSomething went wrong during the traceback in function "
+                          "pPIP::_build_MSA. Check call stack below.";
+        }
+    }
+
+    //======== DEBUG =========================================//
+//    std::cout<<"\n\nMSA\n";
+//    for (int j = 0; j < pipmsa->traceback_path_.size(); j++) {
+//        std::cout<<pipmsa->msa_.at(j)<<"\n";
+//    }
+//    std::cout<<"\n\n";
+    //======== DEBUG =========================================//
+
+}
+
+//void PIPmsaComp::_build_MSA(MSA_t &msaL, MSA_t &msaR, int idx_sb) {
 
     // convert traceback path into an MSA
 
@@ -477,33 +556,33 @@ void PIPmsaComp::_build_MSA(MSA_t &msaL, MSA_t &msaR, int idx_sb) {
 //    }
 //
 //    MSA_.at(idx_sb) = MSA;
-}
+//}
 
-void PIPmsaSingle::_compress_lk_components(std::vector<double> &lk_down_not_compressed,
-                                           std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed) {
+//void PIPmsaSingle::_compress_lk_components(std::vector<double> &lk_down_not_compressed,
+//                                           std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed) {
+//
+//
+//    int comprMSAlen = pipmsa->rev_map_compressed_seqs_.size();
+//
+//    int id_map;
+//
+//    //log_lk_down_[nodeID].resize(comprMSAlen);
+//
+//    //fv_data_[nodeID].resize(comprMSAlen);
+//
+//    for (int i = 0; i < comprMSAlen; i++) {
+//        id_map = pipmsa->rev_map_compressed_seqs_.at(i);
+//
+//        //log_lk_down_.at(i)=lk_down_not_compressed.at(id_map);
+//
+//        //fv_data_at(i)=fv_data_not_compressed.at(id_map);
+//    }
+//
+//}
 
-
-    int comprMSAlen = pipmsa->rev_map_compressed_seqs_.size();
-
-    int id_map;
-
-    //log_lk_down_[nodeID].resize(comprMSAlen);
-
-    //fv_data_[nodeID].resize(comprMSAlen);
-
-    for (int i = 0; i < comprMSAlen; i++) {
-        id_map = pipmsa->rev_map_compressed_seqs_.at(i);
-
-        //log_lk_down_.at(i)=lk_down_not_compressed.at(id_map);
-
-        //fv_data_at(i)=fv_data_not_compressed.at(id_map);
-    }
-
-}
-
-void PIPmsaComp::_compress_lk_components(std::vector<double> &lk_down_not_compressed,
-                                         std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
-                                         int idx_sb) {
+//void PIPmsaComp::_compress_lk_components(std::vector<double> &lk_down_not_compressed,
+//                                         std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
+//                                         int idx_sb) {
 
 //    int nodeID = node->getId();
 //
@@ -523,6 +602,23 @@ void PIPmsaComp::_compress_lk_components(std::vector<double> &lk_down_not_compre
 //        fv_data_[nodeID].at(idx_sb).at(i)=fv_data_not_compressed.at(id_map);
 //    }
 
+//}
+
+void PIPmsa::_compressLK(std::vector<double> &lk_down_not_compressed){
+
+    // compress an array of lk values
+
+    int comprMSAlen = getCompressedMSAlength();
+
+    int id_map;
+
+    log_lk_down_.resize(comprMSAlen);
+
+    for(int i=0;i<comprMSAlen;i++){
+        id_map = rev_map_compressed_seqs_.at(i);
+        log_lk_down_.at(i)=lk_down_not_compressed.at(id_map);
+    }
+
 }
 
 void PIPmsa::_setTracebackPathleaves() {
@@ -534,47 +630,53 @@ void PIPmsa::_setTracebackPathleaves() {
     traceback_path_.resize(MSAlen);
 
     // resize the traceback map
-    traceback_map_.resize(MSAlen);
+//    traceback_map_.resize(MSAlen);
 
     for (int i = 0; i < MSAlen; i++) {
         // assign MATCH STATE to all the sites
         traceback_path_.at(i) = (int) MATCH_STATE;
 
         // assign the corresponding position in the sequences
-        traceback_map_.at(i) = i;
+  //      traceback_map_.at(i) = i;
     }
 
 }
 
-int PIPmsa::getNumSites() {
+//int PIPmsa::getMSAlength() {
+//
+//    return msa_.size();
+//
+//}
 
-    return msa_.size();
+//int PIPmsaSingle::getMSAlength() {
+//
+//    return pipmsa->getNumSites();
+//
+//}
+
+//int PIPmsaSingle::getCompressedMSAlength(int idx) {
+//
+//    return pipmsa->rev_map_compressed_seqs_.size();
+//
+//}
+//
+//int PIPmsaComp::getCompressedMSAlength(int idx) {
+//
+//    return pipmsa.at(idx)->rev_map_compressed_seqs_.size();
+//
+//}
+
+int PIPmsa::getCompressedMSAlength() {
+
+    return rev_map_compressed_seqs_.size();
 
 }
 
-int PIPmsaSingle::getMSAlength() {
-
-    return pipmsa->getNumSites();
-
-}
-
-int PIPmsaSingle::getCompressedMSAlength(int idx) {
-
-    return pipmsa->rev_map_compressed_seqs_.size();
-
-}
-
-int PIPmsaComp::getCompressedMSAlength(int idx) {
-
-    return pipmsa.at(idx)->rev_map_compressed_seqs_.size();
-
-}
-
-int PIPmsaComp::getMSAlength(int idx) {
-
-    return pipmsa.at(idx)->getNumSites();
-
-}
+//int PIPmsaComp::getMSAlength(int idx) {
+//
+//    return pipmsa.at(idx)->getNumSites();
+//
+//}
 
 //int PIPmsaComp::getCompressedMSAlength(int idx){
 //

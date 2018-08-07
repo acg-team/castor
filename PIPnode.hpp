@@ -176,9 +176,27 @@ namespace bpp {
         // it encompasses the probability of an insertion along
         // the whole path between the root and this node
 
+        std::vector<double> _computeLkEmptyNode(std::vector<bpp::ColMatrix<double> > &fvL,
+                                                std::vector<bpp::ColMatrix<double> > &fvR,
+                                                std::vector<bpp::ColMatrix<double> > &fv_empty_data,
+                                                std::vector<double> &fv_empty_sigma,
+                                                std::vector<double> &lk_emptyL,
+                                                std::vector<double> &lk_emptyR,
+                                                std::vector<double> &lk_empty);
+
+        // get the index and the max value among the three input values (m,x,y)
+        bool _index_of_max(double m,            // match value
+                           double x,            // gapx value
+                           double y,            // gapy value
+                           double epsilon,      // small number for the comparison between to numbers
+                           std::default_random_engine &generator,   // random number generator (when two or three numbers have the same value)
+                           std::uniform_real_distribution<double> &distribution,    // uniform distribution
+                           int &index,          // index of max (1: MATCH, 2: GAPX, 3: GAPY)
+                           double &val);        // max value between the three (m,x,y)
+
         void _getPrFromSubstitutionModel(); // compute exp(br_len * Q)
 
-        void _computeLkEmptyLeaf();
+        virtual void _computeLkEmptyLeaf() {};
 
         //virtual void _computeAllFvEmptySigmaRec() {};
 

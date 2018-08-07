@@ -53,167 +53,167 @@ using namespace bpp;
 
 #define EARLY_STOP_THR 10
 
-bool nodeRAM::_index_of_max(double m,
-                            double x,
-                            double y,
-                            double epsilon,
-                            std::default_random_engine &generator,
-                            std::uniform_real_distribution<double> &distribution,
-                            int &index,
-                            double &val) {
-
-    // get the index and the max value among the three input values (m,x,y)
-
-    // m:  match value
-    // x:  gapx value
-    // y:   gapy value
-    // epsilon: small number for the comparison between to numbers
-    // generator: random number generator (when two or three numbers have the same value)
-    // distribution: uniform distribution
-    // index: index of max (1: MATCH, 2: GAPX, 3: GAPY)
-    // val: max value between the three (m,x,y)
-
-    double random_number;
-
-    if (std::isinf(m) & std::isinf(x) & std::isinf(y)){
-        // if the three values are -inf than this cell is marked as
-        // non-valid (STOP_STATE) and the max val is -inf
-        index = int(STOP_STATE);
-        val = -std::numeric_limits<double>::infinity();
-        return true;
-    }
-
-    if (not(std::isinf(m)) & not(std::isinf(x)) & (fabs((m - x)) < epsilon)) {
-        // m and x are both not -inf
-        // they are identical (their difference is smaller than epsilon)
-        x = m; // x is exactly equal to m
-    }
-
-    if (not(std::isinf(m)) & not(std::isinf(y)) & (fabs((m - y)) < epsilon)) {
-        // y and m are both not -inf
-        // they are identical (their difference is smaller than epsilon)
-        y = m; // y is exactly equal to m
-    }
-
-    if (not(std::isinf(x)) & not(std::isinf(y)) & (fabs((x - y)) < epsilon)) {
-        // y and x are both not -inf
-        // they are identical (their difference is smaller than epsilon)
-        y = x; // y is exactly equal to x
-    }
-
-    if (m > x) {
-        if (m > y) {
-            index = int(MATCH_STATE);
-            val = m;
-            return true;
-        } else if (y > m) {
-            index = int(GAP_Y_STATE);
-            val = y;
-            return true;
-        } else {
-            if (abs(m - y) < epsilon) {
-                //m or y
-                random_number = distribution(generator);
-                // m and y are equal and have the same value,
-                // the state is selected with a uniform random
-                // distribution with 50% probability each
-                if (random_number < (1.0 / 2.0)) {
-                    index = int(MATCH_STATE);
-                    val = m;
-                    return true;
-                } else {
-                    index = int(GAP_Y_STATE);
-                    val = y;
-                    return true;
-                }
-            } else {
-                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
-                              "pPIP::_index_of_max. Check call stack below.";
-                return false;
-            }
-        }
-    } else if (x > m) {
-        if (x > y) {
-            index = int(GAP_X_STATE);
-            val = x;
-            return true;
-        } else if (y > x) {
-            index = int(GAP_Y_STATE);
-            val = y;
-            return true;
-        } else {
-            if (abs(x - y) < epsilon) {
-                //x or y
-                random_number = distribution(generator);
-                // x and y are equal and have the same value,
-                // the state is selected with a uniform random
-                // distribution with 50% probability each
-                if (random_number < (1.0 / 2.0)) {
-                    index = int(GAP_X_STATE);
-                    val = x;
-                    return true;
-                } else {
-                    index = int(GAP_Y_STATE);
-                    val = y;
-                    return true;
-                }
-            } else {
-                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
-                              "pPIP::_index_of_max. Check call stack below.";
-                return false;
-            }
-        }
-    } else {
-
-        double mx = x;
-        if (mx > y) {
-            //m or x
-            random_number = distribution(generator);
-            // m and x are equal and have the same value,
-            // the state is selected with a uniform random
-            // distribution with 50% probability each
-            if (random_number < (1.0 / 2.0)) {
-                index = int(MATCH_STATE);
-                val = m;
-                return true;
-            } else {
-                index = int(GAP_X_STATE);
-                val = x;
-                return true;
-            }
-        } else if (y > mx) {
-            index = int(GAP_Y_STATE);
-            val = y;
-            return true;
-        } else {
-            if (abs(mx - y) < epsilon) {
-                //m or x or y
-                // m,x and y are equal and have the same value,
-                // the state is selected with a uniform random
-                // distribution with 1/3 probability each
-                random_number = distribution(generator);
-                if (random_number < (1.0 / 3.0)) {
-                    index = int(MATCH_STATE);
-                    val = m;
-                    return true;
-                } else if (random_number < (2.0 / 3.0)) {
-                    index = int(GAP_X_STATE);
-                    val = x;
-                    return true;
-                } else {
-                    index = int(GAP_Y_STATE);
-                    val = y;
-                    return true;
-                }
-            } else {
-                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
-                              "pPIP::_index_of_max. Check call stack below.";
-                return false;
-            }
-        }
-    }
-
-}
+//bool nodeRAM::_index_of_max(double m,
+//                            double x,
+//                            double y,
+//                            double epsilon,
+//                            std::default_random_engine &generator,
+//                            std::uniform_real_distribution<double> &distribution,
+//                            int &index,
+//                            double &val) {
+//
+//    // get the index and the max value among the three input values (m,x,y)
+//
+//    // m:  match value
+//    // x:  gapx value
+//    // y:   gapy value
+//    // epsilon: small number for the comparison between to numbers
+//    // generator: random number generator (when two or three numbers have the same value)
+//    // distribution: uniform distribution
+//    // index: index of max (1: MATCH, 2: GAPX, 3: GAPY)
+//    // val: max value between the three (m,x,y)
+//
+//    double random_number;
+//
+//    if (std::isinf(m) & std::isinf(x) & std::isinf(y)){
+//        // if the three values are -inf than this cell is marked as
+//        // non-valid (STOP_STATE) and the max val is -inf
+//        index = int(STOP_STATE);
+//        val = -std::numeric_limits<double>::infinity();
+//        return true;
+//    }
+//
+//    if (not(std::isinf(m)) & not(std::isinf(x)) & (fabs((m - x)) < epsilon)) {
+//        // m and x are both not -inf
+//        // they are identical (their difference is smaller than epsilon)
+//        x = m; // x is exactly equal to m
+//    }
+//
+//    if (not(std::isinf(m)) & not(std::isinf(y)) & (fabs((m - y)) < epsilon)) {
+//        // y and m are both not -inf
+//        // they are identical (their difference is smaller than epsilon)
+//        y = m; // y is exactly equal to m
+//    }
+//
+//    if (not(std::isinf(x)) & not(std::isinf(y)) & (fabs((x - y)) < epsilon)) {
+//        // y and x are both not -inf
+//        // they are identical (their difference is smaller than epsilon)
+//        y = x; // y is exactly equal to x
+//    }
+//
+//    if (m > x) {
+//        if (m > y) {
+//            index = int(MATCH_STATE);
+//            val = m;
+//            return true;
+//        } else if (y > m) {
+//            index = int(GAP_Y_STATE);
+//            val = y;
+//            return true;
+//        } else {
+//            if (abs(m - y) < epsilon) {
+//                //m or y
+//                random_number = distribution(generator);
+//                // m and y are equal and have the same value,
+//                // the state is selected with a uniform random
+//                // distribution with 50% probability each
+//                if (random_number < (1.0 / 2.0)) {
+//                    index = int(MATCH_STATE);
+//                    val = m;
+//                    return true;
+//                } else {
+//                    index = int(GAP_Y_STATE);
+//                    val = y;
+//                    return true;
+//                }
+//            } else {
+//                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
+//                              "pPIP::_index_of_max. Check call stack below.";
+//                return false;
+//            }
+//        }
+//    } else if (x > m) {
+//        if (x > y) {
+//            index = int(GAP_X_STATE);
+//            val = x;
+//            return true;
+//        } else if (y > x) {
+//            index = int(GAP_Y_STATE);
+//            val = y;
+//            return true;
+//        } else {
+//            if (abs(x - y) < epsilon) {
+//                //x or y
+//                random_number = distribution(generator);
+//                // x and y are equal and have the same value,
+//                // the state is selected with a uniform random
+//                // distribution with 50% probability each
+//                if (random_number < (1.0 / 2.0)) {
+//                    index = int(GAP_X_STATE);
+//                    val = x;
+//                    return true;
+//                } else {
+//                    index = int(GAP_Y_STATE);
+//                    val = y;
+//                    return true;
+//                }
+//            } else {
+//                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
+//                              "pPIP::_index_of_max. Check call stack below.";
+//                return false;
+//            }
+//        }
+//    } else {
+//
+//        double mx = x;
+//        if (mx > y) {
+//            //m or x
+//            random_number = distribution(generator);
+//            // m and x are equal and have the same value,
+//            // the state is selected with a uniform random
+//            // distribution with 50% probability each
+//            if (random_number < (1.0 / 2.0)) {
+//                index = int(MATCH_STATE);
+//                val = m;
+//                return true;
+//            } else {
+//                index = int(GAP_X_STATE);
+//                val = x;
+//                return true;
+//            }
+//        } else if (y > mx) {
+//            index = int(GAP_Y_STATE);
+//            val = y;
+//            return true;
+//        } else {
+//            if (abs(mx - y) < epsilon) {
+//                //m or x or y
+//                // m,x and y are equal and have the same value,
+//                // the state is selected with a uniform random
+//                // distribution with 1/3 probability each
+//                random_number = distribution(generator);
+//                if (random_number < (1.0 / 3.0)) {
+//                    index = int(MATCH_STATE);
+//                    val = m;
+//                    return true;
+//                } else if (random_number < (2.0 / 3.0)) {
+//                    index = int(GAP_X_STATE);
+//                    val = x;
+//                    return true;
+//                } else {
+//                    index = int(GAP_Y_STATE);
+//                    val = y;
+//                    return true;
+//                }
+//            } else {
+//                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
+//                              "pPIP::_index_of_max. Check call stack below.";
+//                return false;
+//            }
+//        }
+//    }
+//
+//}
 
 double nodeRAM::max_of_three(double m,
                              double x,
@@ -540,6 +540,7 @@ void nodeRAM::_computeLkEmptyLeaf(){
 
 }
 
+/*
 std::vector<double> nodeRAM::_computeLkEmptyNode(){
 
     // number of discrete gamma categories
@@ -583,8 +584,6 @@ std::vector<double> nodeRAM::_computeLkEmptyNode(){
 
         dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.at(catg) = fv0;
 
-        //double pr_up = 0.0; // lk_empty UP (from the actual node to the root)
-
         if(_isRootNode()){ // root
             // lk at root node (beta = 1.0)
             p0 = iotasNode_.at(catg) * fv0;
@@ -592,28 +591,10 @@ std::vector<double> nodeRAM::_computeLkEmptyNode(){
             p0 = ( iotasNode_.at(catg) - \
                    iotasNode_.at(catg) * betasNode_.at(catg) + \
                    iotasNode_.at(catg) * betasNode_.at(catg) * fv0 );
-
-            /*
-            // climb the tree and compute the probability UP
-            bpp::PIPnode *tmpNode = this->parent;
-            while(tmpNode){
-                pr_up += tmpNode->iotasNode_.at(catg) - \
-                         tmpNode->iotasNode_.at(catg) * tmpNode->betasNode_.at(catg) + \
-                         tmpNode->iotasNode_.at(catg) * tmpNode->betasNode_.at(catg) * dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.at(catg);
-                tmpNode = tmpNode->parent;
-            }
-            */
-
-            //pr_up = etaNode_.at(catg);
-
         }
-
-        //double pr_up = etaNode_.at(catg);
 
         pL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->lk_empty_.at(catg); // lk_empty DOWN left
         pR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->lk_empty_.at(catg); // lk_empty DOWN right
-
-        //double p0_fp = etaNode_.at(catg) + alphaNode_.at(catg) * fv0 + ;
 
         pc0.at(catg) = etaNode_.at(catg) + \
                        alphaNode_.at(catg) * fv0 + \
@@ -625,7 +606,7 @@ std::vector<double> nodeRAM::_computeLkEmptyNode(){
     return pc0;
 
 }
-
+*/
 
 
 //void nodeRAM::_compute_lk_empty_down_rec(std::vector<double> &lk){
@@ -702,7 +683,7 @@ void nodeRAM::_computeLkLeaf(){
     int numCatg = progressivePIP_->numCatg_;
 
     // get the size of the compressed sequences
-    int msaLen = dynamic_cast<PIPmsaSingle *>(MSA_)->getCompressedMSAlength();
+    int msaLen = dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->getCompressedMSAlength();
 
     // allocate memory ([site])
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.resize(msaLen);
@@ -722,11 +703,12 @@ void nodeRAM::_computeLkLeaf(){
 
 }
 
+/*
 void nodeRAM::_compressLK(std::vector<double> &lk_down_not_compressed){
 
     // compress an array of lk values
 
-    int comprMSAlen = dynamic_cast<PIPmsaSingle *>(MSA_)->getCompressedMSAlength();
+    int comprMSAlen = dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->getCompressedMSAlength();
 
     int id_map;
 
@@ -738,6 +720,7 @@ void nodeRAM::_compressLK(std::vector<double> &lk_down_not_compressed){
     }
 
 }
+*/
 
 /*
 void nodeRAM::_computeAllFvEmptySigmaRec() {
@@ -801,9 +784,6 @@ void nodeRAM::DP3D_PIP_leaf() {
     // ALIGNS LEAVES
     //*******************************************************************************
 
-
-
-    //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
     // get vnode Id
     int vnodeId = (int) vnode_->vnode_seqid;
 
@@ -816,11 +796,11 @@ void nodeRAM::DP3D_PIP_leaf() {
     // get sequence from sequence name
     const bpp::Sequence *sequence = &progressivePIP_->sequences_->getSequence(seqname);
 
-    // creates a column containing the sequence associated to the leaf node
+    // creates a vector containing the sequence associated to the leaf node
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setMSAleaf(sequence);
 
     // compresses sequence at the leaves
-    dynamic_cast<PIPmsaSingle *>(MSA_)->_compressMSA(progressivePIP_->alphabet_);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_compressMSA(progressivePIP_->alphabet_);
 
     // set fv_empty
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVemptyLeaf(progressivePIP_->numCatg_,
@@ -828,19 +808,19 @@ void nodeRAM::DP3D_PIP_leaf() {
 
     // set fv_sigma_empty = fv_empty dot pi
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaEmptyLeaf(progressivePIP_->numCatg_);
-    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
 
     // computes the indicator values (fv values) at the leaves
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVleaf(progressivePIP_->numCatg_,
                              progressivePIP_->alphabet_);
 
     // computes dotprod(pi,fv)
-    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaLeaf(
-                                  dynamic_cast<PIPmsaSingle *>(MSA_)->getCompressedMSAlength(),
-                                  progressivePIP_->numCatg_,
-                                  progressivePIP_->pi_);
+//    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaLeaf(
+//                                  dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->getCompressedMSAlength(),
+//                                  progressivePIP_->numCatg_,
+//                                  progressivePIP_->pi_);
+
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaLeaf(progressivePIP_->numCatg_,
+                                                                progressivePIP_->pi_);
 
     // compute the lk of an empty column
     _computeLkEmptyLeaf();
@@ -935,11 +915,11 @@ void nodeRAM::DP3D_PIP_node() {
     // DP SIZES
     //***************************************************************************************
     // Compute dimensions of the 3D block at current internal node.
-    int h = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->getMSAlength() + 1; // dimension of the alignment on the left side
-    int w = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->getMSAlength() + 1; // dimension of the alignment on the right side
+    int h = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->getMSAlength() + 1; // dimension of the alignment on the left side
+    int w = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->getMSAlength() + 1; // dimension of the alignment on the right side
     int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
-    int h_compr = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->getCompressedMSAlength(); // dimension of the compressed alignment on the left side
-    int w_compr = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->getCompressedMSAlength(); // dimension of the compressed alignment on the right side
+    int h_compr = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->getCompressedMSAlength(); // dimension of the compressed alignment on the left side
+    int w_compr = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->getCompressedMSAlength(); // dimension of the compressed alignment on the right side
     //***************************************************************************************
     // WORKING VARIABLES
     //***************************************************************************************
@@ -1040,7 +1020,28 @@ void nodeRAM::DP3D_PIP_node() {
     // LK COMPUTATION OF AN EMPTY COLUMNS (FULL OF GAPS)
     //***************************************************************************************
     // computes the lk of an empty column in the two subtrees
-    std::vector<double> pc0 = _computeLkEmptyNode();
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.resize(numCatg);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_data_.resize(numCatg);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.resize(numCatg);
+
+    std::vector<bpp::ColMatrix<double> > &fvL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->fv_empty_data_;
+    std::vector<bpp::ColMatrix<double> > &fvR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->fv_empty_data_;
+
+    std::vector<bpp::ColMatrix<double> > &fv_empty_data = dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_data_;
+    std::vector<double> &fv_empty_sigma = dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_;
+
+    std::vector<double> &lk_emptyL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->lk_empty_;
+    std::vector<double> &lk_emptyR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->lk_empty_;
+
+    std::vector<double> &lk_empty = dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_;
+
+    std::vector<double> pc0 = _computeLkEmptyNode(fvL,
+                                                  fvR,
+                                                  fv_empty_data,
+                                                  fv_empty_sigma,
+                                                  lk_emptyL,
+                                                  lk_emptyR,
+                                                  lk_empty);
     //***************************************************************************************
     // COMPUTES LOG(PHI(0))
     //***************************************************************************************
@@ -1371,7 +1372,7 @@ void nodeRAM::DP3D_PIP_node() {
     // converts traceback path into an MSA
     MSA_t *msaL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->_getMSA();
     MSA_t *msaR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->_getMSA();
-    dynamic_cast<PIPmsaSingle *>(MSA_)->_build_MSA(*msaL,*msaR);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_build_MSA(*msaL,*msaR);
 
     // assigns the sequence names of the new alligned sequences to the current MSA
     std::vector<string> *seqNameL = &dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->seqNames_;
@@ -1382,10 +1383,10 @@ void nodeRAM::DP3D_PIP_node() {
     // COMPRESS INFO
     //***************************************************************************************
     // compress the MSA
-    dynamic_cast<PIPmsaSingle *>(MSA_)->_compressMSA(progressivePIP_->alphabet_);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_compressMSA(progressivePIP_->alphabet_);
 
     // compress fv values and lk_down
-    _compressLK(lk_down_not_compressed);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_compressLK(lk_down_not_compressed);
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_compress_Fv(fv_sigma_not_compressed, fv_data_not_compressed);
 
 }

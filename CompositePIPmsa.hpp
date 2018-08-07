@@ -76,7 +76,7 @@ namespace bpp {
 
         std::vector<int> traceback_path_;
 
-        std::vector<int> traceback_map_;
+        //std::vector<int> traceback_map_;
 //        std::vector<int> traceback_mapL_;
 //        std::vector<int> traceback_mapR_;
 
@@ -109,7 +109,9 @@ namespace bpp {
         void _setSeqNameNode(std::vector<std::string> &seqNamesL,
                              std::vector<std::string> &seqNamesR);
 
-        int getNumSites();
+        int getMSAlength() { return msa_.size(); }
+
+        int getCompressedMSAlength();
 
         void _setTracebackPathleaves();
 
@@ -117,8 +119,7 @@ namespace bpp {
 
         void _setFVleaf(int numCatg, const bpp::Alphabet *alphabet);
 
-        void _setFVsigmaLeaf(int lenComprSeqs,
-                             int numCatg,
+        void _setFVsigmaLeaf(int numCatg,
                              const bpp::ColMatrix<double> &pi);
 
         void _setFVemptyNode(int numCatg,
@@ -140,6 +141,12 @@ namespace bpp {
 
         void _compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compressed,
                           std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
+
+        void _compressMSA(const bpp::Alphabet *alphabet);
+
+        void _compressLK(std::vector<double> &lk_down_not_compressed);
+
+        void _build_MSA(MSA_t &msaL, MSA_t &msaR);
 
     };
 
@@ -164,7 +171,7 @@ namespace bpp {
 //        virtual void _setFVemptyLeaf(int numCatg,
 //                                     const bpp::Alphabet *alphabet){};
 
-        virtual int getCompressedMSAlength() {};
+        //virtual int getCompressedMSAlength() {};
 
         virtual MSA_t *_getMSA() {};
 
@@ -203,11 +210,11 @@ namespace bpp {
 //            subMSAidxR_ = 0;
         }
 
-        void _compressMSA(const bpp::Alphabet *alphabet);
+        //void _compressMSA(const bpp::Alphabet *alphabet);
 
-        void _build_MSA(MSA_t &msaL, MSA_t &msaR);
+        //void _build_MSA(MSA_t &msaL, MSA_t &msaR);
 
-        int getMSAlength();
+        //int getMSAlength();
 
         MSA_t *_getMSA(int idx=0) { return &(pipmsa->msa_); }
 
@@ -217,8 +224,8 @@ namespace bpp {
 
         void add(PIPmsa *x);
 
-        void _compress_lk_components(std::vector<double> &lk_down_not_compressed,
-                                     std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
+        //void _compress_lk_components(std::vector<double> &lk_down_not_compressed,
+        //                             std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
 
         void _setFVsigmaEmptyNode(int numCatg,
                                   PIPmsa *childL,
@@ -227,7 +234,7 @@ namespace bpp {
                                   double bR,
                                   const std::vector<double> &mu);
 
-        int getCompressedMSAlength(int idx=0);
+        //int getCompressedMSAlength(int idx=0);
 
         ~PIPmsaSingle() {
             delete pipmsa;
@@ -260,13 +267,13 @@ namespace bpp {
 
         PIPmsaComp(int size) { pipmsa.resize(size); }
 
-        void _compressMSA(const bpp::Alphabet *alphabet, int idx_sb);
+        //void _compressMSA(const bpp::Alphabet *alphabet, int idx_sb);
 
-        void _build_MSA(MSA_t &msaL, MSA_t &msaR, int idx_sb);
+        //void _build_MSA(MSA_t &msaL, MSA_t &msaR, int idx_sb);
 
-        int getMSAlength(int idx);
+        //int getMSAlength(int idx);
 
-        int getCompressedMSAlength(int idx);
+        //int getCompressedMSAlength(int idx);
 
         MSA_t *_getMSA(int idx) { return &(pipmsa.at(idx)->msa_); }
 
@@ -276,9 +283,9 @@ namespace bpp {
 
         void add(PIPmsa *x);
 
-        void _compress_lk_components(std::vector<double> &lk_down_not_compressed,
-                                     std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
-                                     int idx_sb);
+//        void _compress_lk_components(std::vector<double> &lk_down_not_compressed,
+//                                     std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
+//                                     int idx_sb);
 
 //        void _setFVsigmaEmptyNode(int numCatg,
 //                                    PIPmsa *childL,

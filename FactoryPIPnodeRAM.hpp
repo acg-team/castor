@@ -72,15 +72,15 @@ namespace bpp {
 
         void DP3D_PIP_node(); // DP method to align 2 MSAs at an internal node
 
-        // get the index and the max value among the three input values (m,x,y)
-        bool _index_of_max(double m,            // match value
-                           double x,            // gapx value
-                           double y,            // gapy value
-                           double epsilon,      // small number for the comparison between to numbers
-                           std::default_random_engine &generator,   // random number generator (when two or three numbers have the same value)
-                           std::uniform_real_distribution<double> &distribution,    // uniform distribution
-                           int &index,          // index of max (1: MATCH, 2: GAPX, 3: GAPY)
-                           double &val);        // max value between the three (m,x,y)
+//        // get the index and the max value among the three input values (m,x,y)
+//        bool _index_of_max(double m,            // match value
+//                           double x,            // gapx value
+//                           double y,            // gapy value
+//                           double epsilon,      // small number for the comparison between to numbers
+//                           std::default_random_engine &generator,   // random number generator (when two or three numbers have the same value)
+//                           std::uniform_real_distribution<double> &distribution,    // uniform distribution
+//                           int &index,          // index of max (1: MATCH, 2: GAPX, 3: GAPY)
+//                           double &val);        // max value between the three (m,x,y)
 
         // get max value among the three input values (m,x,y)
         double max_of_three(double m,           // match value
@@ -92,9 +92,9 @@ namespace bpp {
 
         void _computeLkEmptyLeaf(); // compute the lk of an empty column at the leaf
 
-        std::vector<double> _computeLkEmptyNode(); // compute the lk of an empty column at an internal node
+        //std::vector<double> _computeLkEmptyNode(); // compute the lk of an empty column at an internal node
 
-        void _compressLK(std::vector<double> &lk_down_not_compressed);  // compress an array of lk values
+        //void _compressLK(std::vector<double> &lk_down_not_compressed);  // compress an array of lk values
 
         // compress an array of fv values and fv_sigma values
 //        void _compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compressed,

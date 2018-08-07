@@ -76,13 +76,28 @@ namespace bpp {
         void DP3D_PIP_leaf(); // DP method to align a sequence at a leaf PIPnode
                               // (which reduces to data preparation)
 
-        void DP3D_PIP_node(); // DP method to align 2 MSAs at an internal node
+        void DP3D_PIP_node(int msa_idx_L,
+                           int msa_idx_R,
+                           int &position); // DP method to align 2 MSAs at an internal node
 
-        std::vector<double> _computeLkEmptyNode();
+        //std::vector<double> _computeLkEmptyNode();
 
         void _computeLkEmptyLeaf();
 
         void _computeLkLeaf();
+
+        void startingLevelSB(std::vector< vector< vector<double> > > &Log3DM,
+                                     std::vector< vector< vector<double> > > &Log3DX,
+                                     std::vector< vector< vector<double> > > &Log3DY,
+                                     double epsilon,
+                                     std::default_random_engine &generator,
+                                     std::uniform_real_distribution<double> &distribution,
+                                     int d,
+                                     int h,
+                                     int w,
+                                     int &lev,
+                                     double &val,
+                                     int &state);
 
     public:
 
@@ -114,6 +129,7 @@ namespace bpp {
 
             }else{
 
+                /*
                 // create a PIPmsaComp object
                 MSA_  = new PIPmsaComp(progressivePIP_->num_sb_);
 
@@ -121,6 +137,8 @@ namespace bpp {
                     // create a new PIPmsa
                     dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(i) = new PIPmsa();
                 }
+
+                */
 
             }
 

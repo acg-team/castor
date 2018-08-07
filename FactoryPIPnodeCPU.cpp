@@ -1821,7 +1821,7 @@ void nodeCPU::DP3D_PIP_node() {
     // converts traceback path into an MSA
     MSA_t *msaL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->_getMSA();
     MSA_t *msaR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->_getMSA();
-    dynamic_cast<PIPmsaSingle *>(MSA_)->_build_MSA(*msaL,*msaR);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_build_MSA(*msaL,*msaR);
 
     // assigns the sequence names of the new alligned sequences to the current MSA
     std::vector<string> *seqNameL = &dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->seqNames_;
