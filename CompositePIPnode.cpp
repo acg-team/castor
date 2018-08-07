@@ -64,8 +64,6 @@ void CompositePIPnode::PIPnodeAlign(PIPnode *root_pip_node) {
 
     // ALIGN UNDER THE PIP MODEL
 
-    //root_pip_node->_computeAllFvEmptySigmaRec(); // compute all fv_empty and fv_empty_sigma values
-
     // get the number of PIPnodes
     size_t num_nodes = pip_nodes_.size();
 

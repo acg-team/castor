@@ -208,7 +208,9 @@ set(SOURCES
         FactoryPIPnodeSB.hpp
         FactoryPIPnode.hpp
         CompositePIPnode.hpp
-        CompositePIPnode.cpp)
+        CompositePIPnode.cpp
+        PIPmsa.cpp
+        PIPmsa.hpp)
 
 
 if (STATIC GREATER 0)

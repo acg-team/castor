@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file pPIP.hpp
+ * @file PIPnode.hpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 19 02 2018
@@ -104,15 +104,6 @@ namespace bpp {
 
         std::vector<double> etaNode_;
 
-//        std::vector<double> log_lk_down_; //each node a vector of lk
-//        std::vector<double> lk_empty_; //each node a vector of lk_empty (for each gamma category)
-
-        //std::vector< std::vector< bpp::ColMatrix<double> > > fv_data_; // [site][catg][fv]
-//        std::vector< bpp::ColMatrix<double> > fv_empty_data_; // [catg][fv]
-//
-//        std::vector< std::vector<double> > fv_sigma_; // [site][catg]
-//        std::vector<double>  fv_empty_sigma_; // [catg]
-
         double distanceToRoot; // length of the path from this node to root (sum of branch length)
 
         //***************************************************************************************
@@ -133,18 +124,6 @@ namespace bpp {
         bool _isRootNode(); // true if is the PIPnode root, false otherwise
 
         bool _isTerminalNode(); // true if is a PIPnode leaf, false otherwise
-
-        //void _setFVemptyLeaf(); // compute the fv array at leaf (indicator array) for an empty column
-
-        //void _setFVsigmaEmptyLeaf(); // compute fv_sigma = fv dot pi for an empty column
-
-        //void _setFVsigmaEmptyNode();
-
-        //void _setFVemptyNode();
-
-        //void _setFVleaf(MSA_t &MSA); // compute the fv array at leaf (indicator array)
-
-        //void _setFVsigmaLeaf(); // compute fv_sigma = fv dot pi
 
         // compute the MATCH lk
         void _computeLK_M(std::vector<bpp::ColMatrix<double> > &fvL, // fv array of the left child
@@ -197,8 +176,6 @@ namespace bpp {
         void _getPrFromSubstitutionModel(); // compute exp(br_len * Q)
 
         virtual void _computeLkEmptyLeaf() {};
-
-        //virtual void _computeAllFvEmptySigmaRec() {};
 
         virtual void DP3D_PIP_leaf(){}; // align a leaf PIPnode
 

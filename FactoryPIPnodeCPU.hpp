@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file pPIP.hpp
+ * @file FactoryPIPnodeCPU.hpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 19 02 2018

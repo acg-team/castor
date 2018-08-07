@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file pPIP.cpp
+ * @file FactoryPIPnodeCPU.cpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 19 02 2018
@@ -1819,8 +1819,8 @@ void nodeCPU::DP3D_PIP_node() {
     }
 
     // converts traceback path into an MSA
-    MSA_t *msaL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->_getMSA();
-    MSA_t *msaR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->_getMSA();
+    MSA_t *msaL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->_getMSA();
+    MSA_t *msaR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->_getMSA();
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_build_MSA(*msaL,*msaR);
 
     // assigns the sequence names of the new alligned sequences to the current MSA

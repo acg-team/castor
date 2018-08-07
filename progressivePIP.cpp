@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file pPIP.cpp
+ * @file progressivePIP.cpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 19 02 2018
@@ -189,55 +189,11 @@ void progressivePIP::_setAllAlphas() {
         // resize for each gamma category
         node->alphaNode_.resize(numCatg_);
 
-
         for(int catg=0;catg<numCatg_;catg++){
             // initialize alpha with the probability at the starting node which is
             // alpha(v) = iota * beta
             node->alphaNode_.at(catg) = (1.0/mu_.at(catg)) / (tau_ + 1/mu_.at(catg));
         }
-
-        /*
-
-        // zeta = exp(- mu * b ) is 1 at the starting node
-        double zeta = 1.0;
-        for(int catg=0;catg<numCatg_;catg++){
-            // initialize alpha with the probability at the starting node which is
-            // alpha(v) = iota * beta
-            node->alphaNode_.at(catg) = node->iotasNode_.at(catg) * node->betasNode_.at(catg) * zeta;
-        }
-
-        // climb the tree from the starting node towards the root
-        bpp::PIPnode *tmpPIPnode = node;
-
-        double T; // path length from the starting node to the node below the insertion point
-
-        if( !tmpPIPnode->_isRootNode() ) { // root node doesn't have distanceToFather
-            T = tmpPIPnode->bnode_->getDistanceToFather();
-        }
-
-        while( !tmpPIPnode->_isRootNode() ){
-
-            // get the parent node
-            tmpPIPnode = tmpPIPnode->parent;
-
-            for(int catg=0;catg<numCatg_;catg++) {
-
-                // zeta(v) = "pure" survival probability from the starting node
-                // and the node below the insertion point
-                zeta = exp(-mu_.at(catg)*T);
-
-                // alpha(v) = sum_from_v_to_root ( iota * beta * zeta )
-                node->alphaNode_.at(catg) += tmpPIPnode->iotasNode_.at(catg) * tmpPIPnode->betasNode_.at(catg) * zeta;
-
-            }
-
-            if( !tmpPIPnode->_isRootNode() ){
-                T += tmpPIPnode->bnode_->getDistanceToFather(); // increase the path length from starting node and root
-            }
-        }
-
-
-        */
 
     }
 
@@ -308,76 +264,6 @@ void progressivePIP::_setAllBetas() {
     }
 
 }
-
-//void progressivePIP::_computeAllLkemptyRec(bpp::PIPnode *node) {
-//
-//    if(node->_isTerminalNode()){
-//
-//        node->fv_empty_sigma__.resize(numCatg_);
-//
-//        for(int catg=0;catg<numCatg_;catg++){
-//            node->fv_empty_sigma__.at(catg) = 0.0;
-//        }
-//
-//    }else{
-//
-//        _computeAllLkemptyRec(node->childL);
-//        _computeAllLkemptyRec(node->childR);
-//
-//        double bL = node->childL->bnode_->getDistanceToFather();
-//        double bR = node->childR->bnode_->getDistanceToFather();
-//        double zetaL;
-//        double zetaR;
-//
-//        node->fv_empty_sigma__.resize(numCatg_);
-//
-//        for(int catg=0;catg<numCatg_;catg++){
-//
-//            zetaL = exp(-mu_.at(catg) * bL);
-//            zetaR = exp(-mu_.at(catg) * bR);
-//
-//            node->fv_empty_sigma__.at(catg) = \
-//                    (1 - zetaL) * (1 - zetaR) + \
-//                    (1 - zetaL) * zetaR * node->childR->fv_empty_sigma__.at(catg) + \
-//                    zetaL * node->childL->fv_empty_sigma__.at(catg)* (1 - zetaR) + \
-//                    zetaL * node->childL->fv_empty_sigma__.at(catg) * zetaR * node->childR->fv_empty_sigma__.at(catg);
-//
-//        }
-//
-//    }
-//
-//}
-
-//void progressivePIP::_computeAllFvEmptySigmaRec(bpp::PIPnode *node) {
-//
-//    if(node->_isTerminalNode()){ // leaf
-//
-//        node->_setFVemptyLeaf(); // set fv_empty
-//
-//        node->_setFVsigmaEmptyLeaf(); // set fv_sigma_empty = fv_empty dot pi
-//
-//    }else{ // internal node
-//
-//        // recursive call
-//        _computeAllFvEmptySigmaRec(node->childL);
-//        _computeAllFvEmptySigmaRec(node->childR) ;
-//
-//        node->_setFVemptyNode(); // set fv_empty
-//
-//        node->_setFVsigmaEmptyNode(); // set fv_sigma_empty = fv_empty dot pi
-//    }
-//
-//}
-
-//void progressivePIP::_computeAllFvEmptySigma() {
-//
-//    // get the root PIPnode
-//    bpp::PIPnode *PIPnodeRoot = getPIPnodeRootNode();
-//
-//    // recursive call
-//    PIPnodeRoot->_computeAllFvEmptySigmaRec();
-//
-//}
 
 void progressivePIP::_computeLengthPathToRoot(){
 

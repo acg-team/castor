@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file pPIP.hpp
+ * @file FactoryPIPnodeSB.hpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 19 02 2018
@@ -80,8 +80,6 @@ namespace bpp {
                            int msa_idx_R,
                            int &position); // DP method to align 2 MSAs at an internal node
 
-        //std::vector<double> _computeLkEmptyNode();
-
         void _computeLkEmptyLeaf();
 
         void _computeLkLeaf();
@@ -105,12 +103,6 @@ namespace bpp {
         // PUBLIC FIELDS
         //***************************************************************************************
 
-//        nodeSB *parent;
-//        nodeSB *childL;
-//        nodeSB *childR;
-
-        //PIPmsaComp *MSA_; //contains the MSA
-
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
@@ -129,17 +121,6 @@ namespace bpp {
 
             }else{
 
-                /*
-                // create a PIPmsaComp object
-                MSA_  = new PIPmsaComp(progressivePIP_->num_sb_);
-
-                for(int i=0;i<progressivePIP_->num_sb_;i++){
-                    // create a new PIPmsa
-                    dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(i) = new PIPmsa();
-                }
-
-                */
-
             }
 
         }
@@ -148,7 +129,6 @@ namespace bpp {
 
         void DP3D_PIP();
 
-        //void _computeAllFvEmptySigmaRec();
 
     };
 

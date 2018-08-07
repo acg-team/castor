@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file pPIP.cpp
+ * @file FactoryPIPnodeRAM.cpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 19 02 2018
@@ -52,168 +52,6 @@
 using namespace bpp;
 
 #define EARLY_STOP_THR 10
-
-//bool nodeRAM::_index_of_max(double m,
-//                            double x,
-//                            double y,
-//                            double epsilon,
-//                            std::default_random_engine &generator,
-//                            std::uniform_real_distribution<double> &distribution,
-//                            int &index,
-//                            double &val) {
-//
-//    // get the index and the max value among the three input values (m,x,y)
-//
-//    // m:  match value
-//    // x:  gapx value
-//    // y:   gapy value
-//    // epsilon: small number for the comparison between to numbers
-//    // generator: random number generator (when two or three numbers have the same value)
-//    // distribution: uniform distribution
-//    // index: index of max (1: MATCH, 2: GAPX, 3: GAPY)
-//    // val: max value between the three (m,x,y)
-//
-//    double random_number;
-//
-//    if (std::isinf(m) & std::isinf(x) & std::isinf(y)){
-//        // if the three values are -inf than this cell is marked as
-//        // non-valid (STOP_STATE) and the max val is -inf
-//        index = int(STOP_STATE);
-//        val = -std::numeric_limits<double>::infinity();
-//        return true;
-//    }
-//
-//    if (not(std::isinf(m)) & not(std::isinf(x)) & (fabs((m - x)) < epsilon)) {
-//        // m and x are both not -inf
-//        // they are identical (their difference is smaller than epsilon)
-//        x = m; // x is exactly equal to m
-//    }
-//
-//    if (not(std::isinf(m)) & not(std::isinf(y)) & (fabs((m - y)) < epsilon)) {
-//        // y and m are both not -inf
-//        // they are identical (their difference is smaller than epsilon)
-//        y = m; // y is exactly equal to m
-//    }
-//
-//    if (not(std::isinf(x)) & not(std::isinf(y)) & (fabs((x - y)) < epsilon)) {
-//        // y and x are both not -inf
-//        // they are identical (their difference is smaller than epsilon)
-//        y = x; // y is exactly equal to x
-//    }
-//
-//    if (m > x) {
-//        if (m > y) {
-//            index = int(MATCH_STATE);
-//            val = m;
-//            return true;
-//        } else if (y > m) {
-//            index = int(GAP_Y_STATE);
-//            val = y;
-//            return true;
-//        } else {
-//            if (abs(m - y) < epsilon) {
-//                //m or y
-//                random_number = distribution(generator);
-//                // m and y are equal and have the same value,
-//                // the state is selected with a uniform random
-//                // distribution with 50% probability each
-//                if (random_number < (1.0 / 2.0)) {
-//                    index = int(MATCH_STATE);
-//                    val = m;
-//                    return true;
-//                } else {
-//                    index = int(GAP_Y_STATE);
-//                    val = y;
-//                    return true;
-//                }
-//            } else {
-//                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
-//                              "pPIP::_index_of_max. Check call stack below.";
-//                return false;
-//            }
-//        }
-//    } else if (x > m) {
-//        if (x > y) {
-//            index = int(GAP_X_STATE);
-//            val = x;
-//            return true;
-//        } else if (y > x) {
-//            index = int(GAP_Y_STATE);
-//            val = y;
-//            return true;
-//        } else {
-//            if (abs(x - y) < epsilon) {
-//                //x or y
-//                random_number = distribution(generator);
-//                // x and y are equal and have the same value,
-//                // the state is selected with a uniform random
-//                // distribution with 50% probability each
-//                if (random_number < (1.0 / 2.0)) {
-//                    index = int(GAP_X_STATE);
-//                    val = x;
-//                    return true;
-//                } else {
-//                    index = int(GAP_Y_STATE);
-//                    val = y;
-//                    return true;
-//                }
-//            } else {
-//                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
-//                              "pPIP::_index_of_max. Check call stack below.";
-//                return false;
-//            }
-//        }
-//    } else {
-//
-//        double mx = x;
-//        if (mx > y) {
-//            //m or x
-//            random_number = distribution(generator);
-//            // m and x are equal and have the same value,
-//            // the state is selected with a uniform random
-//            // distribution with 50% probability each
-//            if (random_number < (1.0 / 2.0)) {
-//                index = int(MATCH_STATE);
-//                val = m;
-//                return true;
-//            } else {
-//                index = int(GAP_X_STATE);
-//                val = x;
-//                return true;
-//            }
-//        } else if (y > mx) {
-//            index = int(GAP_Y_STATE);
-//            val = y;
-//            return true;
-//        } else {
-//            if (abs(mx - y) < epsilon) {
-//                //m or x or y
-//                // m,x and y are equal and have the same value,
-//                // the state is selected with a uniform random
-//                // distribution with 1/3 probability each
-//                random_number = distribution(generator);
-//                if (random_number < (1.0 / 3.0)) {
-//                    index = int(MATCH_STATE);
-//                    val = m;
-//                    return true;
-//                } else if (random_number < (2.0 / 3.0)) {
-//                    index = int(GAP_X_STATE);
-//                    val = x;
-//                    return true;
-//                } else {
-//                    index = int(GAP_Y_STATE);
-//                    val = y;
-//                    return true;
-//                }
-//            } else {
-//                LOG(FATAL) << "\nSomething went wrong during the comparison in function "
-//                              "pPIP::_index_of_max. Check call stack below.";
-//                return false;
-//            }
-//        }
-//    }
-//
-//}
 
 double nodeRAM::max_of_three(double m,
                              double x,
@@ -255,199 +93,6 @@ double nodeRAM::max_of_three(double m,
 
 }
 
-//void nodeRAM::_compress_Fv(std::vector<std::vector<double>> &fv_sigma_not_compressed,
-//                           std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed){
-//
-//    // compress an array of fv values and fv_sigma values
-//
-//    int comprMSAlen = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.size();
-//
-//    int id_map;
-//
-//    fv_data_.resize(comprMSAlen);
-//
-//    fv_sigma_.resize(comprMSAlen);
-//
-//    for(int i=0;i<comprMSAlen;i++){
-//        id_map = static_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.at(i);
-//
-//        fv_data_.at(i)=fv_data_not_compressed.at(id_map);
-//
-//        fv_sigma_.at(i)=fv_sigma_not_compressed.at(id_map);
-//    }
-//
-//}
-
-//void nodeRAM::_computeLK_M(std::vector<bpp::ColMatrix<double> > &fvL,
-//                             std::vector<bpp::ColMatrix<double> > &fvR,
-//                             std::vector<bpp::ColMatrix<double> > &Fv_M_ij,
-//                             std::vector<double> &Fv_sigma_M_ij,
-//                             double &pr_match,
-//                             double &pr_match_full_path) {
-//
-//
-//    // COMPUTE THE MATCH LK
-//
-//    // fvL: fv array of the left child
-//    // fvR: fv array of the right child
-//    // Fv_M_ij: result of Fv_M_ij = Pr_R * fv_R hadamard_prod Pr_L * fv_L
-//    // Fv_sigma_M_ij: result of Fv_M_ij dot pi
-//    // pr_match: match probability (stored for the next layer)
-//    // pr_match_full_path: full match probability (used at this layer)
-//    // it encompasses the probability of an insertion along
-//    // the whole path between the root and this node
-//
-//    // number of discrete gamma categories
-//    int num_gamma_categories = progressivePIP_->numCatg_;
-//
-//    pr_match = 0.0;
-//    pr_match_full_path = 0.0;
-//    for (int catg = 0; catg < num_gamma_categories; catg++) {
-//
-//        // PrfvL = Pr_L * fv_L
-//        bpp::ColMatrix<double> PrfvL;
-//        bpp::MatrixTools::mult(childL->prNode_.at(catg), fvL.at(catg), PrfvL);
-//
-//        // PrfvR = Pr_R * fv_R
-//        bpp::ColMatrix<double> PrfvR;
-//        bpp::MatrixTools::mult(childR->prNode_.at(catg), fvR.at(catg), PrfvR);
-//
-//        // fv = PrfvL * PrfvR
-//        bpp::ColMatrix<double> fv;
-//        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
-//
-//        Fv_M_ij[catg] = fv;
-//
-//        // fv0 = pi * fv
-//        double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
-//
-//        Fv_sigma_M_ij.at(catg) = fv0;
-//
-//        // match probability with gamma
-//        double p = progressivePIP_->rDist_->getProbability((size_t) catg) * \
-//               iotasNode_[catg] * betasNode_[catg] * fv0;
-//
-//        pr_match_full_path += progressivePIP_->rDist_->getProbability((size_t) catg) * \
-//                              alphaNode_.at(catg) * fv0;
-//
-//        pr_match += p;
-//    }
-//
-//}
-//
-//void nodeRAM::_computeLK_X(std::vector<bpp::ColMatrix<double> > &fvL,
-//                             std::vector<bpp::ColMatrix<double> > &fvR,
-//                             std::vector<bpp::ColMatrix<double> > &Fv_X_ij,
-//                             std::vector<double> &Fv_sigma_X_ij,
-//                             double &pr_gapx,
-//                             double &pr_gapx_full_path) {
-//
-//    // COMPUTE THE GAPX LK
-//
-//    // fvL: fv array of the left child
-//    // fvR: fv array of the right child
-//    // Fv_X_ij: result of Fv_X_ij = Pr_R * fv_R hadamard_prod Pr_L * fv_L
-//    // Fv_sigma_X_ij: result of Fv_sigma_X_ij dot pi
-//    // pr_gapx: gapx probability (stored for the next layer)
-//    // pr_gapx_full_path: full gapx probability (used at this layer)
-//    // it encompasses the probability of an insertion along
-//    // the whole path between the root and this node
-//
-//    // number of discrete gamma categories
-//    int numCatg = progressivePIP_->numCatg_;
-//
-//    pr_gapx = 0.0;
-//    pr_gapx_full_path = 0.0;
-//    for (int catg = 0; catg < numCatg; catg++) {
-//
-//        // PrfvL = Pr_L * fv_L
-//        bpp::ColMatrix<double> PrfvL;
-//        bpp::MatrixTools::mult(childL->prNode_.at(catg), fvL.at(catg), PrfvL);
-//
-//        // PrfvR = Pr_R * fv_R
-//        bpp::ColMatrix<double> PrfvR;
-//        bpp::MatrixTools::mult(childR->prNode_.at(catg), fvR.at(catg), PrfvR);
-//
-//        // fv = PrfvL * PrfvR
-//        bpp::ColMatrix<double> fv;
-//        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
-//
-//        Fv_X_ij[catg] = fv;
-//
-//        // fv0 = pi * fv
-//        double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
-//
-//        Fv_sigma_X_ij.at(catg) = fv0;
-//
-//        // gapX probability with gamma
-//        double p0 = progressivePIP_->rDist_->getProbability((size_t) catg) * \
-//                    iotasNode_[catg] * betasNode_[catg] * fv0;
-//
-//        pr_gapx_full_path += progressivePIP_->rDist_->getProbability((size_t) catg) * \
-//                              alphaNode_.at(catg) * fv0;
-//
-//        pr_gapx += p0;
-//    }
-//
-//}
-//
-//void nodeRAM::_computeLK_Y(std::vector<bpp::ColMatrix<double> > &fvL,
-//                             std::vector<bpp::ColMatrix<double> > &fvR,
-//                             std::vector<bpp::ColMatrix<double> > &Fv_Y_ij,
-//                             std::vector<double> &Fv_sigma_Y_ij,
-//                             double &pr_gapy,
-//                             double &pr_gapy_full_path) {
-//
-//    // COMPUTE THE GAPY LK
-//
-//    // fvL: fv array of the left child
-//    // fvR: fv array of the right child
-//    // Fv_Y_ij: result of Fv_Y_ij = Pr_R * fv_R hadamard_prod Pr_L * fv_L
-//    // Fv_sigma_Y_ij: result of Fv_sigma_Y_ij dot pi
-//    // pr_gapy: gapx probability (stored for the next layer)
-//    // pr_gapy_full_path: full gapx probability (used at this layer)
-//    // it encompasses the probability of an insertion along
-//    // the whole path between the root and this node
-//
-//    // number of discrete gamma categories
-//    int numCatg = progressivePIP_->numCatg_;
-//
-//    pr_gapy = 0.0;
-//    pr_gapy_full_path = 0.0;
-//    for (int catg = 0; catg < numCatg; catg++) {
-//
-//        // PrfvL = Pr_L * fv_L
-//        bpp::ColMatrix<double> PrfvL;
-//        bpp::MatrixTools::mult(childL->prNode_.at(catg), fvL.at(catg), PrfvL);
-//
-//        // PrfvR = Pr_R * fv_R
-//        bpp::ColMatrix<double> PrfvR;
-//        bpp::MatrixTools::mult(childR->prNode_.at(catg), fvR.at(catg), PrfvR);
-//
-//        // fv = PrfvL * PrfvR
-//        bpp::ColMatrix<double> fv;
-//        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
-//
-//        Fv_Y_ij[catg] = fv;
-//
-//        // fv0 = pi * fv
-//        double fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
-//
-//        Fv_sigma_Y_ij.at(catg) = fv0;
-//
-//        // gapY probability with gamma
-//        double p0 = progressivePIP_->rDist_->getProbability((size_t) catg) * \
-//                    iotasNode_[catg] * betasNode_[catg] * fv0;
-//
-//        pr_gapy_full_path += progressivePIP_->rDist_->getProbability((size_t) catg) * \
-//                              alphaNode_.at(catg) * fv0;
-//
-//        pr_gapy += p0;
-//
-//    }
-//
-//}
-
 double nodeRAM::_computeLK_MXY(double log_phi_gamma,
                                double valM,
                                double valX,
@@ -460,66 +105,6 @@ double nodeRAM::_computeLK_MXY(double log_phi_gamma,
 
     return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
 }
-
-//std::vector<double> nodeRAM::_computeLK_empty(std::vector<bpp::ColMatrix<double> > &fvL,
-//                                              std::vector<bpp::ColMatrix<double> > &fvR,
-//                                              std::vector<bpp::ColMatrix<double> > &Fv_gap,
-//                                              std::vector<double> &fv_empty_sigma_,
-//                                              std::vector<double> &lk_empty_down_L,
-//                                              std::vector<double> &lk_empty_down_R) {
-//
-//    // number of discrete gamma categories
-//    int num_gamma_categories = progressivePIP_->numCatg_;
-//
-//    double fv0;
-//    double p0;
-//    double pL,pR;
-//
-//    // array of lk (for each gamma rate) of a single column full of gaps
-//    std::vector<double> pc0;
-//    pc0.resize(num_gamma_categories);
-//
-//    for (int catg = 0; catg < num_gamma_categories; catg++) {
-//
-//        // PrfvL = Pr_L * fv_L
-//        bpp::ColMatrix<double> PrfvL;
-//        bpp::MatrixTools::mult(childL->prNode_.at(catg), fvL.at(catg), PrfvL);
-//
-//        // PrfvR = Pr_R * fv_R
-//        bpp::ColMatrix<double> PrfvR;
-//        bpp::MatrixTools::mult(childR->prNode_.at(catg), fvR.at(catg), PrfvR);
-//
-//        // fv = PrfvL * PrfvR
-//        bpp::ColMatrix<double> fv;
-//        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
-//
-//        Fv_gap.at(catg) = fv;
-//
-//        // fv0 = pi * fv
-//        fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
-//
-//        fv_empty_sigma_.at(catg) = fv0;
-//
-//        if(_isRootNode()){
-//            // lk at root node (beta = 1.0)
-//            p0 = iotasNode_.at(catg) * fv0;
-//        }else{
-//            p0 = ( iotasNode_.at(catg) - \
-//                   iotasNode_.at(catg) * betasNode_.at(catg) + \
-//                   iotasNode_.at(catg) * betasNode_.at(catg) * fv0 );
-//        }
-//
-//        pL = lk_empty_down_L.at(catg);
-//        pR = lk_empty_down_R.at(catg);
-//
-//        // TODO: remove this use instead lk_empty_down_
-//        pc0.at(catg) = p0 + pL + pR;
-//
-//        lk_empty_.at(catg) = p0 + pL + pR;
-//    }
-//
-//    return pc0;
-//}
 
 void nodeRAM::_computeLkEmptyLeaf(){
 
@@ -540,141 +125,6 @@ void nodeRAM::_computeLkEmptyLeaf(){
 
 }
 
-/*
-std::vector<double> nodeRAM::_computeLkEmptyNode(){
-
-    // number of discrete gamma categories
-    int numCatg = progressivePIP_->numCatg_;
-
-    double p0;
-    double pL,pR;
-    double fv0;
-
-    // resize array ([numCatg] x 1)
-    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.resize(numCatg);
-
-    // array of lk (for each gamma rate) of a single column full of gaps
-    std::vector<double> pc0;
-    pc0.resize(numCatg);
-
-    std::vector<bpp::ColMatrix<double> > &fvL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->fv_empty_data_;
-    std::vector<bpp::ColMatrix<double> > &fvR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->fv_empty_data_;
-
-    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_data_.resize(numCatg);
-    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.resize(numCatg);
-
-    for (int catg = 0; catg < numCatg; catg++) {
-
-        // PrfvL = Pr_L * fv_L
-        bpp::ColMatrix<double> PrfvL;
-        bpp::MatrixTools::mult(childL->prNode_.at(catg), fvL.at(catg), PrfvL);
-
-        // PrfvR = Pr_R * fv_R
-        bpp::ColMatrix<double> PrfvR;
-        bpp::MatrixTools::mult(childR->prNode_.at(catg), fvR.at(catg), PrfvR);
-
-        // fv = PrfvL * PrfvR
-        bpp::ColMatrix<double> fv;
-        bpp::MatrixTools::hadamardMult(PrfvL, PrfvR, fv);
-
-        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_data_.at(catg) = fv;
-
-        // fv0 = pi * fv
-        fv0 = MatrixBppUtils::dotProd(fv, progressivePIP_->pi_);
-
-        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->fv_empty_sigma_.at(catg) = fv0;
-
-        if(_isRootNode()){ // root
-            // lk at root node (beta = 1.0)
-            p0 = iotasNode_.at(catg) * fv0;
-        }else{ // internal node
-            p0 = ( iotasNode_.at(catg) - \
-                   iotasNode_.at(catg) * betasNode_.at(catg) + \
-                   iotasNode_.at(catg) * betasNode_.at(catg) * fv0 );
-        }
-
-        pL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->lk_empty_.at(catg); // lk_empty DOWN left
-        pR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->lk_empty_.at(catg); // lk_empty DOWN right
-
-        pc0.at(catg) = etaNode_.at(catg) + \
-                       alphaNode_.at(catg) * fv0 + \
-                       pL + pR; // this lk_empty is used at this layer
-
-        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.at(catg) = p0 + pL + pR; // here store the lk for the next layer (probability UP is not added here)
-    }
-
-    return pc0;
-
-}
-*/
-
-
-//void nodeRAM::_compute_lk_empty_down_rec(std::vector<double> &lk){
-//    int num_gamma_categories = rDist_->getNumberOfCategories();
-//
-//    for (int catg=0; catg<num_gamma_categories; catg++) {
-//        lk.at(catg) = lk.at(catg) + rDist_->getProbability((size_t) catg) * \
-//            (iotasNode_.at(nodeID).at(catg) - \
-//            iotasNode_.at(nodeID).at(catg) * betasNode_.at(nodeID).at(catg) + \
-//            iotasNode_.at(nodeID).at(catg) * betasNode_.at(nodeID).at(catg) * \
-//            fv_empty_sigma_.at(nodeID).at(catg));
-//    }
-//
-//    if (!node->isLeaf()) {
-//
-//        tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
-//        int sonLeftID = treemap_.right.at(vnode_left);
-//        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
-//
-//        tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
-//        int sonRightID = treemap_.right.at(vnode_right);
-//        bpp::Node *sonRight = tree_->getNode(sonRightID);
-//
-//        _compute_lk_empty_down_rec(sonLeft,lk);
-//        _compute_lk_empty_down_rec(sonRight,lk);
-//
-//    }
-//}
-
-//void nodeRAM::_compute_lk_empty_leaf_() {
-//
-//    // get the number of gamma categories
-//    int numCatg = progressivePIP_->numCatg_;
-//
-//    // allocate memory ([numCatg] x 1)
-//    lk_empty_.resize(numCatg);
-//
-//    // only 1 column
-//    for (int catg=0; catg<numCatg; catg++) {
-//        // compute the lk of an empty column at the leaf
-//        lk_empty_.at(catg) = progressivePIP_->rDist_->getProbability((size_t) catg) * \
-//            (iotasNode_.at(catg) - \
-//            iotasNode_.at(catg) * betasNode_.at(catg) + \
-//            iotasNode_.at(catg) * betasNode_.at(catg) * \
-//            fv_empty_sigma_.at(catg));
-//    }
-//
-//}
-
-//void nodeRAM::_computeLkEmptyLeaf(){
-//
-//    // compute the lk of an empty column at the leaf
-//
-//    // get the number of gamma categories
-//    int numCatg = progressivePIP_->numCatg_;
-//
-//    // allocate memory ([numCatg] x 1)
-//    static_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.resize(numCatg);
-//
-//    // only 1 column
-//    for (int catg=0; catg<numCatg; catg++) {
-//        // compute the lk of an empty column at the leaf
-//        static_cast<PIPmsaSingle *>(MSA_)->pipmsa->lk_empty_.at(catg) = progressivePIP_->rDist_->getProbability((size_t) catg) * \
-//            iotasNode_.at(catg) * (1 - betasNode_.at(catg));
-//    }
-//
-//}
-
 void nodeRAM::_computeLkLeaf(){
 
     // compute the lk at the leaf
@@ -683,7 +133,7 @@ void nodeRAM::_computeLkLeaf(){
     int numCatg = progressivePIP_->numCatg_;
 
     // get the size of the compressed sequences
-    int msaLen = dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->getCompressedMSAlength();
+    int msaLen = dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_getCompressedMSAlength();
 
     // allocate memory ([site])
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.resize(msaLen);
@@ -702,81 +152,6 @@ void nodeRAM::_computeLkLeaf(){
     }
 
 }
-
-/*
-void nodeRAM::_compressLK(std::vector<double> &lk_down_not_compressed){
-
-    // compress an array of lk values
-
-    int comprMSAlen = dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->getCompressedMSAlength();
-
-    int id_map;
-
-    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.resize(comprMSAlen);
-
-    for(int i=0;i<comprMSAlen;i++){
-        id_map = dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->rev_map_compressed_seqs_.at(i);
-        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->log_lk_down_.at(i)=lk_down_not_compressed.at(id_map);
-    }
-
-}
-*/
-
-/*
-void nodeRAM::_computeAllFvEmptySigmaRec() {
-
-    if(childL == nullptr && childR == nullptr){ // leaf
-
-        // get vnode Id
-        int vnodeId = (int) vnode_->vnode_seqid;
-
-        // get sequence name from vnodeId
-        std::string seqname = progressivePIP_->sequences_->getSequencesNames().at(vnodeId);
-
-        // associates the sequence name to the leaf node
-        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setSeqNameLeaf(seqname);
-
-        // get sequence from sequence name
-        const bpp::Sequence *sequence = &progressivePIP_->sequences_->getSequence(seqname);
-
-        // creates a column containing the sequence associated to the leaf node
-        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setMSAleaf(sequence);
-
-        // compresses sequence at the leaves
-        dynamic_cast<PIPmsaSingle *>(MSA_)->_compressMSA(progressivePIP_->alphabet_);
-
-        // set fv_empty
-        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVemptyLeaf(progressivePIP_->numCatg_,
-                                      progressivePIP_->alphabet_);
-
-        // set fv_sigma_empty = fv_empty dot pi
-        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaEmptyLeaf(progressivePIP_->numCatg_);
-
-    }else{ // internal node
-
-        // recursive call
-        childL->_computeAllFvEmptySigmaRec();
-        childR->_computeAllFvEmptySigmaRec();
-
-        // set fv_empty
-        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVemptyNode(progressivePIP_->numCatg_,
-                                                                    dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa,
-                                                                    dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa,
-                                                                    childL->prNode_,
-                                                                    childR->prNode_);
-
-        // set fv_sigma_empty = fv_empty dot pi
-        dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaEmptyNode(progressivePIP_->numCatg_,
-                                                                         dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa,
-                                                                         dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa,
-                                                                         childL->bnode_->getDistanceToFather(),
-                                                                         childR->bnode_->getDistanceToFather(),
-                                                                         progressivePIP_->mu_);
-    }
-
-}
-
-*/
 
 void nodeRAM::DP3D_PIP_leaf() {
 
@@ -813,12 +188,6 @@ void nodeRAM::DP3D_PIP_leaf() {
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVleaf(progressivePIP_->numCatg_,
                              progressivePIP_->alphabet_);
 
-    // computes dotprod(pi,fv)
-//    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaLeaf(
-//                                  dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->getCompressedMSAlength(),
-//                                  progressivePIP_->numCatg_,
-//                                  progressivePIP_->pi_);
-
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setFVsigmaLeaf(progressivePIP_->numCatg_,
                                                                 progressivePIP_->pi_);
 
@@ -829,7 +198,7 @@ void nodeRAM::DP3D_PIP_leaf() {
     _computeLkLeaf();
 
     // sets the traceback path at the leaf
-    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setTracebackPathleaves();
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_setTracebackPathLeaf();
 
 }
 
@@ -915,11 +284,11 @@ void nodeRAM::DP3D_PIP_node() {
     // DP SIZES
     //***************************************************************************************
     // Compute dimensions of the 3D block at current internal node.
-    int h = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->getMSAlength() + 1; // dimension of the alignment on the left side
-    int w = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->getMSAlength() + 1; // dimension of the alignment on the right side
+    int h = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->_getMSAlength() + 1; // dimension of the alignment on the left side
+    int w = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->_getMSAlength() + 1; // dimension of the alignment on the right side
     int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
-    int h_compr = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->getCompressedMSAlength(); // dimension of the compressed alignment on the left side
-    int w_compr = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->getCompressedMSAlength(); // dimension of the compressed alignment on the right side
+    int h_compr = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->_getCompressedMSAlength(); // dimension of the compressed alignment on the left side
+    int w_compr = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->_getCompressedMSAlength(); // dimension of the compressed alignment on the right side
     //***************************************************************************************
     // WORKING VARIABLES
     //***************************************************************************************
@@ -1370,8 +739,8 @@ void nodeRAM::DP3D_PIP_node() {
     // BUILD NEW MSA
     //***************************************************************************************
     // converts traceback path into an MSA
-    MSA_t *msaL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->_getMSA();
-    MSA_t *msaR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->_getMSA();
+    MSA_t *msaL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->_getMSA();
+    MSA_t *msaR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa->_getMSA();
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_build_MSA(*msaL,*msaR);
 
     // assigns the sequence names of the new alligned sequences to the current MSA
@@ -1387,7 +756,8 @@ void nodeRAM::DP3D_PIP_node() {
 
     // compress fv values and lk_down
     dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_compressLK(lk_down_not_compressed);
-    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_compress_Fv(fv_sigma_not_compressed, fv_data_not_compressed);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_compressFv(fv_data_not_compressed);
+    dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa->_compressFvSigma(fv_sigma_not_compressed);
 
 }
 

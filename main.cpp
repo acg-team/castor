@@ -802,23 +802,25 @@ int main(int argc, char *argv[]) {
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
                 // convert PIPmsa into a sites objects
-                sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
-                                                            *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getseqNames()),
-                                                            *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getMSA()));
+                sites = PIPmsaUtils::PIPmsa2Sites(proPIP->alphabet_,
+                                                  *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getseqNames()),
+                                                  *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getMSA()));
 
             } else if (PAR_alignment_version.find("ram") != std::string::npos) {
 
                 // convert PIPmsa into a sites objects
-                sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
-                                                            *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getseqNames()),
-                                                            *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getMSA()));
+                sites = PIPmsaUtils::PIPmsa2Sites(proPIP->alphabet_,
+                                                  *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getseqNames()),
+                                                  *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getMSA()));
 
             } else if (PAR_alignment_version.find("sb") != std::string::npos) {
 
                 // convert PIPmsa into a sites objects
-                sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
-                                                            *(dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->_getseqNames(0)),
-                                                            *(dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->_getMSA(0)));
+                sites = PIPmsaUtils::PIPmsa2Sites(proPIP->alphabet_,
+                                                  *(dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa.at(
+                                                          0)->_getseqNames()),
+                                                  *(dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa.at(
+                                                          0)->_getMSA()));
 
             }
 
@@ -833,15 +835,15 @@ int main(int argc, char *argv[]) {
 
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
-                MSAscore = dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getScore();
+                MSAscore = dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getScore();
 
             } else if (PAR_alignment_version.find("ram") != std::string::npos) {
 
-                MSAscore = dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->_getScore();
+                MSAscore = dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getScore();
 
             } else if (PAR_alignment_version.find("sb") != std::string::npos) {
 
-                MSAscore = dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->_getScore(0);
+                MSAscore = dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa.at(0)->_getScore();
             }
 
             std::ofstream lkFile;
