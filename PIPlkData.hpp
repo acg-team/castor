@@ -154,6 +154,7 @@ struct LKdata {
         if(sparse){
             TR.resize(d);
             TR[0].resize(1);
+            TR[0][0].resize(1,(int)STOP_STATE);
             for (i = 1; i < d; i++) {
                 TR[i].resize(h);
                 for(j = 0; j < h; j++){
