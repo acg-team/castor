@@ -52,6 +52,7 @@
 #include "progressivePIP.hpp"
 #include "PIPnode.hpp"
 #include "CompositePIPnode.hpp"
+#include "PIPlkData.hpp"
 
 #define ERR_STATE (-999)
 #define DBL_EPSILON std::numeric_limits<double>::min()
@@ -358,22 +359,88 @@ std::vector<double> PIPnode::_computeLkEmptyNode(std::vector<bpp::ColMatrix<doub
 
 }
 
+//void PIPnode::_DP2D(PIPmsa *msaL,
+//                    PIPmsa *msaR,
+//                    int h_compr,
+//                    int w_compr,
+//                    std::vector<vector<double> > &Log2DM,
+//                    std::vector<double> &Log2DX,
+//                    std::vector<double> &Log2DY,
+//                    std::vector<vector<double> > &Log2DM_fp,
+//                    std::vector<double> &Log2DX_fp,
+//                    std::vector<double> &Log2DY_fp,
+//                    std::vector<vector<vector<bpp::ColMatrix<double> > > > &Fv_M,
+//                    std::vector<vector<bpp::ColMatrix<double> > > &Fv_X,
+//                    std::vector<vector<bpp::ColMatrix<double> > > &Fv_Y,
+//                    std::vector<vector<vector<double> > > &Fv_sigma_M,
+//                    std::vector<vector<double> > &Fv_sigma_X,
+//                    std::vector<vector<double> > &Fv_sigma_Y){
+//
+//    //***************************************************************************************
+//    // 2D LK COMPUTATION
+//    //***************************************************************************************
+//
+//    int i,j;
+//
+//    // computes the lk in the two subtrees
+//    std::vector<double> &lk_down_L = msaL->log_lk_down_;
+//    std::vector<double> &lk_down_R = msaR->log_lk_down_;
+//
+//    // MATCH2D
+//    double pr_m;
+//    double pr_m_fp;
+//    for (i = 0; i < h_compr; i++) {
+//        for (j = 0; j < w_compr; j++) {
+//
+//            _computeLK_M(msaL->fv_data_.at(i),
+//                         msaR->fv_data_.at(j),
+//                         Fv_M[i][j],
+//                         Fv_sigma_M[i][j],
+//                         pr_m,
+//                         pr_m_fp);
+//
+//            Log2DM[i][j] = log(pr_m); // stored for the next layer
+//            Log2DM_fp[i][j] = log(pr_m_fp); // used at this node
+//        }
+//    }
+//    //***************************************************************************************
+//    // GAPX2D
+//    double pr_x;
+//    double pr_x_fp;
+//    for (i = 0; i < h_compr; i++) {
+//
+//        _computeLK_X(msaL->fv_data_.at(i),
+//                     msaR->fv_empty_data_,
+//                     Fv_X[i],
+//                     Fv_sigma_X[i],
+//                     pr_x,
+//                     pr_x_fp);
+//
+//        Log2DX[i] = progressivePIPutils::add_lns(log(pr_x),lk_down_L.at(i)); // stored for the next layer
+//        Log2DX_fp[i] = progressivePIPutils::add_lns(log(pr_x_fp),lk_down_L.at(i)); // used at this node
+//    }
+//    //***************************************************************************************
+//    // GAPY2D
+//    double pr_y;
+//    double pr_y_fp;
+//    for (j = 0; j < w_compr; j++) {
+//
+//        _computeLK_Y(msaL->fv_empty_data_,
+//                     msaR->fv_data_.at(j),
+//                     Fv_Y[j],
+//                     Fv_sigma_Y[j],
+//                     pr_y,
+//                     pr_y_fp);
+//
+//        Log2DY[j] = progressivePIPutils::add_lns(log(pr_y),lk_down_R.at(j)); // stored for the next layer
+//        Log2DY_fp[j] = progressivePIPutils::add_lns(log(pr_y_fp),lk_down_R.at(j)); // used at this node
+//    }
+//
+//}
+
 void PIPnode::_DP2D(PIPmsa *msaL,
                     PIPmsa *msaR,
-                    int h_compr,
-                    int w_compr,
-                    std::vector<vector<double> > &Log2DM,
-                    std::vector<double> &Log2DX,
-                    std::vector<double> &Log2DY,
-                    std::vector<vector<double> > &Log2DM_fp,
-                    std::vector<double> &Log2DX_fp,
-                    std::vector<double> &Log2DY_fp,
-                    std::vector<vector<vector<bpp::ColMatrix<double> > > > &Fv_M,
-                    std::vector<vector<bpp::ColMatrix<double> > > &Fv_X,
-                    std::vector<vector<bpp::ColMatrix<double> > > &Fv_Y,
-                    std::vector<vector<vector<double> > > &Fv_sigma_M,
-                    std::vector<vector<double> > &Fv_sigma_X,
-                    std::vector<vector<double> > &Fv_sigma_Y){
+                    LKdata &lkdata){
 
     //***************************************************************************************
     // 2D LK COMPUTATION
@@ -388,51 +455,51 @@ void PIPnode::_DP2D(PIPmsa *msaL,
     // MATCH2D
     double pr_m;
     double pr_m_fp;
-    for (i = 0; i < h_compr; i++) {
-        for (j = 0; j < w_compr; j++) {
+    for (i = 0; i < lkdata.h_compr_; i++) {
+        for (j = 0; j < lkdata.w_compr_; j++) {
 
             _computeLK_M(msaL->fv_data_.at(i),
                          msaR->fv_data_.at(j),
-                         Fv_M[i][j],
-                         Fv_sigma_M[i][j],
+                         lkdata.Fv_M[i][j],
+                         lkdata.Fv_sigma_M[i][j],
                          pr_m,
                          pr_m_fp);
 
-            Log2DM[i][j] = log(pr_m); // stored for the next layer
-            Log2DM_fp[i][j] = log(pr_m_fp); // used at this node
+            lkdata.Log2DM[i][j] = log(pr_m); // stored for the next layer
+            lkdata.Log2DM_fp[i][j] = log(pr_m_fp); // used at this node
         }
     }
     //***************************************************************************************
     // GAPX2D
     double pr_x;
     double pr_x_fp;
-    for (i = 0; i < h_compr; i++) {
+    for (i = 0; i < lkdata.h_compr_; i++) {
 
         _computeLK_X(msaL->fv_data_.at(i),
                      msaR->fv_empty_data_,
-                     Fv_X[i],
-                     Fv_sigma_X[i],
+                     lkdata.Fv_X[i],
+                     lkdata.Fv_sigma_X[i],
                      pr_x,
                      pr_x_fp);
 
-        Log2DX[i] = progressivePIPutils::add_lns(log(pr_x),lk_down_L.at(i)); // stored for the next layer
-        Log2DX_fp[i] = progressivePIPutils::add_lns(log(pr_x_fp),lk_down_L.at(i)); // used at this node
+        lkdata.Log2DX[i] = progressivePIPutils::add_lns(log(pr_x),lk_down_L.at(i)); // stored for the next layer
+        lkdata.Log2DX_fp[i] = progressivePIPutils::add_lns(log(pr_x_fp),lk_down_L.at(i)); // used at this node
     }
     //***************************************************************************************
     // GAPY2D
     double pr_y;
     double pr_y_fp;
-    for (j = 0; j < w_compr; j++) {
+    for (j = 0; j < lkdata.w_compr_; j++) {
 
         _computeLK_Y(msaL->fv_empty_data_,
                      msaR->fv_data_.at(j),
-                     Fv_Y[j],
-                     Fv_sigma_Y[j],
+                     lkdata.Fv_Y[j],
+                     lkdata.Fv_sigma_Y[j],
                      pr_y,
                      pr_y_fp);
 
-        Log2DY[j] = progressivePIPutils::add_lns(log(pr_y),lk_down_R.at(j)); // stored for the next layer
-        Log2DY_fp[j] = progressivePIPutils::add_lns(log(pr_y_fp),lk_down_R.at(j)); // used at this node
+        lkdata.Log2DY[j] = progressivePIPutils::add_lns(log(pr_y),lk_down_R.at(j)); // stored for the next layer
+        lkdata.Log2DY_fp[j] = progressivePIPutils::add_lns(log(pr_y_fp),lk_down_R.at(j)); // used at this node
     }
 
 }

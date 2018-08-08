@@ -81,20 +81,11 @@ namespace bpp {
                               double valY,
                               double log_pr);
 
-        void DP3D(std::vector< vector< vector<double> > > &Log3DM,
-                           std::vector< vector< vector<double> > > &Log3DX,
-                           std::vector< vector< vector<double> > > &Log3DY,
-                           std::vector< vector<double> > &Log2DM_fp,
-                           std::vector<double> &Log2DX_fp,
-                           std::vector<double> &Log2DY_fp,
-                           std::vector< vector< vector<int> > > &TR,
-                           int h,
-                           int w,
-                           int d,
-                           double log_phi_gamma,
-                           double log_nu_gamma,
-                           double &curr_best_score, // best likelihood value at this node
-                           int &level_max_lk); // depth in M,X,Y with the highest lk value
+        void DP3D(LKdata &lkdata,
+                  double log_phi_gamma,
+                  double log_nu_gamma,
+                  double &curr_best_score, // best likelihood value at this node
+                  int &level_max_lk); // depth in M,X,Y with the highest lk value
 
         void DP3D_PIP_leaf(); // DP method to align a sequence at a leaf PIPnode
                               // (which reduces to data preparation)

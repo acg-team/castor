@@ -210,7 +210,7 @@ set(SOURCES
         CompositePIPnode.hpp
         CompositePIPnode.cpp
         PIPmsa.cpp
-        PIPmsa.hpp)
+        PIPmsa.hpp PIPlkData.hpp)
 
 
 if (STATIC GREATER 0)

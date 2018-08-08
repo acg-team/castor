@@ -42,6 +42,9 @@
  * @see For more information visit:
  */
 
+#ifndef MINIJATI_FACTORYNODESB_HPP
+#define MINIJATI_FACTORYNODESB_HPP
+
 #include <Bpp/Numeric/VectorTools.h>
 #include <Bpp/Phyl/Node.h>
 #include <random>
@@ -52,9 +55,7 @@
 
 #include "progressivePIP.hpp"
 #include "FactoryPIPnode.hpp"
-
-#ifndef MINIJATI_FACTORYNODESB_HPP
-#define MINIJATI_FACTORYNODESB_HPP
+#include "PIPlkData.hpp"
 
 namespace bpp {
 
@@ -73,43 +74,48 @@ namespace bpp {
         // PRIVATE METHODS
         //***************************************************************************************
 
-        void startingLevelSB(std::vector< vector< vector<double> > > &Log3DM,
-                                     std::vector< vector< vector<double> > > &Log3DX,
-                                     std::vector< vector< vector<double> > > &Log3DY,
+//        void startingLevelSB(std::vector< vector< vector<double> > > &Log3DM,
+//                                     std::vector< vector< vector<double> > > &Log3DX,
+//                                     std::vector< vector< vector<double> > > &Log3DY,
+//                                     double epsilon,
+//                                     std::default_random_engine &generator,
+//                                     std::uniform_real_distribution<double> &distribution,
+//                                     int d,
+//                                     int h,
+//                                     int w,
+//                                     int &lev,
+//                                     double &val,
+//                                     int &state);
+
+        void startingLevelSB(LKdata &lkdata,
                                      double epsilon,
                                      std::default_random_engine &generator,
                                      std::uniform_real_distribution<double> &distribution,
-                                     int d,
                                      int h,
                                      int w,
                                      int &lev,
                                      double &val,
                                      int &state);
 
-        void forward(std::vector< vector< vector<double> > > &Log3DM,
-                             std::vector< vector< vector<double> > > &Log3DX,
-                             std::vector< vector< vector<double> > > &Log3DY,
-                             std::vector< vector<double> > &Log2DM,
-                             std::vector<double> &Log2DX,
-                             std::vector<double> &Log2DY,
-                             int position);
+        void selectState(LKdata &lkdata,
+                                 int state,
+                                 std::vector<int> *map_compr_L,
+                                 std::vector<int> *map_compr_R,
+                                 int &i,int &j,int &m,
+                                 double &log_P,
+                                 std::vector<int> &traceback,
+                                 std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
+                                 std::vector<std::vector<double>> &fv_sigma_not_compressed,
+                                 std::vector<double> &lk_down_not_compressed);
 
-        void backward(std::vector< vector< vector<double> > > &Log3DM,
-                              std::vector< vector< vector<double> > > &Log3DX,
-                              std::vector< vector< vector<double> > > &Log3DY,
-                              std::vector< vector<double> > &Log2DM,
-                              std::vector<double> &Log2DX,
-                              std::vector<double> &Log2DY,
-                              std::vector< vector< vector< bpp::ColMatrix<double> > > > &Fv_M,
-                              std::vector< vector< bpp::ColMatrix<double> > > &Fv_X,
-                              std::vector< vector< bpp::ColMatrix<double> > > &Fv_Y,
-                              std::vector< vector< vector<double> > > &Fv_sigma_M,
-                              std::vector< vector<double> > &Fv_sigma_X,
-                              std::vector< vector<double> > &Fv_sigma_Y,
-                              int position);
+        void _forward(LKdata &lkdata,
+                      int position);
+
+        void _backward(LKdata &lkdata,
+                       int position);
 
         void DP3D_PIP_leaf(); // DP method to align a sequence at a leaf PIPnode
-        // (which reduces to data preparation)
+                              // (which reduces to data preparation)
 
         using PIPnode::DP3D_PIP_node;
         void DP3D_PIP_node(int position); // DP method to align 2 MSAs at an internal node
