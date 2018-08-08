@@ -114,7 +114,7 @@ namespace bpp {
                 tshlib::VirtualNode *vnode,
                 bpp::Node *bnode); // constructor
 
-        virtual ~PIPnode(){};
+        virtual ~PIPnode(){}; // destructor
 
         int _getId(){ return nodeID_; }; // get the Id of the node
 
@@ -174,6 +174,23 @@ namespace bpp {
                            double &val);        // max value between the three (m,x,y)
 
         void _getPrFromSubstitutionModel(); // compute exp(br_len * Q)
+
+        void _DP2D(PIPmsa *msaL,
+                   PIPmsa *msaR,
+                   int h_compr,
+                   int w_compr,
+                   std::vector<vector<double> > &Log2DM,
+                   std::vector<double> &Log2DX,
+                   std::vector<double> &Log2DY,
+                   std::vector<vector<double> > &Log2DM_fp,
+                   std::vector<double> &Log2DX_fp,
+                   std::vector<double> &Log2DY_fp,
+                   std::vector<vector<vector<bpp::ColMatrix<double> > > > &Fv_M,
+                   std::vector<vector<bpp::ColMatrix<double> > > &Fv_X,
+                   std::vector<vector<bpp::ColMatrix<double> > > &Fv_Y,
+                   std::vector<vector<vector<double> > > &Fv_sigma_M,
+                   std::vector<vector<double> > &Fv_sigma_X,
+                   std::vector<vector<double> > &Fv_sigma_Y);
 
         virtual void DP3D_PIP_leaf(){}; // align a leaf PIPnode
 

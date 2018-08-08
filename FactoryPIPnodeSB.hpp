@@ -73,13 +73,6 @@ namespace bpp {
         // PRIVATE METHODS
         //***************************************************************************************
 
-        void DP3D_PIP_leaf(); // DP method to align a sequence at a leaf PIPnode
-                              // (which reduces to data preparation)
-
-        void DP3D_PIP_node(int msa_idx_L,
-                           int msa_idx_R,
-                           int &position); // DP method to align 2 MSAs at an internal node
-
         void startingLevelSB(std::vector< vector< vector<double> > > &Log3DM,
                                      std::vector< vector< vector<double> > > &Log3DX,
                                      std::vector< vector< vector<double> > > &Log3DY,
@@ -92,6 +85,34 @@ namespace bpp {
                                      int &lev,
                                      double &val,
                                      int &state);
+
+        void forward(std::vector< vector< vector<double> > > &Log3DM,
+                             std::vector< vector< vector<double> > > &Log3DX,
+                             std::vector< vector< vector<double> > > &Log3DY,
+                             std::vector< vector<double> > &Log2DM,
+                             std::vector<double> &Log2DX,
+                             std::vector<double> &Log2DY,
+                             int position);
+
+        void backward(std::vector< vector< vector<double> > > &Log3DM,
+                              std::vector< vector< vector<double> > > &Log3DX,
+                              std::vector< vector< vector<double> > > &Log3DY,
+                              std::vector< vector<double> > &Log2DM,
+                              std::vector<double> &Log2DX,
+                              std::vector<double> &Log2DY,
+                              std::vector< vector< vector< bpp::ColMatrix<double> > > > &Fv_M,
+                              std::vector< vector< bpp::ColMatrix<double> > > &Fv_X,
+                              std::vector< vector< bpp::ColMatrix<double> > > &Fv_Y,
+                              std::vector< vector< vector<double> > > &Fv_sigma_M,
+                              std::vector< vector<double> > &Fv_sigma_X,
+                              std::vector< vector<double> > &Fv_sigma_Y,
+                              int position);
+
+        void DP3D_PIP_leaf(); // DP method to align a sequence at a leaf PIPnode
+        // (which reduces to data preparation)
+
+        using PIPnode::DP3D_PIP_node;
+        void DP3D_PIP_node(int position); // DP method to align 2 MSAs at an internal node
 
     public:
 

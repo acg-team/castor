@@ -306,7 +306,7 @@ void progressivePIP::_buildPIPnodeTree() {
 
         bpp::Node *bnode = node->bnode_;
 
-        int bnodeId = bnode->getId();
+        //int bnodeId = bnode->getId();
 
         if(bnode->hasFather()){
             // internal node
@@ -459,6 +459,16 @@ void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vno
     // zeta = exp(- mu *b ) is the "pure" survival probability
 
     _setAllEtas();
+}
+
+void progressivePIP::PIPnodeAlign(){
+
+    // wrapper
+
+    PIPnode * root = getPIPnodeRootNode();
+
+    compositePIPaligner_->PIPnodeAlign(root);
+
 }
 //***********************************************************************************************
 //***********************************************************************************************

@@ -511,11 +511,11 @@ double nodeCPU::computeLK_M_local(double NU,
 
     double log_pr;
 
-    bpp::Node *sonLeft = childL->_getBnode();
-    int sonLeftID = sonLeft->getId();
+  //  bpp::Node *sonLeft = childL->_getBnode();
+//    int sonLeftID = sonLeft->getId();
 
-    bpp::Node *sonRight = childR->_getBnode();
-    int sonRightID = sonRight->getId();
+//    bpp::Node *sonRight = childR->_getBnode();
+  //  int sonRightID = sonRight->getId();
 
     // create left + right column
     MSAcolumn_t s;
@@ -600,11 +600,11 @@ double nodeCPU::computeLK_X_local(double NU,
     double log_pr;
 
 
-    bpp::Node *sonLeft = childL->_getBnode();
-    int sonLeftID = sonLeft->getId();
+//    bpp::Node *sonLeft = childL->_getBnode();
+//    int sonLeftID = sonLeft->getId();
 
-    bpp::Node *sonRight = childR->_getBnode();
-    int sonRightID = sonRight->getId();
+  //  bpp::Node *sonRight = childR->_getBnode();
+  //  int sonRightID = sonRight->getId();
 
     // create left + right column
     MSAcolumn_t s;
@@ -686,11 +686,11 @@ std::vector<double> nodeCPU::computeLK_GapColumn_local(MSAcolumn_t &sL,
     std::vector<double> pc0;
     pc0.resize(num_gamma_categories);
 
-    bpp::Node *sonLeft = childL->_getBnode();
-    int sonLeftID = sonLeft->getId();
+    //bpp::Node *sonLeft = childL->_getBnode();
+//    int sonLeftID = sonLeft->getId();
 
-    bpp::Node *sonRight = childR->_getBnode();
-    int sonRightID = sonRight->getId();
+   // bpp::Node *sonRight = childR->_getBnode();
+  //  int sonRightID = sonRight->getId();
 
     for (int catg = 0; catg < num_gamma_categories; catg++) {
 
@@ -744,7 +744,8 @@ std::vector<double> nodeCPU::computeLK_GapColumn_local(int nodeID,
 
     double fv0;
     double p0;
-    double pL,pR;
+    double pL = 0.0;
+    double pR = 0.0;
 
     // array of lk (for each gamma rate) of a single column full of gaps
     std::vector<double> pc0;
@@ -795,11 +796,11 @@ double nodeCPU::computeLK_Y_local(double NU,
 
     double log_pr;
 
-    bpp::Node *sonLeft = childL->_getBnode();
-    int sonLeftID = sonLeft->getId();
-
-    bpp::Node *sonRight = childR->_getBnode();
-    int sonRightID = sonRight->getId();
+//    bpp::Node *sonLeft = childL->_getBnode();
+//    int sonLeftID = sonLeft->getId();
+//
+//    bpp::Node *sonRight = childR->_getBnode();
+//    int sonRightID = sonRight->getId();
 
     // create left + right column
     MSAcolumn_t s;
@@ -884,11 +885,11 @@ bpp::ColMatrix<double> nodeCPU::computeFVrec(MSAcolumn_t &s, int &idx, int catg)
 
     } else {
 
-        bpp::Node *sonLeft = childL->_getBnode();
-        int sonLeftID = sonLeft->getId();
-
-        bpp::Node *sonRight = childR->_getBnode();
-        int sonRightID = sonRight->getId();
+//        bpp::Node *sonLeft = childL->_getBnode();
+//        int sonLeftID = sonLeft->getId();
+//
+//        bpp::Node *sonRight = childR->_getBnode();
+//        int sonRightID = sonRight->getId();
 
         // computes the recursive Felsenstein's peeling weight on the left subtree
         bpp::ColMatrix<double> fvL = dynamic_cast<nodeCPU *>(childL)->computeFVrec(s, idx, catg);
@@ -927,11 +928,11 @@ void nodeCPU::allgaps(std::string &s, int &idx, bool &flag) {
 
     } else {
 
-        bpp::Node *sonLeft = childL->_getBnode();
-        int sonLeftID = sonLeft->getId();
-
-        bpp::Node *sonRight = childR->_getBnode();
-        int sonRightID = sonRight->getId();
+//        bpp::Node *sonLeft = childL->_getBnode();
+//        int sonLeftID = sonLeft->getId();
+//
+//        bpp::Node *sonRight = childR->_getBnode();
+//        int sonRightID = sonRight->getId();
 
         dynamic_cast<nodeCPU *>(childL)->allgaps(s, idx, flag);
         dynamic_cast<nodeCPU *>(childR)->allgaps(s, idx, flag);
@@ -961,11 +962,11 @@ double nodeCPU::compute_lk_gap_down(MSAcolumn_t &s, int catg) {
 
     }
 
-    bpp::Node *sonLeft = childL->_getBnode();
-    int sonLeftID = sonLeft->getId();
+   // bpp::Node *sonLeft = childL->_getBnode();
+  //  int sonLeftID = sonLeft->getId();
 
-    bpp::Node *sonRight = childR->_getBnode();
-    int sonRightID = sonRight->getId();
+ //   bpp::Node *sonRight = childR->_getBnode();
+//    int sonRightID = sonRight->getId();
 
     idx = 0;
     bpp::ColMatrix<double> fv = computeFVrec(s, idx, catg);
@@ -1082,11 +1083,11 @@ double nodeCPU::_compute_lk_down(MSAcolumn_t &s, int catg) {
 
     }
 
-    bpp::Node *sonLeft = childL->_getBnode();
-    int sonLeftID = sonLeft->getId();
+//    bpp::Node *sonLeft = childL->_getBnode();
+//    int sonLeftID = sonLeft->getId();
 
-    bpp::Node *sonRight = childR->_getBnode();
-    int sonRightID = sonRight->getId();
+  //  bpp::Node *sonRight = childR->_getBnode();
+  //  int sonRightID = sonRight->getId();
 
     idx = 0;
     bpp::ColMatrix<double> fv = computeFVrec(s, idx, catg);
@@ -1154,11 +1155,11 @@ void nodeCPU::DP3D_PIP_node() {
 
     int tr;
 
-    bpp::Node *sonLeft = childL->_getBnode();
-    int sonLeftID = sonLeft->getId();
+  //  bpp::Node *sonLeft = childL->_getBnode();
+    //int sonLeftID = sonLeft->getId();
 
-    bpp::Node *sonRight = childR->_getBnode();
-    int sonRightID = sonRight->getId();
+//    bpp::Node *sonRight = childR->_getBnode();
+    //int sonRightID = sonRight->getId();
 
     // Compute dimensions of the 3D block at current internal node.
     h = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa->msa_.size() + 1; // dimension of the alignment on the left side
@@ -1288,7 +1289,7 @@ void nodeCPU::DP3D_PIP_node() {
 
     int depth;
 
-    int last_d = d - 1;
+    //int last_d = d - 1;
     int size_tr, tr_up_i, tr_up_j, tr_down_i, tr_down_j;
     std::map<MSAcolumn_t, double> lkM;
     std::map<MSAcolumn_t, double> lkX;
@@ -1798,7 +1799,7 @@ void nodeCPU::DP3D_PIP_node() {
     for (int lev = depth; lev > 0; lev--) {
         set_indices_T(up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, lev, h, w);
         idx = get_indices_T(id1, id2, up_corner_i, up_corner_j, bot_corner_i, bot_corner_j, lev, h, w);
-        int state = TR[lev][idx];
+//        int state = TR[lev][idx];
         switch (TR[lev][idx]) {
             case MATCH_STATE:
                 id1 = id1 - 1;

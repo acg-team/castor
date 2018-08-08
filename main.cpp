@@ -790,8 +790,7 @@ int main(int argc, char *argv[]) {
                                    DPversion, // version of the alignment algorithm
                                    num_sb);   // number of suboptimal MSAs
 
-            proPIP->compositePIPaligner_->PIPnodeAlign(proPIP->getPIPnodeRootNode()); // align input sequences with a
-                                                                                      // DP algorithm under PIP
+            proPIP->PIPnodeAlign(); // align input sequences with a DP algorithm under PIP
 
             std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
@@ -831,7 +830,7 @@ int main(int argc, char *argv[]) {
                 seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
             }
 
-            double MSAscore;
+            double MSAscore = -std::numeric_limits<double>::infinity();;
 
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
 

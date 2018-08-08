@@ -527,10 +527,6 @@ bpp::SiteContainer *PIPmsaUtils::PIPmsa2Sites(const bpp::Alphabet *alphabet,
 
     return new bpp::VectorSiteContainer(*sequences);
 }
-
-//bool sortByScore(const bpp::PIPmsa *msa1, const bpp::PIPmsa *msa2) {
-//    return msa1->score_ > msa2->score_;
-//}
 //***********************************************************************************************
 //***********************************************************************************************
 //***********************************************************************************************

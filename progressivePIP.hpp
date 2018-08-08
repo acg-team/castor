@@ -173,6 +173,8 @@ namespace bpp {
                             enumDP3Dversion DPversion, // DP3D version
                             int num_sb);  // number of sub. optimal solutions (MSAs)
 
+        void PIPnodeAlign();
+
         long getSeed() const { return seed_; }; // return seed for the random number generation
 
         void _setAllIotas(); // compute all the insertion probabilities (iota function)

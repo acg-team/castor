@@ -192,8 +192,6 @@ namespace PIPmsaUtils {
                                      std::vector<std::string> &seqNames,
                                      std::vector<std::string> &MSA);
 
-    //bool sortByScore(const bpp::PIPmsa *msa1, const bpp::PIPmsa *msa2);
-
 }
 //***********************************************************************************************
 //***********************************************************************************************
