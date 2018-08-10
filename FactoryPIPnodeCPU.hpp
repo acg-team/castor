@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file pPIP.hpp
+ * @file FactoryPIPnodeCPU.hpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 19 02 2018
@@ -232,7 +232,6 @@ namespace bpp {
 
 
         //-----------------------------------------------------------
-        // TODO: remove from here
         bpp::ColMatrix<double> computeFVrec(MSAcolumn_t &s,
                                             int &idx,
                                             int catg);
@@ -249,12 +248,22 @@ namespace bpp {
         double _compute_lk_down(MSAcolumn_t &s,
                                 int catg);
 
+        std::vector<double> _compute_lk_down();
+
         std::vector<double> _compute_lk_down(int idx_sb);
         //-----------------------------------------------------------
 
-
-
     public:
+
+        //***************************************************************************************
+        // PUBLIC FIELDS
+        //***************************************************************************************
+
+//        nodeCPU *parent;
+//        nodeCPU *childL;
+//        nodeCPU *childR;
+
+        //PIPmsaSingle *MSA_; //contains the MSA
 
         //***************************************************************************************
         // PUBLIC METHODS
@@ -264,7 +273,11 @@ namespace bpp {
                                                                                                     bnode) {
         }
 
+        virtual ~nodeCPU() = default;
+
         void DP3D_PIP();
+
+        void _computeAllFvEmptySigmaRec();
     };
 
 }

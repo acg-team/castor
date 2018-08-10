@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file pPIP.hpp
+ * @file FactoryPIPnodeSB.hpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 19 02 2018
@@ -42,6 +42,9 @@
  * @see For more information visit:
  */
 
+#ifndef MINIJATI_FACTORYNODESB_HPP
+#define MINIJATI_FACTORYNODESB_HPP
+
 #include <Bpp/Numeric/VectorTools.h>
 #include <Bpp/Phyl/Node.h>
 #include <random>
@@ -52,10 +55,7 @@
 
 #include "progressivePIP.hpp"
 #include "FactoryPIPnode.hpp"
-#include "CompositePIPmsa.hpp"
-
-#ifndef MINIJATI_FACTORYNODESB_HPP
-#define MINIJATI_FACTORYNODESB_HPP
+#include "PIPlkData.hpp"
 
 namespace bpp {
 
@@ -64,31 +64,78 @@ namespace bpp {
     private:
 
         //***************************************************************************************
-        // PUBLIC FIELDS
+        // PRIVATE FIELDS
         //***************************************************************************************
 
-        PIPmsaComp *MSA_;
+        std::vector<int> subMSAidxL_;
+        std::vector<int> subMSAidxR_;
 
         //***************************************************************************************
         // PRIVATE METHODS
         //***************************************************************************************
 
-        //void max_val_in_column(double ***M,int depth, int height, int width, double &val, int &level);
+        int getStartingLevel(LKdata &lkdata,
+                             double epsilon,
+                             std::default_random_engine &generator,
+                             std::uniform_real_distribution<double> &distribution,
+                             int &state);
 
-        void DP3D_PIP_leaf();
+        double getStateData(LKdata &lkdata,
+                            int state,
+                            int i,
+                            int j,
+                            std::vector<int> *mapL,
+                            std::vector<int> *mapR,
+                            std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
+                            std::vector<std::vector<double>> &fv_sigma_not_compressed,
+                            std::vector<double> &lk_down_not_compressed);
 
-        void DP3D_PIP_node();
+        void _forward(LKdata &lkdata,
+                      int position);
+
+        void _backward(LKdata &lkdata,
+                       int position);
+
+        void DP3D_PIP_leaf(); // DP method to align a sequence at a leaf PIPnode
+        // (which reduces to data preparation)
+
+        using PIPnode::DP3D_PIP_node;
+
+        void DP3D_PIP_node(int position); // DP method to align 2 MSAs at an internal node
 
     public:
+
+        //***************************************************************************************
+        // PUBLIC FIELDS
+        //***************************************************************************************
 
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
 
-        nodeSB(const progressivePIP *pPIP, tshlib::VirtualNode *vnode, bpp::Node *bnode) : PIPnode(pPIP, vnode, bnode) {
+        // constructor
+        nodeSB(const progressivePIP *pPIP, tshlib::VirtualNode *vnode, bpp::Node *bnode) : PIPnode(pPIP,
+                                                                                                   vnode,
+                                                                                                   bnode) {
+            if (bnode->isLeaf()) {
+
+                // create a PIPmsaComp object
+                MSA_ = new PIPmsaComp(1);
+
+                // create a new PIPmsa
+                dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0) = new PIPmsa();
+
+            } else {
+
+            }
+
         }
 
+        virtual ~nodeSB() = default;
+
         void DP3D_PIP();
+
+
     };
 
 }

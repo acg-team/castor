@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file pPIP.hpp
+ * @file progressivePIP.hpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 19 02 2018
@@ -85,22 +85,33 @@ namespace bpp {
         //***************************************************************************************
         // PRIVATE FIELDS
         //***************************************************************************************
-        tshlib::Utree *utree_; // tshlib:: tree
-        bpp::TreeTemplate<bpp::Node> *tree_; // bpp::tree
-        long seed_; //jatiapp seed for the random numbers generation
-        mutable UtreeBppUtils::treemap treemap_; // bpp::Node * <-> tshlib::VirtualNode *
-        double lambda0_; // original lambda (no Gamma distribution)
-        double mu0_; // original mu (no Gamma distribution)
-        PIPnode *PIPnodeRoot;
 
+        tshlib::Utree *utree_; // tshlib:: tree
+
+        bpp::TreeTemplate<bpp::Node> *tree_; // bpp::tree
+
+        long seed_; //jatiapp seed for the random numbers generation
+
+        mutable UtreeBppUtils::treemap treemap_; // bpp::Node * <-> tshlib::VirtualNode *
+
+        double lambda0_; // original lambda (no Gamma distribution)
+
+        double mu0_; // original mu (no Gamma distribution)
+
+        PIPnode *PIPnodeRoot; // root PIPnode (root of the tree of PIPnodes)
         //***************************************************************************************
         // PRIVATE METHODS
         //***************************************************************************************
+
         void _setLambda(double lambda); // set lambda for different rates
+
         void _setMu(double mu); // set mu for different rates
+
         void _setPi(const Vdouble &pi); // set Pi
-        void _computeTauRec_(PIPnode *pipnode);
-        void _computeAllFvEmptySigmaRec(bpp::PIPnode *node);
+
+        void _computeTauRec_(PIPnode *pipnode); // recursive computation of the total tree length and
+                                                // of the total left/right subtree length
+
         //***************************************************************************************
 
     public:
@@ -108,26 +119,45 @@ namespace bpp {
         //***************************************************************************************
         // PUBLIC FIELDS
         //***************************************************************************************
+
         CompositePIPnode *compositePIPaligner_; // array of PIPnodes
 
         unsigned long numNodes_; // total number of nodes
+
         unsigned long numCatg_; // number of discrete categories (gamma distribution)
+
+        int num_sb_; // number of sub-optimal solutions saved at each DP instance
+
+        double temperature_; // to tune the greedyness of the sub-optimal solution
+
         std::vector<double> lambda_; // vector[rate] of lambda rate with Gamma distribution
+
         std::vector<double> mu_; // vector[rate] of mu rate with Gamma distribution
+
         bpp::DiscreteDistribution *rDist_; // distribution for rate variation among sites
+
         bpp::SubstitutionModel *substModel_; // substitution model
+
         bpp::SequenceContainer *sequences_; // un-aligned input sequences
+
         const bpp::Alphabet *alphabet_; // extended alphabet (alphabet U {'-'})
+
         long alphabetSize_; // original alphabet size
+
         long extendedAlphabetSize_; // extended alphabet size
+
         bpp::ColMatrix<double> pi_; // steady state base frequencies
+
         double tau_; // total tree length
+
         std::vector<double> nu_; // normalizing Poisson intensity for each gamma category
+
         //***************************************************************************************
 
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
+
         // constructor
         progressivePIP(tshlib::Utree *utree,              // tshlib:: tree
                        bpp::Tree *tree,                   // bpp::tree
@@ -142,7 +172,10 @@ namespace bpp {
 
         void _initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, // list of nodes
                             enumDP3Dversion DPversion, // DP3D version
-                            int num_sb);  // number of sub. optimal solutions (MSAs)
+                            int num_sb, // number of sub. optimal solutions (MSAs)
+                            double temperature);  // to tune the greedyness of the sub-optimal solution
+
+        void PIPnodeAlign();
 
         long getSeed() const { return seed_; }; // return seed for the random number generation
 
@@ -150,7 +183,10 @@ namespace bpp {
 
         void _setAllBetas(); // compute all the survival probabilities (beta function)
 
-        void _setAllAlphas();
+        void _setAllAlphas(); // alpha(v) = sum_from_v_to_root ( iota * beta * zeta )
+                              // zeta = exp(- mu *b ) is the "pure" survival probability
+
+        void _setAllEtas();
 
         bpp::Node *getBPProotNode(){ return tree_->getRootNode(); }; // get the root of the tree
 
@@ -163,11 +199,9 @@ namespace bpp {
         void _computeTau_(); // compute the total tree length and the length of the left/right subtree
                              // of the tree rooted at a given PIPnode
 
-        //void _computeLengthPathToRoot();
-
         void _computeNu(); // compute the normalizing Poisson intensity (expected MSA length)
 
-        void _computeAllFvEmptySigma();
+        void _computeLengthPathToRoot(); // compute the distance from any node to the root
 
     };
 

@@ -744,10 +744,11 @@ int main(int argc, char *argv[]) {
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
-
-            //===========================================================
-            //===========================================================
+            //**********************************************************************************************************
+            // ********  3D DP PIP  ************************************************************************************
+            //**********************************************************************************************************
             int num_sb = 0; // number of sub-optimal MSAs
+            double temperature = 1.0; // temperature for SB version
 
             enumDP3Dversion DPversion = CPU; // DP3D version
 
@@ -761,12 +762,13 @@ int main(int argc, char *argv[]) {
                 DPversion = SB;  // stochastic backtracking version
                 num_sb = 4;
             } else {
-                ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
+                ApplicationTools::displayError("The user specified an unknown alignment.version. "
+                                               "The execution will not continue.");
             }
 
             std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
-            proPIP = new bpp::progressivePIP(utree,     // tshlib tree
+            proPIP = new bpp::progressivePIP(utree,               // tshlib tree
                                              tree,                // bpp tree
                                              smodel,              // substitution model
                                              tm,                  // tree-map
@@ -774,24 +776,44 @@ int main(int argc, char *argv[]) {
                                              rDist,               // rate-variation among site distribution
                                              jatiapp.getSeed());  // seed for random number generation
 
+            proPIP->_initializePIP(ftn,          // list of tshlib nodes in on post-order (correct order of execution)
+                                   DPversion,    // version of the alignment algorithm
+                                   num_sb,       // number of suboptimal MSAs
+                                   temperature); // to tune the greedyness of the sub-optimal solution
 
-
-            proPIP->_initializePIP(ftn, // list of tshlib nodes in on post-order (correct order of execution)
-                                   DPversion, // version of the alignment algorithm
-                                   num_sb);  // number of suboptimal MSAs
-
-            proPIP->compositePIPaligner_->PIPnodeAlign(); // align input sequences with a DP algorithm under PIP
+            proPIP->PIPnodeAlign(); // align input sequences with a DP algorithm under PIP
 
             std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
             std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
-            ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration, 4));
+            ApplicationTools::displayResult("\nAlignment elapsed time (msec):",
+                                            TextTools::toString((double) duration, 4));
 
-            // convert PIPmsa into a sites objects
-            sites = compositePIPmsaUtils::pPIPmsa2Sites(proPIP->alphabet_,
-                                                        static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->seqNames_,
-                                                        static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->msa_);
+            if (PAR_alignment_version.find("cpu") != std::string::npos) {
+
+                // convert PIPmsa into a sites objects
+                sites = PIPmsaUtils::PIPmsa2Sites(proPIP->alphabet_,
+                                                  *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getseqNames()),
+                                                  *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getMSA()));
+
+            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
+
+                // convert PIPmsa into a sites objects
+                sites = PIPmsaUtils::PIPmsa2Sites(proPIP->alphabet_,
+                                                  *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getseqNames()),
+                                                  *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getMSA()));
+
+            } else if (PAR_alignment_version.find("sb") != std::string::npos) {
+
+                // convert PIPmsa into a sites objects
+                sites = PIPmsaUtils::PIPmsa2Sites(proPIP->alphabet_,
+                                                  *(dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa.at(
+                                                          0)->_getseqNames()),
+                                                  *(dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa.at(
+                                                          0)->_getMSA()));
+
+            }
 
             // Export alignment to file
             if (PAR_output_file_msa.find("none") == std::string::npos) {
@@ -800,16 +822,31 @@ int main(int argc, char *argv[]) {
                 seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
             }
 
-            double MSAscore;
-            MSAscore = static_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->score_;
+            double MSAscore = -std::numeric_limits<double>::infinity();;
+
+            if (PAR_alignment_version.find("cpu") != std::string::npos) {
+
+                MSAscore = dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getScore();
+
+            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
+
+                MSAscore = dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getScore();
+
+            } else if (PAR_alignment_version.find("sb") != std::string::npos) {
+
+                MSAscore = dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa.at(0)->_getScore();
+            }
 
             std::ofstream lkFile;
             lkFile << std::setprecision(18);
             lkFile.open(PAR_output_file_lk);
             lkFile << MSAscore;
             lkFile.close();
-            //===========================================================
-            //===========================================================
+
+            ApplicationTools::displayResult("Alignment log likelihood", TextTools::toString(MSAscore, 15));
+            //**********************************************************************************************************
+            // ********  3D DP PIP  ************************************************************************************
+            //**********************************************************************************************************
 
             //===== OBSOLETE ===========================================================
             //Align sequences using the progressive 3D Dynamic Programming under PIP
@@ -835,13 +872,15 @@ int main(int argc, char *argv[]) {
                 flag_map = true;
                 flag_fv = false;
 
-                ApplicationTools::displayError("The user specified an unknown alignment.version. The execution will not continue.");
+                ApplicationTools::displayError(
+                        "The user specified an unknown alignment.version. The execution will not continue.");
 
             }
 
             std::chrono::high_resolution_clock::time_point t3 = std::chrono::high_resolution_clock::now();
             // Initialise alignment object
-            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(), PAR_alignment_sbsolutions);
+            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),
+                                      PAR_alignment_sbsolutions);
 
             alignment->PIPAligner(ftn, flag_local, flag_map, flag_fv);
 
@@ -849,8 +888,8 @@ int main(int argc, char *argv[]) {
 
             duration = std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
             std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
-            ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration, 4));
-            //===== OBSOLETE ===========================================================
+            ApplicationTools::displayResult("\nAlignment elapsed time (msec):",
+                                            TextTools::toString((double) duration, 4));
 
 
             //===== OBSOLETE ===========================================================
@@ -898,7 +937,8 @@ int main(int argc, char *argv[]) {
 
         // Get transition model from substitution model
         if (!PAR_model_indels) {
-            model = bpp::PhylogeneticsApplicationTools::getTransitionModel(alphabet, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
+            model = bpp::PhylogeneticsApplicationTools::getTransitionModel(alphabet, gCode.get(), sites,
+                                                                           jatiapp.getParams(), "", true, false, 0);
         } else {
             unique_ptr<TransitionModel> test;
             test.reset(smodel);
@@ -908,12 +948,14 @@ int main(int argc, char *argv[]) {
         // Initialise likelihood functions
         if (!PAR_model_indels) {
             //tl = new bpp::RHomogeneousTreeLikelihood_Generic(*tree, *sites, model, rDist, false, false, false);
-            tl = new bpp::UnifiedTSHomogeneousTreeLikelihood(*tree, *sites, model, rDist, utree, &tm, true, jatiapp.getParams(), "", false, false,
+            tl = new bpp::UnifiedTSHomogeneousTreeLikelihood(*tree, *sites, model, rDist, utree, &tm, true,
+                                                             jatiapp.getParams(), "", false, false,
                                                              false);
 
         } else {
             //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, &tm, false, false, false);
-            tl = new bpp::UnifiedTSHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, utree, &tm, true, jatiapp.getParams(), "", false,
+            tl = new bpp::UnifiedTSHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, utree, &tm, true,
+                                                                 jatiapp.getParams(), "", false,
                                                                  false, false);
         }
         ApplicationTools::displayResult("Tree likelihood model", std::string("Homogeneous"));
@@ -927,7 +969,8 @@ int main(int argc, char *argv[]) {
         ApplicationTools::displayMessage("\n[Parameter sanity check]");
 
         //Listing parameters
-        string paramNameFile = ApplicationTools::getAFilePath("output.parameter_names.file", jatiapp.getParams(), false, false, "", true, "none", 1);
+        string paramNameFile = ApplicationTools::getAFilePath("output.parameter_names.file", jatiapp.getParams(), false,
+                                                              false, "", true, "none", 1);
         if (paramNameFile != "none") {
             ApplicationTools::displayResult("List parameters to", paramNameFile);
             ofstream pnfile(paramNameFile.c_str(), ios::out);
@@ -964,7 +1007,8 @@ int main(int argc, char *argv[]) {
                         s = site.size();
                         for (size_t j = 0; j < s; j++) {
                             if (gCode->isStop(site.getValue(j))) {
-                                (*ApplicationTools::error << "Stop Codon at site " << site.getPosition() << " in sequence "
+                                (*ApplicationTools::error << "Stop Codon at site " << site.getPosition()
+                                                          << " in sequence "
                                                           << sites->getSequence(j).getName()).endLine();
                                 f = true;
                             }
@@ -974,15 +1018,18 @@ int main(int argc, char *argv[]) {
                 if (f)
                     exit(-1);
             }
-            bool removeSaturated = ApplicationTools::getBooleanParameter("input.sequence.remove_saturated_sites", jatiapp.getParams(), false, "",
+            bool removeSaturated = ApplicationTools::getBooleanParameter("input.sequence.remove_saturated_sites",
+                                                                         jatiapp.getParams(), false, "",
                                                                          true, 1);
             if (!removeSaturated) {
                 ofstream debug("DEBUG_likelihoods.txt", ios::out);
                 for (size_t i = 0; i < sites->getNumberOfSites(); i++) {
-                    debug << "Position " << sites->getSite(i).getPosition() << " = " << tl->getLogLikelihoodForASite(i) << endl;
+                    debug << "Position " << sites->getSite(i).getPosition() << " = " << tl->getLogLikelihoodForASite(i)
+                          << endl;
                 }
                 debug.close();
-                ApplicationTools::displayError("!!! Site-specific likelihood have been written in file DEBUG_likelihoods.txt .");
+                ApplicationTools::displayError(
+                        "!!! Site-specific likelihood have been written in file DEBUG_likelihoods.txt .");
                 ApplicationTools::displayError(
                         "!!! 0 values (inf in log) may be due to computer overflow, particularily if datasets are big (>~500 sequences).");
                 ApplicationTools::displayError(
@@ -1031,7 +1078,8 @@ int main(int argc, char *argv[]) {
 
             const Tree &tmpTree = tl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
 
-            auto nntl = new bpp::RHomogeneousTreeLikelihood_PIP(tmpTree, *sites, model, rDist, &tm, false, false, false);
+            auto nntl = new bpp::RHomogeneousTreeLikelihood_PIP(tmpTree, *sites, model, rDist, &tm, false, false,
+                                                                false);
             nntl->initialize();
             logL = nntl->getLogLikelihood();
 
@@ -1111,7 +1159,8 @@ int main(int argc, char *argv[]) {
 
 
         // Compute support measures
-        std::string PAR_support = ApplicationTools::getStringParameter("support", jatiapp.getParams(), "", "", true, true);
+        std::string PAR_support = ApplicationTools::getStringParameter("support", jatiapp.getParams(), "", "", true,
+                                                                       true);
         if (PAR_support == "bootstrap") {
             ApplicationTools::displayMessage("\n[Tree support measures]");
 

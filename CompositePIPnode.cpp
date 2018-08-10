@@ -48,15 +48,21 @@ using namespace bpp;
 
 void CompositePIPnode::addPIPnode(PIPnode *pip_node){
 
-    pip_nodes_.at(pip_node->_getId()) = pip_node;
+    pip_nodes_.at(pip_node->_getId()) = pip_node; // put the PIPnode in the array at the position indicated
+                                                  // by the PIPnode Id (same as bpp Node Id). The array
+                                                  // of PIPnodes is pre-allocated in the constructor
 
 };
 
 CompositePIPnode::CompositePIPnode(int numNodes){
-    pip_nodes_.resize(numNodes);
+
+    pip_nodes_.resize(numNodes); // resize the array of PIPnodes
+
 }
 
 void CompositePIPnode::PIPnodeAlign() {
+
+    // ALIGN UNDER THE PIP MODEL
 
     // get the number of PIPnodes
     size_t num_nodes = pip_nodes_.size();

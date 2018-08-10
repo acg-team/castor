@@ -211,7 +211,11 @@ set(SOURCES
         CompositePIPnode.cpp
         Horner.h
         LambertW.cc
-        LambertW.h)
+        LambertW.h
+        CompositePIPnode.cpp
+        PIPmsa.cpp
+        PIPmsa.hpp
+        PIPlkData.hpp)
 
 
 if (STATIC GREATER 0)

@@ -22,10 +22,10 @@
  *******************************************************************************/
 
 /**
- * @file pPIP.hpp
+ * @file CompositePIPmsa.hpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
- * @date 19 02 2018
+ * @date 07 08 2018
  * @version 1.0.7
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
@@ -42,65 +42,18 @@
  * @see For more information visit:
  */
 
-#include "PIPnode.hpp"
-
 #ifndef MINIJATI_COMPOSITEPIPMSA_HPP
 #define MINIJATI_COMPOSITEPIPMSA_HPP
 
+#include <string>
+#include <vector>
+#include <Bpp/Numeric/Matrix/Matrix.h>
+#include <Bpp/Seq/Sequence.h>
+#include <Bpp/Seq/Container/SiteContainer.h>
+#include "PIPmsa.hpp"
+
 namespace bpp {
 
-    //*******************************************************************************************
-
-    typedef std::string MSAcolumn_t; // MSA column type
-    typedef std::vector<MSAcolumn_t> MSA_t; // MSA as vector of columns
-
-    //*******************************************************************************************
-    class PIPmsa {
-
-    private:
-
-    public:
-
-        //***************************************************************************************
-        // PUBLIC FIELDS
-        //***************************************************************************************
-
-        double score_;
-
-        std::vector<std::string>  seqNames_; // vector of strings (sequence names)
-
-        MSA_t msa_;
-
-        std::vector<int>  traceback_path_;
-
-        std::vector<int> traceback_map_;
-//        std::vector<int> traceback_mapL_;
-//        std::vector<int> traceback_mapR_;
-
-        std::vector<int> map_compressed_seqs_;
-
-        std::vector<int> rev_map_compressed_seqs_;
-
-        //***************************************************************************************
-        // PUBLIC METHODS
-        //***************************************************************************************
-
-        PIPmsa() { score_ = -std::numeric_limits<double>::infinity(); }
-
-        void _setSeqNameLeaf(std::string &seqName);
-
-        void _setMSAleaf(const bpp::Sequence *sequence);
-
-        void _setSeqNameNode(std::vector<std::string> &seqNamesL,
-                             std::vector<std::string> &seqNamesR);
-
-        int getNumSites();
-
-        void _setTracebackPathleaves();
-
-        std::vector<string> getSequenceNames(){ return seqNames_; };
-
-    };
     //*******************************************************************************************
     class iPIPmsa {
 
@@ -110,11 +63,16 @@ namespace bpp {
         // PUBLIC METHODS
         //***************************************************************************************
 
-        void _setMSAleaves(bpp::Sequence &sequence, std::string &seqName);
+        iPIPmsa() {}; // constructor
 
-        void add(PIPmsa *msa) {};
+        virtual ~iPIPmsa() {}; // destructor
+
+        virtual void add(PIPmsa *msa) {}; // virtual function to add a new PIPmsa
+
+        virtual PIPmsa *getMSA() {};
 
     };
+
     //*******************************************************************************************
     class PIPmsaSingle : public iPIPmsa {
 
@@ -124,45 +82,33 @@ namespace bpp {
         // PRIVATE FIELDS
         //***************************************************************************************
 
+        //***************************************************************************************
+        // PRIVATE METHODS
+        //***************************************************************************************
+
     public:
 
         //***************************************************************************************
         // PUBLIC FIELDS
         //***************************************************************************************
 
-        PIPmsa *pipmsa;
-
-//        int subMSAidxL_;
-//        int subMSAidxR_;
+        PIPmsa *pipmsa; // PIPmsaSingle has only one MSA per PIPnode
 
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
 
-        PIPmsaSingle(){
-//            subMSAidxL_ = 0;
-//            subMSAidxR_ = 0;
-        }
+        PIPmsaSingle() {}; // constructor
 
-        void _compressMSA(const bpp::Alphabet *alphabet);
+        void add(PIPmsa *x){ pipmsa = x; }; // add (associate) an MSA
 
-        void _build_MSA(MSA_t &msaL,MSA_t &msaR);
+        PIPmsa *getMSA() {return pipmsa;}
 
-        int getMSAlength();
-
-        int getCompressedMSAlength();
-
-        PIPmsa *_getMSA(){ return pipmsa; }
-
-        void add(PIPmsa *x);
-
-        void _compress_lk_components( std::vector<double> &lk_down_not_compressed,
-                                                    std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed);
-
-        ~PIPmsaSingle() {
+        ~PIPmsaSingle() { // destructor
             delete pipmsa;
         }
     };
+
     //*******************************************************************************************
     class PIPmsaComp : public iPIPmsa {
 
@@ -172,40 +118,29 @@ namespace bpp {
         // PRIVATE FIELDS
         //***************************************************************************************
 
+        //***************************************************************************************
+        // PRIVATE METHODS
+        //***************************************************************************************
+
     public:
 
         //***************************************************************************************
         // PUBLIC FIELDS
         //***************************************************************************************
 
-        std::vector<PIPmsa *> pipmsa;
-
-        std::vector<int> subMSAidxL_;
-        std::vector<int> subMSAidxR_;
+        std::vector<PIPmsa *> pipmsa; // PIPmsaComp has one or more MSAs per PIPnode
 
         //***************************************************************************************
         // PUBLIC METHODS
         //***************************************************************************************
 
-        PIPmsaComp(){}
+        PIPmsaComp(int size) { pipmsa.resize(size); } // constructor
 
-        void _compressMSA(const bpp::Alphabet *alphabet,int idx_sb);
+        void add(PIPmsa *x){ pipmsa.push_back(x); }; // add a PIPmsa to the vector (add a new alignment object)
 
-        void _build_MSA(MSA_t &msaL,MSA_t &msaR,int idx_sb);
+        PIPmsa *getMSA( int idx) {return pipmsa.at(idx);}
 
-        int getMSAlength(int idx);
-
-        int getCompressedMSAlength(int idx);
-
-        PIPmsa *_getMSA(int idx){ return pipmsa.at(idx); }
-
-        void add(PIPmsa *x);
-
-        void _compress_lk_components(std::vector<double> &lk_down_not_compressed,
-                                     std::vector<std::vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
-                                     int idx_sb);
-
-        ~PIPmsaComp() {
+        ~PIPmsaComp() { // destructor
             for (std::vector<PIPmsa *>::const_iterator iter = pipmsa.begin(); iter != pipmsa.end(); ++iter) {
                 delete *iter;
             }
@@ -214,22 +149,5 @@ namespace bpp {
     //*******************************************************************************************
 
 }
-//***********************************************************************************************
-//***********************************************************************************************
-//***********************************************************************************************
-namespace compositePIPmsaUtils {
-
-    std::vector<std::string> siteContainer2sequenceVector(std::vector<bpp::MSAcolumn_t> &MSA);
-
-    std::vector<int> reverse_map(std::vector<int> &m);
-
-    bpp::SiteContainer *pPIPmsa2Sites(const bpp::Alphabet *alphabet,
-                                      std::vector<std::string> &seqNames,
-                                      std::vector<std::string> &MSA);
-
-}
-//***********************************************************************************************
-//***********************************************************************************************
-//***********************************************************************************************
 
 #endif //MINIJATI_COMPOSITEPIPMSA_HPP
