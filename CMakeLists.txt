@@ -155,6 +155,16 @@ find_package(bpp-core 4.0.0 REQUIRED)
 find_package(bpp-seq  12.0.0 REQUIRED)
 find_package(bpp-phyl 12.0.0 REQUIRED)
 
+if(PATH_INTELTBB)
+    include_directories(${PATH_INTELTBB})
+    find_package(TBB)
+    if(TBB_FOUND)
+        message(STATUS "Intel TBB Library ${TBB_VERSION} ${TBB_INTERFACE_VERSION} found:")
+        message(STATUS "  directory: ${PATH_INTELTBB}")
+        message(STATUS "  targets: ${TBB_IMPORTED_TARGETS}")
+    endif()
+endif()
+
 # @MAX: memtest
 include (CTest)
 
@@ -226,12 +236,14 @@ if (STATIC GREATER 0)
     target_link_libraries(miniJATI glog::glog)
     target_link_libraries(miniJATI ${BPP_LIBS_STATIC})
     target_link_libraries(miniJATI ${Boost_LIBRARIES})
+    target_link_libraries(miniJATI ${TBB_IMPORTED_TARGETS})
 else ()
     add_executable(miniJATI ${SOURCES})
     target_link_libraries(miniJATI tshlib)
     target_link_libraries(miniJATI glog::glog)
     target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
     target_link_libraries(miniJATI ${Boost_LIBRARIES})
+    target_link_libraries(miniJATI ${TBB_IMPORTED_TARGETS})
 endif ()
 
 # @MAX: memtest
