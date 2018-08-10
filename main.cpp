@@ -811,7 +811,7 @@ int main(int argc, char *argv[]) {
             // ********  3D DP PIP  ************************************************************************************
             //**********************************************************************************************************
             int num_sb = 0; // number of sub-optimal MSAs
-            double temperature = 1.0; // temperature for SB version
+            double temperature = 100; // temperature for SB version
 
             enumDP3Dversion DPversion = CPU; // DP3D version
 
@@ -880,6 +880,7 @@ int main(int argc, char *argv[]) {
             // ********  3D DP PIP  ************************************************************************************
             //**********************************************************************************************************
 
+            /*
             //===== OBSOLETE ===========================================================
             //Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_local;
@@ -949,7 +950,12 @@ int main(int argc, char *argv[]) {
 //            DLOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
             //===== OBSOLETE ===========================================================
 
+
+             */
+
+
         }
+
 
         //--------------------------------------------------------------------------------------------------------------
         // best tree from MSA_t marginalization

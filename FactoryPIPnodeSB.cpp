@@ -68,10 +68,11 @@ double sum_3_logs(double l1, double l2, double l3) {
 }
 
 //==============================================================================
-double stateProbability(double prob, double totalProb, double temperature) {
+double stateProbability(double log_prob, double temperature) {
 
     //return exp(-(1 - exp(logState - logTotal)) / temperature);
-    return 1.0-exp(- prob / temperature);
+
+    return 1.0 / temperature * log_prob;
 
 }
 
@@ -91,19 +92,13 @@ void weightProbWithPartFun(double temperature,
         LOG(FATAL) << "\nlog_Zm,log_Zx and log_Zy are all infinite.";
     }
 
+    log_Zm = stateProbability(log_Zm, temperature);
+    log_Zx = stateProbability(log_Zx, temperature);
+    log_Zy = stateProbability(log_Zy, temperature);
+
     pm = exp(log_Zm);
     px = exp(log_Zx);
     py = exp(log_Zy);
-
-    Z = pm + px + py;
-
-    pm = pm / Z;
-    px = px / Z;
-    py = py / Z;
-
-    pm = stateProbability(pm, 1.0, temperature);
-    px = stateProbability(px, 1.0, temperature);
-    py = stateProbability(py, 1.0, temperature);
 
     Z = pm + px + py;
 
@@ -780,27 +775,27 @@ void nodeSB::DP3D_PIP_leaf() {
 
     // set fv_empty
     MSA_->getMSA(0)->_setFVemptyLeaf(progressivePIP_->numCatg_,
-                                                                    progressivePIP_->alphabet_);
+                                     progressivePIP_->alphabet_);
 
     // set fv_sigma_empty = fv_empty dot pi
     MSA_->getMSA(0)->_setFVsigmaEmptyLeaf(progressivePIP_->numCatg_);
 
     // computes the indicator values (fv values) at the leaves
     MSA_->getMSA(0)->_setFVleaf(progressivePIP_->numCatg_,
-                                                               progressivePIP_->alphabet_);
+                                progressivePIP_->alphabet_);
 
     MSA_->getMSA(0)->_setFVsigmaLeaf(progressivePIP_->numCatg_,
-                                                                    progressivePIP_->pi_);
+                                     progressivePIP_->pi_);
 
     // compute the lk of an empty column
     MSA_->getMSA(0)->_computeLkEmptyLeaf(progressivePIP_,
-                                                                        iotasNode_,
-                                                                        betasNode_);
+                                         iotasNode_,
+                                         betasNode_);
 
     // computes the lk for all the characters at the leaf
     MSA_->getMSA(0)->_computeLkLeaf(progressivePIP_,
-                                                                   iotasNode_,
-                                                                   betasNode_);
+                                    iotasNode_,
+                                    betasNode_);
 
     // sets the traceback path at the leaf
     MSA_->getMSA(0)->_setTracebackPathLeaf();
@@ -841,8 +836,10 @@ void nodeSB::DP3D_PIP_node(int position) {
     int h = childL->MSA_->getMSA(msa_idx_L)->_getMSAlength() + 1; // dimension of the alignment on the left side
     int w = childR->MSA_->getMSA(msa_idx_R)->_getMSAlength() + 1; // dimension of the alignment on the right side
     int d = (h - 1) + (w - 1) + 1; // third dimension of the DP matrix
-    int h_compr = childL->MSA_->getMSA(msa_idx_L)->_getCompressedMSAlength(); // dimension of the compressed alignment on the left side
-    int w_compr = childR->MSA_->getMSA(msa_idx_R)->_getCompressedMSAlength(); // dimension of the compressed alignment on the right side
+    int h_compr = childL->MSA_->getMSA(
+            msa_idx_L)->_getCompressedMSAlength(); // dimension of the compressed alignment on the left side
+    int w_compr = childR->MSA_->getMSA(
+            msa_idx_R)->_getCompressedMSAlength(); // dimension of the compressed alignment on the right side
     //***************************************************************************************
     // WORKING VARIABLES
     //***************************************************************************************
