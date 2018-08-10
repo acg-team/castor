@@ -745,17 +745,6 @@ int main(int argc, char *argv[]) {
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
 
-
-
-
-
-
-
-
-
-
-
-
             //===========================================================
             //===========================================================
             int num_sb = 0; // number of sub-optimal MSAs
@@ -768,7 +757,7 @@ int main(int argc, char *argv[]) {
             } else if (PAR_alignment_version.find("ram") != std::string::npos) {
                 DPversion = RAM; // faster but uses more memory
                 num_sb = 1;
-            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
+            } else if (PAR_alignment_version.find("sb") != std::string::npos) {
                 DPversion = SB;  // stochastic backtracking version
                 num_sb = 4;
             } else {
@@ -822,15 +811,6 @@ int main(int argc, char *argv[]) {
             //===========================================================
             //===========================================================
 
-
-
-
-
-
-
-
-
-
             //===== OBSOLETE ===========================================================
             //Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_local;
@@ -871,17 +851,6 @@ int main(int argc, char *argv[]) {
             std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
             ApplicationTools::displayResult("\nAlignment elapsed time (msec):", TextTools::toString((double) duration, 4));
             //===== OBSOLETE ===========================================================
-
-
-
-
-
-
-
-
-
-
-
 
 
             //===== OBSOLETE ===========================================================

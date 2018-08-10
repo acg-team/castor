@@ -202,44 +202,44 @@ double TwoTreeLikelihood_PIP::getLogLikelihood() const {
     return ll + logemptycol;
 }
 
-double TwoTreeLikelihood_PIP::computeEmptyColumnLikelihood()const{
+double TwoTreeLikelihood_PIP::computeEmptyColumnLikelihood() const {
 
-    double lambda =  model_->getParameter("lambda").getValue();
-    double mu =  model_->getParameter("mu").getValue();
-    double nu = lambda*(brLen_+1/mu);
+    double lambda = model_->getParameter("lambda").getValue();
+    double mu = model_->getParameter("mu").getValue();
+    double nu = lambda * (brLen_ + 1 / mu);
 
 
     //compute empty column likelihood
     double rootBeta = 1;
-    double rootIota = (1/mu)/(brLen_+1/mu);
-    double branchBeta = (1-exp(-mu*brLen_))/(mu*brLen_);
-    double branchIota = brLen_/(brLen_+1/mu);
+    double rootIota = (1 / mu) / (brLen_ + 1 / mu);
+    double branchBeta = (1 - exp(-mu * brLen_)) / (mu * brLen_);
+    double branchIota = brLen_ / (brLen_ + 1 / mu);
 
     // compute root lk
     Vdouble fr = model_->getFrequencies();
 
-    ColMatrix<double>emptycolumn(nbStates_,1);
-    ColMatrix<double>empty_l1(nbStates_,1);
-    ColMatrix<double>freqs(nbStates_,1);
-    ColMatrix<double>pxy(nbStates_,nbStates_);
+    ColMatrix<double> emptycolumn(nbStates_, 1);
+    ColMatrix<double> empty_l1(nbStates_, 1);
+    ColMatrix<double> freqs(nbStates_, 1);
+    ColMatrix<double> pxy(nbStates_, nbStates_);
 
-    emptycolumn.operator()(model_->getAlphabet()->getGapCharacterCode(),0) = 1;
+    emptycolumn.operator()(model_->getAlphabet()->getGapCharacterCode(), 0) = 1;
 
-    for(int i=0;i<nbStates_;i++){
-        for(int o=0;o<nbStates_;o++) {
-            pxy.operator()(i,o) = pxy_[0][i][o];
+    for (int i = 0; i < nbStates_; i++) {
+        for (int o = 0; o < nbStates_; o++) {
+            pxy.operator()(i, o) = pxy_[0][i][o];
         }
-        freqs.operator()(i,0) = fr.at(i);
+        freqs.operator()(i, 0) = fr.at(i);
     }
 
 
-    MatrixTools::mult(pxy,emptycolumn, empty_l1);
-    double llempty_root = MatrixBppUtils::dotProd(freqs,empty_l1);
+    MatrixTools::mult(pxy, emptycolumn, empty_l1);
+    double llempty_root = MatrixBppUtils::dotProd(freqs, empty_l1);
 
-    double lkemptyRoot=rootBeta*rootIota*llempty_root;
-    double lkemptyBranch=branchIota*(1-branchBeta+branchBeta*llempty_root);
+    double lkemptyRoot = rootBeta * rootIota * llempty_root;
+    double lkemptyBranch = branchIota * (1 - branchBeta + branchBeta * llempty_root);
 
-    double llempty = lkemptyRoot+lkemptyBranch;
+    double llempty = lkemptyRoot + lkemptyBranch;
 
     //compute phi
     double logphy;
@@ -423,16 +423,16 @@ void TwoTreeLikelihood_PIP::initTreeLikelihoods(const SequenceContainer &sequenc
         int state2 = seq2->getValue(i);
 
         // Set state of the sequence
-        if(state1 == gapChar && state2 != gapChar ){
+        if (state1 == gapChar && state2 != gapChar) {
             // GC state
             setA_[i] = PairwiseSeqStates::gc;
-        }else if(state1 != gapChar && state2 == gapChar){
+        } else if (state1 != gapChar && state2 == gapChar) {
             // CG state
             setA_[i] = PairwiseSeqStates::cg;
-        }else if(state1 != gapChar && state2 != gapChar){
+        } else if (state1 != gapChar && state2 != gapChar) {
             // CC state
             setA_[i] = PairwiseSeqStates::cc;
-        }else{
+        } else {
             // GG state
             setA_[i] = PairwiseSeqStates::gg;
         }
@@ -482,9 +482,9 @@ void TwoTreeLikelihood_PIP::computeTreeLikelihood() {
 
     // compute PIP composite parameters
     double betaRoot = 1;
-    double iotaRoot = (1/mu)/(tau+1/mu);
-    double betaBranch = (1-exp(-mu*brLen_))/(mu*brLen_);
-    double iotaBranch = brLen_/(tau+1/mu);
+    double iotaRoot = (1 / mu) / (tau + 1 / mu);
+    double betaBranch = (1 - exp(-mu * brLen_)) / (mu * brLen_);
+    double iotaBranch = brLen_ / (tau + 1 / mu);
 
     for (size_t i = 0; i < nbDistinctSites_; i++) {
         VVdouble *rootLikelihoods_i = &rootLikelihoods_[i];
@@ -524,39 +524,48 @@ void TwoTreeLikelihood_PIP::computeTreeLikelihood() {
             rootLikelihoodsSR_[i] += p[c] * (*rootLikelihoodsS_i)[c];
         }
 
-        if (setA_[i] == PairwiseSeqStates::cc){
+        if (setA_[i] == PairwiseSeqStates::cc || setA_[i] == PairwiseSeqStates::cg) {
 
             rootLikelihoodsSR_[i] = betaRoot * iotaRoot * rootLikelihoodsSR_[i];
 
-        }else if (setA_[i] == PairwiseSeqStates::cg) {
+        } else if (setA_[i] == PairwiseSeqStates::gc) {
 
-            Vdouble *leafLikelihoods1_i = &leafLikelihoods1_[i];
-            double leaflk = 0;
-            double rootlk = 0;
-            //for (size_t x = 0; x < nbStates_; x++) {
-            //    leaflk += fr[x] * (*leafLikelihoods1_i)[x];
-            //  }
-            //leaflk = betaBranch * iotaBranch * leaflk;
-
-            //leaflk = iotaBranch * (1-betaBranch);
-            rootlk = betaRoot * iotaRoot * rootLikelihoodsSR_[i];
-
-            rootLikelihoodsSR_[i] = rootlk + leaflk;
-        } else if (setA_[i] == PairwiseSeqStates::gc){
             Vdouble *leafLikelihoods2_i = &leafLikelihoods2_[i];
+
             double leaflk = 0;
-            double rootlk = 0;
             for (size_t x = 0; x < nbStates_; x++) {
                 leaflk += fr[x] * (*leafLikelihoods2_i)[x];
             }
-            leaflk = betaBranch * iotaBranch * leaflk;
-            //rootlk = betaRoot * iotaRoot * rootLikelihoodsSR_[i];
+            //leaflk = betaBranch * iotaBranch * leaflk;
 
-            rootLikelihoodsSR_[i] = rootlk + leaflk;
+            //double rootlk = 0;
+            //rootlk = betaRoot * iotaRoot * rootLikelihoodsSR_[i];
             //rootLikelihoodsSR_[i] = betaRoot * iotaRoot * rootLikelihoodsSR_[i];
-        }else{
-            rootLikelihoodsSR_[i] = iotaBranch * (1-betaBranch);
+
+            rootLikelihoodsSR_[i] = betaBranch * iotaBranch * leaflk;
+
+        } else {
+            // this is the case for -|-
+            rootLikelihoodsSR_[i] = iotaBranch * (1 - betaBranch);
         }
+
+        //else if (setA_[i] == PairwiseSeqStates::cg) {
+
+        //    Vdouble *leafLikelihoods1_i = &leafLikelihoods1_[i];
+        //    double leaflk = 0;
+        //    double rootlk = 0;
+        //    double tmp = rootLikelihoodsSR_[i];
+        //for (size_t x = 0; x < nbStates_; x++) {
+        //    leaflk += fr[x] * (*leafLikelihoods1_i)[x];
+        //  }
+        //leaflk = betaBranch * iotaBranch * leaflk;
+
+        //leaflk = iotaBranch * (1-betaBranch);
+        //    rootlk = betaRoot * iotaRoot * tmp;
+
+        //    rootLikelihoodsSR_[i] = rootlk + leaflk;
+        //}
+
     }
 }
 
