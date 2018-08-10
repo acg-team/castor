@@ -74,39 +74,21 @@ namespace bpp {
         // PRIVATE METHODS
         //***************************************************************************************
 
-//        void startingLevelSB(std::vector< vector< vector<double> > > &Log3DM,
-//                                     std::vector< vector< vector<double> > > &Log3DX,
-//                                     std::vector< vector< vector<double> > > &Log3DY,
-//                                     double epsilon,
-//                                     std::default_random_engine &generator,
-//                                     std::uniform_real_distribution<double> &distribution,
-//                                     int d,
-//                                     int h,
-//                                     int w,
-//                                     int &lev,
-//                                     double &val,
-//                                     int &state);
+        int getStartingLevel(LKdata &lkdata,
+                             double epsilon,
+                             std::default_random_engine &generator,
+                             std::uniform_real_distribution<double> &distribution,
+                             int &state);
 
-        void startingLevelSB(LKdata &lkdata,
-                                     double epsilon,
-                                     std::default_random_engine &generator,
-                                     std::uniform_real_distribution<double> &distribution,
-                                     int h,
-                                     int w,
-                                     int &lev,
-                                     double &val,
-                                     int &state);
-
-        void selectState(LKdata &lkdata,
-                                 int state,
-                                 std::vector<int> *map_compr_L,
-                                 std::vector<int> *map_compr_R,
-                                 int &i,int &j,int &m,
-                                 double &log_P,
-                                 std::vector<int> &traceback,
-                                 std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
-                                 std::vector<std::vector<double>> &fv_sigma_not_compressed,
-                                 std::vector<double> &lk_down_not_compressed);
+        double getStateData(LKdata &lkdata,
+                            int state,
+                            int i,
+                            int j,
+                            std::vector<int> *mapL,
+                            std::vector<int> *mapR,
+                            std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
+                            std::vector<std::vector<double>> &fv_sigma_not_compressed,
+                            std::vector<double> &lk_down_not_compressed);
 
         void _forward(LKdata &lkdata,
                       int position);
@@ -115,9 +97,10 @@ namespace bpp {
                        int position);
 
         void DP3D_PIP_leaf(); // DP method to align a sequence at a leaf PIPnode
-                              // (which reduces to data preparation)
+        // (which reduces to data preparation)
 
         using PIPnode::DP3D_PIP_node;
+
         void DP3D_PIP_node(int position); // DP method to align 2 MSAs at an internal node
 
     public:
@@ -134,15 +117,15 @@ namespace bpp {
         nodeSB(const progressivePIP *pPIP, tshlib::VirtualNode *vnode, bpp::Node *bnode) : PIPnode(pPIP,
                                                                                                    vnode,
                                                                                                    bnode) {
-            if(bnode->isLeaf()){
+            if (bnode->isLeaf()) {
 
                 // create a PIPmsaComp object
-                MSA_  = new PIPmsaComp(1);
+                MSA_ = new PIPmsaComp(1);
 
                 // create a new PIPmsa
                 dynamic_cast<PIPmsaComp *>(MSA_)->pipmsa.at(0) = new PIPmsa();
 
-            }else{
+            } else {
 
             }
 

@@ -502,6 +502,58 @@ void PIPnode::_DP2D(PIPmsa *msaL,
         lkdata.Log2DY_fp[j] = progressivePIPutils::add_lns(log(pr_y_fp),lk_down_R.at(j)); // used at this node
     }
 
+
+
+
+
+    //==== DEBUG ===============
+    std::cout<<"\n";
+
+    std::cout<<"M2D\n";
+    for(int ii=0;ii<lkdata.h_compr_;ii++){
+        for(int jj=0;jj<lkdata.w_compr_;jj++){
+            double lk;
+            if(std::isinf(lkdata.Log2DM[ii][jj])){
+                lk=-0.0;
+            }else{
+                lk=lkdata.Log2DM[ii][jj];
+            }
+            printf("%8.6lf ",lk);
+        }
+        std::cout<<"\n";
+    }
+
+    std::cout<<"\n";
+
+    std::cout<<"X2D\n";
+    for(int ii=0;ii<lkdata.h_compr_;ii++){
+        double lk;
+        if(std::isinf(lkdata.Log2DX[ii])){
+            lk=-0.0;
+        }else{
+            lk=lkdata.Log2DX[ii];
+        }
+        printf("%8.6lf ",lk);
+    }
+    std::cout<<"\n\n";
+
+    std::cout<<"Y2D\n";
+    for(int jj=0;jj<lkdata.w_compr_;jj++){
+        double lk;
+        if(std::isinf(lkdata.Log2DY[jj])){
+            lk=-0.0;
+        }else{
+            lk=lkdata.Log2DY[jj];
+        }
+        printf("%8.6lf ",lk);
+    }
+    std::cout<<"\n";
+    //==== DEBUG ===============
+
+
+
+
+
 }
 
 // TODO:re-implement this method for nodeCPU

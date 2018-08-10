@@ -99,7 +99,6 @@ namespace bpp {
         double mu0_; // original mu (no Gamma distribution)
 
         PIPnode *PIPnodeRoot; // root PIPnode (root of the tree of PIPnodes)
-
         //***************************************************************************************
         // PRIVATE METHODS
         //***************************************************************************************
@@ -128,6 +127,8 @@ namespace bpp {
         unsigned long numCatg_; // number of discrete categories (gamma distribution)
 
         int num_sb_; // number of sub-optimal solutions saved at each DP instance
+
+        double temperature_; // to tune the greedyness of the sub-optimal solution
 
         std::vector<double> lambda_; // vector[rate] of lambda rate with Gamma distribution
 
@@ -171,7 +172,8 @@ namespace bpp {
 
         void _initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root, // list of nodes
                             enumDP3Dversion DPversion, // DP3D version
-                            int num_sb);  // number of sub. optimal solutions (MSAs)
+                            int num_sb, // number of sub. optimal solutions (MSAs)
+                            double temperature);  // to tune the greedyness of the sub-optimal solution
 
         void PIPnodeAlign();
 

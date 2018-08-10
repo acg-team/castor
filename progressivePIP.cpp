@@ -399,13 +399,15 @@ void progressivePIP::_computeNu() {
 
 void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
                                     enumDP3Dversion DPversion,
-                                    int num_sb) {
+                                    int num_sb,
+                                    double temperature) {
 
     //***************************************************************************************
     // get dimensions
     numNodes_ = list_vnode_to_root.size(); // total number of nodes
     numCatg_ = rDist_->getNumberOfCategories(); // number of gamma categories
     num_sb_ = num_sb; // number of sub-optimal solutions
+    temperature_ = temperature; // for SB algorithm
     //***************************************************************************************
     // computes lambda and mu with gamma
     // set lambdas with rate variation (gamma distribution)
