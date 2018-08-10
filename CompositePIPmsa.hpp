@@ -69,7 +69,7 @@ namespace bpp {
 
         virtual void add(PIPmsa *msa) {}; // virtual function to add a new PIPmsa
 
-        virtual PIPmsa *getMSA() {};
+        virtual PIPmsa *getMSA(int idx=0) {};
 
     };
 
@@ -102,7 +102,7 @@ namespace bpp {
 
         void add(PIPmsa *x){ pipmsa = x; }; // add (associate) an MSA
 
-        PIPmsa *getMSA() {return pipmsa;}
+        PIPmsa *getMSA(int idx=0) {return pipmsa;}
 
         ~PIPmsaSingle() { // destructor
             delete pipmsa;
@@ -138,7 +138,7 @@ namespace bpp {
 
         void add(PIPmsa *x){ pipmsa.push_back(x); }; // add a PIPmsa to the vector (add a new alignment object)
 
-        PIPmsa *getMSA( int idx) {return pipmsa.at(idx);}
+        PIPmsa *getMSA( int idx=0) {return pipmsa.at(idx);}
 
         ~PIPmsaComp() { // destructor
             for (std::vector<PIPmsa *>::const_iterator iter = pipmsa.begin(); iter != pipmsa.end(); ++iter) {
