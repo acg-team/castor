@@ -68,12 +68,13 @@ double sum_3_logs(double l1, double l2, double l3) {
 }
 
 //==============================================================================
-double stateProbability(double log_prob, double temperature) {
+double stateProbability(double prob, double temperature) {
 
     //return exp(-(1 - exp(logState - logTotal)) / temperature);
 
-    return 1.0 / temperature * log_prob;
+    //return 1.0 / temperature * prob;
 
+    return pow(prob,temperature);
 }
 
 //==============================================================================
@@ -92,13 +93,23 @@ void weightProbWithPartFun(double temperature,
         LOG(FATAL) << "\nlog_Zm,log_Zx and log_Zy are all infinite.";
     }
 
-    log_Zm = stateProbability(log_Zm, temperature);
-    log_Zx = stateProbability(log_Zx, temperature);
-    log_Zy = stateProbability(log_Zy, temperature);
-
     pm = exp(log_Zm);
     px = exp(log_Zx);
     py = exp(log_Zy);
+
+    Z = pm + px + py;
+
+    pm = pm / Z;
+    px = px / Z;
+    py = py / Z;
+
+    pm = stateProbability(pm, temperature);
+    px = stateProbability(px, temperature);
+    py = stateProbability(py, temperature);
+
+//    pm = exp(log_Zm);
+//    px = exp(log_Zx);
+//    py = exp(log_Zy);
 
     Z = pm + px + py;
 
