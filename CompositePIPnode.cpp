@@ -60,7 +60,7 @@ CompositePIPnode::CompositePIPnode(int numNodes){
 
 }
 
-void CompositePIPnode::PIPnodeAlign(PIPnode *root_pip_node) {
+void CompositePIPnode::PIPnodeAlign() {
 
     // ALIGN UNDER THE PIP MODEL
 

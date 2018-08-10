@@ -870,9 +870,9 @@ void nodeSB::DP3D_PIP_node(int position) {
     PIPmsa *pipmsaL = dynamic_cast<PIPmsaComp *>(childL->MSA_)->pipmsa.at(msa_idx_L);
     PIPmsa *pipmsaR = dynamic_cast<PIPmsaComp *>(childR->MSA_)->pipmsa.at(msa_idx_R);
 
-    _DP2D(pipmsaL,
-          pipmsaR,
-          lkdata);
+    _alignStateMatrices2D(pipmsaL,
+                          pipmsaR,
+                          lkdata);
     //***************************************************************************************
     // FORWARD RECURSION
     //***************************************************************************************

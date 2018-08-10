@@ -438,12 +438,12 @@ std::vector<double> PIPnode::_computeLkEmptyNode(std::vector<bpp::ColMatrix<doub
 //
 //}
 
-void PIPnode::_DP2D(PIPmsa *msaL,
-                    PIPmsa *msaR,
-                    LKdata &lkdata){
+void PIPnode::_alignStateMatrices2D(PIPmsa *msaL,
+                                    PIPmsa *msaR,
+                                    LKdata &lkdata){
 
     //***************************************************************************************
-    // 2D LK COMPUTATION
+    // LK COMPUTATION
     //***************************************************************************************
 
     int i,j;

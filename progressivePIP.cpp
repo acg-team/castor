@@ -253,7 +253,7 @@ void progressivePIP::_setAllBetas() {
 
                 // checks division by 0 or too small value
                 if (fabs(muT) < SMALL_DOUBLE) {
-                    perror("ERROR mu * T is too small");
+                    PLOG(WARNING) << "ERROR mu * T is too small";
                 }
                 // survival probability on node v (different from (local)-root)
                 // beta(v,r) = (1 - exp( -mu * r * b(v) )) / (mu * r * b(v))
@@ -467,9 +467,7 @@ void progressivePIP::PIPnodeAlign(){
 
     // wrapper
 
-    PIPnode * root = getPIPnodeRootNode();
-
-    compositePIPaligner_->PIPnodeAlign(root);
+    compositePIPaligner_->PIPnodeAlign();
 
 }
 //***********************************************************************************************

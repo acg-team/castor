@@ -176,9 +176,9 @@ namespace bpp {
 
         void _getPrFromSubstitutionModel(); // compute exp(br_len * Q)
 
-        void _DP2D(PIPmsa *msaL,
-                    PIPmsa *msaR,
-                    LKdata &lkdata);
+        void _alignStateMatrices2D(PIPmsa *msaL,
+                                   PIPmsa *msaR,
+                                   LKdata &lkdata);
 
         virtual void DP3D_PIP_leaf(){}; // align a leaf PIPnode
 

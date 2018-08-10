@@ -54,7 +54,7 @@ struct LKdata {
     int w_compr_;
     int numCatg_;
 
-    std::vector<vector<vector<double> > > Log3DM;   // DP sparse matrix for MATCH case (only 2 layer are needed)
+    std::vector<std::vector<vector<double> > > Log3DM;   // DP sparse matrix for MATCH case (only 2 layer are needed)
     std::vector<vector<vector<double> > > Log3DX;   // DP sparse matrix for GAPX case (only 2 layer are needed)
     std::vector<vector<vector<double> > > Log3DY;   // DP sparse matrix for GAPY case (only 2 layer are needed)
 

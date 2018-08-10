@@ -808,17 +808,6 @@ int main(int argc, char *argv[]) {
             // Execute alignment on post-order node list
             std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
 
-
-
-
-
-
-
-
-
-
-
-
             //**********************************************************************************************************
             // ********  3D DP PIP  ************************************************************************************
             //**********************************************************************************************************
@@ -867,21 +856,21 @@ int main(int argc, char *argv[]) {
 
             if (PAR_alignment_version.find("cpu") != std::string::npos) {
 
-// convert PIPmsa into a sites objects
+                // convert PIPmsa into a sites objects
                 sites = PIPmsaUtils::PIPmsa2Sites(proPIP->alphabet_,
                                                   *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getseqNames()),
                                                   *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getMSA()));
 
             } else if (PAR_alignment_version.find("ram") != std::string::npos) {
 
-// convert PIPmsa into a sites objects
+                // convert PIPmsa into a sites objects
                 sites = PIPmsaUtils::PIPmsa2Sites(proPIP->alphabet_,
                                                   *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getseqNames()),
                                                   *(dynamic_cast<PIPmsaSingle *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa->_getMSA()));
 
             } else if (PAR_alignment_version.find("sb") != std::string::npos) {
 
-// convert PIPmsa into a sites objects
+                // convert PIPmsa into a sites objects
                 sites = PIPmsaUtils::PIPmsa2Sites(proPIP->alphabet_,
                                                   *(dynamic_cast<PIPmsaComp *>(proPIP->getPIPnodeRootNode()->MSA_)->pipmsa.at(
                                                           0)->_getseqNames()),
@@ -890,7 +879,7 @@ int main(int argc, char *argv[]) {
 
             }
 
-// Export alignment to file
+            // Export alignment to file
             if (PAR_output_file_msa.find("none") == std::string::npos) {
                 DLOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
                 bpp::Fasta seqWriter;
@@ -917,21 +906,18 @@ int main(int argc, char *argv[]) {
             lkFile.open(PAR_output_file_lk);
             lkFile << MSAscore;
             lkFile.close();
-//**********************************************************************************************************
-// ********  3D DP PIP  ************************************************************************************
-//**********************************************************************************************************
+
+            ApplicationTools::displayResult("Alignment log likelihood", TextTools::toString(MSAscore, 15));
+            //**********************************************************************************************************
+            // ********  3D DP PIP  ************************************************************************************
+            //**********************************************************************************************************
 
 
-            exit(EXIT_SUCCESS);
+            //exit(EXIT_SUCCESS);
 
 
-
-
-
-
-
-//===== OBSOLETE ===========================================================
-//Align sequences using the progressive 3D Dynamic Programming under PIP
+            //===== OBSOLETE ===========================================================
+            //Align sequences using the progressive 3D Dynamic Programming under PIP
             bool flag_local;
             bool flag_map;
             bool flag_fv;
@@ -960,7 +946,7 @@ int main(int argc, char *argv[]) {
             }
 
             std::chrono::high_resolution_clock::time_point t3 = std::chrono::high_resolution_clock::now();
-// Initialise alignment object
+            // Initialise alignment object
             alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),
                                       PAR_alignment_sbsolutions);
 
@@ -972,19 +958,6 @@ int main(int argc, char *argv[]) {
             std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
             ApplicationTools::displayResult("\nAlignment elapsed time (msec):",
                                             TextTools::toString((double) duration, 4));
-//===== OBSOLETE ===========================================================
-
-
-
-
-
-
-
-
-
-
-
-
 
 //===== OBSOLETE ===========================================================
 // Convert PIP Aligner into bpp::sites

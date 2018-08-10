@@ -442,12 +442,15 @@ void nodeRAM::DP3D_PIP_node() {
     //***************************************************************************************
     // 2D LK COMPUTATION
     //***************************************************************************************
-    PIPmsa *pipmsaL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa;
-    PIPmsa *pipmsaR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa;
+    //PIPmsa *pipmsaL = dynamic_cast<PIPmsaSingle *>(childL->MSA_)->pipmsa;
+    PIPmsa *pipmsaL = childL->MSA_->getMSA();
 
-    _DP2D(pipmsaL,
-          pipmsaR,
-          lkdata);
+    //PIPmsa *pipmsaR = dynamic_cast<PIPmsaSingle *>(childR->MSA_)->pipmsa;
+    PIPmsa *pipmsaR = childR->MSA_->getMSA();
+
+    _alignStateMatrices2D(pipmsaL,
+                          pipmsaR,
+                          lkdata);
     //***************************************************************************************
     // 3D DYNAMIC PROGRAMMING
     //***************************************************************************************
