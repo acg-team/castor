@@ -162,6 +162,7 @@ if(PATH_INTELTBB)
         message(STATUS "Intel TBB Library ${TBB_VERSION} ${TBB_INTERFACE_VERSION} found:")
         message(STATUS "  directory: ${PATH_INTELTBB}")
         message(STATUS "  targets: ${TBB_IMPORTED_TARGETS}")
+        add_definitions("-DINTELTBB")
     endif()
 endif()
 
