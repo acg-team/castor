@@ -86,36 +86,69 @@ void weightProbWithPartFun(double temperature,
                            double &px,
                            double &py) {
 
-//    double log_Z;
     double Z;
 
     if (std::isinf(log_Zm) && std::isinf(log_Zx) && std::isinf(log_Zy)) {
         LOG(FATAL) << "\nlog_Zm,log_Zx and log_Zy are all infinite.";
     }
 
-    pm = exp(log_Zm);
-    px = exp(log_Zx);
-    py = exp(log_Zy);
+    Z = sum_3_logs(log_Zm,log_Zx,log_Zy);
 
-    Z = pm + px + py;
+    pm = log_Zm - Z;
+    px = log_Zx - Z;
+    py = log_Zy - Z;
 
-    pm = pm / Z;
-    px = px / Z;
-    py = py / Z;
+    pm = (1/temperature) * pm;
+    px = (1/temperature) * px;
+    py = (1/temperature) * py;
 
-    pm = stateProbability(pm, temperature);
-    px = stateProbability(px, temperature);
-    py = stateProbability(py, temperature);
+    Z = sum_3_logs(pm,px,py);
 
+    pm = pm - Z;
+    px = px - Z;
+    py = py - Z;
+
+    pm = exp(pm);
+    px = exp(px);
+    py = exp(py);
+
+//    Z = pm + px + py;
+//
+//    pm = pm / Z;
+//    px = px / Z;
+//    py = py / Z;
+
+//    double minval = log_Zm;
+//    if(minval>log_Zx){
+//        minval = log_Zx;
+//    }
+//    if(minval>log_Zy){
+//        minval = log_Zy;
+//    }
+//
+//    pm = log_Zm - minval;
+//    px = log_Zx - minval;
+//    py = log_Zy - minval;
+//
 //    pm = exp(log_Zm);
 //    px = exp(log_Zx);
 //    py = exp(log_Zy);
-
-    Z = pm + px + py;
-
-    pm = pm / Z;
-    px = px / Z;
-    py = py / Z;
+////
+////    Z = pm + px + py;
+////
+////    pm = pm / Z;
+////    px = px / Z;
+////    py = py / Z;
+////
+//    pm = stateProbability(pm, temperature);
+//    px = stateProbability(px, temperature);
+//    py = stateProbability(py, temperature);
+//
+//    Z = pm + px + py;
+//
+//    pm = pm / Z;
+//    px = px / Z;
+//    py = py / Z;
 
 }
 
@@ -232,7 +265,6 @@ int nodeSB::_getStartingLevel(LKdata &lkdata,
     double py = 0.0;
     int h = lkdata.h_;
     int w = lkdata.w_;
-//    double val = 0.0;
     int lev = 0;
     double random_number;
     //*******************************************************************************
@@ -248,6 +280,25 @@ int nodeSB::_getStartingLevel(LKdata &lkdata,
             sumY += lkdata.Log3DY[k][h - 1][w - 1];
         }
     }
+
+
+    //********** DEBUG **************************************************************
+//    std::cout<<"M_last\n";
+//    for(int k=0;k<lkdata.d_;k++){
+//        std::cout<<lkdata.Log3DM[k][h - 1][w - 1]<<"\n";
+//    }
+//    std::cout<<"X_last\n";
+//    for(int k=0;k<lkdata.d_;k++){
+//        std::cout<<lkdata.Log3DX[k][h - 1][w - 1]<<"\n";
+//    }
+//    std::cout<<"Y_last\n";
+//    for(int k=0;k<lkdata.d_;k++){
+//        std::cout<<lkdata.Log3DY[k][h - 1][w - 1]<<"\n";
+//    }
+//    std::cout<<"\n";
+    //********** DEBUG **************************************************************
+
+
     //*******************************************************************************
     weightProbWithPartFun(progressivePIP_->temperature_,
                           sumM,

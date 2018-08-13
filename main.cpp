@@ -811,7 +811,7 @@ int main(int argc, char *argv[]) {
             // ********  3D DP PIP  ************************************************************************************
             //**********************************************************************************************************
             int num_sb = 0; // number of sub-optimal MSAs
-            double temperature = 0.01; // temperature for SB version
+            double temperature = 0.0001; // temperature for SB version
 
             enumDP3Dversion DPversion = CPU; // DP3D version
 
