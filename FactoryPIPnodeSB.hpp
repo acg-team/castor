@@ -94,12 +94,14 @@ namespace bpp {
                       int position);
 
         void _backward(LKdata &lkdata,
+                       double log_phi_gamma,
+                       double log_nu_gamma,
                        int position);
 
         void _computeLKmarginalEmptyColumn(LKdata &lkdata,
-                                                   int position,
-                                                   double &log_phi_gamma,
-                                                   double &log_nu_gamma);
+                                           int position,
+                                           double &log_phi_gamma,
+                                           double &log_nu_gamma);
 
         void _addLKmarginalEmptyColumn(LKdata &lkdata,
                                        double log_phi_gamma,

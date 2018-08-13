@@ -86,7 +86,7 @@ void weightProbWithPartFun(double temperature,
                            double &px,
                            double &py) {
 
-    double log_Z;
+//    double log_Z;
     double Z;
 
     if (std::isinf(log_Zm) && std::isinf(log_Zx) && std::isinf(log_Zy)) {
@@ -232,7 +232,7 @@ int nodeSB::_getStartingLevel(LKdata &lkdata,
     double py = 0.0;
     int h = lkdata.h_;
     int w = lkdata.w_;
-    double val = 0.0;
+//    double val = 0.0;
     int lev = 0;
     double random_number;
     //*******************************************************************************
@@ -382,8 +382,9 @@ void nodeSB::_forward(LKdata &lkdata,
                 lkdata.Log3DX[m][i][j] = min_inf;
             } else {
                 id1x = map_compr_L->at(i - 1);
-                lkdata.Log3DX[m][i][j] = progressivePIPutils::add_lns(lkdata.Log3DX[m - 1][i - 1][j],
-                                                                      lkdata.Log2DX[id1x]);
+//                lkdata.Log3DX[m][i][j] = progressivePIPutils::add_lns(lkdata.Log3DX[m - 1][i - 1][j],
+//                                                                      lkdata.Log2DX[id1x]);
+                lkdata.Log3DX[m][i][j] = lkdata.Log3DX[m - 1][i - 1][j] + lkdata.Log2DX[id1x];
             }
 
         }
@@ -399,8 +400,9 @@ void nodeSB::_forward(LKdata &lkdata,
                 lkdata.Log3DY[m][i][j] = min_inf;
             } else {
                 id2y = map_compr_R->at(j - 1);
-                lkdata.Log3DY[m][i][j] = progressivePIPutils::add_lns(lkdata.Log3DY[m - 1][i][j - 1],
-                                                                      lkdata.Log2DY[id2y]);
+//                lkdata.Log3DY[m][i][j] = progressivePIPutils::add_lns(lkdata.Log3DY[m - 1][i][j - 1],
+//                                                                      lkdata.Log2DY[id2y]);
+                lkdata.Log3DY[m][i][j] = lkdata.Log3DY[m - 1][i][j - 1] + lkdata.Log2DY[id2y];
             }
 
         }
@@ -419,7 +421,8 @@ void nodeSB::_forward(LKdata &lkdata,
                 } else {
                     id1m = map_compr_L->at(i - 1);
                     id2m = map_compr_R->at(j - 1);
-                    lkdata.Log3DM[m][i][j] = progressivePIPutils::add_lns(tmp_lk, lkdata.Log2DM[id1m][id2m]);
+                    //lkdata.Log3DM[m][i][j] = progressivePIPutils::add_lns(tmp_lk, lkdata.Log2DM[id1m][id2m]);
+                    lkdata.Log3DM[m][i][j] = tmp_lk + lkdata.Log2DM[id1m][id2m];
                 }
 
                 //***************************************************************************
@@ -433,7 +436,8 @@ void nodeSB::_forward(LKdata &lkdata,
                     lkdata.Log3DX[m][i][j] = min_inf;
                 } else {
                     id1x = map_compr_L->at(i - 1);
-                    lkdata.Log3DX[m][i][j] = progressivePIPutils::add_lns(tmp_lk, lkdata.Log2DX[id1x]);
+                    //lkdata.Log3DX[m][i][j] = progressivePIPutils::add_lns(tmp_lk, lkdata.Log2DX[id1x]);
+                    lkdata.Log3DX[m][i][j] = tmp_lk + lkdata.Log2DX[id1x];
                 }
 
                 //***************************************************************************
@@ -447,7 +451,8 @@ void nodeSB::_forward(LKdata &lkdata,
                     lkdata.Log3DY[m][i][j] = min_inf;
                 } else {
                     id2y = map_compr_R->at(j - 1);
-                    lkdata.Log3DY[m][i][j] = progressivePIPutils::add_lns(tmp_lk, lkdata.Log2DY[id2y]);
+                    //lkdata.Log3DY[m][i][j] = progressivePIPutils::add_lns(tmp_lk, lkdata.Log2DY[id2y]);
+                    lkdata.Log3DY[m][i][j] = tmp_lk + lkdata.Log2DY[id2y];
                 }
                 //***************************************************************************
             }
@@ -583,8 +588,6 @@ void nodeSB::_addLKmarginalEmptyColumn(LKdata &lkdata,
                                        double log_phi_gamma,
                                        double log_nu_gamma) {
 
-    //lk = -log_factorial(m) + m * log_nu_gamma + log_phi_gamma;
-
     int h = lkdata.h_ - 1;
     int w = lkdata.w_ - 1;
 
@@ -605,6 +608,8 @@ void nodeSB::_addLKmarginalEmptyColumn(LKdata &lkdata,
 }
 
 void nodeSB::_backward(LKdata &lkdata,
+                       double log_phi_gamma,
+                       double log_nu_gamma,
                        int position) {
 
     //***************************************************************************************
@@ -646,8 +651,7 @@ void nodeSB::_backward(LKdata &lkdata,
     // GAMMA VARIABLES
     //***************************************************************************************
     // number of discrete gamma categories
-    size_t numCatg = lkdata.numCatg_;
-    int local_position = position;
+    int local_position;
 
     //***************************************************************************************
     local_position = position;
@@ -672,7 +676,7 @@ void nodeSB::_backward(LKdata &lkdata,
 
         traceback.push_back(state);
 
-        //lk = -log_factorial(m) + m * log_nu_gamma + log_phi_gamma;
+        lk = -log_factorial(m) + (double) m * log_nu_gamma + log_phi_gamma;
 
         log_P = _getStateData(lkdata,
                               state,
@@ -893,7 +897,10 @@ void nodeSB::DP3D_PIP_node(int position) {
     //***************************************************************************************
     // BACKWARD RECURSION
     //***************************************************************************************
-    _backward(lkdata, position);
+    _backward(lkdata,
+              log_phi_gamma,
+              log_nu_gamma,
+              position);
     //***************************************************************************************
 
 }

@@ -132,27 +132,27 @@ void nodeRAM::DP3D_PIP_leaf() {
 
     // set fv_empty
     MSA_->getMSA()->_setFVemptyLeaf(progressivePIP_->numCatg_,
-                                                                progressivePIP_->alphabet_);
+                                    progressivePIP_->alphabet_);
 
     // set fv_sigma_empty = fv_empty dot pi
     MSA_->getMSA()->_setFVsigmaEmptyLeaf(progressivePIP_->numCatg_);
 
     // computes the indicator values (fv values) at the leaves
     MSA_->getMSA()->_setFVleaf(progressivePIP_->numCatg_,
-                             progressivePIP_->alphabet_);
+                               progressivePIP_->alphabet_);
 
     MSA_->getMSA()->_setFVsigmaLeaf(progressivePIP_->numCatg_,
-                                                                progressivePIP_->pi_);
+                                    progressivePIP_->pi_);
 
     // compute the lk of an empty column
     MSA_->getMSA()->_computeLkEmptyLeaf(progressivePIP_,
-                                                                    iotasNode_,
-                                                                    betasNode_);
+                                        iotasNode_,
+                                        betasNode_);
 
     // computes the lk for all the characters at the leaf
     MSA_->getMSA()->_computeLkLeaf(progressivePIP_,
-                                                               iotasNode_,
-                                                               betasNode_);
+                                   iotasNode_,
+                                   betasNode_);
 
     // sets the traceback path at the leaf
     MSA_->getMSA()->_setTracebackPathLeaf();
@@ -163,7 +163,7 @@ void nodeRAM::DP3D(LKdata &lkdata,
                    double log_phi_gamma,
                    double log_nu_gamma,
                    double &curr_best_score, // best likelihood value at this node
-                   int &level_max_lk){      // depth in M,X,Y with the highest lk value
+                   int &level_max_lk) {      // depth in M,X,Y with the highest lk value
 
 
     //***************************************************************************************
@@ -182,13 +182,13 @@ void nodeRAM::DP3D(LKdata &lkdata,
     //***************************************************************************************
     bool flag_exit = false; // early stop condition flag
     double prev_best_score = min_inf; // previuous best value at this node
-    int tr_index = (int)STOP_STATE; // traceback index: 1=MATCH, 2=GAPX, 3=GAPY
+    int tr_index = (int) STOP_STATE; // traceback index: 1=MATCH, 2=GAPX, 3=GAPY
     double max_lk_val = min_inf; // best lk value
     //***************************************************************************************
     // RANDOM NUMBERS GENERATOR
     //***************************************************************************************
     std::default_random_engine generator(progressivePIP_->getSeed()); // jatiapp seed
-    std::uniform_real_distribution<double> distribution(0.0,1.0); // uniform distribution for the selection
+    std::uniform_real_distribution<double> distribution(0.0, 1.0); // uniform distribution for the selection
     // of lks with the same value
     //***************************************************************************************
     // EARLY STOP VARIABLES
@@ -198,9 +198,9 @@ void nodeRAM::DP3D(LKdata &lkdata,
     //***************************************************************************************
     // WORKING VARIABLES
     //***************************************************************************************
-    int i,j;
-    int id1m,id2m;
-    int id1x,id2y;
+    int i, j;
+    int id1m, id2m;
+    int id1x, id2y;
     //***************************************************************************************
     // GET SONS
     //***************************************************************************************
@@ -227,12 +227,12 @@ void nodeRAM::DP3D(LKdata &lkdata,
 
         //***********************************************************************************
         // delta phi to add
-        log_phi_gamma = - log((long double) m) + log_nu_gamma;
+        log_phi_gamma = -log((long double) m) + log_nu_gamma;
         //***********************************************************************************
 
         //***************************************************************************
         // GAPX[i][0]
-        j=0;
+        j = 0;
         for (i = 1; i < lkdata.h_; i++) {
             id1x = map_compr_L->at(i - 1);
 
@@ -245,23 +245,23 @@ void nodeRAM::DP3D(LKdata &lkdata,
                                                                 min_inf,
                                                                 lkdata.Log2DX_fp[id1x]);;
 
-            lkdata.TR[m][i][j] = (int)GAP_X_STATE;
+            lkdata.TR[m][i][j] = (int) GAP_X_STATE;
         }
         //***********************************************************************************
         // GAPY[0][j]
-        i=0;
+        i = 0;
         for (j = 1; j < lkdata.w_; j++) {
             id2y = map_compr_R->at(j - 1);
 
             lkdata.Log3DM[m_binary_this][i][j - 1] = min_inf;
             lkdata.Log3DX[m_binary_this][i][j - 1] = min_inf;
             lkdata.Log3DY[m_binary_this][i][j] = _computeLK_MXY(log_phi_gamma,
-                                                         min_inf,
-                                                         min_inf,
-                                                         lkdata.Log3DY[m_binary_prev][i][j - 1],
-                                                         lkdata.Log2DY_fp[id2y]);
+                                                                min_inf,
+                                                                min_inf,
+                                                                lkdata.Log3DY[m_binary_prev][i][j - 1],
+                                                                lkdata.Log2DY_fp[id2y]);
 
-            lkdata.TR[m][i][j] = (int)GAP_Y_STATE;
+            lkdata.TR[m][i][j] = (int) GAP_Y_STATE;
         }
         //***********************************************************************************
         for (i = 1; i < lkdata.h_; i++) {
@@ -272,19 +272,19 @@ void nodeRAM::DP3D(LKdata &lkdata,
                 id2m = map_compr_R->at(j - 1);
 
                 lkdata.Log3DM[m_binary_this][i][j] = _computeLK_MXY(log_phi_gamma,
-                                                             lkdata.Log3DM[m_binary_prev][i - 1][j - 1],
-                                                             lkdata.Log3DX[m_binary_prev][i - 1][j - 1],
-                                                             lkdata.Log3DY[m_binary_prev][i - 1][j - 1],
-                                                             lkdata.Log2DM_fp[id1m][id2m]);
+                                                                    lkdata.Log3DM[m_binary_prev][i - 1][j - 1],
+                                                                    lkdata.Log3DX[m_binary_prev][i - 1][j - 1],
+                                                                    lkdata.Log3DY[m_binary_prev][i - 1][j - 1],
+                                                                    lkdata.Log2DM_fp[id1m][id2m]);
                 //***************************************************************************
                 // GAPX[i][j]
                 id1x = map_compr_L->at(i - 1);
 
                 lkdata.Log3DX[m_binary_this][i][j] = _computeLK_MXY(log_phi_gamma,
-                                                             lkdata.Log3DM[m_binary_prev][i - 1][j],
-                                                             lkdata.Log3DX[m_binary_prev][i - 1][j],
-                                                             lkdata.Log3DY[m_binary_prev][i - 1][j],
-                                                             lkdata.Log2DX_fp[id1x]);
+                                                                    lkdata.Log3DM[m_binary_prev][i - 1][j],
+                                                                    lkdata.Log3DX[m_binary_prev][i - 1][j],
+                                                                    lkdata.Log3DY[m_binary_prev][i - 1][j],
+                                                                    lkdata.Log2DX_fp[id1x]);
                 //***************************************************************************
                 // GAPY[i][j]
                 id2y = map_compr_R->at(j - 1);
@@ -310,13 +310,14 @@ void nodeRAM::DP3D(LKdata &lkdata,
                 lkdata.TR[m][i][j] = tr_index;
 
                 // If we reached the corner of the 3D cube, then:
-                if ( (m>=(lkdata.h_-1)) && (m>=(lkdata.w_-1)) && (i == (lkdata.h_ - 1)) && (j == (lkdata.w_ - 1))  ) {
+                if ((m >= (lkdata.h_ - 1)) && (m >= (lkdata.w_ - 1)) && (i == (lkdata.h_ - 1)) &&
+                    (j == (lkdata.w_ - 1))) {
                     // the algorithm is filling the last column of 3D DP matrix where
                     // all the characters are in the MSA
 
-                    if(tr_index==(int)STOP_STATE){
-                        LOG(FATAL) <<"\nSomething went wrong in reading the TR value. "
-                                     "TR is neither MATCH, nor GAPX, nor GAPY. ";
+                    if (tr_index == (int) STOP_STATE) {
+                        LOG(FATAL) << "\nSomething went wrong in reading the TR value. "
+                                      "TR is neither MATCH, nor GAPX, nor GAPY. ";
                     }
 
                     if (max_lk_val > curr_best_score) {
@@ -352,7 +353,7 @@ void nodeRAM::DP3D_PIP_node() {
     // ALIGNS INTERNAL NODE
     //*******************************************************************************
 
-    DVLOG(1) << "DP3D_PIP at node: "<<bnode_->getName();
+    DVLOG(1) << "DP3D_PIP at node: " << bnode_->getName();
 
     //***************************************************************************************
     // DP VARIABLES
@@ -385,12 +386,12 @@ void nodeRAM::DP3D_PIP_node() {
     //***************************************************************************************
     // WORKING VARIABLES
     //***************************************************************************************
-    int i,j;
+    int i, j;
     //***************************************************************************************
     // MEMORY ALLOCATION
     //***************************************************************************************
     // Initialisation of the data structure
-    LKdata lkdata(d,h,h_compr,w,w_compr,numCatg,true);
+    LKdata lkdata(d, h, h_compr, w, w_compr, numCatg, true);
     //***************************************************************************************
     // LK COMPUTATION OF AN EMPTY COLUMNS (FULL OF GAPS)
     //***************************************************************************************
@@ -433,7 +434,7 @@ void nodeRAM::DP3D_PIP_node() {
 
         log_phi_gamma += progressivePIP_->rDist_->getProbability((size_t) catg) * \
                          (progressivePIP_->nu_.at(catg) * \
-                         (pc0.at(catg)-1));
+                         (pc0.at(catg) - 1));
     }
 
     double log_nu_gamma = log(nu_gamma);
@@ -462,7 +463,7 @@ void nodeRAM::DP3D_PIP_node() {
     //***************************************************************************************
     // TRACEBACK ALGORITHM
     //***************************************************************************************
-    std::vector< vector< bpp::ColMatrix<double> > > fv_data_not_compressed;
+    std::vector<vector<bpp::ColMatrix<double> > > fv_data_not_compressed;
     fv_data_not_compressed.resize(level_max_lk);
 
     std::vector<std::vector<double>> fv_sigma_not_compressed;
@@ -476,50 +477,50 @@ void nodeRAM::DP3D_PIP_node() {
 
     i = h - 1;
     j = w - 1;
-    int idmL,idmR;
+    int idmL, idmR;
     int state;
     for (int lev = level_max_lk; lev > 0; lev--) {
         state = lkdata.TR[lev][i][j];
         switch (state) {
             case MATCH_STATE:
 
-                idmL = map_compr_L->at(i-1);
-                idmR = map_compr_R->at(j-1);
+                idmL = map_compr_L->at(i - 1);
+                idmR = map_compr_R->at(j - 1);
 
                 fv_data_not_compressed.at(lev - 1) = lkdata.Fv_M[idmL][idmR];
-                fv_sigma_not_compressed.at(lev -1) = lkdata.Fv_sigma_M[idmL][idmR];
+                fv_sigma_not_compressed.at(lev - 1) = lkdata.Fv_sigma_M[idmL][idmR];
                 lk_down_not_compressed.at(lev - 1) = lkdata.Log2DM[idmL][idmR];
 
                 i = i - 1;
                 j = j - 1;
 
-                MSA_->getMSA()->traceback_path_.at(lev - 1) = (int)MATCH_STATE;
+                MSA_->getMSA()->traceback_path_.at(lev - 1) = (int) MATCH_STATE;
 
                 break;
             case GAP_X_STATE:
 
-                idmL = map_compr_L->at(i-1);
+                idmL = map_compr_L->at(i - 1);
 
                 fv_data_not_compressed.at(lev - 1) = lkdata.Fv_X[idmL];
-                fv_sigma_not_compressed.at(lev -1) = lkdata.Fv_sigma_X[idmL];
+                fv_sigma_not_compressed.at(lev - 1) = lkdata.Fv_sigma_X[idmL];
                 lk_down_not_compressed.at(lev - 1) = lkdata.Log2DX[idmL];
 
                 i = i - 1;
 
-                MSA_->getMSA()->traceback_path_.at(lev - 1) = (int)GAP_X_STATE;
+                MSA_->getMSA()->traceback_path_.at(lev - 1) = (int) GAP_X_STATE;
 
                 break;
             case GAP_Y_STATE:
 
-                idmR = map_compr_R->at(j-1);
+                idmR = map_compr_R->at(j - 1);
 
                 fv_data_not_compressed.at(lev - 1) = lkdata.Fv_Y[idmR];
-                fv_sigma_not_compressed.at(lev -1) = lkdata.Fv_sigma_Y[idmR];
+                fv_sigma_not_compressed.at(lev - 1) = lkdata.Fv_sigma_Y[idmR];
                 lk_down_not_compressed.at(lev - 1) = lkdata.Log2DY[idmR];
 
                 j = j - 1;
 
-                MSA_->getMSA()->traceback_path_.at(lev - 1) = (int)GAP_Y_STATE;
+                MSA_->getMSA()->traceback_path_.at(lev - 1) = (int) GAP_Y_STATE;
 
                 break;
             default:
@@ -533,12 +534,12 @@ void nodeRAM::DP3D_PIP_node() {
     // converts traceback path into an MSA
     MSA_t *msaL = childL->MSA_->getMSA()->_getMSA();
     MSA_t *msaR = childR->MSA_->getMSA()->_getMSA();
-    MSA_->getMSA()->_build_MSA(*msaL,*msaR);
+    MSA_->getMSA()->_build_MSA(*msaL, *msaR);
 
     // assigns the sequence names of the new alligned sequences to the current MSA
     std::vector<string> *seqNameL = &(childL->MSA_->getMSA()->seqNames_);
     std::vector<string> *seqNameR = &(childR->MSA_->getMSA()->seqNames_);
-    MSA_->getMSA()->_setSeqNameNode(*seqNameL,*seqNameR);
+    MSA_->getMSA()->_setSeqNameNode(*seqNameL, *seqNameR);
     //***************************************************************************************
     // COMPRESS INFO
     //***************************************************************************************
@@ -557,7 +558,7 @@ void nodeRAM::DP3D_PIP() {
     if (_isTerminalNode()) {
         // align leaf (prepare data)
         DP3D_PIP_leaf();
-    }else{
+    } else {
         // align internal node
         DP3D_PIP_node();
     }
