@@ -74,27 +74,36 @@ namespace bpp {
         // PRIVATE METHODS
         //***************************************************************************************
 
-        int getStartingLevel(LKdata &lkdata,
-                             double epsilon,
-                             std::default_random_engine &generator,
-                             std::uniform_real_distribution<double> &distribution,
-                             int &state);
+        int _getStartingLevel(LKdata &lkdata,
+                              double epsilon,
+                              std::default_random_engine &generator,
+                              std::uniform_real_distribution<double> &distribution,
+                              int &state);
 
-        double getStateData(LKdata &lkdata,
-                            int state,
-                            int i,
-                            int j,
-                            std::vector<int> *mapL,
-                            std::vector<int> *mapR,
-                            std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
-                            std::vector<std::vector<double>> &fv_sigma_not_compressed,
-                            std::vector<double> &lk_down_not_compressed);
+        double _getStateData(LKdata &lkdata,
+                             int state,
+                             int i,
+                             int j,
+                             std::vector<int> *mapL,
+                             std::vector<int> *mapR,
+                             std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
+                             std::vector<std::vector<double>> &fv_sigma_not_compressed,
+                             std::vector<double> &lk_down_not_compressed);
 
         void _forward(LKdata &lkdata,
                       int position);
 
         void _backward(LKdata &lkdata,
                        int position);
+
+        void _computeLKmarginalEmptyColumn(LKdata &lkdata,
+                                                   int position,
+                                                   double &log_phi_gamma,
+                                                   double &log_nu_gamma);
+
+        void _addLKmarginalEmptyColumn(LKdata &lkdata,
+                                       double log_phi_gamma,
+                                       double log_nu_gamma);
 
         void DP3D_PIP_leaf(); // DP method to align a sequence at a leaf PIPnode
         // (which reduces to data preparation)

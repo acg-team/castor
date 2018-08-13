@@ -74,7 +74,7 @@ double stateProbability(double prob, double temperature) {
 
     //return 1.0 / temperature * prob;
 
-    return pow(prob,temperature);
+    return pow(prob, temperature);
 }
 
 //==============================================================================
@@ -162,14 +162,14 @@ void updateCoord(int state, int &i, int &j, int &m) {
 }
 
 //==============================================================================
-double nodeSB::getStateData(LKdata &lkdata,
-                            int state,
-                            int i, int j,
-                            std::vector<int> *mapL,
-                            std::vector<int> *mapR,
-                            std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
-                            std::vector<std::vector<double>> &fv_sigma_not_compressed,
-                            std::vector<double> &lk_down_not_compressed) {
+double nodeSB::_getStateData(LKdata &lkdata,
+                             int state,
+                             int i, int j,
+                             std::vector<int> *mapL,
+                             std::vector<int> *mapR,
+                             std::vector<vector<bpp::ColMatrix<double> > > &fv_data_not_compressed,
+                             std::vector<std::vector<double>> &fv_sigma_not_compressed,
+                             std::vector<double> &lk_down_not_compressed) {
 
     double log_P;
     int idmL, idmR;
@@ -218,11 +218,11 @@ double nodeSB::getStateData(LKdata &lkdata,
     return log_P;
 }
 
-int nodeSB::getStartingLevel(LKdata &lkdata,
-                             double epsilon,
-                             std::default_random_engine &generator,
-                             std::uniform_real_distribution<double> &distribution,
-                             int &state) {
+int nodeSB::_getStartingLevel(LKdata &lkdata,
+                              double epsilon,
+                              std::default_random_engine &generator,
+                              std::uniform_real_distribution<double> &distribution,
+                              int &state) {
 
     double sumM = 0.0;
     double sumX = 0.0;
@@ -458,58 +458,149 @@ void nodeSB::_forward(LKdata &lkdata,
 
 
     //==== DEBUG ===============
-    std::cout << "\n";
-    for (int kk = 0; kk < d; kk++) {
-        std::cout << "M[" << kk << "]\n";
-        for (int ii = 0; ii < h; ii++) {
-            for (int jj = 0; jj < w; jj++) {
-                double lk;
-                if (std::isinf(lkdata.Log3DM[kk][ii][jj])) {
-                    lk = -0.0;
-                } else {
-                    lk = lkdata.Log3DM[kk][ii][jj];
-                }
-                printf("%8.6lf ", lk);
-            }
-            std::cout << "\n";
-        }
-        std::cout << "\n\n";
-    }
-    std::cout << "\n";
-    for (int kk = 0; kk < d; kk++) {
-        std::cout << "X[" << kk << "]\n";
-        for (int ii = 0; ii < h; ii++) {
-            for (int jj = 0; jj < w; jj++) {
-                double lk;
-                if (std::isinf(lkdata.Log3DX[kk][ii][jj])) {
-                    lk = -0.0;
-                } else {
-                    lk = lkdata.Log3DX[kk][ii][jj];
-                }
-                printf("%8.6lf ", lk);
-            }
-            std::cout << "\n";
-        }
-        std::cout << "\n\n";
-    }
-    std::cout << "\n";
-    for (int kk = 0; kk < d; kk++) {
-        std::cout << "Y[" << kk << "]\n";
-        for (int ii = 0; ii < h; ii++) {
-            for (int jj = 0; jj < w; jj++) {
-                double lk;
-                if (std::isinf(lkdata.Log3DY[kk][ii][jj])) {
-                    lk = -0.0;
-                } else {
-                    lk = lkdata.Log3DY[kk][ii][jj];
-                }
-                printf("%8.6lf ", lk);
-            }
-            std::cout << "\n";
-        }
-        std::cout << "\n\n";
-    }
+//    std::cout << "\n";
+//    for (int kk = 0; kk < d; kk++) {
+//        std::cout << "M[" << kk << "]\n";
+//        for (int ii = 0; ii < h; ii++) {
+//            for (int jj = 0; jj < w; jj++) {
+//                double lk;
+//                if (std::isinf(lkdata.Log3DM[kk][ii][jj])) {
+//                    lk = -0.0;
+//                } else {
+//                    lk = lkdata.Log3DM[kk][ii][jj];
+//                }
+//                printf("%8.6lf ", lk);
+//            }
+//            std::cout << "\n";
+//        }
+//        std::cout << "\n\n";
+//    }
+//    std::cout << "\n";
+//    for (int kk = 0; kk < d; kk++) {
+//        std::cout << "X[" << kk << "]\n";
+//        for (int ii = 0; ii < h; ii++) {
+//            for (int jj = 0; jj < w; jj++) {
+//                double lk;
+//                if (std::isinf(lkdata.Log3DX[kk][ii][jj])) {
+//                    lk = -0.0;
+//                } else {
+//                    lk = lkdata.Log3DX[kk][ii][jj];
+//                }
+//                printf("%8.6lf ", lk);
+//            }
+//            std::cout << "\n";
+//        }
+//        std::cout << "\n\n";
+//    }
+//    std::cout << "\n";
+//    for (int kk = 0; kk < d; kk++) {
+//        std::cout << "Y[" << kk << "]\n";
+//        for (int ii = 0; ii < h; ii++) {
+//            for (int jj = 0; jj < w; jj++) {
+//                double lk;
+//                if (std::isinf(lkdata.Log3DY[kk][ii][jj])) {
+//                    lk = -0.0;
+//                } else {
+//                    lk = lkdata.Log3DY[kk][ii][jj];
+//                }
+//                printf("%8.6lf ", lk);
+//            }
+//            std::cout << "\n";
+//        }
+//        std::cout << "\n\n";
+//    }
     //==== DEBUG ===============
+
+}
+
+void nodeSB::_computeLKmarginalEmptyColumn(LKdata &lkdata,
+                                           int position,
+                                           double &log_phi_gamma,
+                                           double &log_nu_gamma) {
+
+    //***************************************************************************************
+    // LK COMPUTATION OF AN EMPTY COLUMNS (FULL OF GAPS)
+    //***************************************************************************************
+    // computes the lk of an empty column in the two subtrees
+
+    int msa_idx_L = subMSAidxL_.at(position);
+    int msa_idx_R = subMSAidxR_.at(position);
+
+    std::vector<bpp::ColMatrix<double> > &fvL = childL->MSA_->getMSA(msa_idx_L)->fv_empty_data_;
+    std::vector<bpp::ColMatrix<double> > &fvR = childR->MSA_->getMSA(msa_idx_R)->fv_empty_data_;
+
+    std::vector<double> &lk_emptyL = childL->MSA_->getMSA(msa_idx_L)->lk_empty_;
+    std::vector<double> &lk_emptyR = childR->MSA_->getMSA(msa_idx_R)->lk_empty_;
+
+    double nu_gamma;
+
+    int local_position = position;
+    for (int sb = 0; sb < progressivePIP_->num_sb_; sb++) {
+
+        MSA_->getMSA(local_position)->lk_empty_.resize(lkdata.numCatg_);
+        MSA_->getMSA(local_position)->fv_empty_data_.resize(lkdata.numCatg_);
+        MSA_->getMSA(local_position)->fv_empty_sigma_.resize(lkdata.numCatg_);
+
+        std::vector<bpp::ColMatrix<double> > &fv_empty_data = MSA_->getMSA(local_position)->fv_empty_data_;
+        std::vector<double> &fv_empty_sigma = MSA_->getMSA(local_position)->fv_empty_sigma_;
+
+        std::vector<double> &lk_empty = MSA_->getMSA(local_position)->lk_empty_;
+
+        std::vector<double> pc0 = _computeLkEmptyNode(fvL,
+                                                      fvR,
+                                                      fv_empty_data,
+                                                      fv_empty_sigma,
+                                                      lk_emptyL,
+                                                      lk_emptyR,
+                                                      lk_empty);
+
+        //***********************************************************************************
+        // COMPUTES LOG(PHI(0))
+        //***********************************************************************************
+        // marginal likelihood for all empty columns with rate variation (gamma distribution)
+        // phi(m,pc0,r) depends on the MSA length m
+        // marginal phi marginalized over gamma categories
+        nu_gamma = 0.0;
+        log_phi_gamma = 0.0;
+        for (int catg = 0; catg < lkdata.numCatg_; catg++) {
+            // log( P_gamma(r) * phi(0,pc0(r),r) ): marginal lk for all empty columns of an alignment of size 0
+            nu_gamma += progressivePIP_->rDist_->getProbability((size_t) catg) * progressivePIP_->nu_.at(catg);
+            log_phi_gamma += progressivePIP_->rDist_->getProbability((size_t) catg) * (progressivePIP_->nu_.at(catg) * \
+                             (pc0.at(catg) - 1));
+        }
+
+        log_nu_gamma = log(nu_gamma);
+        //***********************************************************************************
+
+
+        local_position++;
+    }
+    //***************************************************************************************
+
+}
+
+void nodeSB::_addLKmarginalEmptyColumn(LKdata &lkdata,
+                                       double log_phi_gamma,
+                                       double log_nu_gamma) {
+
+    //lk = -log_factorial(m) + m * log_nu_gamma + log_phi_gamma;
+
+    int h = lkdata.h_ - 1;
+    int w = lkdata.w_ - 1;
+
+    double lkempty;
+    double log_fact = 0.0;
+    for (int m = 1; m < lkdata.d_; m++) {
+
+        log_fact -= log((double) m);
+
+        lkempty = log_fact + (double) m * log_nu_gamma + log_phi_gamma;
+
+        lkdata.Log3DM[m][h][w] += lkempty;
+        lkdata.Log3DX[m][h][w] += lkempty;
+        lkdata.Log3DY[m][h][w] += lkempty;
+    }
+
 
 }
 
@@ -556,95 +647,11 @@ void nodeSB::_backward(LKdata &lkdata,
     //***************************************************************************************
     // number of discrete gamma categories
     size_t numCatg = lkdata.numCatg_;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    //***************************************************************************************
-    // LK COMPUTATION OF AN EMPTY COLUMNS (FULL OF GAPS)
-    //***************************************************************************************
-    // computes the lk of an empty column in the two subtrees
-
-    std::vector<bpp::ColMatrix<double> > &fvL = childL->MSA_->getMSA(msa_idx_L)->fv_empty_data_;
-    std::vector<bpp::ColMatrix<double> > &fvR = childR->MSA_->getMSA(msa_idx_R)->fv_empty_data_;
-
-    std::vector<double> &lk_emptyL = childL->MSA_->getMSA(msa_idx_L)->lk_empty_;
-    std::vector<double> &lk_emptyR = childR->MSA_->getMSA(msa_idx_R)->lk_empty_;
-
-    double nu_gamma;
-    double log_phi_gamma;
-    double log_nu_gamma;
-
     int local_position = position;
-    for (int sb = 0; sb < progressivePIP_->num_sb_; sb++) {
-
-        MSA_->getMSA(local_position)->lk_empty_.resize(numCatg);
-        MSA_->getMSA(local_position)->fv_empty_data_.resize(numCatg);
-        MSA_->getMSA(local_position)->fv_empty_sigma_.resize(numCatg);
-
-        std::vector<bpp::ColMatrix<double> > &fv_empty_data = MSA_->getMSA(local_position)->fv_empty_data_;
-        std::vector<double> &fv_empty_sigma = MSA_->getMSA(local_position)->fv_empty_sigma_;
-
-        std::vector<double> &lk_empty = MSA_->getMSA(local_position)->lk_empty_;
-
-        std::vector<double> pc0 = _computeLkEmptyNode(fvL,
-                                                      fvR,
-                                                      fv_empty_data,
-                                                      fv_empty_sigma,
-                                                      lk_emptyL,
-                                                      lk_emptyR,
-                                                      lk_empty);
-
-        //***********************************************************************************
-        // COMPUTES LOG(PHI(0))
-        //***********************************************************************************
-        // marginal likelihood for all empty columns with rate variation (gamma distribution)
-        // phi(m,pc0,r) depends on the MSA length m
-        // marginal phi marginalized over gamma categories
-        nu_gamma = 0.0;
-        log_phi_gamma = 0.0;
-        for (int catg = 0; catg < numCatg; catg++) {
-            // log( P_gamma(r) * phi(0,pc0(r),r) ): marginal lk for all empty columns of an alignment of size 0
-            nu_gamma += progressivePIP_->rDist_->getProbability((size_t) catg) * progressivePIP_->nu_.at(catg);
-            log_phi_gamma += progressivePIP_->rDist_->getProbability((size_t) catg) * (progressivePIP_->nu_.at(catg) * \
-                             (pc0.at(catg) - 1));
-        }
-
-        log_nu_gamma = log(nu_gamma);
-        //***********************************************************************************
-
-
-        local_position++;
-    }
-    //***************************************************************************************
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     //***************************************************************************************
     local_position = position;
+    lk = 0.0;
     for (int sb = 0; sb < progressivePIP_->num_sb_; sb++) {
 
         std::vector<int> traceback;
@@ -657,24 +664,24 @@ void nodeSB::_backward(LKdata &lkdata,
         //***********************************************************************************
         i = h - 1;
         j = w - 1;
-        m = getStartingLevel(lkdata,
-                             SMALL_DOUBLE,
-                             generator,
-                             distribution,
-                             state);
+        m = _getStartingLevel(lkdata,
+                              SMALL_DOUBLE,
+                              generator,
+                              distribution,
+                              state);
 
         traceback.push_back(state);
 
-        lk = -log_factorial(m) + m * log_nu_gamma + log_phi_gamma;
+        //lk = -log_factorial(m) + m * log_nu_gamma + log_phi_gamma;
 
-        log_P = getStateData(lkdata,
-                             state,
-                             i, j,
-                             map_compr_L,
-                             map_compr_R,
-                             fv_data_not_compressed,
-                             fv_sigma_not_compressed,
-                             lk_down_not_compressed);
+        log_P = _getStateData(lkdata,
+                              state,
+                              i, j,
+                              map_compr_L,
+                              map_compr_R,
+                              fv_data_not_compressed,
+                              fv_sigma_not_compressed,
+                              lk_down_not_compressed);
 
         lk = lk + log_P;
 
@@ -704,14 +711,14 @@ void nodeSB::_backward(LKdata &lkdata,
 
             traceback.push_back(state);
             //*******************************************************************************
-            log_P = getStateData(lkdata,
-                                 state,
-                                 i, j,
-                                 map_compr_L,
-                                 map_compr_R,
-                                 fv_data_not_compressed,
-                                 fv_sigma_not_compressed,
-                                 lk_down_not_compressed);
+            log_P = _getStateData(lkdata,
+                                  state,
+                                  i, j,
+                                  map_compr_L,
+                                  map_compr_R,
+                                  fv_data_not_compressed,
+                                  fv_sigma_not_compressed,
+                                  lk_down_not_compressed);
 
             lk = lk + log_P;
             //*******************************************************************************
@@ -854,7 +861,8 @@ void nodeSB::DP3D_PIP_node(int position) {
     //***************************************************************************************
     // WORKING VARIABLES
     //***************************************************************************************
-
+    double log_phi_gamma;
+    double log_nu_gamma;
     //***************************************************************************************
     // MEMORY ALLOCATION
     //***************************************************************************************
@@ -873,6 +881,15 @@ void nodeSB::DP3D_PIP_node(int position) {
     // FORWARD RECURSION
     //***************************************************************************************
     _forward(lkdata, position);
+    //***************************************************************************************
+    // ADD MARGINAL LK OF AN EMPTY COLUMNS (FULL OF GAPS)
+    //***************************************************************************************
+    _computeLKmarginalEmptyColumn(lkdata, position,
+                                  log_phi_gamma,
+                                  log_nu_gamma);
+    _addLKmarginalEmptyColumn(lkdata,
+                              log_phi_gamma,
+                              log_nu_gamma);
     //***************************************************************************************
     // BACKWARD RECURSION
     //***************************************************************************************
