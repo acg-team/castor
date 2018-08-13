@@ -45,6 +45,8 @@
 #include <glog/logging.h>
 #include "UnifiedTSHomogeneousTreeLikelihood_PIP.hpp"
 
+
+
 using namespace bpp;
 /*
  * Implementation for the interface  likelihood under tree search engines (all mixed models)
@@ -140,6 +142,25 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangeme
 }
 
 
+
+void UnifiedTSHomogeneousTreeLikelihood_PIP::recomputeSiteLikelihoodUsingPartitions(const tbb::blocked_range<size_t>& range, std::vector<double> *lk_sites) const{
+    for (size_t i = range.begin(); i < range.end(); ++i) {
+
+        std::vector<int> tempExtendedNodeList;
+        const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
+
+        // Extend it
+        _extendNodeListOnSetA(likelihoodNodes_.back(), tempExtendedNodeList, i);
+
+        // call to function which retrieves the lk value for each site
+        (*lk_sites)[i] = log(computeLikelihoodForASite(tempExtendedNodeList, i)) * rootWeights->at(i);
+
+        // Debug
+        DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << (*lk_sites)[i] << std::endl;
+    }
+};
+
+
 double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangement() const {
     double logLK;
 
@@ -150,6 +171,16 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangeme
     std::vector<double> lk_sites(nbDistinctSites_);
 
     const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
+
+
+#ifdef INTELTBB
+
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, nbDistinctSites_), recomputeSiteLikelihoodUsingPartitions(&lk_sites));
+
+#else
+//    for (unsigned long i = 0; i < nbDistinctSites_; i++) {
+//        recomputeSiteLikelihoodUsingPartitions(&lk_sites, i);
+//    }
 
     for (unsigned long i = 0; i < nbDistinctSites_; i++) {
 
@@ -163,6 +194,7 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangeme
        DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
     }
 
+#endif
     // Sum all the values stored in the lk vector
     logLK = MatrixBppUtils::sumVector(&lk_sites);
    DVLOG(2) << "LK Sites [BPP] " << std::setprecision(18) << logLK;
