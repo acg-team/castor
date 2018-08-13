@@ -651,6 +651,7 @@ void nodeSB::_backward(LKdata &lkdata,
 
     //***************************************************************************************
     local_position = position;
+    lk = 0.0;
     for (int sb = 0; sb < progressivePIP_->num_sb_; sb++) {
 
         std::vector<int> traceback;
