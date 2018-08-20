@@ -164,7 +164,8 @@ namespace bpp {
 
         //void _hadamardMultFvEmptySons(Node *node, bool overrideArrays = true) const;
 
-        void _SingleRateCategoryHadamardMultFvSons(Node *node, unsigned long site, unsigned long rate, Vdouble *fv_out) const;
+        //void _SingleRateCategoryHadamardMultFvSons(Node *node, unsigned long site, unsigned long rate, Vdouble *fv_out) const;
+        std::vector<double> _SingleRateCategoryHadamardMultFvSons(int nodeID, unsigned long site, unsigned long rate) const;
 
         void _SingleRateCategoryHadamardMultFvEmptySons(Node *node, unsigned long rate, Vdouble *fv_out) const;
 
@@ -181,7 +182,7 @@ namespace bpp {
 
         //void _computePrTimesIndicatorEmpty(Node *node, bool overrideArrays = true) const;
 
-        std::vector<int> _getMappedNodeChildren(int nodeID);
+        std::vector<int> _getMappedNodeChildren(int nodeID) const;
 
         void initialiseInsertionHistories() const;
 

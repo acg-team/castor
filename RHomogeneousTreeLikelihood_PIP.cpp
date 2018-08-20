@@ -338,10 +338,31 @@ void RHomogeneousTreeLikelihood_PIP::_computeHadamardFVSons(std::vector<VVVdoubl
 //}
 
 
-void
-RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvSons(Node *node, unsigned long site, unsigned long rate, Vdouble *fv_out) const {
+Vdouble RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvSons(int nodeID, unsigned long site, unsigned long rate) const {
+    std::vector<double> fv_out(nbStates_,0);
 
     // Get mapped node on Utree
+    auto sonsIDs = _getMappedNodeChildren(nodeID);
+
+    std::map<int, VVVdouble *> lk_sons;
+    //for (int l = 0; l < sonsIDs.size(); l++)
+    for(auto &l : sonsIDs)
+        lk_sons[l] = &likelihoodData_->getLikelihoodArray(l);
+
+    for (int x = 0; x < nbStates_; x++) {
+        double val = 1.0;
+        for(auto &l : sonsIDs)
+            val *= (*lk_sons[l])[site][rate][x];
+
+        fv_out[x] = val;
+    }
+
+    return fv_out;
+}
+
+void
+RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvEmptySons(Node *node, unsigned long rate, Vdouble *fv_out) const {
+
     std::vector<int> sonsIDs;
     tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
     tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
@@ -355,20 +376,22 @@ RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvSons(Node *node
 
     std::map<int, VVVdouble *> lk_sons;
     for (int l = 0; l < nbSons; l++) {
-        lk_sons[l] = &likelihoodData_->getLikelihoodArray(sonsIDs.at(l));
+        lk_sons[l] = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
     }
 
-
-    for (int x = 0; x < nbStates; x++) {
+    for (size_t x = 0; x < nbStates; x++) {
         double val = 1.0;
-        for (int l = 0; l < nbSons; l++) {
-            //VVVdouble *_likelihoods_son = &likelihoodData_->getLikelihoodArray(sonsIDs.at(l));
-            //val *= (*_likelihoods_son)[site][rate][x];
-            val *= (*lk_sons[l])[site][rate][x];
+
+        for (size_t l = 0; l < nbSons; l++) {
+
+            //VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
+            //val *= (*_likelihoods_empty_son)[0][rate][x];
+            val *= (*lk_sons[l])[0][rate][x];
         }
 
         (*fv_out)[x] = val;
     }
+
 
 }
 
@@ -556,7 +579,7 @@ const {
 //
 //}
 
-std::vector<int> RHomogeneousTreeLikelihood_PIP::_getMappedNodeChildren(int nodeID) {
+std::vector<int> RHomogeneousTreeLikelihood_PIP::_getMappedNodeChildren(int nodeID) const {
 
     std::vector<int> sonsIDs;
     tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
@@ -1133,40 +1156,7 @@ std::vector<int> RHomogeneousTreeLikelihood_PIP::remapVirtualNodeLists(std::vect
 }
 
 
-void
-RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvEmptySons(Node *node, unsigned long rate, Vdouble *fv_out) const {
 
-    std::vector<int> sonsIDs;
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
-
-    sonsIDs.push_back(treemap_.right.at(vnode_left));
-    sonsIDs.push_back(treemap_.right.at(vnode_right));
-    int nbSons = sonsIDs.size();
-
-    // Vectorization requires explicit loop sizes
-    int nbStates = (int) nbStates_;
-
-    std::map<int, VVVdouble *> lk_sons;
-    for (int l = 0; l < nbSons; l++) {
-        lk_sons[l] = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
-    }
-
-    for (size_t x = 0; x < nbStates; x++) {
-        double val = 1.0;
-
-        for (size_t l = 0; l < nbSons; l++) {
-
-            //VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
-            //val *= (*_likelihoods_empty_son)[0][rate][x];
-            val *= (*lk_sons[l])[0][rate][x];
-        }
-
-        (*fv_out)[x] = val;
-    }
-
-
-}
 
 
 void RHomogeneousTreeLikelihood_PIP::setIndicatorFunction(const SiteContainer &sites) const {
@@ -1347,44 +1337,35 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
 }
 
 
-double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int> &likelihoodNodes, size_t i) const {
+double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int> &likelihoodNodes, size_t i) const  {
     double lk_site = 0;
 
-    // Vectorization requires explicit loop sizes
-    int nbClasses = (int) nbClasses_;
-    int nbStates = (int) nbStates_;
-
     for (auto &nodeID:likelihoodNodes) {
+
         Node *node = tree_->getNode(nodeID);
         std::vector<bool> *setA__node = &setAData_[nodeID].first;
-        double fv_site = 0;
 
-        for (size_t c = 0; c < nbClasses; c++) {
+        for (size_t c = 0; c < nbClasses_; c++) {
 
-            //if (setAData_[nodeID].first.at(i)) {
+            double fv_site = 0;
             if ((*setA__node)[i]) {
+
                 DVLOG(3) << "[BPP] Likelihood for setA (" << i << ") @node " << node->getName();
+
                 if (!node->isLeaf()) {
 
-                    auto fv_sons = new Vdouble(nbStates);
-                    _SingleRateCategoryHadamardMultFvSons(node, i, c, fv_sons);
-
-                    double partialLK = MatrixBppUtils::dotProd(fv_sons, &rootFreqs_);
-                    fv_site += iotasData_[nodeID] * betasData_[nodeID] * partialLK;
-
-                    delete fv_sons;
+                    std::vector<double> fvsons = _SingleRateCategoryHadamardMultFvSons(nodeID,i,c);
+                    //fv_site += iotasData_[nodeID] * betasData_[nodeID] * MatrixBppUtils::dotProd(&fvsons, &rootFreqs_);
+                    fv_site += iotasData_[nodeID] * betasData_[nodeID] * MatrixBppUtils::dotProd(&fvsons, &rootFreqs_);
 
                 } else {
 
-                    double partialLK = MatrixBppUtils::dotProd(&indicatorFun_[nodeID][i], &rootFreqs_);
-                    fv_site += (iotasData_[nodeID] * betasData_[nodeID]) * partialLK;
+                    fv_site += (iotasData_[nodeID] * betasData_[nodeID]) *  MatrixBppUtils::dotProd(&indicatorFun_[nodeID][i], &rootFreqs_);
                 }
-
             }
 
             // Multiply the likelihood value of the site for the ASVR category probability
-            double li = fv_site * rateDistribution_->getProbability(c);
-            lk_site += li;
+            lk_site += (fv_site * rateDistribution_->getProbability(c));
         }
 
     }
@@ -1415,13 +1396,10 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
 
     const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
 
-
     // For each site in the alignment
     for (int i = 0; i < nbDistinctSites; i++) {
 
-        double lk_site = computeLikelihoodForASite(listNodes, i);
-
-        lk_sites[i] = log(lk_site) * rootWeights->at(i);
+        lk_sites[i] = log(computeLikelihoodForASite(listNodes, i)) * rootWeights->at(i);
         DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
     }
 
