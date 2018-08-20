@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 18 04 2018
- * @version 1.0.7
+ * @version 1.0.10
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
@@ -123,10 +123,11 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangeme
     utree_->addVirtualRootNode();
 
     // 0. convert the list of tshlib::VirtualNodes into bpp::Node
-    std::vector<int> rearrangedNodes = remapVirtualNodeLists(nodeList);
+    //std::vector<int> rearrangedNodes = remapVirtualNodeLists(nodeList);
 
     // 1. Fire topology change
-    fireTopologyChange(rearrangedNodes);
+    //fireTopologyChange(rearrangedNodes);
+    fireTopologyChange(remapVirtualNodeLists(nodeList));
 
     // 2. Compute loglikelihood
     //double logLk = getLogLikelihoodOnTopologyChange();
@@ -187,19 +188,21 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(std::vecto
     // Add virtual root to compute the likelihood
     utree_->addVirtualRootNode();
 
-    // remap the virtual nodes to the bpp nodes
-    std::vector<Node *> extractionNodes = UtreeBppUtils::remapNodeLists(listNodes, tree_, treemap_);
-
     // Fire topology change
-    std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
-    fireTopologyChange(ponl);
+    //std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
+    //fireTopologyChange(ponl);
+
+    fireTopologyChange(getNodeListPostOrder(tree_->getRootNode()->getId()));
+
+    // remap the virtual nodes to the bpp nodes
+    //std::vector<Node *> extractionNodes = UtreeBppUtils::remapNodeLists(listNodes, tree_, treemap_);
 
     // Optimise branches involved in the tree rearrangement
-    fireBranchOptimisation(extractionNodes);
+    //fireBranchOptimisation(extractionNodes);
+    fireBranchOptimisation(UtreeBppUtils::remapNodeLists(listNodes, tree_, treemap_));
 
     // Remove the virtual root to allow for further tree topology improvements
     utree_->removeVirtualRootNode();
-
 
 }
 

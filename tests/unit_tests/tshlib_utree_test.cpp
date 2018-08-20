@@ -25,7 +25,7 @@
  * @file tshlib_utree_test.cpp
  * @author Lorenzo Gatti
  * @date 27 04 2018
- * @version 1.0.7
+ * @version 1.0.10
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @status Development

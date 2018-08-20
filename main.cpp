@@ -26,7 +26,7 @@
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 20 12 2017
- * @version 1.0.7
+ * @version 1.0.10
  * @maintainer Lorenzo Gatti
  * @email lg@lorenzogatti.me
  * @maintainer Massimo Maiolo
