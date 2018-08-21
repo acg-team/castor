@@ -100,11 +100,9 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::~UnifiedTSHomogeneousTreeLikelihood_PIP(
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) {
 
-    //likelihoodData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);        // FV
-    //likelihoodEmptyData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);         // FV empty
 
-    likelihoodDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV test
-    likelihoodEmptyDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);    // FV empty test
+    likelihoodDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);          // FV test
+    likelihoodEmptyDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);     // FV empty test
 
 }
 
@@ -113,6 +111,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::fireTopologyChange(std::vector<int>
     // Store the nodes where the likelihood should be recomputed in post-order
     setLikelihoodNodes(nodeList);
     // Recompute the value of the FV 3D arrays
+    //computeSubtreeLikelihood(likelihoodDataTest_, likelihoodEmptyDataTest_);
     computeSubtreeLikelihood();
     // Compute the insertion histories set (recompute the desc_count and set A)
     setInsertionHistories(*data_);

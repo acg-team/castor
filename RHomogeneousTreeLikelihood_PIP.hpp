@@ -160,9 +160,14 @@ namespace bpp {
 
         void _computeHadamardFVSons(std::vector<VVVdouble *> inFVSons, VVVdouble *outFVParent) const;
 
-        std::vector<double> _SingleRateCategoryHadamardMultFvSons(int nodeID, unsigned long site, unsigned long rate) const;
+        //std::vector<double> _SingleRateCategoryHadamardMultFvSons(int nodeID, unsigned long site, unsigned long rate) const;
 
-        std::vector<double> _SingleRateCategoryHadamardMultFvEmptySons(int nodeID, unsigned long rate) const;
+        //std::vector<double> _SingleRateCategoryHadamardMultFvEmptySons(int nodeID, unsigned long rate) const;
+
+        std::vector<double>  _SingleRateCategoryHadamardMultFvSons(int nodeID,
+                                              unsigned long site,
+                                              unsigned long rate,
+                                              std::vector<VVVdouble *> lk_sons) const;
 
         void _computePrTimesFv(VVVdouble *pxy__node, VVVdouble *_likelihoods_node) const;
 
@@ -315,7 +320,7 @@ namespace bpp {
          * @brief This method computes the likelihood of the tree for a list of nodes computed using a postorder-traversal
          * @param nodeList
          */
-        void computeTreeLikelihood(std::vector<int> nodeList);
+        //void computeTreeLikelihood(std::vector<int> nodeList);
 
         /** @} */
 
@@ -343,9 +348,9 @@ namespace bpp {
          * @brief This method computes the likelihood after a tree rearrangment
          * @return The likelihood value using the intermediate partial values
          */
-        void fireTopologyChange(std::vector<int> nodeList);
+        //void fireTopologyChange(std::vector<int> nodeList);
 
-        double getLogLikelihoodOnTopologyChange() const;
+        //double getLogLikelihoodOnTopologyChange() const;
 
         /**
          * @brief This method computes a list of nodes traversing the tree in postorder
@@ -368,6 +373,11 @@ namespace bpp {
         virtual void computeSubtreeLikelihood();
 
         virtual void computeSubtreeLikelihood() const;
+
+        // this overloaded method is called during the tree-search
+        virtual void computeSubtreeLikelihood(DRASRTreeLikelihoodData *FV, DRASRTreeLikelihoodData *FVEmpty);
+
+        virtual void _kernel_subtreelikelihood(Node *node, VVVdouble *pxy__node, VVVdouble *_likelihoods_node, VVVdouble *_likelihoods_empty_node);
 
         virtual void computeDownSubtreeDLikelihood(const Node *);
 
