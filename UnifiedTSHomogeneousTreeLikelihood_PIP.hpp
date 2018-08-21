@@ -48,6 +48,15 @@
 #include "Utilities.hpp"
 #include "UnifiedTSHSearchable.hpp"
 
+#ifdef INTELTBB
+
+#include <tbb/tbb.h>
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
+
+#endif
+
+
 namespace bpp {
 
     class UnifiedTSHomogeneousTreeLikelihood_PIP : public RHomogeneousTreeLikelihood_PIP, public UnifiedTSHSearchable {
@@ -95,7 +104,7 @@ namespace bpp {
 
         double getTopologyValue() const throw(Exception) { return getValue(); }
 
-        tshlib::Utree *getUtreeTopology() {return utree_;}
+        tshlib::Utree *getUtreeTopology() { return utree_; }
 
         void init_(bool usePatterns);
 
@@ -109,6 +118,48 @@ namespace bpp {
 
         void topologyCommitTree();
 
+        void recomputeSiteLikelihoodUsingPartitions(const tbb::blocked_range<size_t> &range, std::vector<double> *lk_sites) const;
+
     };
+
+
+#ifdef INTELTBB
+
+    class PartitionedSiteLikelihood {
+
+        friend class UnifiedTSHomogeneousTreeLikelihood_PIP;
+
+    private:
+
+        std::vector<double> *siteLogLK_;
+        UnifiedTSHomogeneousTreeLikelihood_PIP *lkFunc_;
+
+    public:
+        PartitionedSiteLikelihood(std::vector<double> *inSiteLogLK, UnifiedTSHomogeneousTreeLikelihood_PIP *inLkFunc) :
+                siteLogLK_(inSiteLogLK), lkFunc_(inLkFunc) {};
+
+        void operator()(const tbb::blocked_range<size_t> &range) const {
+
+            for (size_t i = range.begin(); i != range.end(); ++i) {
+
+                std::vector<int> tempExtendedNodeList;
+                const std::vector<unsigned int> *rootWeights = &lkFunc_->likelihoodData_->getWeights();
+
+                // Extend it
+                lkFunc_->_extendNodeListOnSetA(lkFunc_->likelihoodNodes_.back(), tempExtendedNodeList, i);
+
+                // call to function which retrieves the lk value for each site
+                (*siteLogLK_)[i] = = log(lkFunc_->computeLikelihoodForASite(tempExtendedNodeList, i)) * rootWeights->at(i);
+            }
+
+        };
+
+
+    };
+
+#endif
+
 }
+
+
 #endif //MINIJATI_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_PIP_HPP
