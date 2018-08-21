@@ -160,27 +160,15 @@ namespace bpp {
 
         void _computeHadamardFVSons(std::vector<VVVdouble *> inFVSons, VVVdouble *outFVParent) const;
 
-        //void _hadamardMultFvSons(Node *node, bool overrideArrays = true) const;
-
-        //void _hadamardMultFvEmptySons(Node *node, bool overrideArrays = true) const;
-
-        //void _SingleRateCategoryHadamardMultFvSons(Node *node, unsigned long site, unsigned long rate, Vdouble *fv_out) const;
         std::vector<double> _SingleRateCategoryHadamardMultFvSons(int nodeID, unsigned long site, unsigned long rate) const;
 
-        void _SingleRateCategoryHadamardMultFvEmptySons(Node *node, unsigned long rate, Vdouble *fv_out) const;
+        std::vector<double> _SingleRateCategoryHadamardMultFvEmptySons(int nodeID, unsigned long rate) const;
 
-        //void _computePrTimesFv(Node *node, bool overrideArrays = true) const;
         void _computePrTimesFv(VVVdouble *pxy__node, VVVdouble *_likelihoods_node) const;
-
-        //void _computePrTimesFvEmpty(Node *node, bool overrideArrays = true) const;
 
         void _computePrTimesIndicator(VVVdouble *pxy__node, VVdouble *indicator_node, VVVdouble *_likelihoods_node) const;
 
         void _computePrTimesIndicatorEmpty(VVVdouble *pxy__node, VVdouble *indicator_node, VVVdouble *_likelihoods_node) const;
-
-        //void _computePrTimesIndicator(Node *node, bool overrideArrays = true) const;
-
-        //void _computePrTimesIndicatorEmpty(Node *node, bool overrideArrays = true) const;
 
         std::vector<int> _getMappedNodeChildren(int nodeID) const;
 
