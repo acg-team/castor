@@ -74,7 +74,7 @@ namespace bpp {
 
         UnifiedTSHSearchable() : lk_(nullptr), optimiser_(nullptr), optMethodModel_(""), optNumericalDerivatives_(false) {}
 
-        virtual ~UnifiedTSHSearchable() = default;
+        virtual ~UnifiedTSHSearchable() {delete optimiser_->getFunction();};
 
         void setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
                                         bool optNumericalDerivatives,
