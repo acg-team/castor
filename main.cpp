@@ -758,6 +758,12 @@ int main(int argc, char *argv[]) {
             ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
         }
 
+        for (size_t i = 0; i < smodel->getFrequencies().size(); i++) {
+
+            ApplicationTools::displayResult("eq.freq("+smodel->getAlphabet()->getName(i)+")", TextTools::toString(smodel->getFrequencies()[i], 4));
+        }
+
+
         if (PAR_model_indels) {
             double pip_intensity =
                     parameters.getParameter("PIP.lambda").getValue() * parameters.getParameter("PIP.mu").getValue();
