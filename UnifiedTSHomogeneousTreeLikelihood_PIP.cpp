@@ -141,7 +141,7 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangeme
 
 }
 
-
+#ifdef INTELTBB
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::recomputeSiteLikelihoodUsingPartitions(const tbb::blocked_range<size_t>& range, std::vector<double> *lk_sites) const{
     for (size_t i = range.begin(); i < range.end(); ++i) {
@@ -160,6 +160,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::recomputeSiteLikelihoodUsingPartiti
     }
 };
 
+#endif
 
 double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangement() const {
     double logLK;

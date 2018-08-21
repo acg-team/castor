@@ -118,8 +118,9 @@ namespace bpp {
 
         void topologyCommitTree();
 
+#ifdef INTELTBB
         void recomputeSiteLikelihoodUsingPartitions(const tbb::blocked_range<size_t> &range, std::vector<double> *lk_sites) const;
-
+#endif
     };
 
 
