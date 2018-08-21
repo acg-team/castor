@@ -214,26 +214,23 @@ throw(Exception) {
 }
 
 void RHomogeneousTreeLikelihood_PIP::_computeHadamardFVSons(std::vector<VVVdouble *> inFVSons, VVVdouble *outFVParent) const {
-    // Vectorization requires explicit loop sizes
-    //int nbDistinctSites = (int) nbDistinctSites_;
-    //int nbClasses = (int) nbClasses_;
-    //int nbStates = (int) nbStates_;
 
     size_t t_distSites = (*outFVParent).size();
-    for (int i = 0; i < t_distSites; i++) {
-        size_t t_classes = (*outFVParent)[0].size();
+    size_t t_classes = (*outFVParent)[0].size();
+    size_t t_states = (*outFVParent)[0][0].size();
+    
+    for (int i = 0; i < t_distSites; i++) {        
         for (int c = 0; c < t_classes; c++) {
-            size_t t_states = (*outFVParent)[0][0].size();
             for (int x = 0; x < t_states; x++) {
-                double val = 1.0;
-                for (int l = 0; l < inFVSons.size(); l++) {
-                    val *= (*inFVSons[l])[i][c][x];
-                }
-                (*outFVParent)[i][c][x] = val;
+                //double val = 1.0;
+		(*outFVParent)[i][c][x] = 1.0;
+                for (int l = 0; l < inFVSons.size(); l++) 
+                    (*outFVParent)[i][c][x] *= (*inFVSons[l])[i][c][x];
+                
+                //(*outFVParent)[i][c][x] = val;
             }
         }
     }
-
 }
 
 
@@ -350,11 +347,12 @@ Vdouble RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvSons(in
         lk_sons[l] = &likelihoodData_->getLikelihoodArray(l);
 
     for (int x = 0; x < nbStates_; x++) {
-        double val = 1.0;
+        //double val = 1.0;
+	fv_out[x] = 1.0;
         for(auto &l : sonsIDs)
-            val *= (*lk_sons[l])[site][rate][x];
+            fv_out[x] *= (*lk_sons[l])[site][rate][x];
 
-        fv_out[x] = val;
+        //fv_out[x] = val;
     }
 
     return fv_out;
@@ -380,16 +378,16 @@ RHomogeneousTreeLikelihood_PIP::_SingleRateCategoryHadamardMultFvEmptySons(Node 
     }
 
     for (size_t x = 0; x < nbStates; x++) {
-        double val = 1.0;
-
+        //double val = 1.0;
+	(*fv_out)[x] = 1.0;
         for (size_t l = 0; l < nbSons; l++) {
 
             //VVVdouble *_likelihoods_empty_son = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l));
             //val *= (*_likelihoods_empty_son)[0][rate][x];
-            val *= (*lk_sons[l])[0][rate][x];
+            (*fv_out)[x] *= (*lk_sons[l])[0][rate][x];
         }
 
-        (*fv_out)[x] = val;
+        //(*fv_out)[x] = val;
     }
 
 
@@ -400,18 +398,22 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFv(VVVdouble *pxy__node, VVV
     size_t t_classes = (*_likelihoods_node)[0].size();
     size_t t_states = (*_likelihoods_node)[0][0].size();
 
+    
     for (int c = 0; c < t_classes; c++) {
         VVdouble *pxy__node_c = &(*pxy__node)[c];
+	
         for (int i = 0; i < t_distSites; i++) {
             // this vector stores the old values before recomputing them
             Vdouble reference = (*_likelihoods_node)[i][c];
+	    
             for (int x = 0; x < t_states; x++) {
-                double val = 0.0;
+                (*_likelihoods_node)[i][c][x] = 0.0;
+		
                 for (int y = 0; y < t_states; y++) {
                     //val += (*pxy__node_c)[x][y] * (*_likelihoods_node)[i][c][y];
-                    val += (*pxy__node_c)[x][y] * reference[y];
+                    (*_likelihoods_node)[i][c][x] += (*pxy__node_c)[x][y] * reference[y];
                 }
-                (*_likelihoods_node)[i][c][x] = val;
+                //(*_likelihoods_node)[i][c][x] = val;
             }
         }
     }
@@ -479,28 +481,30 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFv(VVVdouble *pxy__node, VVV
 //    }
 //
 //}
-void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(VVVdouble *pxy__node, VVdouble *indicator_node, VVVdouble *_likelihoods_node) const {
+void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(VVVdouble  *pxy__node, VVdouble *indicator_node, VVVdouble * _likelihoods_node) const {
     size_t t_distSites = (*_likelihoods_node).size();
     size_t t_classes = (*_likelihoods_node)[0].size();
     size_t t_states = (*_likelihoods_node)[0][0].size();
-
+    
+    
     for (int c = 0; c < t_classes; c++) {
         VVdouble *pxy__node_c = &(*pxy__node)[c];
-
+	
         for (int i = 0; i < t_distSites; i++) {
-
+	    
             for (int x = 0; x < t_states; x++) {
-                double val = 0.0;
+		//double val = 0.0;
+		// Reset value for the current state
+		(*_likelihoods_node)[i][c][x] = 0.0;
+		
                 for (int y = 0; y < t_states; y++) {
-                    val += (*pxy__node_c)[x][y] * (*indicator_node)[i][y];
+                    (*_likelihoods_node)[i][c][x] += (*pxy__node_c)[x][y] * (*indicator_node)[i][y];
                 }
                 // Store value
-                (*_likelihoods_node)[i][c][x] = val;
+                //(*_likelihoods_node)[i][c][x] = val;
             }
         }
-
     }
-
 }
 
 
@@ -898,36 +902,24 @@ void RHomogeneousTreeLikelihood_PIP::setAllIotas() {
     double tau_ = tree_->getTotalLength();
     double T_;
 
-    if (fabs(mu_.getValue()) < 1e-8) {
-        //perror("ERROR in set_iota: mu too small");
-        //DLOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << ;
+    if (fabs(mu_.getValue()) < 1e-8) 
         DLOG(WARNING) << "Constraint match at parameter mu, badValue = " << mu_.getValue() << " [ 1e-08; 10000]";
-    }
+    
 
     // Compute tau value;
     T_ = tau_ + 1 / mu_.getValue();
 
-    if (fabs(T_) < 1e-8) {
-        //perror("ERROR in set_iota: T too small");
-        //DLOG(WARNING) << "[Parameter value] The parameter T is too small! T = " << T_;
+    if (fabs(T_) < 1e-8) 
         DLOG(WARNING) << "Constraint match at parameter T, badValue = " << T_ << " [ 1e-08; 10000]";
 
-    }
-
+    
     for (auto &node:tree_->getNodes()) {
-
         if (!node->hasFather()) {
-
             iotasData_[node->getId()] = (1 / mu_.getValue()) / T_;
-
         } else {
-
             iotasData_[node->getId()] = node->getDistanceToFather() / T_;
-
         }
-
     }
-
 }
 
 
@@ -935,24 +927,17 @@ void RHomogeneousTreeLikelihood_PIP::setAllBetas() {
 
     Parameter mu_ = model_->getParameter("mu");
 
-    if (fabs(mu_.getValue()) < 1e-8) {
-        //perror("ERROR in set_iota: mu too small");
+    if (fabs(mu_.getValue()) < 1e-8) 
         DLOG(WARNING) << "Constraint match at parameter mu, badValue = " << mu_.getValue() << " [ 1e-08; 10000]";
-
-    }
 
 
     for (auto &node:tree_->getNodes()) {
-
         if (!node->hasFather()) {
-
             betasData_[node->getId()] = 1.0;
-
         } else {
             betasData_[node->getId()] = (1.0 - exp(-mu_.getValue() * node->getDistanceToFather())) / (mu_.getValue() * node->getDistanceToFather());
             //node->vnode_beta = (1.0 - exp(-this->mu * vnode->vnode_branchlength)) / (this->mu * vnode->vnode_branchlength);
         }
-
     }
 
 }
@@ -980,12 +965,9 @@ void RHomogeneousTreeLikelihood_PIP::computeNu() {
     double lambda_ = model_->getParameter("lambda").getValue();
     double mu_ = model_->getParameter("mu").getValue();
 
-    if (fabs(mu_) < 1e-8) {
-        //perror("ERROR in setNu: mu too small");
-        //DLOG(WARNING) << "[Parameter value] The parameter mu is too small! mu = " << mu_;
+    if (fabs(mu_) < 1e-8) 
         DLOG(WARNING) << "Constraint match at parameter mu, badValue = " << mu_ << " [ 1e-08; 10000]";
-    }
-
+    
     nu_ = lambda_ * (tau_ + 1 / mu_);
 
 }
