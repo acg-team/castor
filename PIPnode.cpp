@@ -55,7 +55,7 @@
 #include "PIPlkData.hpp"
 
 #define ERR_STATE (-999)
-#define DBL_EPSILON std::numeric_limits<double>::min()
+#define DBL_MACH_EPSILON std::numeric_limits<double>::min()
 #define MATCH_STATE 1
 #define GAP_X_STATE 2
 #define GAP_Y_STATE 3
@@ -416,8 +416,8 @@ std::vector<double> PIPnode::_computeLkEmptyNode(std::vector<bpp::ColMatrix<doub
 //                     pr_x,
 //                     pr_x_fp);
 //
-//        Log2DX[i] = progressivePIPutils::add_lns(log(pr_x),lk_down_L.at(i)); // stored for the next layer
-//        Log2DX_fp[i] = progressivePIPutils::add_lns(log(pr_x_fp),lk_down_L.at(i)); // used at this node
+//        Log2DX[i] = MathUtils::add_lns(log(pr_x),lk_down_L.at(i)); // stored for the next layer
+//        Log2DX_fp[i] = MathUtils::add_lns(log(pr_x_fp),lk_down_L.at(i)); // used at this node
 //    }
 //    //***************************************************************************************
 //    // GAPY2D
@@ -432,8 +432,8 @@ std::vector<double> PIPnode::_computeLkEmptyNode(std::vector<bpp::ColMatrix<doub
 //                     pr_y,
 //                     pr_y_fp);
 //
-//        Log2DY[j] = progressivePIPutils::add_lns(log(pr_y),lk_down_R.at(j)); // stored for the next layer
-//        Log2DY_fp[j] = progressivePIPutils::add_lns(log(pr_y_fp),lk_down_R.at(j)); // used at this node
+//        Log2DY[j] = MathUtils::add_lns(log(pr_y),lk_down_R.at(j)); // stored for the next layer
+//        Log2DY_fp[j] = MathUtils::add_lns(log(pr_y_fp),lk_down_R.at(j)); // used at this node
 //    }
 //
 //}
@@ -482,8 +482,8 @@ void PIPnode::_alignStateMatrices2D(PIPmsa *msaL,
                      pr_x,
                      pr_x_fp);
 
-        lkdata.Log2DX[i] = progressivePIPutils::add_lns(log(pr_x),lk_down_L.at(i)); // stored for the next layer
-        lkdata.Log2DX_fp[i] = progressivePIPutils::add_lns(log(pr_x_fp),lk_down_L.at(i)); // used at this node
+        lkdata.Log2DX[i] = MathUtils::add_lns(log(pr_x),lk_down_L.at(i)); // stored for the next layer
+        lkdata.Log2DX_fp[i] = MathUtils::add_lns(log(pr_x_fp),lk_down_L.at(i)); // used at this node
     }
     //***************************************************************************************
     // GAPY2D
@@ -498,8 +498,8 @@ void PIPnode::_alignStateMatrices2D(PIPmsa *msaL,
                      pr_y,
                      pr_y_fp);
 
-        lkdata.Log2DY[j] = progressivePIPutils::add_lns(log(pr_y),lk_down_R.at(j)); // stored for the next layer
-        lkdata.Log2DY_fp[j] = progressivePIPutils::add_lns(log(pr_y_fp),lk_down_R.at(j)); // used at this node
+        lkdata.Log2DY[j] = MathUtils::add_lns(log(pr_y),lk_down_R.at(j)); // stored for the next layer
+        lkdata.Log2DY_fp[j] = MathUtils::add_lns(log(pr_y_fp),lk_down_R.at(j)); // used at this node
     }
 
 

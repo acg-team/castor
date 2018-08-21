@@ -583,7 +583,7 @@ double nodeCPU::computeLK_M_local(double NU,
         log_pr = it->second;
     }
 
-    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_MACH_EPSILON);
 }
 
 double nodeCPU::computeLK_X_local(double NU,
@@ -673,7 +673,7 @@ double nodeCPU::computeLK_X_local(double NU,
         log_pr = it->second;
     }
 
-    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_MACH_EPSILON);
 }
 
 std::vector<double> nodeCPU::computeLK_GapColumn_local(MSAcolumn_t &sL,
@@ -871,7 +871,7 @@ double nodeCPU::computeLK_Y_local(double NU,
         log_pr = it->second;
     }
 
-    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_MACH_EPSILON);
 }
 
 bpp::ColMatrix<double> nodeCPU::computeFVrec(MSAcolumn_t &s, int &idx, int catg) {
@@ -1185,7 +1185,7 @@ void nodeCPU::DP3D_PIP_node() {
     std::default_random_engine generator(progressivePIP_->getSeed()); // jatiapp seed
     std::uniform_real_distribution<double> distribution(0.0, 1.0); // Uniform distribution for the selection of lks with the same value
 
-    auto epsilon = DBL_EPSILON;
+    auto epsilon = DBL_MACH_EPSILON;
 
     std::vector< std::vector<double> > lkM_pattern;
     std::vector< std::vector<double> > lkX_pattern;
@@ -1251,7 +1251,7 @@ void nodeCPU::DP3D_PIP_node() {
     log_phi_gamma = NU * (PC0 - 1);
     //log_phi_gamma = PHI[0][0];
     //for (int catg = 1; catg < num_gamma_categories; catg++) {
-    //    log_phi_gamma=pPIPUtils::add_lns(log_phi_gamma,PHI[0][catg]);
+    //    log_phi_gamma=MathUtils::add_lns(log_phi_gamma,PHI[0][catg]);
     //}
     //============================================================
 
@@ -1330,7 +1330,7 @@ void nodeCPU::DP3D_PIP_node() {
         // computes the marginal phi marginalized over all the gamma categories
         log_phi_gamma = PHI[m][0];
         for (int catg = 1; catg < num_gamma_categories; catg++) {
-            log_phi_gamma = progressivePIPutils::add_lns(log_phi_gamma, PHI[m][catg]);
+            log_phi_gamma = MathUtils::add_lns(log_phi_gamma, PHI[m][catg]);
         }
         //***************************************************************************************
         //***************************************************************************************

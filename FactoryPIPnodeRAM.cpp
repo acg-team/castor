@@ -103,7 +103,7 @@ double nodeRAM::_computeLK_MXY(double log_phi_gamma,
     // lk (valM,valX,valY) together with the actual lk value (log_pr) and
     // the marginal lk of an empty column
 
-    return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
+    return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_MACH_EPSILON);
 }
 
 void nodeRAM::DP3D_PIP_leaf() {
@@ -175,7 +175,7 @@ void nodeRAM::DP3D(LKdata &lkdata,
     //***************************************************************************************
     int m_binary_this; // Level Index during computation / current
     int m_binary_prev; // Level Index during computation / old
-    auto epsilon = DBL_EPSILON; // very small number
+    auto epsilon = DBL_MACH_EPSILON; // very small number
     double min_inf = -std::numeric_limits<double>::infinity(); // -inf
     //***************************************************************************************
     // TRACEBACK VARIABLES

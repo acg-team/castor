@@ -50,7 +50,7 @@
 #include <glog/logging.h>
 
 #define ERR_STATE (-999)
-#define DBL_EPSILON std::numeric_limits<double>::min()
+#define DBL_MACH_EPSILON std::numeric_limits<double>::min()
 #define MATCH_STATE 1
 #define GAP_X_STATE 2
 #define GAP_Y_STATE 3
@@ -1090,7 +1090,7 @@ double pPIP::computeLK_MXY_local(double log_phi_gamma,
                                  double valY,
                                  double log_pr) {
 
-    return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,true);
+    return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_MACH_EPSILON,true);
 }
 
 void pPIP::allgaps(bpp::Node *node, std::string &s, int &idx, bool &flag) {
@@ -1714,7 +1714,7 @@ double pPIP::computeLK_M_local(double NU,
     }
 
     //return  log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
-    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,flag_RAM);
+    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_MACH_EPSILON,flag_RAM);
 }
 
 double pPIP::computeLK_X_local(int nodeID,
@@ -1882,7 +1882,7 @@ double pPIP::computeLK_X_local(double NU,
         }
     }
     //return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
-    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,flag_RAM);
+    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_MACH_EPSILON,flag_RAM);
 }
 
 double pPIP::computeLK_Y_local(int nodeID,
@@ -2056,7 +2056,7 @@ double pPIP::computeLK_Y_local(double NU,
     }
 
     //return log_phi_gamma + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON);
-    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_EPSILON,flag_RAM);
+    return log(NU) - log((double) m) + log_pr + max_of_three(valM, valX, valY, DBL_MACH_EPSILON,flag_RAM);
 }
 
 //void pPIP::DP3D_PIP_SB(bpp::Node *node,UtreeBppUtils::treemap *tm,double gamma_rate, bool local,double temperature,int num_SB){
@@ -2257,9 +2257,9 @@ double pPIP::computeLK_Y_local(double NU,
 //                        double lk_c = val;
 //                        //lk_c=log(iotaV0*betaV0*P(idx_i,idx_j));
 //                        double lk = -log(m - 1) + log(nu_) + lk_c;
-//                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i - 1][j - 1], LogX[m - 1][i - 1][j - 1]);
-//                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i - 1][j - 1]);
-//                        LogM[m][i][j] = pPIPUtils::add_lns(lk, l2);
+//                        double l1 = MathUtils::add_lns(LogM[m - 1][i - 1][j - 1], LogX[m - 1][i - 1][j - 1]);
+//                        double l2 = MathUtils::add_lns(l1, LogY[m - 1][i - 1][j - 1]);
+//                        LogM[m][i][j] = MathUtils::add_lns(lk, l2);
 //                        Mp[m][i][j] = lk_c;
 //                    }
 //                }
@@ -2294,9 +2294,9 @@ double pPIP::computeLK_Y_local(double NU,
 //                        double lk_c = val;
 //                        //lk_c = log(iotaV0 * betaV0 * P(idx_i, idx_j) + iotaV1 + betaV1 * FV(idx_i));
 //                        double lk = -log(m - 1) + log(nu_) + lk_c;
-//                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i - 1][j], LogX[m - 1][i - 1][j]);
-//                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i - 1][j]);
-//                        LogX[m][i][j] = pPIPUtils::add_lns(lk, l2);
+//                        double l1 = MathUtils::add_lns(LogM[m - 1][i - 1][j], LogX[m - 1][i - 1][j]);
+//                        double l2 = MathUtils::add_lns(l1, LogY[m - 1][i - 1][j]);
+//                        LogX[m][i][j] = MathUtils::add_lns(lk, l2);
 //                        Xp[m][i][j] = lk_c;
 //                    }
 //                }
@@ -2330,9 +2330,9 @@ double pPIP::computeLK_Y_local(double NU,
 //                        double lk_c = val;
 //                        //lk_c = log(iotaV0 * betaV0 * P(idx_i, idx_j) + iotaV2 + betaV2 * FV(idx_j));
 //                        double lk = -log(m - 1) + log(nu_) + lk_c;
-//                        double l1 = pPIPUtils::add_lns(LogM[m - 1][i][j - 1], LogX[m - 1][i][j - 1]);
-//                        double l2 = pPIPUtils::add_lns(l1, LogY[m - 1][i][j - 1]);
-//                        LogY[m][i][j] = pPIPUtils::add_lns(lk, l2);
+//                        double l1 = MathUtils::add_lns(LogM[m - 1][i][j - 1], LogX[m - 1][i][j - 1]);
+//                        double l2 = MathUtils::add_lns(l1, LogY[m - 1][i][j - 1]);
+//                        LogY[m][i][j] = MathUtils::add_lns(lk, l2);
 //                        Yp[m][i][j] = lk_c;
 //                    }
 //                }
@@ -2399,8 +2399,8 @@ double pPIP::computeLK_Y_local(double NU,
 //            perror("ERROR 1: Zm, Zx and Zy are inf");
 //        }
 //
-//        double log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
-//        double log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
+//        double log_Zmx = MathUtils::add_lns(log_Zm, log_Zx);
+//        double log_Z = MathUtils::add_lns(log_Zmx, log_Zy);
 //
 //        if(std::isinf(log_Z)){
 //            perror("ERROR 2 Z: is inf");
@@ -2481,8 +2481,8 @@ double pPIP::computeLK_Y_local(double NU,
 //                perror("ERROR 1: Zm, Zx and Zy are inf");
 //            }
 //
-//            log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
-//            log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
+//            log_Zmx = MathUtils::add_lns(log_Zm, log_Zx);
+//            log_Z = MathUtils::add_lns(log_Zmx, log_Zy);
 //
 //            if(std::isinf(log_Z)){
 //                perror("ERROR 2 Z: is inf");
@@ -2900,7 +2900,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int
     //***************************************************************************************
     // DP VARIABLES
     //***************************************************************************************
-    auto epsilon = DBL_EPSILON;
+    auto epsilon = DBL_MACH_EPSILON;
     double min_inf = -std::numeric_limits<double>::infinity();
     //***************************************************************************************
     double l1,l2,l3;
@@ -3136,7 +3136,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int
                 Log3DX[m][i][j] = min_inf;
             } else {
                 l3 = Log2DX[id1x];
-                Log3DX[m][i][j] = pPIPUtils::add_lns(Log3DX[m-1][i-1][j], l3);
+                Log3DX[m][i][j] = MathUtils::add_lns(Log3DX[m-1][i-1][j], l3);
             }
 
         }
@@ -3153,7 +3153,7 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int
                 Log3DY[m][i][j] = min_inf;
             } else {
                 l3 = Log2DY[id2y];
-                Log3DY[m][i][j] = pPIPUtils::add_lns(Log3DY[m - 1][i][j - 1], l3);
+                Log3DY[m][i][j] = MathUtils::add_lns(Log3DY[m - 1][i][j - 1], l3);
             }
 
         }
@@ -3165,42 +3165,42 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int
                 id1m = map_compressed_seqs_.at(nodeID_L).at(msa_idx_L).at(i-1);
                 id2m = map_compressed_seqs_.at(nodeID_R).at(msa_idx_R).at(j-1);
 
-                l1 = pPIPUtils::add_lns(Log3DM[m - 1][i - 1][j - 1], Log3DX[m - 1][i - 1][j - 1]);
-                l2 = pPIPUtils::add_lns(l1, Log3DY[m - 1][i - 1][j - 1]);
+                l1 = MathUtils::add_lns(Log3DM[m - 1][i - 1][j - 1], Log3DX[m - 1][i - 1][j - 1]);
+                l2 = MathUtils::add_lns(l1, Log3DY[m - 1][i - 1][j - 1]);
 
                 if(std::isinf(l2)){
                     Log3DM[m][i][j] = min_inf;
                 } else {
                     l3 = Log2DM[id1m][id2m];
-                    Log3DM[m][i][j] = pPIPUtils::add_lns(l2, l3);
+                    Log3DM[m][i][j] = MathUtils::add_lns(l2, l3);
                 }
 
                 //***************************************************************************
                 // GAPX[i][j]
                 id1x = map_compressed_seqs_.at(nodeID_L).at(msa_idx_L).at(i-1);
 
-                l1 = pPIPUtils::add_lns(Log3DM[m - 1][i - 1][j], Log3DX[m - 1][i - 1][j]);
-                l2 = pPIPUtils::add_lns(l1, Log3DY[m - 1][i - 1][j]);
+                l1 = MathUtils::add_lns(Log3DM[m - 1][i - 1][j], Log3DX[m - 1][i - 1][j]);
+                l2 = MathUtils::add_lns(l1, Log3DY[m - 1][i - 1][j]);
 
                 if(std::isinf(l2)){
                     Log3DX[m][i][j] = min_inf;
                 } else {
                     l3 = Log2DX[id1x];
-                    Log3DX[m][i][j] = pPIPUtils::add_lns(l2, l3);
+                    Log3DX[m][i][j] = MathUtils::add_lns(l2, l3);
                 }
 
                 //***************************************************************************
                 // GAPY[i][j]
                 id2y = map_compressed_seqs_.at(nodeID_R).at(msa_idx_R).at(j-1);
 
-                l1 = pPIPUtils::add_lns(Log3DM[m - 1][i][j - 1], Log3DX[m - 1][i][j - 1]);
-                l2 = pPIPUtils::add_lns(l1, Log3DY[m - 1][i][j - 1]);
+                l1 = MathUtils::add_lns(Log3DM[m - 1][i][j - 1], Log3DX[m - 1][i][j - 1]);
+                l2 = MathUtils::add_lns(l1, Log3DY[m - 1][i][j - 1]);
 
                 if(std::isinf(l2)){
                     Log3DY[m][i][j] = min_inf;
                 } else {
                     l3 = Log2DY[id2y];
-                    Log3DY[m][i][j] = pPIPUtils::add_lns(l2, l3);
+                    Log3DY[m][i][j] = MathUtils::add_lns(l2, l3);
                 }
                 //***************************************************************************
             }
@@ -3322,8 +3322,8 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int
             LOG(FATAL) << "\nlog_Zm,log_Zx and log_Zy are all infinite.";
         }
 
-        double log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
-        double log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
+        double log_Zmx = MathUtils::add_lns(log_Zm, log_Zx);
+        double log_Z = MathUtils::add_lns(log_Zmx, log_Zy);
 
         if (std::isinf(log_Z)) {
             LOG(FATAL) << "\nlog_Z is infinite.";
@@ -3445,8 +3445,8 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int
                 LOG(FATAL) << "\nlog_Zm,log_Zx and log_Zy are all infinite.";
             }
 
-            log_Zmx = pPIPUtils::add_lns(log_Zm, log_Zx);
-            log_Z = pPIPUtils::add_lns(log_Zmx, log_Zy);
+            log_Zmx = MathUtils::add_lns(log_Zm, log_Zx);
+            log_Z = MathUtils::add_lns(log_Zmx, log_Zy);
 
             if (std::isinf(log_Z)) {
                 LOG(FATAL) << "\nlog_Z is infinite.";
@@ -3549,7 +3549,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     //***************************************************************************************
     int m_binary_this; // Level Index during computation / current
     int m_binary_prev; // Level Index during computation / old
-    auto epsilon = DBL_EPSILON;
+    auto epsilon = DBL_MACH_EPSILON;
     double min_inf = -std::numeric_limits<double>::infinity();
     //***************************************************************************************
     // TRACEBACK VARIABLES
@@ -4268,7 +4268,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 //    log_phi_gamma = NU * (PC0 - 1);
 //    //log_phi_gamma = PHI[0][0];
 //    //for (int catg = 1; catg < num_gamma_categories; catg++) {
-//    //    log_phi_gamma=pPIPUtils::add_lns(log_phi_gamma,PHI[0][catg]);
+//    //    log_phi_gamma=MathUtils::add_lns(log_phi_gamma,PHI[0][catg]);
 //    //}
 //    //============================================================
 //
@@ -4344,7 +4344,7 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
 //        // computes the marginal phi marginalized over all the gamma categories
 //        log_phi_gamma = PHI[m][0];
 //        for (int catg = 1; catg < num_gamma_categories; catg++) {
-//            log_phi_gamma = pPIPUtils::add_lns(log_phi_gamma, PHI[m][catg]);
+//            log_phi_gamma = MathUtils::add_lns(log_phi_gamma, PHI[m][catg]);
 //        }
 //        //***************************************************************************************
 //        //***************************************************************************************
@@ -5000,7 +5000,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     std::default_random_engine generator(seed_);                   // jatiapp seed
     std::uniform_real_distribution<double> distribution(0.0, 1.0); // Uniform distribution for the selection of lks with the same value
 
-    auto epsilon = DBL_EPSILON;
+    auto epsilon = DBL_MACH_EPSILON;
 
 
     std::vector< std::vector<double> > lkM_pattern;
@@ -5100,7 +5100,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
     log_phi_gamma = NU * (PC0 - 1);
     //log_phi_gamma = PHI[0][0];
     //for (int catg = 1; catg < num_gamma_categories; catg++) {
-    //    log_phi_gamma=pPIPUtils::add_lns(log_phi_gamma,PHI[0][catg]);
+    //    log_phi_gamma=MathUtils::add_lns(log_phi_gamma,PHI[0][catg]);
     //}
     //============================================================
 
@@ -5183,7 +5183,7 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
         // computes the marginal phi marginalized over all the gamma categories
         log_phi_gamma = PHI[m][0];
         for (int catg = 1; catg < num_gamma_categories; catg++) {
-            log_phi_gamma = pPIPUtils::add_lns(log_phi_gamma, PHI[m][catg]);
+            log_phi_gamma = MathUtils::add_lns(log_phi_gamma, PHI[m][catg]);
         }
         //***************************************************************************************
         //***************************************************************************************
@@ -5994,28 +5994,6 @@ bpp::SiteContainer *pPIPUtils::pPIPmsa2Sites(bpp::pPIP *progressivePIP,int idx_s
     }
 
     return new bpp::VectorSiteContainer(*sequences);
-}
-
-double pPIPUtils::add_lns(double a_ln, double b_ln) {
-    //ln(a + b) = ln{exp[ln(a) - ln(b)] + 1} + ln(b)
-
-    double R;
-
-    if (std::isinf(a_ln) && std::isinf(b_ln)) {
-        R = -std::numeric_limits<double>::infinity();
-    } else if (std::isinf(a_ln)) {
-        R = b_ln;
-    } else if (std::isinf(b_ln)) {
-        R = a_ln;
-    } else if ((abs(a_ln - b_ln) >= 36.043653389117155)) {
-        //TODO:check this
-        //2^52-1 = 4503599627370495.	log of that is 36.043653389117155867651465390794
-        R = max(a_ln, b_ln);
-    } else {
-        R = log(exp(a_ln - b_ln) + 1) + b_ln;
-    }
-
-    return R;
 }
 
 void pPIPUtils::max_val_in_column(std::vector<std::vector<std::vector<double>>> &M, int depth, int height, int width, double &val, int &level) {

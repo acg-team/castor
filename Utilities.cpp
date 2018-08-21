@@ -41,6 +41,8 @@
  *
  * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
  */
+#include <cfloat>
+
 #include <glog/logging.h>
 
 #include <boost/property_tree/ptree.hpp>
@@ -1484,5 +1486,30 @@ bool ComparisonUtils::areLogicallyEqual(double a, double b) {
 
 }
 
+double MathUtils::add_lns(double a_ln,double b_ln){
+    //ln(a + b) = ln{exp[ln(a) - ln(b)] + 1} + ln(b)
+
+    double R;
+    const double exp_precision =  log(pow(2,(double)DBL_MANT_DIG-1)-1);
+
+    //ApplicationTools::displayResult("Mantissa precision", TextTools::toString(exp_precision, 50));
+
+    if (std::isinf(a_ln) && std::isinf(b_ln)) {
+        R = -std::numeric_limits<double>::infinity();
+    } else if (std::isinf(a_ln)) {
+        R = b_ln;
+    } else if (std::isinf(b_ln)) {
+        R = a_ln;
+    } else if ((abs(a_ln - b_ln) >= exp_precision)) {
+        //TODO:check this
+        //2^52-1 = 4503599627370495.	log of that is 36.043653389117155867651465390794
+        R = max(a_ln, b_ln);
+    } else {
+        R = log(exp(a_ln - b_ln) + 1) + b_ln;
+    }
+
+    return R;
+
+};
 
 

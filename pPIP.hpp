@@ -495,9 +495,6 @@ namespace pPIPUtils {
     // convert MSA PIP into sites container
     bpp::SiteContainer *pPIPmsa2Sites(bpp::pPIP *progressivePIP,int idx_sb);
 
-    // sum of logs
-    double add_lns(double a_ln,double b_ln);
-
     void max_val_in_column(std::vector<std::vector<std::vector<double>>> &M,int depth, int height, int width, double &val, int &level);
 
     std::vector<std::string> siteContainer_2_sequence_vector(std::vector<bpp::pPIP::MSAcolumn_t> &MSA);

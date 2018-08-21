@@ -200,6 +200,13 @@ namespace ComparisonUtils {
     bool areLogicallyEqual(double a, double b);
 }
 
+namespace MathUtils {
+
+    // sum of logs
+    double add_lns(double a_ln,double b_ln);
+
+}
+
 class DistanceMethodsUtils {
 
 private:

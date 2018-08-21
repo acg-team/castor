@@ -51,23 +51,19 @@
 
 using namespace bpp;
 
-//==============================================================================
+
 bool sortByScore(const bpp::PIPmsa *msa1, const bpp::PIPmsa *msa2) {
     return msa1->score_ > msa2->score_;
 }
 
-//==============================================================================
+
 double sum_3_logs(double l1, double l2, double l3) {
-
-    double tmp;
-
-    tmp = progressivePIPutils::add_lns(l1, l2);
-
-    return progressivePIPutils::add_lns(tmp, l3);
+    
+    return MathUtils::add_lns(MathUtils::add_lns(l1, l2), l3);
 
 }
 
-//==============================================================================
+
 double stateProbability(double prob, double temperature) {
 
     //return exp(-(1 - exp(logState - logTotal)) / temperature);
@@ -77,7 +73,7 @@ double stateProbability(double prob, double temperature) {
     return pow(prob, temperature);
 }
 
-//==============================================================================
+
 void weightProbWithPartFun(double temperature,
                            double log_Zm,
                            double log_Zx,
@@ -152,7 +148,7 @@ void weightProbWithPartFun(double temperature,
 
 }
 
-//==============================================================================
+
 double log_factorial(int m) {
 
     double f = log(1);
@@ -163,7 +159,7 @@ double log_factorial(int m) {
     return f;
 }
 
-//==============================================================================
+
 void updateCoord(int state, int &i, int &j, int &m) {
 
     switch (state) {
@@ -194,7 +190,7 @@ void updateCoord(int state, int &i, int &j, int &m) {
 
 }
 
-//==============================================================================
+
 double nodeSB::_getStateData(LKdata &lkdata,
                              int state,
                              int i, int j,
@@ -433,7 +429,7 @@ void nodeSB::_forward(LKdata &lkdata,
                 lkdata.Log3DX[m][i][j] = min_inf;
             } else {
                 id1x = map_compr_L->at(i - 1);
-//                lkdata.Log3DX[m][i][j] = progressivePIPutils::add_lns(lkdata.Log3DX[m - 1][i - 1][j],
+//                lkdata.Log3DX[m][i][j] = MathUtils::add_lns(lkdata.Log3DX[m - 1][i - 1][j],
 //                                                                      lkdata.Log2DX[id1x]);
                 lkdata.Log3DX[m][i][j] = lkdata.Log3DX[m - 1][i - 1][j] + lkdata.Log2DX[id1x];
             }
@@ -451,7 +447,7 @@ void nodeSB::_forward(LKdata &lkdata,
                 lkdata.Log3DY[m][i][j] = min_inf;
             } else {
                 id2y = map_compr_R->at(j - 1);
-//                lkdata.Log3DY[m][i][j] = progressivePIPutils::add_lns(lkdata.Log3DY[m - 1][i][j - 1],
+//                lkdata.Log3DY[m][i][j] = MathUtils::add_lns(lkdata.Log3DY[m - 1][i][j - 1],
 //                                                                      lkdata.Log2DY[id2y]);
                 lkdata.Log3DY[m][i][j] = lkdata.Log3DY[m - 1][i][j - 1] + lkdata.Log2DY[id2y];
             }
@@ -472,7 +468,7 @@ void nodeSB::_forward(LKdata &lkdata,
                 } else {
                     id1m = map_compr_L->at(i - 1);
                     id2m = map_compr_R->at(j - 1);
-                    //lkdata.Log3DM[m][i][j] = progressivePIPutils::add_lns(tmp_lk, lkdata.Log2DM[id1m][id2m]);
+                    //lkdata.Log3DM[m][i][j] = MathUtils::add_lns(tmp_lk, lkdata.Log2DM[id1m][id2m]);
                     lkdata.Log3DM[m][i][j] = tmp_lk + lkdata.Log2DM[id1m][id2m];
                 }
 
@@ -487,7 +483,7 @@ void nodeSB::_forward(LKdata &lkdata,
                     lkdata.Log3DX[m][i][j] = min_inf;
                 } else {
                     id1x = map_compr_L->at(i - 1);
-                    //lkdata.Log3DX[m][i][j] = progressivePIPutils::add_lns(tmp_lk, lkdata.Log2DX[id1x]);
+                    //lkdata.Log3DX[m][i][j] = MathUtils::add_lns(tmp_lk, lkdata.Log2DX[id1x]);
                     lkdata.Log3DX[m][i][j] = tmp_lk + lkdata.Log2DX[id1x];
                 }
 
@@ -502,7 +498,7 @@ void nodeSB::_forward(LKdata &lkdata,
                     lkdata.Log3DY[m][i][j] = min_inf;
                 } else {
                     id2y = map_compr_R->at(j - 1);
-                    //lkdata.Log3DY[m][i][j] = progressivePIPutils::add_lns(tmp_lk, lkdata.Log2DY[id2y]);
+                    //lkdata.Log3DY[m][i][j] = MathUtils::add_lns(tmp_lk, lkdata.Log2DY[id2y]);
                     lkdata.Log3DY[m][i][j] = tmp_lk + lkdata.Log2DY[id2y];
                 }
                 //***************************************************************************
