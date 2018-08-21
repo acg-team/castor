@@ -584,6 +584,7 @@ const {
 //
 //}
 
+
 std::vector<int> RHomogeneousTreeLikelihood_PIP::_getMappedNodeChildren(int nodeID) const {
 
     std::vector<int> sonsIDs;
@@ -602,25 +603,25 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
         // Get references to datastructes for current node
 
-        Node *node = tree_->getNode(nodeID);
-        VVVdouble *pxy__node = &pxy_[node->getId()];
+        //Node *node = tree_->getNode(nodeID);
+        VVVdouble *pxy__node = &pxy_[nodeID];
         VVVdouble *_likelihoods_node = &likelihoodData_->getLikelihoodArray(nodeID);
         VVVdouble *_likelihoods_empty_node = &likelihoodEmptyData_->getLikelihoodArray(nodeID);
 
-        _kernel_subtreelikelihood(node, pxy__node, _likelihoods_node, _likelihoods_empty_node);
+        _kernel_subtreelikelihood(nodeID, pxy__node, _likelihoods_node, _likelihoods_empty_node);
 
     }
 
 }
 
-void RHomogeneousTreeLikelihood_PIP::_kernel_subtreelikelihood(Node *node,
+void RHomogeneousTreeLikelihood_PIP::_kernel_subtreelikelihood(int nodeID,
                                                                VVVdouble *pxy__node,
                                                                VVVdouble *_likelihoods_node,
                                                                VVVdouble *_likelihoods_empty_node) {
-    int nodeID = node->getId();
-
+    //int nodeID = node->getId();
+    tshlib::VirtualNode *node = getVirtualNode(nodeID);
     // Leaf node
-    if (node->isLeaf()) {
+    if (node->isTerminalNode()) {
         VVdouble *indicator_node = &indicatorFun_[nodeID];
         _computePrTimesIndicator(pxy__node, indicator_node, _likelihoods_node);
         _computePrTimesIndicatorEmpty(pxy__node, indicator_node, _likelihoods_empty_node);
@@ -642,7 +643,7 @@ void RHomogeneousTreeLikelihood_PIP::_kernel_subtreelikelihood(Node *node,
     _computeHadamardFVSons(lk_sons_empty, _likelihoods_empty_node);
 
     // Add transition probability for internal node (not root)
-    if (node->hasFather()) {
+    if (!node->isRootNode()) {
         _computePrTimesFv(pxy__node, _likelihoods_node);
         _computePrTimesFv(pxy__node, _likelihoods_empty_node);
     }
@@ -662,12 +663,12 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood(DRASRTreeLikelihoo
     for (auto &nodeID:likelihoodNodes_) {
 
         // Get references to datastructes for current node
-        Node *node = tree_->getNode(nodeID);
-        VVVdouble *pxy__node = &pxy_[node->getId()];
+        //Node *node = tree_->getNode(nodeID);
+        VVVdouble *pxy__node = &pxy_[nodeID];
         VVVdouble *_likelihoods_node = &FV->getLikelihoodArray(nodeID);
         VVVdouble *_likelihoods_empty_node = &FVEmpty->getLikelihoodArray(nodeID);
 
-        _kernel_subtreelikelihood(node, pxy__node, _likelihoods_node, _likelihoods_empty_node);
+        _kernel_subtreelikelihood(nodeID, pxy__node, _likelihoods_node, _likelihoods_empty_node);
 
     }
 
@@ -1297,12 +1298,13 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
 
     for (auto &nodeID:getNodeListPostOrder(tree_->getRootNode()->getId())) {
 
-        Node *node = tree_->getNode(nodeID);
+        tshlib::VirtualNode *node = getVirtualNode(nodeID);
+        //Node *node = tree_->getNode(nodeID);
         double fv_site = 0;
 
         for (size_t c = 0; c < nbClasses_; c++) {
-
-            if (!node->isLeaf()) {
+            if (!node->isTerminalNode()) {
+            //if (!node->isLeaf()) {
 
                 // Get mapped node on Utree
                 //auto sonsIDs = _getMappedNodeChildren(nodeID);
@@ -1313,7 +1315,8 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
 
                 std::vector<double> fvsons = _SingleRateCategoryHadamardMultFvSons(nodeID, 0, c,lk_sons);
 
-                if (node->hasFather()) {
+                if(!node->isRootNode()){
+                //if (node->hasFather()) {
                     fv_site += iotasData_[nodeID] * (1 - betasData_[nodeID] + betasData_[nodeID] * MatrixBppUtils::dotProd(&fvsons, &rootFreqs_));
                 } else {
                     fv_site += iotasData_[nodeID] * betasData_[nodeID] * MatrixBppUtils::dotProd(&fvsons, &rootFreqs_);
@@ -1324,7 +1327,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
                 fv_site += iotasData_[nodeID] * (1 - betasData_[nodeID]);
             }
 
-            DVLOG(3) << "lk empty at node[" << node->getName() << "] -> " << std::setprecision(18) << fv_site << std::endl;
+            DVLOG(3) << "lk empty at node[" << node->vnode_name << "] -> " << std::setprecision(18) << fv_site << std::endl;
             lk_site_empty += (fv_site * rateDistribution_->getProbability(c));
         }
 
@@ -1341,7 +1344,8 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
 
     for (auto &nodeID:likelihoodNodes) {
 
-        Node *node = tree_->getNode(nodeID);
+        //Node *node = tree_->getNode(nodeID);
+        tshlib::VirtualNode *node = getVirtualNode(nodeID);
         std::vector<bool> *setA__node = &setAData_[nodeID].first;
 
         for (size_t c = 0; c < nbClasses_; c++) {
@@ -1349,9 +1353,11 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
             double fv_site = 0;
             if ((*setA__node)[i]) {
 
-                DVLOG(3) << "[BPP] Likelihood for setA (" << i << ") @node " << node->getName();
+                DVLOG(3) << "[BPP] Likelihood for setA (" << i << ") @node " << node->vnode_name;
 
-                if (!node->isLeaf()) {
+                if (!node->isTerminalNode()) {
+
+                //if (!node->isLeaf()) {
 
                     std::vector<VVVdouble *> lk_sons;
                     for (auto &l : _getMappedNodeChildren(nodeID))

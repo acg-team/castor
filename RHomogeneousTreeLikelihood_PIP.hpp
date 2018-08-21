@@ -377,7 +377,7 @@ namespace bpp {
         // this overloaded method is called during the tree-search
         virtual void computeSubtreeLikelihood(DRASRTreeLikelihoodData *FV, DRASRTreeLikelihoodData *FVEmpty);
 
-        virtual void _kernel_subtreelikelihood(Node *node, VVVdouble *pxy__node, VVVdouble *_likelihoods_node, VVVdouble *_likelihoods_empty_node);
+        virtual void _kernel_subtreelikelihood(int nodeID, VVVdouble *pxy__node, VVVdouble *_likelihoods_node, VVVdouble *_likelihoods_empty_node);
 
         virtual void computeDownSubtreeDLikelihood(const Node *);
 
@@ -463,6 +463,7 @@ namespace bpp {
 
         double getNodeAge(int nodeID);
 
+        tshlib::VirtualNode * getVirtualNode(int nodeID) const { return treemap_.left.at(nodeID); };
 
         //friend class RHomogeneousMixedTreeLikelihood;
 
