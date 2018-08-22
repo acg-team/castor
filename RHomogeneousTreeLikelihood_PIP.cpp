@@ -405,7 +405,7 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFv(VVVdouble *pxy__node, VVV
 
 
     for (int c = 0; c < t_classes; c++) {
-        VVdouble *pxy__node_c = &(*pxy__node)[c];
+        //VVdouble *pxy__node_c = &(*pxy__node)[c];
 
         for (int i = 0; i < t_distSites; i++) {
             // this vector stores the old values before recomputing them
@@ -415,7 +415,7 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFv(VVVdouble *pxy__node, VVV
                 (*_likelihoods_node)[i][c][x] = 0.0;
 
                 for (int y = 0; y < t_states; y++)
-                    (*_likelihoods_node)[i][c][x] += (*pxy__node_c)[x][y] * reference[y];
+                    (*_likelihoods_node)[i][c][x] += (*pxy__node)[c][x][y] * reference[y];
 
             }
         }
@@ -491,7 +491,7 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(VVVdouble *pxy__no
 
 
     for (int c = 0; c < t_classes; c++) {
-        VVdouble *pxy__node_c = &(*pxy__node)[c];
+        //VVdouble *pxy__node_c = &(*pxy__node)[c];
 
         for (int i = 0; i < t_distSites; i++) {
 
@@ -501,7 +501,7 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(VVVdouble *pxy__no
                 (*_likelihoods_node)[i][c][x] = 0.0;
 
                 for (int y = 0; y < t_states; y++)
-                    (*_likelihoods_node)[i][c][x] += (*pxy__node_c)[x][y] * (*indicator_node)[i][y];
+                    (*_likelihoods_node)[i][c][x] += (*pxy__node)[c][x][y] * (*indicator_node)[i][y];
 
             }
         }
@@ -512,14 +512,12 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(VVVdouble *pxy__no
 void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicatorEmpty(VVVdouble *pxy__node, VVdouble *indicator_node, VVVdouble *_likelihoods_node)
 const {
 
-    int nbClasses = (int) nbClasses_;
-    int nbStates = (int) nbStates_;
 
-    for (int c = 0; c < nbClasses; c++) {
-        VVdouble *pxy__node_c = &(*pxy__node)[c];
+    for (int c = 0; c < nbClasses_; c++) {
+        //VVdouble *pxy__node_c = &(*pxy__node)[c];
 
-        for (int x = 0; x < nbStates; x++) {
-            (*_likelihoods_node)[0][c][x] = (*pxy__node_c)[x][nbStates - 1];
+        for (int x = 0; x < nbStates_; x++) {
+            (*_likelihoods_node)[0][c][x] = (*pxy__node)[c][x][nbStates_ - 1];
         }
 
     }
@@ -628,12 +626,12 @@ void RHomogeneousTreeLikelihood_PIP::_kernel_subtreelikelihood(int nodeID,
 
     // Get references to datastructes for node children and append them in a vector
     std::vector<int> sonsIDs = _getMappedNodeChildren(nodeID);
-    std::vector<VVVdouble *> lk_sons;
-    std::vector<VVVdouble *> lk_sons_empty;
+    std::vector<VVVdouble *> lk_sons(2);
+    std::vector<VVVdouble *> lk_sons_empty(2);
 
     for (int l = 0; l < sonsIDs.size(); l++) {
-        lk_sons.push_back(&likelihoodData_->getLikelihoodArray(sonsIDs.at(l)));
-        lk_sons_empty.push_back(&likelihoodEmptyData_->getLikelihoodArray(sonsIDs.at(l)));
+        lk_sons[l] = &likelihoodData_->getLikelihoodArray(sonsIDs[l]);
+        lk_sons_empty[l] = &likelihoodEmptyData_->getLikelihoodArray(sonsIDs[l]);
     }
 
     // Update FV children
