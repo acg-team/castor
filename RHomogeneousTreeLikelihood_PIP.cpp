@@ -831,16 +831,17 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
 
                 // Recompute it
                 for (auto &l:sonsIDs){
-                    descCountData_[nodeID].first.at(i) += getNodeDescCountForASite(l, i);
+
+                    descCountData_[nodeID].first.at(i) += descCountData_[l].first.at(i);
                 }
 
             }
 
             // Activate or deactivate set A
-            setAData_[nodeID].first.at(i) = (getNodeDescCountForASite(nodeID, i) == nonGaps_);
+            setAData_[nodeID].first.at(i) = (descCountData_[nodeID].first.at(i) == nonGaps_);
 
-            DVLOG(3) << "setInsertionHistories [setA] (" << std::setfill('0') << std::setw(3) << i << ") @node " << tree_->getNode(nodeID)->getName() << "\t"
-                     << setAData_[nodeID].first.at(i);
+            DVLOG(3) << "setInsertionHistories [setA] (" << std::setfill('0') << std::setw(3) << i << ") @node " << tree_->getNode(nodeID)->getName()
+                     << "\t" << setAData_[nodeID].first.at(i);
 
             /*
             // Set attributes on the node
