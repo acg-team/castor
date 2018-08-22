@@ -587,12 +587,10 @@ const {
 
 std::vector<int> RHomogeneousTreeLikelihood_PIP::_getMappedNodeChildren(int nodeID) const {
 
-    std::vector<int> sonsIDs;
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
+    std::vector<int> sonsIDs(2);
 
-    sonsIDs.push_back(treemap_.right.at(vnode_left));
-    sonsIDs.push_back(treemap_.right.at(vnode_right));
+    sonsIDs[0] = treemap_.right.at(treemap_.left.at(nodeID)->getNodeLeft());
+    sonsIDs[1] = treemap_.right.at(treemap_.left.at(nodeID)->getNodeRight());
 
     return sonsIDs;
 }
