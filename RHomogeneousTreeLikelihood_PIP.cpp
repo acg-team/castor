@@ -781,28 +781,22 @@ void RHomogeneousTreeLikelihood_PIP::fireParameterChanged(const ParameterList &p
 
 void RHomogeneousTreeLikelihood_PIP::initialiseInsertionHistories() const {
 
-    // Vectorization requires explicit loop sizes
-    int nbDistinctSites = (int) nbDistinctSites_;
-    int nbStates = (int) nbStates_;
-
-    for (int i = 0; i < nbDistinctSites; i++) {
-        for (auto &node:tree_->getNodes()) {
-
+    for (int i = 0; i < nbDistinctSites_; i++) {
+        for (auto &nodeID:tree_->getNodesId()) {
+            // Get VirtualNode associated to current bpp::Node id
+            tshlib::VirtualNode *node = getVirtualNode(nodeID);
             // Initialize vectors descCount_ and setA_ and indicatorFunctionVector
             std::vector<int> descCount_;
-            //std::vector<bool> descGapCount_;
             std::vector<bool> setA_;
-            descCount_.resize(nbDistinctSites);
-            //descGapCount_.resize(nbDistinctSites);
+            descCount_.resize(nbDistinctSites_);
 
-            setA_.resize(nbDistinctSites);
-            if (node->isLeaf()) {
-                indicatorFun_[node->getId()].at(i).resize(nbStates);
+            setA_.resize(nbDistinctSites_);
+            if (node->isTerminalNode()) {
+                indicatorFun_[nodeID].at(i).resize(nbStates_);
             }
 
-            descCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
-            //descGapCountData_.insert(std::make_pair(node->getId(), std::make_pair(descCount_, node->getId())));
-            setAData_.insert(std::make_pair(node->getId(), std::make_pair(setA_, node->getId())));
+            descCountData_.insert(std::make_pair(nodeID, std::make_pair(descCount_, nodeID)));
+            setAData_.insert(std::make_pair(nodeID, std::make_pair(setA_, nodeID)));
         }
     }
 }
@@ -810,57 +804,42 @@ void RHomogeneousTreeLikelihood_PIP::initialiseInsertionHistories() const {
 
 void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &sites) const {
 
-    // Vectorization requires explicit loop sizes
-    int nbDistinctSites = (int) nbDistinctSites_;
-    int nbClasses = (int) nbClasses_;
-    int nbStates = (int) nbStates_;
+    for (int i = 0; i < nbDistinctSites_; i++) {
 
-
-    for (int i = 0; i < nbDistinctSites; i++) {
+        // Get uncompressed site index
         size_t indexRealSite = static_cast<size_t>(rootPatternLinksInverse_.at(i));
+
         // Compute the total number of characters (exc. gap) for the current site
         int nonGaps_ = countNonGapCharacterInSite(sites, (int) indexRealSite);
 
         for (auto &nodeID:likelihoodNodes_) {
-            Node *node = tree_->getNode(nodeID);
+            // Get VirtualNode associated to current bpp::Node id
+            tshlib::VirtualNode *node = getVirtualNode(nodeID);
 
             // Computing descCount and descGapCount
-            if (node->isLeaf()) {
+            if (node->isTerminalNode()) {
 
-                descCountData_[nodeID].first.at(i) = (sites.getSequence(node->getName()).getValue(indexRealSite) ==
-                                                      sites.getAlphabet()->getGapCharacterCode() ? 0 : 1);
-                //descGapCountData_[nodeID].first.at(i) = sites.getSequence(node->getName()).getValue(indexRealSite) == sites.getAlphabet()->getGapCharacterCode();
-
+                descCountData_[nodeID].first.at(i) = (indicatorFun_[nodeID][i].back() == 1 ? 0 : 1);
 
             } else {
 
                 // Get the left and right son of the current node (mapped on the utree structure which can differ from tree_).
-                std::vector<int> sonsIDs;
-                tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
-                tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
-
-                sonsIDs.push_back(treemap_.right.at(vnode_left));
-                sonsIDs.push_back(treemap_.right.at(vnode_right));
-                size_t nbNodes = sonsIDs.size();
+                std::vector<int> sonsIDs = _getMappedNodeChildren(nodeID);
 
                 // Reset value stored at the internal node
                 descCountData_[nodeID].first.at(i) = 0;
-                //descGapCountData_[nodeID].first.at(i) = true;
-
 
                 // Recompute it
-                for (size_t l = 0; l < nbNodes; l++) {
-
-                    descCountData_[nodeID].first.at(i) += getNodeDescCountForASite(tree_->getNode(sonsIDs.at(l)), i);
-                    //descGapCountData_[nodeID].first.at(i) = (descGapCountData_[nodeID].first.at(i) && descGapCountData_[sonsIDs.at(l)].first.at(i));
-
+                for (auto &l:sonsIDs){
+                    descCountData_[nodeID].first.at(i) += getNodeDescCountForASite(l, i);
                 }
 
             }
 
             // Activate or deactivate set A
-            setAData_[nodeID].first.at(i) = (getNodeDescCountForASite(node, i) == nonGaps_);
-            DVLOG(3) << "setInsertionHistories [setA] (" << std::setfill('0') << std::setw(3) << i << ") @node " << node->getName() << "\t"
+            setAData_[nodeID].first.at(i) = (getNodeDescCountForASite(nodeID, i) == nonGaps_);
+
+            DVLOG(3) << "setInsertionHistories [setA] (" << std::setfill('0') << std::setw(3) << i << ") @node " << tree_->getNode(nodeID)->getName() << "\t"
                      << setAData_[nodeID].first.at(i);
 
             /*

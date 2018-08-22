@@ -301,7 +301,7 @@ namespace bpp {
 
         std::vector<int> getNodeDescCounts(bpp::Node *node, int siteId) { return descCountData_[node->getId()].first; }
 
-        int getNodeDescCountForASite(bpp::Node *node, int siteId) const { return descCountData_[node->getId()].first.at(siteId); }
+        int getNodeDescCountForASite(int nodeID, int siteId) const { return descCountData_[nodeID].first.at(siteId); }
 
         bool getSetAForANodeForASite(bpp::Node *node, int siteId) { return setAData_[node->getId()].first.at(siteId); }
 
