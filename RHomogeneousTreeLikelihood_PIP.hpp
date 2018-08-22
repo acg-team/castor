@@ -453,7 +453,7 @@ namespace bpp {
 
         double computeLikelihoodWholeAlignmentEmptyColumn() const;
 
-        int countNonGapCharacterInSite(const SiteContainer &sites, int siteID) const;
+        int countNonGapCharacterInSite(int siteID) const;
 
         void computeInDelDispersionOnTree(const SiteContainer &sites);
 

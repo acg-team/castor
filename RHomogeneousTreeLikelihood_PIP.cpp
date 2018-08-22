@@ -805,10 +805,11 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
     for (int i = 0; i < nbDistinctSites_; i++) {
 
         // Get uncompressed site index
-        size_t indexRealSite = static_cast<size_t>(rootPatternLinksInverse_.at(i));
+        //size_t indexRealSite = static_cast<size_t>(rootPatternLinksInverse_.at(i));
 
         // Compute the total number of characters (exc. gap) for the current site
-        int nonGaps_ = countNonGapCharacterInSite(sites, (int) indexRealSite);
+        //int nonGaps_ = countNonGapCharacterInSite(sites, (int) indexRealSite);
+        int nonGaps_ = countNonGapCharacterInSite(i);
 
         for (auto &nodeID:likelihoodNodes_) {
             // Get VirtualNode associated to current bpp::Node id
@@ -890,14 +891,13 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
 }
 
 
-int RHomogeneousTreeLikelihood_PIP::countNonGapCharacterInSite(const SiteContainer &sites, int siteID) const {
+int RHomogeneousTreeLikelihood_PIP::countNonGapCharacterInSite(int siteID) const {
     int nonGaps_ = 0;
-    for (int s = 0; s < sites.getNumberOfSequences(); s++) {
 
-        if (sites.getAlphabet()->getGapCharacterCode() != sites.getSite(siteID).getValue(s)) {
-            nonGaps_++;
-        }
+    for (std::map<int, std::vector<std::vector<double>>>::iterator it=indicatorFun_.begin(); it!=indicatorFun_.end(); ++it){
+        nonGaps_ += (it->second.at(siteID).back()== 1 ? 0 : 1);
     }
+
     return nonGaps_;
 }
 
