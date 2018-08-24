@@ -111,7 +111,7 @@ namespace bpp {
 
         double updateLikelihoodOnTreeRearrangement(std::vector<tshlib::VirtualNode *> &nodeList);
 
-        double getLogLikelihoodOnTreeRearrangement() const;
+        double getLogLikelihoodOnTreeRearrangement(const std::vector<int> &nodeList) const;
 
         void topologyChangeSuccessful(std::vector<tshlib::VirtualNode *> listNodes);
 

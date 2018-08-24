@@ -190,7 +190,7 @@ void RHomogeneousTreeLikelihood_PIP::setData(const SiteContainer &sites) throw(E
     setLikelihoodNodes(ponl);
 
     // Set initial Insertion Histories
-    setInsertionHistories(*data_);
+    setInsertionHistories(*data_, ponl);
 
     if (verbose_)
         ApplicationTools::displayResult("Number of distinct sites", TextTools::toString(nbDistinctSites_));
@@ -314,9 +314,9 @@ std::vector<int> RHomogeneousTreeLikelihood_PIP::_getMappedNodeChildren(int node
     return sonsIDs;
 }
 
-void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
+void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood(const std::vector<int> &nodeList) {
 
-    for (auto &nodeID:likelihoodNodes_) {
+    for (auto &nodeID:nodeList) {
 
         // Get references to objects
         VVVdouble *pxy__node = &pxy_[nodeID];
@@ -330,9 +330,9 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood() {
 
 }
 
-void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood(DRASRTreeLikelihoodData *FV, DRASRTreeLikelihoodData *FVEmpty) {
+void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood(DRASRTreeLikelihoodData *FV, DRASRTreeLikelihoodData *FVEmpty, const std::vector<int> &nodeList) {
 
-    for (auto &nodeID:likelihoodNodes_) {
+    for (auto &nodeID:nodeList) {
 
         // Get references to objects
         VVVdouble *pxy__node = &pxy_[nodeID];
@@ -467,14 +467,14 @@ void RHomogeneousTreeLikelihood_PIP::initialiseInsertionHistories() const {
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &sites) const {
+void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &sites, const std::vector<int> &nodeList) const {
 
     for (int i = 0; i < nbDistinctSites_; i++) {
 
         // Compute the total number of characters (exc. gap) for the current site
         int nonGaps_ = countNonGapCharacterInSite(i);
 
-        for (auto &nodeID:likelihoodNodes_) {
+        for (auto &nodeID:nodeList) {
 
             // Get VirtualNode associated to current bpp::Node id
             tshlib::VirtualNode *node = getVirtualNode(nodeID);
@@ -786,7 +786,7 @@ void RHomogeneousTreeLikelihood_PIP::setIndicatorFunction(const SiteContainer &s
 
 void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood() {
 
-    computeSubtreeLikelihood();
+    computeSubtreeLikelihood(likelihoodNodes_);
 }
 
 
@@ -802,10 +802,6 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
 
         for (size_t c = 0; c < nbClasses_; c++) {
             if (!node->isTerminalNode()) {
-            //if (!node->isLeaf()) {
-
-                // Get mapped node on Utree
-                //auto sonsIDs = _getMappedNodeChildren(nodeID);
 
                 std::vector<VVVdouble *> lk_sons;
                 for (auto &l : _getMappedNodeChildren(nodeID))
@@ -881,12 +877,13 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
 /********************************************************************************************************************************************/
 
 double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
+
     // Get number of sites to use for the likelihood computation
-    int nbDistinctSites = (int) nbDistinctSites_;
+    //int nbDistinctSites = (int) nbDistinctSites_;
 
     // Set the likelihoodNodeList to the postorder one
-    std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
-    setLikelihoodNodes(ponl);
+    //std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
+    //setLikelihoodNodes(ponl);
 
     // compute likelihood empty column
     double lk_site_empty = computeLikelihoodWholeAlignmentEmptyColumn();
@@ -897,14 +894,15 @@ double RHomogeneousTreeLikelihood_PIP::getLogLikelihood() const {
     // Initialise vector of likelihood per each site
     std::vector<double> lk_sites(nbDistinctSites_);
 
-    std::vector<int> listNodes = likelihoodNodes_;
+    //std::vector<int> listNodes = likelihoodNodes_;
 
     const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
 
     // For each site in the alignment
-    for (int i = 0; i < nbDistinctSites; i++) {
+    for (int i = 0; i < nbDistinctSites_; i++) {
 
-        lk_sites[i] = log(computeLikelihoodForASite(listNodes, i)) * rootWeights->at(i);
+        //lk_sites[i] = log(computeLikelihoodForASite(listNodes, i)) * rootWeights->at(i);
+        lk_sites[i] = log(computeLikelihoodForASite(likelihoodNodes_, i)) * rootWeights->at(i);
         DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
     }
 

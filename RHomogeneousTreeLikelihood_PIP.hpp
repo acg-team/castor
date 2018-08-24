@@ -370,12 +370,12 @@ namespace bpp {
          *
          * @param node The root of the subtree.
          */
-        virtual void computeSubtreeLikelihood();
+        virtual void computeSubtreeLikelihood(const std::vector<int> &nodeList);
 
         virtual void computeSubtreeLikelihood() const;
 
         // this overloaded method is called during the tree-search
-        virtual void computeSubtreeLikelihood(DRASRTreeLikelihoodData *FV, DRASRTreeLikelihoodData *FVEmpty);
+        virtual void computeSubtreeLikelihood(DRASRTreeLikelihoodData *FV, DRASRTreeLikelihoodData *FVEmpty, const std::vector<int> &nodeList);
 
         virtual void _kernel_subtreelikelihood(int nodeID, VVVdouble *pxy__node, VVVdouble *_likelihoods_node, VVVdouble *_likelihoods_empty_node);
 
@@ -396,7 +396,7 @@ namespace bpp {
          * @brief This method sets DescCount (number of characters different from gap per column) value for all the nodes in the tree
          * @param sites SiteContainer of the aligned sites
          */
-        virtual void setInsertionHistories(const SiteContainer &sites) const;
+        virtual void setInsertionHistories(const SiteContainer &sites, const std::vector<int> &nodeList) const;
 
         /**
          * @brief This method sets the indicator for the number of evolutionary events (Insertions and Deletions) at each node of the topology

@@ -86,9 +86,6 @@ namespace bpp {
 
             delete optimiser_->getFunction();
 
-            // cycle on map, map, map and delete VVVdouble
-
-
         };
 
         void setOptimiser(AbstractHomogeneousTreeLikelihood *lk,

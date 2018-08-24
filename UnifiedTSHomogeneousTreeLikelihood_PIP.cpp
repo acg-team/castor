@@ -143,12 +143,12 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::removeTestLikelihoodData(int idxThr
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::fireTopologyChange(std::vector<int> nodeList) {
     // Store the nodes where the likelihood should be recomputed in post-order
-    setLikelihoodNodes(nodeList);
+    //setLikelihoodNodes(nodeList);
     // Recompute the value of the FV 3D arrays
     //computeSubtreeLikelihood(likelihoodDataTest_, likelihoodEmptyDataTest_);
-    computeSubtreeLikelihood();
+    computeSubtreeLikelihood(nodeList);
     // Compute the insertion histories set (recompute the desc_count and set A)
-    setInsertionHistories(*data_);
+    setInsertionHistories(*data_, nodeList);
 }
 
 
@@ -158,15 +158,15 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangeme
     utree_->addVirtualRootNode();
 
     // 0. convert the list of tshlib::VirtualNodes into bpp::Node
-    //std::vector<int> rearrangedNodes = remapVirtualNodeLists(nodeList);
+    std::vector<int> rearrangedNodes = remapVirtualNodeLists(nodeList);
 
     // 1. Fire topology change
     //fireTopologyChange(rearrangedNodes);
-    fireTopologyChange(remapVirtualNodeLists(nodeList));
+    fireTopologyChange(rearrangedNodes);
 
     // 2. Compute loglikelihood
     //double logLk = getLogLikelihoodOnTopologyChange();
-    double logLk = getLogLikelihoodOnTreeRearrangement();
+    double logLk = getLogLikelihoodOnTreeRearrangement(rearrangedNodes);
 
     // Remove root node from the utree structure
     utree_->removeVirtualRootNode();
@@ -196,7 +196,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::recomputeSiteLikelihoodUsingPartiti
 
 #endif
 
-double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangement() const {
+double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangement(const std::vector<int> &nodeList) const {
     double logLK;
 
     // 2. Compute the lk of the empty column
@@ -222,7 +222,7 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangeme
         std::vector<int> tempExtendedNodeList;
 
         // Extend it
-        _extendNodeListOnSetA(likelihoodNodes_.back(), tempExtendedNodeList, i);
+        _extendNodeListOnSetA(nodeList.back(), tempExtendedNodeList, i);
 
         // call to function which retrieves the lk value for each site
         lk_sites[i] = log(computeLikelihoodForASite(tempExtendedNodeList, i)) * rootWeights->at(i);
@@ -254,10 +254,11 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(std::vecto
     utree_->addVirtualRootNode();
 
     // Fire topology change
-    //std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
-    //fireTopologyChange(ponl);
+    std::vector<int> ponl = getNodeListPostOrder(tree_->getRootNode()->getId());
 
-    fireTopologyChange(getNodeListPostOrder(tree_->getRootNode()->getId()));
+    setLikelihoodNodes(ponl);
+
+    fireTopologyChange(ponl);
 
     // remap the virtual nodes to the bpp nodes
     //std::vector<Node *> extractionNodes = UtreeBppUtils::remapNodeLists(listNodes, tree_, treemap_);
