@@ -281,6 +281,14 @@ namespace tshlib {
          */
         void testMoves(tshlib::TreeRearrangment *candidateMoves);
 
+        /*!
+         * @brief This method preallocates the required amount of memory to test each candidate tree-rearrangement.
+         *        Memory can have concurrent threads in reading and writing mode.
+         * @param candidateMoves stack of the moves to test
+         */
+        void allocateTemporaryLikelihoodData(int numThreads = 1);
+
+        void deallocateTemporaryLikelihoodData(int numThreads = 1);
 
 
         std::string debugStackTraceMove(Move *move, Utree *tree,

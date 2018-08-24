@@ -58,11 +58,19 @@ namespace bpp {
 
     protected:
 
+        enum class LKDataClass { sub, empty };
+
         mutable AbstractHomogeneousTreeLikelihood *lk_;
-        mutable std::vector<Parameter> testBrLens_;
         mutable AbstractOptimizer *optimiser_;
         std::string optMethodModel_;
         bool optNumericalDerivatives_;
+
+        // Temporary object for storing FV components (unlimited) during tree-search
+        // - allocation at the beginning of the tree-search cycle
+        // - deallocation at the end of the tree-search cycle
+        // - one or more VVVdouble object per each tree-rearrangement (map classVVVdouble (map idxRearrangment, map idxNode, VVVdouble))
+        mutable std::map<LKDataClass,std::map<int,std::map<int, VVVdouble *>>> testVectorLikelihoodData_;
+
 
 
     public:
@@ -74,7 +82,14 @@ namespace bpp {
 
         UnifiedTSHSearchable() : lk_(nullptr), optimiser_(nullptr), optMethodModel_(""), optNumericalDerivatives_(false) {}
 
-        virtual ~UnifiedTSHSearchable() {delete optimiser_->getFunction();};
+        virtual ~UnifiedTSHSearchable() {
+
+            delete optimiser_->getFunction();
+
+            // cycle on map, map, map and delete VVVdouble
+
+
+        };
 
         void setOptimiser(AbstractHomogeneousTreeLikelihood *lk,
                                         bool optNumericalDerivatives,
@@ -86,6 +101,13 @@ namespace bpp {
 
         void fireBranchOptimisation(std::vector<bpp::Node *> extractionNodes);
 
+        std::map<int,std::map<int, VVVdouble *>> *getTestLikelihoodData(LKDataClass classTestLKData = LKDataClass::sub) {
+            return &testVectorLikelihoodData_[classTestLKData];
+        }
+
+        virtual void addTestLikelihoodData(int idxThread){}
+
+        virtual void removeTestLikelihoodData(int idxThread){}
 
     };
 }

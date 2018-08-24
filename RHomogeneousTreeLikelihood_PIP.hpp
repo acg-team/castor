@@ -60,35 +60,35 @@ namespace bpp {
     class RHomogeneousTreeLikelihood_PIP : public AbstractHomogeneousTreeLikelihood {
     protected:
 
-        mutable DRASRTreeLikelihoodData *likelihoodData_;
-        mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;
+        // Likelihood quantities (FV)
+        mutable DRASRTreeLikelihoodData *likelihoodData_;           // Structure containing the 3D FV arrays at each internal node
+        mutable DRASRTreeLikelihoodData *likelihoodEmptyData_;      // Structure containing the 3D FV arrays (empty column) at each internal node
+        mutable std::vector<int> likelihoodNodes_;                  // The node is represented via its <int> ID
 
-        mutable std::vector<int> likelihoodNodes_;                            //The node is represented via its <int> ID
+        // Insertion histories
+        mutable std::map<int, std::vector<int>> descCountData_;     // Descendant count
+        mutable std::map<int, std::vector<bool>> setAData_;         // SetA flags if a node should be included in the insertion histories
 
-        mutable std::map<int, std::pair<std::vector<int>, int>> descCountData_;
-        mutable std::map<int, std::pair<std::vector<bool>, int>> setAData_;                   // SetA flags if a node should be included in the insertion histories
+        // PIP quantities
+        mutable std::map<int, double> iotasData_;                               //
+        mutable std::map<int, double> betasData_;                               //
+        mutable std::map<int, std::vector<std::vector<double>>> indicatorFun_;  //
+        mutable double nu_;                                                     //
+        mutable double tau_;                                                    //
 
-        mutable std::map<int, std::pair<std::vector<int>, bool>> descGapCountData_;           // Counts the number of gaps in the descending nodes
-        mutable std::map<int, int> evolutionaryEvents_;                                       // Evolutionary events counts the number of possible evolutionary events happened on the node
-        mutable std::map<int, double> evolutionaryEventsWeighted_;                            // Evolutionary events counts the number of possible evolutionary events happened on the node
-        // weighted them by the number of nodes in the clade
-        mutable std::map<int, double> iotasData_;
-        mutable std::map<int, double> betasData_;
-        mutable std::map<int, std::vector<std::vector<double>>> indicatorFun_;
-        mutable std::vector<unsigned long> rootPatternLinksInverse_;
+        mutable UtreeBppUtils::treemap treemap_;                                // Bidirectional map Utree <-> BppTree
+        mutable std::vector<unsigned long> rootPatternLinksInverse_;            //
 
-        mutable double nu_;
-        mutable double tau_;
-
-        mutable UtreeBppUtils::treemap treemap_;
+        mutable std::map<int,std::map<int, std::vector<int> *>> tsTemp_descCountData_;   // TS: collector for Descendant count vectors
+        mutable std::map<int,std::map<int, std::vector<bool> *>> tsTemp_setAData_;       // TS: collector for SetA flags vectors insertion hist.
 
 
     protected:
 
-        double minusLogLik_;
+        double minusLogLik_;        // Log Likelihood values
 
-        double d1bl_;
-        double d2bl_;
+        double d1bl_;               // value of the First-Derivative of the likelihood function
+        double d2bl_;               // value of the Second-Derivative of the likelihood function
 
     public:
         /**
@@ -299,11 +299,11 @@ namespace bpp {
 
         const DRASRTreeLikelihoodData *getLikelihoodData() const { return likelihoodData_; }
 
-        std::vector<int> getNodeDescCounts(bpp::Node *node, int siteId) { return descCountData_[node->getId()].first; }
+        std::vector<int> getNodeDescCounts(bpp::Node *node, int siteId) { return descCountData_[node->getId()]; }
 
-        int getNodeDescCountForASite(int nodeID, int siteId) const { return descCountData_[nodeID].first.at(siteId); }
+        int getNodeDescCountForASite(int nodeID, int siteId) const { return descCountData_[nodeID][siteId]; }
 
-        bool getSetAForANodeForASite(bpp::Node *node, int siteId) { return setAData_[node->getId()].first.at(siteId); }
+        bool getSetAForANodeForASite(bpp::Node *node, int siteId) { return setAData_[node->getId()][siteId]; }
 
 
         /**

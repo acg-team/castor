@@ -46,8 +46,8 @@
 #include "UnifiedTSHomogeneousTreeLikelihood_PIP.hpp"
 
 
-
 using namespace bpp;
+
 /*
  * Implementation for the interface  likelihood under tree search engines (all mixed models)
  */
@@ -59,7 +59,7 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
                                                                                tshlib::Utree *utree,
                                                                                UtreeBppUtils::treemap *tm,
                                                                                bool optNumericalDerivatives,
-                                                                               std::map<std::string, std::string> &params,
+                                                                               std::map <std::string, std::string> &params,
                                                                                const std::string &suffix,
                                                                                bool checkRooted,
                                                                                bool verbose,
@@ -77,7 +77,7 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
                                                                                tshlib::Utree *utree,
                                                                                UtreeBppUtils::treemap *tm,
                                                                                bool optNumericalDerivatives,
-                                                                               std::map<std::string, std::string> &params,
+                                                                               std::map <std::string, std::string> &params,
                                                                                const std::string &suffix,
                                                                                bool checkRooted,
                                                                                bool verbose,
@@ -85,9 +85,7 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
         RHomogeneousTreeLikelihood_PIP(tree, model, rDist, tm, checkRooted, verbose, usePatterns), utree_(utree) {
 
 
-
-    setOptimiser(static_cast<UnifiedTSHomogeneousTreeLikelihood_PIP*>(this), optNumericalDerivatives, params, suffix, true, verbose, 0);
-
+    setOptimiser(static_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(this), optNumericalDerivatives, params, suffix, true, verbose, 0);
 
 
 }
@@ -100,11 +98,47 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::~UnifiedTSHomogeneousTreeLikelihood_PIP(
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) {
 
+}
 
-    likelihoodDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);          // FV test
-    likelihoodEmptyDataTest_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);     // FV empty test
+void UnifiedTSHomogeneousTreeLikelihood_PIP::addTestLikelihoodData(int idxThread) {
+
+    for (auto &nodeID:tree_->getNodesId()) {
+
+        // Instantiation objects
+        auto sub = new VVVdouble;
+        auto empty = new VVVdouble;
+        auto descCount = new Vint;
+        auto setA = new std::vector<bool>;
+
+        // Allocate memory
+        descCount->resize(nbDistinctSites_);
+        setA->resize(nbDistinctSites_);
+        VectorTools::resize3(*sub, nbDistinctSites_, nbClasses_, nbStates_);
+        VectorTools::resize3(*empty, nbDistinctSites_, nbClasses_, nbStates_);
+
+        // Store references
+        testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID] = sub;
+        testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID] = empty;
+        tsTemp_descCountData_[idxThread][nodeID] = descCount;
+        tsTemp_setAData_[idxThread][nodeID] = setA;
+
+    }
 
 }
+
+void UnifiedTSHomogeneousTreeLikelihood_PIP::removeTestLikelihoodData(int idxThread) {
+
+    for (auto &nodeID:tree_->getNodesId()) {
+        // deallocate memory
+        delete testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID];
+        delete testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID];
+        delete tsTemp_descCountData_[idxThread][nodeID];
+        delete tsTemp_setAData_[idxThread][nodeID];
+
+    }
+
+}
+
 
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::fireTopologyChange(std::vector<int> nodeList) {
@@ -192,20 +226,19 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangeme
 
         // call to function which retrieves the lk value for each site
         lk_sites[i] = log(computeLikelihoodForASite(tempExtendedNodeList, i)) * rootWeights->at(i);
-       DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
+        DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
     }
 
 #endif
     // Sum all the values stored in the lk vector
     logLK = MatrixBppUtils::sumVector(&lk_sites);
-   DVLOG(2) << "LK Sites [BPP] " << std::setprecision(18) << logLK;
+    DVLOG(2) << "LK Sites [BPP] " << std::setprecision(18) << logLK;
 
     // compute PHi
     double log_phi_value = computePhi(lk_site_empty);
-   DVLOG(2) << "PHI [BPP] " << std::setprecision(18) << log_phi_value;
+    DVLOG(2) << "PHI [BPP] " << std::setprecision(18) << log_phi_value;
 
     logLK += log_phi_value;
-
 
 
     return logLK;
@@ -241,10 +274,10 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(std::vecto
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyCommitTree() {
 
-    std::vector<tshlib::VirtualNode *> nodelist;
+    std::vector < tshlib::VirtualNode * > nodelist;
     nodelist = utree_->listVNodes;
 
-    std::map<int, bpp::Node *> tempMap;
+    std::map < int, bpp::Node * > tempMap;
     std::map<int, double> tempDistanceToFather;
     // reset inBtree
     for (auto &bnode:tree_->getNodes()) {
@@ -253,7 +286,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyCommitTree() {
         // Empty array of sons on the node
         bnode->removeSons();
 
-        if (bnode->hasFather()){
+        if (bnode->hasFather()) {
 
             tempDistanceToFather.insert(std::pair<int, double>(bnode->getId(), bnode->getDistanceToFather()));
             // Empty father connection

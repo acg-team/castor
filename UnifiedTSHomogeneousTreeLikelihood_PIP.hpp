@@ -63,9 +63,8 @@ namespace bpp {
 
     protected:
 
-        mutable DRASRTreeLikelihoodData *likelihoodDataTest_;
-        mutable DRASRTreeLikelihoodData *likelihoodEmptyDataTest_;
         mutable tshlib::Utree *utree_;
+
 
     public:
 
@@ -117,6 +116,11 @@ namespace bpp {
         void topologyChangeSuccessful(std::vector<tshlib::VirtualNode *> listNodes);
 
         void topologyCommitTree();
+
+        void addTestLikelihoodData(int idxThread) override;
+
+        void removeTestLikelihoodData(int idxThread) override;
+
 
 #ifdef INTELTBB
         void recomputeSiteLikelihoodUsingPartitions(const tbb::blocked_range<size_t> &range, std::vector<double> *lk_sites) const;
