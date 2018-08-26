@@ -107,9 +107,15 @@ namespace bpp {
 
         void init_(bool usePatterns);
 
+        void fireTopologyChange(std::vector<int> nodeList,
+                std::map<int, VVVdouble> *ts_lkdata,
+                std::map<int, VVVdouble> *ts_lkemptydata,
+                std::map<int, std::vector<int>> *ts_desccount,
+                std::map<int, std::vector<bool>> *ts_setadata);
+
         void fireTopologyChange(std::vector<int> nodeList);
 
-        double updateLikelihoodOnTreeRearrangement(std::vector<tshlib::VirtualNode *> &nodeList);
+        double updateLikelihoodOnTreeRearrangement(std::vector<tshlib::VirtualNode *> &nodeList, int idxThread=0);
 
         double getLogLikelihoodOnTreeRearrangement(const std::vector<int> &nodeList) const;
 

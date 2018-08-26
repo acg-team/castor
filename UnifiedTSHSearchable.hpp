@@ -69,7 +69,7 @@ namespace bpp {
         // - allocation at the beginning of the tree-search cycle
         // - deallocation at the end of the tree-search cycle
         // - one or more VVVdouble object per each tree-rearrangement (map classVVVdouble (map idxRearrangment, map idxNode, VVVdouble))
-        mutable std::map<LKDataClass,std::map<int,std::map<int, VVVdouble *>>> testVectorLikelihoodData_;
+        mutable std::map<LKDataClass,std::map<int,std::map<int, VVVdouble>>> testVectorLikelihoodData_;
 
 
 
@@ -98,7 +98,7 @@ namespace bpp {
 
         void fireBranchOptimisation(std::vector<bpp::Node *> extractionNodes);
 
-        std::map<int,std::map<int, VVVdouble *>> *getTestLikelihoodData(LKDataClass classTestLKData = LKDataClass::sub) {
+        std::map<int,std::map<int, VVVdouble>> *getTestLikelihoodData(LKDataClass classTestLKData = LKDataClass::sub) {
             return &testVectorLikelihoodData_[classTestLKData];
         }
 

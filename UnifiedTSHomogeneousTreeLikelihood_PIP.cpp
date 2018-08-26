@@ -59,7 +59,7 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
                                                                                tshlib::Utree *utree,
                                                                                UtreeBppUtils::treemap *tm,
                                                                                bool optNumericalDerivatives,
-                                                                               std::map <std::string, std::string> &params,
+                                                                               std::map<std::string, std::string> &params,
                                                                                const std::string &suffix,
                                                                                bool checkRooted,
                                                                                bool verbose,
@@ -77,7 +77,7 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
                                                                                tshlib::Utree *utree,
                                                                                UtreeBppUtils::treemap *tm,
                                                                                bool optNumericalDerivatives,
-                                                                               std::map <std::string, std::string> &params,
+                                                                               std::map<std::string, std::string> &params,
                                                                                const std::string &suffix,
                                                                                bool checkRooted,
                                                                                bool verbose,
@@ -114,13 +114,13 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::addTestLikelihoodData(int idxThread
         descCount->resize(nbDistinctSites_);
         setA->resize(nbDistinctSites_);
         VectorTools::resize3(*sub, nbDistinctSites_, nbClasses_, nbStates_);
-        VectorTools::resize3(*empty, nbDistinctSites_, nbClasses_, nbStates_);
+        VectorTools::resize3(*empty, 1, nbClasses_, nbStates_);
 
         // Store references
-        testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID] = sub;
-        testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID] = empty;
-        tsTemp_descCountData_[idxThread][nodeID] = descCount;
-        tsTemp_setAData_[idxThread][nodeID] = setA;
+        testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID] = *sub;
+        testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID] = *empty;
+        tsTemp_descCountData_[idxThread][nodeID] = *descCount;
+        tsTemp_setAData_[idxThread][nodeID] = *setA;
 
     }
 
@@ -130,29 +130,64 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::removeTestLikelihoodData(int idxThr
 
     for (auto &nodeID:tree_->getNodesId()) {
         // deallocate memory
-        delete testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID];
-        delete testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID];
-        delete tsTemp_descCountData_[idxThread][nodeID];
-        delete tsTemp_setAData_[idxThread][nodeID];
+
+        size_t dim1 = testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID].size();
+        size_t dim2 = testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][0].size();
+
+        for(int i = 0; i != dim1; ++i)
+//                  ^^^^^ not levelSize.x
+        {
+            for(int j = 0; j != dim2; ++j)
+                //                  ^^^^^^^^^^^ not levelSize.y
+            {
+                delete[] &testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][i][j];
+            }
+            delete[] &testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][i];
+            delete[] &testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID][i];
+
+        }
+        delete[] &testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID];
+        delete[] &testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID];
+
+        //testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID] = nullptr;
+        //testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID] = nullptr;
+        //tsTemp_descCountData_[idxThread][nodeID] = nullptr;
+        //tsTemp_setAData_[idxThread][nodeID] = nullptr;
 
     }
 
 }
 
-
-
 void UnifiedTSHomogeneousTreeLikelihood_PIP::fireTopologyChange(std::vector<int> nodeList) {
-    // Store the nodes where the likelihood should be recomputed in post-order
-    //setLikelihoodNodes(nodeList);
+
     // Recompute the value of the FV 3D arrays
     //computeSubtreeLikelihood(likelihoodDataTest_, likelihoodEmptyDataTest_);
     computeSubtreeLikelihood(nodeList);
     // Compute the insertion histories set (recompute the desc_count and set A)
-    setInsertionHistories(*data_, nodeList);
+    setInsertionHistories(*data_, nodeList, &descCountData_, &setAData_);
 }
 
 
-double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangement(std::vector<tshlib::VirtualNode *> &nodeList) {
+void UnifiedTSHomogeneousTreeLikelihood_PIP::fireTopologyChange(std::vector<int> nodeList,
+                                                                std::map<int, VVVdouble> *ts_lkdata,
+                                                                std::map<int, VVVdouble> *ts_lkemptydata,
+                                                                std::map<int, std::vector<int>> *ts_desccount,
+                                                                std::map<int, std::vector<bool>> *ts_setadata) {
+
+    // Recompute the value of the FV 3D arrays
+    //computeSubtreeLikelihood(likelihoodDataTest_, likelihoodEmptyDataTest_);
+    computeSubtreeLikelihood(ts_lkdata, ts_lkemptydata, nodeList);
+    // Compute the insertion histories set (recompute the desc_count and set A)
+    setInsertionHistories(*data_, nodeList, ts_desccount, ts_setadata);
+}
+
+
+double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangement(std::vector<tshlib::VirtualNode *> &nodeList, int idxThread) {
+    //fetch temporary arrays
+    std::map<int, VVVdouble> *ts_lkdata = &testVectorLikelihoodData_[LKDataClass::sub][idxThread];
+    std::map<int, VVVdouble> *ts_lkemptydata = &testVectorLikelihoodData_[LKDataClass::empty][idxThread];
+    std::map<int, std::vector<int>> *ts_desccount = &tsTemp_descCountData_[idxThread];
+    std::map<int, std::vector<bool>> *ts_setadata = &tsTemp_setAData_[idxThread];
 
     // Add root to the utree structure
     utree_->addVirtualRootNode();
@@ -161,11 +196,9 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangeme
     std::vector<int> rearrangedNodes = remapVirtualNodeLists(nodeList);
 
     // 1. Fire topology change
-    //fireTopologyChange(rearrangedNodes);
-    fireTopologyChange(rearrangedNodes);
+    fireTopologyChange(rearrangedNodes, ts_lkdata, ts_lkemptydata, ts_desccount, ts_setadata);
 
     // 2. Compute loglikelihood
-    //double logLk = getLogLikelihoodOnTopologyChange();
     double logLk = getLogLikelihoodOnTreeRearrangement(rearrangedNodes);
 
     // Remove root node from the utree structure
@@ -197,39 +230,30 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::recomputeSiteLikelihoodUsingPartiti
 #endif
 
 double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangement(const std::vector<int> &nodeList) const {
+
+    // 1. Initialise variables and contenitors
     double logLK;
+    std::vector<double> lk_sites(nbDistinctSites_);
 
     // 2. Compute the lk of the empty column
     double lk_site_empty = computeLikelihoodWholeAlignmentEmptyColumn();
 
     // 3. Compute the likelihood of each site
-    std::vector<double> lk_sites(nbDistinctSites_);
-
     const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
-
-
-#ifdef INTELTBB
-
-    tbb::parallel_for(tbb::blocked_range<size_t>(0, nbDistinctSites_), recomputeSiteLikelihoodUsingPartitions(&lk_sites));
-
-#else
-//    for (unsigned long i = 0; i < nbDistinctSites_; i++) {
-//        recomputeSiteLikelihoodUsingPartitions(&lk_sites, i);
-//    }
 
     for (unsigned long i = 0; i < nbDistinctSites_; i++) {
 
+        // Extend rearranged-node-list including all the nodes in the setA for each site
         std::vector<int> tempExtendedNodeList;
-
-        // Extend it
         _extendNodeListOnSetA(nodeList.back(), tempExtendedNodeList, i);
 
         // call to function which retrieves the lk value for each site
         lk_sites[i] = log(computeLikelihoodForASite(tempExtendedNodeList, i)) * rootWeights->at(i);
+
+
         DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
     }
 
-#endif
     // Sum all the values stored in the lk vector
     logLK = MatrixBppUtils::sumVector(&lk_sites);
     DVLOG(2) << "LK Sites [BPP] " << std::setprecision(18) << logLK;
@@ -260,11 +284,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(std::vecto
 
     fireTopologyChange(ponl);
 
-    // remap the virtual nodes to the bpp nodes
-    //std::vector<Node *> extractionNodes = UtreeBppUtils::remapNodeLists(listNodes, tree_, treemap_);
-
     // Optimise branches involved in the tree rearrangement
-    //fireBranchOptimisation(extractionNodes);
     fireBranchOptimisation(UtreeBppUtils::remapNodeLists(listNodes, tree_, treemap_));
 
     // Remove the virtual root to allow for further tree topology improvements
@@ -275,10 +295,10 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(std::vecto
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyCommitTree() {
 
-    std::vector < tshlib::VirtualNode * > nodelist;
+    std::vector<tshlib::VirtualNode *> nodelist;
     nodelist = utree_->listVNodes;
 
-    std::map < int, bpp::Node * > tempMap;
+    std::map<int, bpp::Node *> tempMap;
     std::map<int, double> tempDistanceToFather;
     // reset inBtree
     for (auto &bnode:tree_->getNodes()) {
@@ -310,9 +330,6 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyCommitTree() {
             leftBNode->setFather(pNode);
             rightBNode->setFather(pNode);
 
-            //leftBNode->setDistanceToFather(tree_->getDistanceToFather(leftBNode->getId()));
-            //rightBNode->setDistanceToFather(tree_->getDistanceToFather(rightBNode->getId()));
-
             leftBNode->setDistanceToFather(tempDistanceToFather[leftBNode->getId()]);
             rightBNode->setDistanceToFather(tempDistanceToFather[rightBNode->getId()]);
 
@@ -339,9 +356,6 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyCommitTree() {
 
             leftBNode->setFather(tree_->getRootNode());
             rightBNode->setFather(tree_->getRootNode());
-
-            //leftBNode->setDistanceToFather(tree_->getDistanceToFather(leftBNode->getId()));
-            //rightBNode->setDistanceToFather(tree_->getDistanceToFather(rightBNode->getId()));
 
             leftBNode->setDistanceToFather(tempDistanceToFather[leftBNode->getId()]);
             rightBNode->setDistanceToFather(tempDistanceToFather[rightBNode->getId()]);

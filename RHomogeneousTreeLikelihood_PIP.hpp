@@ -79,8 +79,8 @@ namespace bpp {
         mutable UtreeBppUtils::treemap treemap_;                                // Bidirectional map Utree <-> BppTree
         mutable std::vector<unsigned long> rootPatternLinksInverse_;            //
 
-        mutable std::map<int,std::map<int, std::vector<int> *>> tsTemp_descCountData_;   // TS: collector for Descendant count vectors
-        mutable std::map<int,std::map<int, std::vector<bool> *>> tsTemp_setAData_;       // TS: collector for SetA flags vectors insertion hist.
+        mutable std::map<int, std::map<int, std::vector<int>>> tsTemp_descCountData_;   // TS: collector for Descendant count vectors
+        mutable std::map<int, std::map<int, std::vector<bool>>> tsTemp_setAData_;       // TS: collector for SetA flags vectors insertion hist.
 
 
     protected:
@@ -164,10 +164,10 @@ namespace bpp {
 
         //std::vector<double> _SingleRateCategoryHadamardMultFvEmptySons(int nodeID, unsigned long rate) const;
 
-        std::vector<double>  _SingleRateCategoryHadamardMultFvSons(int nodeID,
-                                              unsigned long site,
-                                              unsigned long rate,
-                                              std::vector<VVVdouble *> lk_sons) const;
+        std::vector<double> _SingleRateCategoryHadamardMultFvSons(int nodeID,
+                                                                  unsigned long site,
+                                                                  unsigned long rate,
+                                                                  std::vector<VVVdouble *> lk_sons) const;
 
         void _computePrTimesFv(VVVdouble *pxy__node, VVVdouble *_likelihoods_node) const;
 
@@ -375,9 +375,11 @@ namespace bpp {
         virtual void computeSubtreeLikelihood() const;
 
         // this overloaded method is called during the tree-search
-        virtual void computeSubtreeLikelihood(DRASRTreeLikelihoodData *FV, DRASRTreeLikelihoodData *FVEmpty, const std::vector<int> &nodeList);
+        virtual void computeSubtreeLikelihood(std::map<int, VVVdouble> *likelihoods,
+                                              std::map<int, VVVdouble> *likelihoods_empty,
+                                              const std::vector<int> &nodeList);
 
-        virtual void _kernel_subtreelikelihood(int nodeID, VVVdouble *pxy__node, VVVdouble *_likelihoods_node, VVVdouble *_likelihoods_empty_node);
+        virtual void _kernel_subtreelikelihood(int nodeID, VVVdouble *pxy__node, VVVdouble *_likelihoods__node, VVVdouble *_likelihoods_empty__node);
 
         virtual void computeDownSubtreeDLikelihood(const Node *);
 
@@ -396,7 +398,10 @@ namespace bpp {
          * @brief This method sets DescCount (number of characters different from gap per column) value for all the nodes in the tree
          * @param sites SiteContainer of the aligned sites
          */
-        virtual void setInsertionHistories(const SiteContainer &sites, const std::vector<int> &nodeList) const;
+        virtual void setInsertionHistories(const SiteContainer &sites,
+                                           const std::vector<int> &nodeList,
+                                           std::map<int, std::vector<int>> *descCountData,
+                                           std::map<int, std::vector<bool>> *setAData) const;
 
         /**
          * @brief This method sets the indicator for the number of evolutionary events (Insertions and Deletions) at each node of the topology
@@ -463,7 +468,7 @@ namespace bpp {
 
         double getNodeAge(int nodeID);
 
-        tshlib::VirtualNode * getVirtualNode(int nodeID) const { return treemap_.left.at(nodeID); };
+        tshlib::VirtualNode *getVirtualNode(int nodeID) const { return treemap_.left.at(nodeID); };
 
         //friend class RHomogeneousMixedTreeLikelihood;
 
