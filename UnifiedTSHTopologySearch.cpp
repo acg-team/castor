@@ -225,42 +225,42 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
                 // Revert the move, and return to the original tree
                 candidateMoves->revertMove(i);
                 DVLOG(1) << "[TSH Cycle - Topology] [R] MOVE#" << candidateMoves->getMove(i)->getUID() << " | " << utree_->printTreeNewick(true);
-
-                // ------------------------------------
-                // Recompute the likelihood after reverting the move
-                double moveLogLK_return = -std::numeric_limits<double>::infinity();
-
-                if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)) {
-                    moveLogLK_return = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(
-                            listNodesWithinPath);
-                } else {
-                    moveLogLK_return = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood *>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(
-                            listNodesWithinPath);
-                }
+//
+//                // ------------------------------------
+//                // Recompute the likelihood after reverting the move
+//                double moveLogLK_return = -std::numeric_limits<double>::infinity();
+//
+//                if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)) {
+//                    moveLogLK_return = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(
+//                            listNodesWithinPath);
+//                } else {
+//                    moveLogLK_return = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood *>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(
+//                            listNodesWithinPath);
+//                }
 
                 // ------------------------------------
                 // Display status of the rearrangement (deprecated)
                 //candidateMoves->displayRearrangmentStatus(i, true);
 
-                LOG_IF(FATAL, std::isinf(moveLogLK_return))
-                << "llk[Return] value is -inf for [MOVE " << candidateMoves->getMove(i)->getUID() << "]" <<
-                debugStackTraceMove(candidateMoves->getMove(i),
-                                    utree_,
-                                    listNodesWithinPath,
-                                    updatedNodesWithinPath,
-                                    tshinitScore,
-                                    moveLogLK,
-                                    moveLogLK_return);
-
-                LOG_IF(FATAL, !ComparisonUtils::areLogicallyEqual(moveLogLK_return, tshinitScore))
-                << "Error in evaluating likelihood [MOVE " << candidateMoves->getMove(i)->getUID() << "]" <<
-                debugStackTraceMove(candidateMoves->getMove(i),
-                                    utree_,
-                                    listNodesWithinPath,
-                                    updatedNodesWithinPath,
-                                    tshinitScore,
-                                    moveLogLK,
-                                    moveLogLK_return);
+//                LOG_IF(FATAL, std::isinf(moveLogLK_return))
+//                << "llk[Return] value is -inf for [MOVE " << candidateMoves->getMove(i)->getUID() << "]" <<
+//                debugStackTraceMove(candidateMoves->getMove(i),
+//                                    utree_,
+//                                    listNodesWithinPath,
+//                                    updatedNodesWithinPath,
+//                                    tshinitScore,
+//                                    moveLogLK,
+//                                    moveLogLK_return);
+//
+//                LOG_IF(FATAL, !ComparisonUtils::areLogicallyEqual(moveLogLK_return, tshinitScore))
+//                << "Error in evaluating likelihood [MOVE " << candidateMoves->getMove(i)->getUID() << "]" <<
+//                debugStackTraceMove(candidateMoves->getMove(i),
+//                                    utree_,
+//                                    listNodesWithinPath,
+//                                    updatedNodesWithinPath,
+//                                    tshinitScore,
+//                                    moveLogLK,
+//                                    moveLogLK_return);
 
                 // ------------------------------------
                 // Count moves performed

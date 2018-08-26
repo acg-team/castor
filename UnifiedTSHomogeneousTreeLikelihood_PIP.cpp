@@ -102,25 +102,26 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) {
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::addTestLikelihoodData(int idxThread) {
 
+    // allocate thread memory
     for (auto &nodeID:tree_->getNodesId()) {
 
-        // Instantiation objects
-        auto sub = new VVVdouble;
-        auto empty = new VVVdouble;
-        auto descCount = new Vint;
-        auto setA = new std::vector<bool>;
+        // Instantiation empty objects
+        std::vector<std::vector<std::vector<double>>> sub;
+        std::vector<std::vector<std::vector<double>>> empty;
+        std::vector<int> descCount;
+        std::vector<bool> setA;
 
         // Allocate memory
-        descCount->resize(nbDistinctSites_);
-        setA->resize(nbDistinctSites_);
-        VectorTools::resize3(*sub, nbDistinctSites_, nbClasses_, nbStates_);
-        VectorTools::resize3(*empty, 1, nbClasses_, nbStates_);
+        descCount.resize(nbDistinctSites_);
+        setA.resize(nbDistinctSites_);
+        VectorTools::resize3(sub, nbDistinctSites_, nbClasses_, nbStates_);
+        VectorTools::resize3(empty, 1, nbClasses_, nbStates_);
 
         // Store references
-        testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID] = *sub;
-        testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID] = *empty;
-        tsTemp_descCountData_[idxThread][nodeID] = *descCount;
-        tsTemp_setAData_[idxThread][nodeID] = *setA;
+        testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID] = sub;
+        testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID] = empty;
+        tsTemp_descCountData_[idxThread][nodeID] = descCount;
+        tsTemp_setAData_[idxThread][nodeID] = setA;
 
     }
 
@@ -128,31 +129,22 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::addTestLikelihoodData(int idxThread
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::removeTestLikelihoodData(int idxThread) {
 
+    // deallocate thread memory
     for (auto &nodeID:tree_->getNodesId()) {
-        // deallocate memory
 
         size_t dim1 = testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID].size();
         size_t dim2 = testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][0].size();
 
-        for(int i = 0; i != dim1; ++i)
-//                  ^^^^^ not levelSize.x
-        {
-            for(int j = 0; j != dim2; ++j)
-                //                  ^^^^^^^^^^^ not levelSize.y
-            {
-                delete[] &testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][i][j];
-            }
-            delete[] &testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][i];
-            delete[] &testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID][i];
+        for(size_t i = 0; i < dim1; ++i) {
+            for(size_t j = 0; j < dim2; ++j)
+                testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][i][j].resize(0);
 
+            testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][i].resize(0);
         }
-        delete[] &testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID];
-        delete[] &testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID];
+        testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID][0].resize(0);
 
-        //testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID] = nullptr;
-        //testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID] = nullptr;
-        //tsTemp_descCountData_[idxThread][nodeID] = nullptr;
-        //tsTemp_setAData_[idxThread][nodeID] = nullptr;
+        tsTemp_descCountData_[idxThread][nodeID].resize(0);
+        tsTemp_setAData_[idxThread][nodeID].resize(0);
 
     }
 
