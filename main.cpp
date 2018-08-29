@@ -603,7 +603,9 @@ int main(int argc, char *argv[]) {
 
         utree->addVirtualRootNode();
         // Once the tree has the root, then map it as well
-        tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode));
+        //tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode));
+
+        tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode->getVnode_id()));
 
         ApplicationTools::displayResult("Initial tree total length", TextTools::toString(tree->getTotalLength(), 6));
         /////////////////////////

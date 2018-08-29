@@ -119,35 +119,35 @@ void UnifiedTSHomogeneousTreeLikelihood::init_(bool usePatterns) {
 }
 
 
-void UnifiedTSHomogeneousTreeLikelihood::fireTopologyChange(std::vector<int> nodeList) {
+void UnifiedTSHomogeneousTreeLikelihood::fireTopologyChange(std::vector<int> nodeList,  tshlib::Utree &_utree__topology) {
 
     // Store the nodes where the likelihood should be recomputed in post-order
     for (auto &nodeID:nodeList) {
 
         Node *node = tree_->getNode(nodeID);
 
-        updateLikelihoodArrays(node);
+        updateLikelihoodArrays(node, _utree__topology);
     }
 
 }
 
 
-double UnifiedTSHomogeneousTreeLikelihood::updateLikelihoodOnTreeRearrangement(std::vector<tshlib::VirtualNode *> &nodeList) {
+double UnifiedTSHomogeneousTreeLikelihood::updateLikelihoodOnTreeRearrangement(std::vector<int> &nodeList, tshlib::Utree &_utree__topology) {
     // Add root to the utree structure
-    utree_->addVirtualRootNode();
+    _utree__topology.addVirtualRootNode();
 
     // 0. convert the list of tshlib::VirtualNodes into bpp::Node
     //std::vector<int> rearrangedNodes = remapVirtualNodeLists(nodeList);
 
     // 1. Fire topology change
     //fireTopologyChange(rearrangedNodes);
-    fireTopologyChange(remapVirtualNodeLists(nodeList));
+    fireTopologyChange(remapVirtualNodeLists(nodeList),_utree__topology);
 
     // 2. Compute loglikelihood
     double logLk = getLogLikelihood();
 
     // Remove root node from the utree structure
-    utree_->removeVirtualRootNode();
+    _utree__topology.removeVirtualRootNode();
 
     return logLk;
 }
@@ -186,11 +186,11 @@ void UnifiedTSHomogeneousTreeLikelihood::topologyCommitTree() {
         if (!vnode->isTerminalNode()) {
 
             // get corrisponding sons in inBTree
-            bpp::Node *leftBNode = tempMap[treemap_.right.at(vnode->getNodeLeft())];
-            bpp::Node *rightBNode = tempMap[treemap_.right.at(vnode->getNodeRight())];
+            bpp::Node *leftBNode = tempMap[treemap_.right.at(vnode->getNodeLeft()->getVnode_id())];
+            bpp::Node *rightBNode = tempMap[treemap_.right.at(vnode->getNodeRight()->getVnode_id())];
 
             // get corrisponding parent in inBTree
-            bpp::Node *pNode = tempMap[treemap_.right.at(vnode)];
+            bpp::Node *pNode = tempMap[treemap_.right.at(vnode->getVnode_id())];
 
             leftBNode->setFather(pNode);
             rightBNode->setFather(pNode);
@@ -217,8 +217,8 @@ void UnifiedTSHomogeneousTreeLikelihood::topologyCommitTree() {
         if (vnode == vnode->getNodeUp()->getNodeUp()) {
             //std::cerr << "\tvnode pseudoroot";
 
-            bpp::Node *leftBNode = tempMap[treemap_.right.at(vnode)];
-            bpp::Node *rightBNode = tempMap[treemap_.right.at(vnode->getNodeUp())];
+            bpp::Node *leftBNode = tempMap[treemap_.right.at(vnode->getVnode_id())];
+            bpp::Node *rightBNode = tempMap[treemap_.right.at(vnode->getNodeUp()->getVnode_id())];
 
             tree_->getRootNode()->removeSons();
 
@@ -244,7 +244,7 @@ void UnifiedTSHomogeneousTreeLikelihood::topologyCommitTree() {
 
 
 
-void UnifiedTSHomogeneousTreeLikelihood::topologyChangeSuccessful(std::vector<tshlib::VirtualNode *> listNodes) {
+void UnifiedTSHomogeneousTreeLikelihood::topologyChangeSuccessful(std::vector<int> listNodes) {
 
     // Update BPP tree using the structure in Utree
     topologyCommitTree();
@@ -268,7 +268,7 @@ void UnifiedTSHomogeneousTreeLikelihood::topologyChangeSuccessful(std::vector<ts
 }
 
 
-std::vector<int> UnifiedTSHomogeneousTreeLikelihood::remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const {
+std::vector<int> UnifiedTSHomogeneousTreeLikelihood::remapVirtualNodeLists(std::vector<int> &inputList) const {
 
     std::vector<int> newList;
 
@@ -281,7 +281,7 @@ std::vector<int> UnifiedTSHomogeneousTreeLikelihood::remapVirtualNodeLists(std::
 }
 
 
-void UnifiedTSHomogeneousTreeLikelihood::updateLikelihoodArrays(Node *node) {
+void UnifiedTSHomogeneousTreeLikelihood::updateLikelihoodArrays(Node *node, tshlib::Utree &_utree__topology) {
 
     if (node->isLeaf()) return;
 
@@ -307,12 +307,17 @@ void UnifiedTSHomogeneousTreeLikelihood::updateLikelihoodArrays(Node *node) {
 
 
     // Get mapped node on Utree
-    std::vector<int> sonsIDs;
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+    std::vector<int> sonsIDs(2);
 
-    sonsIDs.push_back(treemap_.right.at(vnode_left));
-    sonsIDs.push_back(treemap_.right.at(vnode_right));
+    //tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    //tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+    //sonsIDs.push_back(treemap_.right.at(vnode_left));
+    //sonsIDs.push_back(treemap_.right.at(vnode_right));
+
+    sonsIDs[0] = treemap_.right.at(_utree__topology.getNodeIdsMap().at(treemap_.left.at(node->getId()))->getNodeLeft()->getVnode_id());
+    sonsIDs[1] = treemap_.right.at(_utree__topology.getNodeIdsMap().at(treemap_.left.at(node->getId()))->getNodeRight()->getVnode_id());
+
+
     size_t nbNodes = sonsIDs.size();
 
     for (size_t l = 0; l < nbNodes; l++) {

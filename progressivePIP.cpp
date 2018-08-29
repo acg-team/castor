@@ -427,7 +427,7 @@ void progressivePIP::_initializePIP(std::vector<tshlib::VirtualNode *> &list_vno
 
     for (auto &vnode:list_vnode_to_root) {
 
-        auto bnode = tree_->getNode(treemap_.right.at(vnode), false); // get bnode from vnode through the tree-map
+        auto bnode = tree_->getNode(treemap_.right.at(vnode->getVnode_id()), false); // get bnode from vnode through the tree-map
 
         // create a PIPnode
         PIPnode * pip_node = nodeFactory->getPIPnode(DPversion, // PIPnode of type CPU, RAM, SB,... to access the correct DP version

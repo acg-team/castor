@@ -70,63 +70,6 @@
 
 using namespace bpp;
 
-/*
-void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Node *source, treemap &tm) {
-
-    std::string name;
-
-
-    if(source->isLeaf()){
-        target->vnode_leaf=true;
-    }else{
-        target->vnode_leaf=false;
-    }
-
-
-    for(auto &bppNode:source->getSons()){
-
-        auto ichild = new VirtualNode();
-
-        // Filling the bidirectional map
-        tm.insert(nodeassoc(bppNode, ichild)); // TODO: avoid the map at all costs
-
-        ichild->vnode_id = bppNode->getId();
-
-        if(bppNode->hasName()){
-            name = bppNode->getName();
-        }else{
-            name = "V"+std::to_string(bppNode->getId());
-        }
-
-        ichild->vnode_name = name;
-        ichild->vnode_branchlength = bppNode->getDistanceToFather();
-
-        if(!bppNode->isLeaf()){
-
-            ichild->vnode_leaf = false;
-
-            target->connectNode(ichild);
-            in_tree->addMember(ichild);
-            _traverseTree_b2u(in_tree, ichild, bppNode, tm);
-
-        }else{
-
-            // Set all the other directions to null
-            ichild->_setNodeLeft(nullptr);
-            ichild->_setNodeRight(nullptr);
-
-            // Set the LEAF flag to true
-            ichild->vnode_leaf = true;
-            in_tree->addMember(ichild);
-            target->connectNode(ichild);
-
-        }
-
-    }
-
-
-}
- */
 
 void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::Tree *refTree, int nodeId, treemap &tm) {
 
@@ -139,11 +82,12 @@ void UtreeBppUtils::_traverseTree_b2u(Utree *in_tree, VirtualNode *target, bpp::
 
     for (auto &sonId:refTree->getSonsId(nodeId)) {
         auto ichild = new VirtualNode();
-        // Filling the bidirectional map
-        tm.insert(nodeassoc(sonId, ichild));
+
         ichild->vnode_id = sonId;
         ichild->vnode_name = refTree->getNodeName(sonId);
         ichild->vnode_branchlength = refTree->getDistanceToFather(sonId);
+        // Filling the bidirectional map
+        tm.insert(nodeassoc(sonId, ichild->getVnode_id()));
 
         if (!refTree->isLeaf(sonId)) {
 
@@ -175,13 +119,13 @@ void UtreeBppUtils::convertTree_b2u(bpp::Tree *in_tree, Utree *out_tree, treemap
     for (auto &sonId:in_tree->getSonsId(rootId)) {
 
         auto ichild = new VirtualNode;
-        // Filling the bidirectional map
-        tm.insert(nodeassoc(sonId, ichild));
-        // Filling the bidirectional map
 
         ichild->vnode_id = sonId;
         ichild->vnode_name = in_tree->getNodeName(sonId);
         ichild->vnode_branchlength = in_tree->getDistanceToFather(sonId);
+
+        // Filling the bidirectional map
+        tm.insert(nodeassoc(sonId, ichild->getVnode_id()));
 
         _traverseTree_b2u(out_tree, ichild, in_tree, sonId, tm);
 
@@ -198,46 +142,6 @@ void UtreeBppUtils::convertTree_b2u(bpp::Tree *in_tree, Utree *out_tree, treemap
 
 }
 
-
-/*
-void UtreeBppUtils::convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree, treemap &tm) {
-
-    bpp::Node * RootNode = in_tree->getRootNode();
-
-    std::string name;
-    // For each node descending the root, create either a new VirtualNode
-    for (auto &bppNode:RootNode->getSons()) {
-
-        auto ichild = new VirtualNode;
-        // Filling the bidirectional map
-        tm.insert(nodeassoc(bppNode, ichild)); // TODO: avoid the map at all costs
-
-        ichild->vnode_id = bppNode->getId();
-        if(bppNode->hasName()){
-            name = bppNode->getName();
-        }else{
-            name = "V"+std::to_string(bppNode->getId());
-        }
-        ichild->vnode_name = name;
-        ichild->vnode_branchlength = bppNode->getDistanceToFather();
-
-        _traverseTree_b2u(out_tree, ichild, bppNode, tm);
-
-        // Add this node as starting point of the tree
-        out_tree->addMember(ichild, true);
-
-
-    }
-
-    // Collapse multiforcating trees to star tree pointing to the same pseudoroot
-    // Pick root node at random within the node-vector
-
-    out_tree->startVNodes.at(0)->_setNodeUp(out_tree->startVNodes.at(1));
-    out_tree->startVNodes.at(1)->_setNodeUp(out_tree->startVNodes.at(0));
-
-}
-
- */
 
 bpp::TreeTemplate<bpp::Node> *UtreeBppUtils::convertTree_u2b(tshlib::Utree *in_tree) {
 
@@ -353,7 +257,7 @@ void UtreeBppUtils::renameInternalNodes(bpp::Tree *in_tree, std::string prefix) 
 
 
 std::vector<bpp::Node *>
-UtreeBppUtils::remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm) {
+UtreeBppUtils::remapNodeLists(std::vector<int> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm) {
 
     std::vector<bpp::Node *> newList;
 
@@ -368,13 +272,9 @@ UtreeBppUtils::remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp
 
 void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib::Utree *inUTree, UtreeBppUtils::treemap &tm) {
 
-    //inUTree->addVirtualRootNode();
     std::vector<tshlib::VirtualNode *> nodelist;
 
     nodelist = inUTree->listVNodes;
-    //nodelist.push_back(inUTree->rootnode);
-    //bpp::Node *rNode = inBTree.getRootNode();
-    //rNode->removeSons();
 
     std::map<int, bpp::Node *> tempMap;
 
@@ -395,21 +295,15 @@ void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib:
         if (!vnode->isTerminalNode()) {
 
             // get corrisponding sons in inBTree
-            //bpp::Node *leftBNode  = inBTree.getNode(tm.right.at(vnode->getNodeLeft()));
-            //bpp::Node *rightBNode = inBTree.getNode(tm.right.at(vnode->getNodeRight()));
-            bpp::Node *leftBNode = tempMap[tm.right.at(vnode->getNodeLeft())];
-            bpp::Node *rightBNode = tempMap[tm.right.at(vnode->getNodeRight())];
+            bpp::Node *leftBNode = tempMap[tm.right.at(vnode->getNodeLeft()->getVnode_id())];
+            bpp::Node *rightBNode = tempMap[tm.right.at(vnode->getNodeRight()->getVnode_id())];
+
             // get corrisponding parent in inBTree
-            //bpp::Node *pNode = inBTree.getNode(tm.right.at(vnode));
-            bpp::Node *pNode = tempMap[tm.right.at(vnode)];
+            bpp::Node *pNode = tempMap[tm.right.at(vnode->getVnode_id())];
 
-            // Empty array of sons on the parent node
-            //pNode->removeSons();
-
-            //leftBNode->removeFather();
-            //rightBNode->removeFather();
             leftBNode->setFather(pNode);
             rightBNode->setFather(pNode);
+
             //Add new sons
             pNode->setSon(0, leftBNode);
             pNode->setSon(1, rightBNode);
@@ -420,31 +314,20 @@ void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib:
 
             std::cerr << "\t leaf";
 
-            //bpp::Node *pNode = inBTree.getNode(tm.right.at(vnode->getNodeUp()));
-            //bpp::Node *cNode = inBTree.getNode(tm.right.at(vnode));
-            //cNode->removeFather();
-            //cNode->setFather(pNode);
+
 
         }
         // in case the current vnode is also the pseudo-root
         if (vnode == vnode->getNodeUp()->getNodeUp()) {
             std::cerr << "\tvnode pseudoroot";
-            //bpp::Node *leftBNode  = inBTree.getNode(tm.right.at(vnode->getNodeLeft()));
-            //bpp::Node *rightBNode = inBTree.getNode(tm.right.at(vnode->getNodeRight()));
 
 
+            bpp::Node *leftBNode = tempMap[tm.right.at(vnode->getVnode_id())];
+            bpp::Node *rightBNode = tempMap[tm.right.at(vnode->getNodeUp()->getVnode_id())];
 
-            bpp::Node *leftBNode = tempMap[tm.right.at(vnode)];
-            bpp::Node *rightBNode = tempMap[tm.right.at(vnode->getNodeUp())];
             // get corrisponding parent in inBTree
-            //bpp::Node *pNode = inBTree.getNode(tm.right.at(vnode));
-            //bpp::Node *pNode = tempMap[tm.right.at(vnode)].second;
-
-
             inBTree.getRootNode()->removeSons();
 
-            //leftBNode->removeFather();
-            //rightBNode->removeFather();
 
             leftBNode->setFather(inBTree.getRootNode());
             rightBNode->setFather(inBTree.getRootNode());
@@ -458,7 +341,6 @@ void UtreeBppUtils::updateTree_b2u(bpp::TreeTemplate<bpp::Node> inBTree, tshlib:
         std::cerr << "\t done\n";
 
     }
-    //inUTree->removeVirtualRootNode();
 
 }
 
@@ -468,90 +350,11 @@ void UtreeBppUtils::updateTree_u2b(bpp::Tree *inBTree, tshlib::Utree *inUTree, U
 }
 
 
-/*
-Eigen::MatrixXd MatrixBppUtils::Matrix2Eigen(const bpp::Matrix<double> &inMatrix) {
 
-    size_t rows, cols;
-
-    rows = inMatrix.getNumberOfRows();
-    cols = inMatrix.getNumberOfColumns();
-
-    Eigen::MatrixXd m = Eigen::MatrixXd::Zero(rows, cols);
-
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-
-            m(r, c) = inMatrix(r, c);
-
-        }
-
-    }
-
-    return m;
-}
-
-bpp::RowMatrix<double> MatrixBppUtils::Eigen2Matrix(const Eigen::MatrixXd &M) {
-
-    size_t rows, cols;
-
-    rows = M.rows();
-    cols = M.cols();
-
-    bpp::RowMatrix<double> m;
-    m.resize(rows, cols);
-
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-
-            m(r, c) = M(r, c);
-
-        }
-
-    }
-
-    return m;
-}
-
-Eigen::VectorXd MatrixBppUtils::Vector2Eigen(const std::vector<double> &inVector) {
-
-    Eigen::VectorXd vector = Eigen::VectorXd::Zero(inVector.size());
-
-    for (int r = 0; r < inVector.size(); r++) {
-
-        vector(r) = inVector.at(r);
-
-    }
-
-    return vector;
-}
-
-
-bpp::Matrix<double> MatrixBppUtils::Eigen2Matrix(Eigen::MatrixXd &inMatrix) {
-
-    bpp::Matrix<double> outMatrix;
-    outMatrix.resize((size_t) inMatrix.cols(), (size_t) inMatrix.cols());
-
-    for(int r=0; r<inMatrix.rows(); r++){
-        for (int c=0; c<inMatrix.cols(); c++){
-
-            outMatrix(r,c) = inMatrix(r,c);
-
-        }
-
-    }
-
-
-    return outMatrix;
-}
-*/
 
 double MatrixBppUtils::dotProd(const std::vector<double> *x, const std::vector<double> *y) {
 
     double val;
-
-//    if(x->size() != y->size()){
-//        perror("ERROR: MatrixBppUtils::dotProd");
-//    }
 
     val = 0.0;
     for (unsigned long i = 0; i < x->size(); i++) {
@@ -566,10 +369,6 @@ double MatrixBppUtils::dotProd(const bpp::ColMatrix<double> &x, const bpp::ColMa
 
     double val;
 
-//    if(x->size() != y->size()){
-//        perror("ERROR: MatrixBppUtils::dotProd");
-//    }
-
     val = 0.0;
     for (unsigned long i = 0; i < x.getNumberOfRows(); i++) {
         val += (x(i, 0) * y(i, 0));
@@ -582,11 +381,6 @@ double MatrixBppUtils::dotProd(const bpp::ColMatrix<double> &x, const bpp::ColMa
 std::vector<double> MatrixBppUtils::cwiseProd(std::vector<double> *x, std::vector<double> *y) {
 
     std::vector<double> val;
-
-
-//    if(x->size() != y->size()){
-//        perror("ERROR: MatrixBppUtils::dotProd");
-//    }
 
     val.resize(x->size());
 
@@ -1152,276 +946,6 @@ bpp::DistanceEstimation DistanceUtils::computeDistanceMethod(std::string seqfile
     return distEstimation;
 }
 
-/*
-bpp::TreeTemplate<bpp::Node> *DistanceUtils::computeDistanceTree(bpp::TransitionModel *model,
-                                                                 bpp::DiscreteDistribution *rDist,
-                                                                 bpp::DistanceEstimation &distEstimation,
-                                                                 std::map<std::string, std::string> &params) {
-
-    std::string method = ApplicationTools::getStringParameter("distance.method", params, "nj");
-    bpp::ApplicationTools::displayResult("Initial tree reconstruction method", method);
-    bpp::TreeTemplate<Node> *tree;
-    bpp::AgglomerativeDistanceMethod *distMethod = 0;
-    if (method == "wpgma") {
-        PGMA *wpgma = new PGMA(true);
-        distMethod = wpgma;
-    } else if (method == "upgma") {
-        PGMA *upgma = new PGMA(false);
-        distMethod = upgma;
-    } else if (method == "nj") {
-        NeighborJoining *nj = new NeighborJoining();
-        nj->outputPositiveLengths(true);
-        distMethod = nj;
-    } else if (method == "bionj") {
-        bpp::BioNJ *bionj = new bpp::BioNJ();
-        bionj->outputPositiveLengths(true);
-        distMethod = bionj;
-    } else throw Exception("Unknown initial tree reconstruction method.");
-
-    string type = ApplicationTools::getStringParameter("distance.optimization.method", params, "init");
-    ApplicationTools::displayResult("Model parameters estimation method for initial tree", type);
-    if (type == "init") type = OptimizationTools::DISTANCEMETHOD_INIT;
-    else if (type == "pairwise") type = OptimizationTools::DISTANCEMETHOD_PAIRWISE;
-    else if (type == "iterations") type = OptimizationTools::DISTANCEMETHOD_ITERATIONS;
-    else throw Exception("Unknown parameter estimation procedure '" + type + "'.");
-
-    unsigned int optVerbose = ApplicationTools::getParameter<unsigned int>("distance.optimization.verbose", params, 2);
-
-    string mhPath = ApplicationTools::getAFilePath("distance.optimization.message_handler", params, false, false);
-    OutputStream *messenger = (mhPath == "none") ? 0 : (mhPath == "std") ? ApplicationTools::message : new StlOutputStream(new ofstream(mhPath.c_str(), ios::out));
-    ApplicationTools::displayResult("Message handler for initial tree optimisation", mhPath);
-
-    string prPath = ApplicationTools::getAFilePath("distance.optimization.profiler", params, false, false);
-    OutputStream *profiler = (prPath == "none") ? 0 : (prPath == "std") ? ApplicationTools::message : new StlOutputStream(new ofstream(prPath.c_str(), ios::out));
-
-    if (profiler) profiler->setPrecision(20);
-    ApplicationTools::displayResult("Profiler for initial tree optimisation", prPath);
-
-    // Should I ignore some parameters?
-    ParameterList allParameters = model->getParameters();
-    allParameters.addParameters(rDist->getParameters());
-    ParameterList parametersToIgnore;
-    string paramListDesc = ApplicationTools::getStringParameter("distance.optimization.ignore_parameter", params, "", "", true, false);
-    bool ignoreBrLen = false;
-    StringTokenizer st(paramListDesc, ",");
-    while (st.hasMoreToken()) {
-        try {
-            string param = st.nextToken();
-            if (param == "BrLen")
-                ignoreBrLen = true;
-            else {
-                if (allParameters.hasParameter(param)) {
-                    Parameter *p = &allParameters.getParameter(param);
-                    parametersToIgnore.addParameter(*p);
-                } else ApplicationTools::displayWarning("Parameter '" + param + "' not found.");
-            }
-        } catch (ParameterNotFoundException &pnfe) {
-            ApplicationTools::displayError("Parameter '" + pnfe.getParameter() + "' not found, and so can't be ignored!");
-        }
-    }
-
-    auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("distance.optimization.max_number_f_eval", params, 1000000);
-    ApplicationTools::displayResult("Max # ML evaluations for initial tree optimisation", TextTools::toString(nbEvalMax));
-
-    double tolerance = ApplicationTools::getDoubleParameter("distance.optimization.tolerance", params, .000001);
-    ApplicationTools::displayResult("Tolerance for initial tree optimisation", TextTools::toString(tolerance));
-
-    //Here it is:
-    ofstream warn("warnings", ios::out);
-    ApplicationTools::warning = new StlOutputStreamWrapper(&warn);
-    tree = OptimizationTools::buildDistanceTree(distEstimation, *distMethod, parametersToIgnore, !ignoreBrLen, type, tolerance, nbEvalMax, profiler, messenger, optVerbose);
-    warn.close();
-    delete ApplicationTools::warning;
-    ApplicationTools::warning = ApplicationTools::message;
-
-    //Output some parameters:
-    if (type == OptimizationTools::DISTANCEMETHOD_ITERATIONS) {
-        // Write parameters to screen:
-        ParameterList parameters = model->getParameters();
-        for (unsigned int i = 0; i < parameters.size(); i++) {
-            ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
-        }
-        parameters = rDist->getParameters();
-        for (unsigned int i = 0; i < parameters.size(); i++) {
-            ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
-        }
-        // Write parameters to file:
-        string parametersFile = ApplicationTools::getAFilePath("distance.output.estimates", params, false, false);
-        if (parametersFile != "none") {
-            ofstream out(parametersFile.c_str(), ios::out);
-            parameters = model->getParameters();
-            for (unsigned int i = 0; i < parameters.size(); i++) {
-                out << parameters[i].getName() << " = " << parameters[i].getValue() << endl;
-            }
-            parameters = rDist->getParameters();
-            for (unsigned int i = 0; i < parameters.size(); i++) {
-                out << parameters[i].getName() << " = " << parameters[i].getValue() << endl;
-            }
-            out.close();
-        }
-    }
-
-    delete distMethod;
-
-    return tree;
-}
-
-
-
-void DistanceMethodsUtils::computeDistanceMatrix() {
-
-    // Create a map containing the required parameters passed by the user
-    map <std::string, std::string> parmap;
-    parmap = params_;
-    // Overwrite the model parameter
-    parmap["model"] = "JC69";
-    // Read the data using the non-extended alphabet
-    bpp::Fasta seqReader;
-    bpp::SequenceContainer *sequences = seqReader.readAlignment(seqfilename_, alphabet_);
-    bpp::SiteContainer *sites = new bpp::VectorSiteContainer(*sequences);
-    bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
-
-    model_ = bpp::PhylogeneticsApplicationTools::getTransitionModel(alphabet_, gCode_, sites, parmap);
-
-    if (model_->getNumberOfStates() > model_->getAlphabet()->getSize()) {
-        //Markov-modulated Markov model!
-        rdist_ = new ConstantRateDistribution();
-    } else {
-        rdist_ = bpp::PhylogeneticsApplicationTools::getRateDistribution(params_);
-    }
-
-    bpp::DistanceEstimation distEstimation(model_, rdist_, sites, 1, false);
-    distEstimation_ = &distEstimation;
-
-    delete sites;
-
-    //return distEstimation;
-}
-
-
-bpp::TreeTemplate<bpp::Node> *DistanceMethodsUtils::computeDistanceTree() {
-    std::string method = ApplicationTools::getStringParameter("distance.method", params_, "nj");
-    bpp::ApplicationTools::displayResult("Initial tree reconstruction method", method);
-    bpp::TreeTemplate<Node> *tree;
-    bpp::AgglomerativeDistanceMethod *distMethod = 0;
-    if (method == "wpgma") {
-        PGMA *wpgma = new PGMA(true);
-        distMethod = wpgma;
-    } else if (method == "upgma") {
-        PGMA *upgma = new PGMA(false);
-        distMethod = upgma;
-    } else if (method == "nj") {
-        NeighborJoining *nj = new NeighborJoining();
-        nj->outputPositiveLengths(true);
-        distMethod = nj;
-    } else if (method == "bionj") {
-        bpp::BioNJ *bionj = new bpp::BioNJ();
-        bionj->outputPositiveLengths(true);
-        distMethod = bionj;
-    } else throw Exception("Unknown initial tree reconstruction method.");
-
-    string type = ApplicationTools::getStringParameter("distance.optimization.method", params_, "init");
-    ApplicationTools::displayResult("Model parameters estimation method for initial tree", type);
-    if (type == "init") type = OptimizationTools::DISTANCEMETHOD_INIT;
-    else if (type == "pairwise") type = OptimizationTools::DISTANCEMETHOD_PAIRWISE;
-    else if (type == "iterations") type = OptimizationTools::DISTANCEMETHOD_ITERATIONS;
-    else throw Exception("Unknown parameter estimation procedure '" + type + "'.");
-
-    unsigned int optVerbose = ApplicationTools::getParameter<unsigned int>("distance.optimization.verbose", params_, 2);
-
-    string mhPath = ApplicationTools::getAFilePath("distance.optimization.message_handler", params_, false, false);
-    OutputStream *messenger = (mhPath == "none") ? 0 : (mhPath == "std") ? ApplicationTools::message : new StlOutputStream(new ofstream(mhPath.c_str(), ios::out));
-    ApplicationTools::displayResult("Message handler for initial tree optimisation", mhPath);
-
-    string prPath = ApplicationTools::getAFilePath("distance.optimization.profiler", params_, false, false);
-    OutputStream *profiler = (prPath == "none") ? 0 : (prPath == "std") ? ApplicationTools::message : new StlOutputStream(new ofstream(prPath.c_str(), ios::out));
-
-    if (profiler) profiler->setPrecision(20);
-    ApplicationTools::displayResult("Profiler for initial tree optimisation", prPath);
-
-    // Should I ignore some parameters?
-    ParameterList allParameters = model_->getParameters();
-    allParameters.addParameters(rdist_->getParameters());
-    ParameterList parametersToIgnore;
-    string paramListDesc = ApplicationTools::getStringParameter("distance.optimization.ignore_parameter", params_, "", "", true, false);
-    bool ignoreBrLen = false;
-    StringTokenizer st(paramListDesc, ",");
-    while (st.hasMoreToken()) {
-        try {
-            string param = st.nextToken();
-            if (param == "BrLen")
-                ignoreBrLen = true;
-            else {
-                if (allParameters.hasParameter(param)) {
-                    Parameter *p = &allParameters.getParameter(param);
-                    parametersToIgnore.addParameter(*p);
-                } else ApplicationTools::displayWarning("Parameter '" + param + "' not found.");
-            }
-        } catch (ParameterNotFoundException &pnfe) {
-            ApplicationTools::displayError("Parameter '" + pnfe.getParameter() + "' not found, and so can't be ignored!");
-        }
-    }
-
-    auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("distance.optimization.max_number_f_eval", params_, 1000000);
-    ApplicationTools::displayResult("Max # ML evaluations for initial tree optimisation", TextTools::toString(nbEvalMax));
-
-    double tolerance = ApplicationTools::getDoubleParameter("distance.optimization.tolerance", params_, .000001);
-    ApplicationTools::displayResult("Tolerance for initial tree optimisation", TextTools::toString(tolerance));
-
-
-    if (distMatrix_) {
-
-        tree = Optimizators::buildDistanceTreeGenericFromDistanceMatrix(distMatrix_, *distMethod, optVerbose);
-
-    } else {
-        //Here it is:
-        ofstream warn("warnings", ios::out);
-        ApplicationTools::warning = new StlOutputStreamWrapper(&warn);
-
-        tree = Optimizators::buildDistanceTreeGeneric(*distEstimation_, *distMethod, parametersToIgnore, !ignoreBrLen, type, tolerance, nbEvalMax, profiler, messenger, optVerbose);
-
-        warn.close();
-        delete ApplicationTools::warning;
-        ApplicationTools::warning = ApplicationTools::message;
-
-        //Output some parameters:
-        if (type == OptimizationTools::DISTANCEMETHOD_ITERATIONS) {
-            // Write parameters to screen:
-            ParameterList parameters = model_->getParameters();
-            for (unsigned int i = 0; i < parameters.size(); i++) {
-                ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
-            }
-            parameters = rdist_->getParameters();
-            for (unsigned int i = 0; i < parameters.size(); i++) {
-                ApplicationTools::displayResult(parameters[i].getName(), TextTools::toString(parameters[i].getValue()));
-            }
-            // Write parameters to file:
-            string parametersFile = ApplicationTools::getAFilePath("distance.output.estimates", params_, false, false);
-            if (parametersFile != "none") {
-                ofstream out(parametersFile.c_str(), ios::out);
-                parameters = model_->getParameters();
-                for (unsigned int i = 0; i < parameters.size(); i++) {
-                    out << parameters[i].getName() << " = " << parameters[i].getValue() << endl;
-                }
-                parameters = rdist_->getParameters();
-                for (unsigned int i = 0; i < parameters.size(); i++) {
-                    out << parameters[i].getName() << " = " << parameters[i].getValue() << endl;
-                }
-                out.close();
-            }
-        }
-    }
-
-    delete distMethod;
-
-    return tree;
-}
-
-
-void DistanceMethodsUtils::setDistanceMatrix() {
-
-}
-*/
 
 std::string TextUtils::appendToFilePath(std::string inputFilePath, std::string string2append) {
 

@@ -175,7 +175,7 @@ namespace bpp {
 
         void _computePrTimesIndicatorEmpty(VVVdouble *pxy__node, VVdouble *indicator_node, VVVdouble *_likelihoods_node) const;
 
-        std::vector<int> _getMappedNodeChildren(int nodeID) const;
+        std::vector<int> _getMappedNodeChildren(int nodeID, tshlib::Utree &candUTree) const;
 
         void initialiseInsertionHistories() const;
 
@@ -375,11 +375,11 @@ namespace bpp {
         virtual void computeSubtreeLikelihood() const;
 
         // this overloaded method is called during the tree-search
-        virtual void computeSubtreeLikelihood(std::map<int, VVVdouble> *likelihoods,
-                                              std::map<int, VVVdouble> *likelihoods_empty,
-                                              const std::vector<int> &nodeList);
+        virtual void computeSubtreeLikelihood(std::map<int, VVVdouble> *likelihoods, std::map<int, VVVdouble> *likelihoods_empty,
+                                              const std::vector<int> &nodeList, tshlib::Utree &_utree__topology);
 
-        virtual void _kernel_subtreelikelihood(int nodeID, VVVdouble *pxy__node, VVVdouble *_likelihoods__node, VVVdouble *_likelihoods_empty__node);
+        virtual void _kernel_subtreelikelihood(int nodeID, VVVdouble *pxy__node, VVVdouble *_likelihoods__node,
+                                               VVVdouble *_likelihoods_empty__node, Vint *_sons__ids);
 
         virtual void computeDownSubtreeDLikelihood(const Node *);
 
@@ -403,6 +403,20 @@ namespace bpp {
                                            std::map<int, std::vector<int>> *descCountData,
                                            std::map<int, std::vector<bool>> *setAData) const;
 
+        /**
+         * @brief This method method sets DescCount (number of characters different from gap per column) value for all the nodes in the tree during
+         * the tree search
+         * @param sites
+         * @param nodeList
+         * @param descCountData
+         * @param setAData
+         * @param _utree__topology
+         */
+        void setInsertionHistories(const SiteContainer &sites,
+                                   const std::vector<int> &nodeList,
+                                   std::map<int, std::vector<int>> *descCountData,
+                                   std::map<int, std::vector<bool>> *setAData,
+                                   tshlib::Utree &_utree__topology) const;
         /**
          * @brief This method sets the indicator for the number of evolutionary events (Insertions and Deletions) at each node of the topology
          * @param sites SiteContainer reference of the aligned sites
@@ -434,9 +448,6 @@ namespace bpp {
          *        subtree
          * @param nodelist The postorder list of nodes at which the likelihood arrays must be updated
          */
-        //virtual void recombineFvAfterMove() const;
-
-        //virtual void recombineFvAtNode(Node *node) const;
 
         void setIndicatorFunction(const SiteContainer &sites) const;
 
@@ -448,15 +459,26 @@ namespace bpp {
 
         void _printPrMatrix(Node *node, VVdouble *pr);
 
-        std::vector<int> remapVirtualNodeLists(std::vector<tshlib::VirtualNode *> &inputList) const;
+        std::vector<int> remapVirtualNodeLists(std::vector<int> &inputList, tshlib::Utree &_utree__topology) const;
 
-        void _extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<int> &listNodes, unsigned long site) const;
+        void _extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<int> &listNodes, unsigned long site, tshlib::Utree &candUTree) const;
 
-        void _extendNodeListOnSetA(int qnodeID, std::vector<int> &listNodes, unsigned long site) const;
+        void _extendNodeListOnSetA(int qnodeID, std::vector<int> &listNodes, unsigned long site, tshlib::Utree &candUTree) const;
+
 
         double computeLikelihoodForASite(std::vector<int> &likelihoodNodes, size_t i) const;
 
+        double computeLikelihoodForASite(std::vector<int> &likelihoodNodes, size_t i, tshlib::Utree &_utree__topology) const;
+
+        double _kernel_likelihood_forasite(int nodeID, size_t i, Vint *_sons__ids) const;
+
+
         double computeLikelihoodWholeAlignmentEmptyColumn() const;
+
+        double computeLikelihoodWholeAlignmentEmptyColumn(tshlib::Utree &_utree__topology) const;
+
+        double _kernel_likelihood_empty_forasite(int nodeID, Vint *_sons__ids) const;
+
 
         int countNonGapCharacterInSite(int siteID) const;
 
@@ -468,9 +490,6 @@ namespace bpp {
 
         double getNodeAge(int nodeID);
 
-        tshlib::VirtualNode *getVirtualNode(int nodeID) const { return treemap_.left.at(nodeID); };
-
-        //friend class RHomogeneousMixedTreeLikelihood;
 
     };
 }

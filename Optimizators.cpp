@@ -787,7 +787,7 @@ namespace bpp {
                 UtreeBppUtils::convertTree_b2u(tree, utree, tm);
                 utree->addVirtualRootNode();
                 // Once the tree has the root, then map it as well
-                tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode));
+                tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode->getVnode_id()));
 
                 tl = new bpp::UnifiedTSHomogeneousTreeLikelihood_PIP(*tree, *estimationMethod.getData(), model.get(), rdist.get(), utree, &tm, true,
                                                                      default_map, "", false, false, false);

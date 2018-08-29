@@ -105,21 +105,24 @@ namespace bpp {
 
         tshlib::Utree *getUtreeTopology() { return utree_; }
 
+        void setUtreeTopology(tshlib::Utree *_in_utree__topology){ utree_ = _in_utree__topology;}
+
         void init_(bool usePatterns);
 
-        void fireTopologyChange(std::vector<int> nodeList,
-                std::map<int, VVVdouble> *ts_lkdata,
-                std::map<int, VVVdouble> *ts_lkemptydata,
-                std::map<int, std::vector<int>> *ts_desccount,
-                std::map<int, std::vector<bool>> *ts_setadata);
+        void fireTopologyChange(std::vector<int> nodeList, std::map<int, VVVdouble> *ts_lkdata,
+                                        std::map<int, VVVdouble> *ts_lkemptydata,
+                                        std::map<int, std::vector<int>> *ts_desccount,
+                                        std::map<int, std::vector<bool>> *ts_setadata, tshlib::Utree &_utree__topology);
 
         void fireTopologyChange(std::vector<int> nodeList);
 
-        double updateLikelihoodOnTreeRearrangement(std::vector<tshlib::VirtualNode *> &nodeList, int idxThread=0);
+        double updateLikelihoodOnTreeRearrangement(std::vector<int> &nodeList,
+                                                           tshlib::Utree &_utree__topology,
+                                                           int idxThread=0);
 
-        double getLogLikelihoodOnTreeRearrangement(const std::vector<int> &nodeList) const;
+        double getLogLikelihoodOnTreeRearrangement(const std::vector<int> &nodeList, tshlib::Utree &_utree__topology) const;
 
-        void topologyChangeSuccessful(std::vector<tshlib::VirtualNode *> listNodes);
+        void topologyChangeSuccessful(std::vector<int> listNodes);
 
         void topologyCommitTree();
 

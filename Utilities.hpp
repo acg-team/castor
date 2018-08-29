@@ -57,7 +57,8 @@
 namespace UtreeBppUtils {
     using namespace tshlib;
 
-    typedef boost::bimap<int, tshlib::VirtualNode *> treemap;
+    //typedef boost::bimap<int, tshlib::VirtualNode *> treemap;
+    typedef boost::bimap<int, int> treemap;
     typedef treemap::value_type nodeassoc;
 
     //void convertTree_b2u(bpp::TreeTemplate<bpp::Node> *in_tree, Utree *out_tree, treemap &tm);
@@ -82,7 +83,7 @@ namespace UtreeBppUtils {
     void renameInternalNodes(bpp::Tree *in_tree, std::string prefix = "V");
 
     std::vector<bpp::Node *>
-    remapNodeLists(std::vector<tshlib::VirtualNode *> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm);
+    remapNodeLists(std::vector<int> &inputList, bpp::TreeTemplate<bpp::Node> *tree, UtreeBppUtils::treemap tm);
 
 
 }

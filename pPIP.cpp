@@ -154,7 +154,7 @@ void pPIP::_reserve(std::vector<tshlib::VirtualNode *> &nodeList) {
     for (auto &vnode:nodeList) {
 
         // get node ID
-        int nodeID = treemap_.right.at(vnode);
+        int nodeID = treemap_.right.at(vnode->getVnode_id());
 
         // insertion probabilities at the given node with rate variation (gamma)
         iotasNode_[nodeID].resize(numCatg);
@@ -660,11 +660,14 @@ void pPIP::_build_MSA(bpp::Node *node, int idx_sb) {
 
     int nodeID = node->getId();
 
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+    //tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    //tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+    //int sonLeftID = treemap_.right.at(vnode_left);
+    //int sonRightID = treemap_.right.at(vnode_right);
 
-    int sonLeftID = treemap_.right.at(vnode_left);
-    int sonRightID = treemap_.right.at(vnode_right);
+    std::vector<int> sonsIDs = node->getSonsId();
+    int sonLeftID = sonsIDs[0];
+    int sonRightID = sonsIDs[1];
 
     MSA_t *MSA_L = &(MSA_.at(sonLeftID).at(0));
     MSA_t *MSA_R = &(MSA_.at(sonRightID).at(0));
@@ -707,11 +710,15 @@ void pPIP::_build_MSA(bpp::Node *node, int idx_sb) {
 
 void pPIP::_setMSAsequenceNames(bpp::Node *node) {
 
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+    //tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+    //tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
 
-    int sonLeftID = treemap_.right.at(vnode_left);
-    int sonRightID = treemap_.right.at(vnode_right);
+    //int sonLeftID = treemap_.right.at(vnode_left);
+    //int sonRightID = treemap_.right.at(vnode_right);
+
+    std::vector<int> sonsIDs = node->getSonsId();
+    int sonLeftID = sonsIDs[0];
+    int sonRightID = sonsIDs[1];
 
     std::vector<std::string> seqNames;
 
@@ -867,8 +874,8 @@ double pPIP::_computeTauRecursive(tshlib::VirtualNode *vnode) {
 //            b0=0.0;
 //        }
 
-        b0 = tree_->getNode(treemap_.right.at(vnode->getNodeLeft()), false)->getDistanceToFather() +\
-                tree_->getNode(treemap_.right.at(vnode->getNodeRight()), false)->getDistanceToFather();
+        b0 = tree_->getNode(treemap_.right.at(vnode->getNodeLeft()->getVnode_id()), false)->getDistanceToFather() +\
+                tree_->getNode(treemap_.right.at(vnode->getNodeRight()->getVnode_id()), false)->getDistanceToFather();
 
         // sum of actual branch length + total branch length of left subtree + total branch length right subtree
         return b0 + bl + br;
@@ -930,13 +937,17 @@ void pPIP::_setAllIotas(bpp::Node *node, bool local_root) {
     }
 
     if (!node->isLeaf()) {
-        tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
-        tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
+        //tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
+        //tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
 
-        int sonLeftID = treemap_.right.at(vnode_left);
+        std::vector<int> sonsIDs = node->getSonsId();
+        int sonLeftID = sonsIDs[0];
+        int sonRightID = sonsIDs[1];
+
+        //int sonLeftID = treemap_.right.at(vnode_left);
         bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
-        int sonRightID = treemap_.right.at(vnode_right);
+        //int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
         _setAllIotas(sonLeft, false);  // false: only at the first call local_root=true (first node is the actual root)
@@ -979,13 +990,23 @@ void pPIP::_setAllBetas(bpp::Node *node, bool local_root) {
 
     if (!node->isLeaf()) {
 
-        tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
-        tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
+        //tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
+        //tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
 
-        int sonLeftID = treemap_.right.at(vnode_left);
+        //int sonLeftID = treemap_.right.at(vnode_left);
+        //bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+        //int sonRightID = treemap_.right.at(vnode_right);
+        //bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+        std::vector<int> sonsIDs = node->getSonsId();
+        int sonLeftID = sonsIDs[0];
+        int sonRightID = sonsIDs[1];
+
+        //int sonLeftID = treemap_.right.at(vnode_left);
         bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
-        int sonRightID = treemap_.right.at(vnode_right);
+        //int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
         _setAllBetas(sonLeft, false); // false: only at the first call local_root=true (first node is the actual root)
@@ -1001,7 +1022,7 @@ void pPIP::_getPrFromSubstutionModel(std::vector<tshlib::VirtualNode *> &listNod
 
     for (auto &vnode:listNodes) {
 
-        auto node = tree_->getNode(treemap_.right.at(vnode), false);
+        auto node = tree_->getNode(treemap_.right.at(vnode->getVnode_id()), false);
 
         if (!node->hasFather()) {
             // root node doesn't have Pr
@@ -1053,14 +1074,25 @@ bpp::ColMatrix<double> pPIP::computeFVrec(bpp::Node *node, MSAcolumn_t &s, int &
 
     } else {
 
-        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+//        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//
+//        int sonLeftID = treemap_.right.at(vnode_left);
+//        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+//
+//        int sonRightID = treemap_.right.at(vnode_right);
+//        bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-        int sonLeftID = treemap_.right.at(vnode_left);
+        std::vector<int> sonsIDs = node->getSonsId();
+        int sonLeftID = sonsIDs[0];
+        int sonRightID = sonsIDs[1];
+
+        //int sonLeftID = treemap_.right.at(vnode_left);
         bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
-        int sonRightID = treemap_.right.at(vnode_right);
+        //int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
+
 
         // computes the recursive Felsenstein's peeling weight on the left subtree
         bpp::ColMatrix<double> fvL = computeFVrec(sonLeft, s, idx, catg);
@@ -1108,13 +1140,23 @@ void pPIP::allgaps(bpp::Node *node, std::string &s, int &idx, bool &flag) {
 
     } else {
 
-        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//        tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+//        tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//
+//        int sonLeftID = treemap_.right.at(vnode_left);
+//        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+//
+//        int sonRightID = treemap_.right.at(vnode_right);
+//        bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-        int sonLeftID = treemap_.right.at(vnode_left);
+        std::vector<int> sonsIDs = node->getSonsId();
+        int sonLeftID = sonsIDs[0];
+        int sonRightID = sonsIDs[1];
+
+        //int sonLeftID = treemap_.right.at(vnode_left);
         bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
-        int sonRightID = treemap_.right.at(vnode_right);
+        //int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
         allgaps(sonLeft, s, idx, flag);
@@ -1139,12 +1181,22 @@ void pPIP::_compute_lk_empty_down_rec(bpp::Node *node,std::vector<double> &lk){
 
     if (!node->isLeaf()) {
 
-        tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
-        int sonLeftID = treemap_.right.at(vnode_left);
+//        tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
+//        int sonLeftID = treemap_.right.at(vnode_left);
+//        bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+//
+//        tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
+//        int sonRightID = treemap_.right.at(vnode_right);
+//        bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+        std::vector<int> sonsIDs = node->getSonsId();
+        int sonLeftID = sonsIDs[0];
+        int sonRightID = sonsIDs[1];
+
+        //int sonLeftID = treemap_.right.at(vnode_left);
         bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
-        tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
-        int sonRightID = treemap_.right.at(vnode_right);
+        //int sonRightID = treemap_.right.at(vnode_right);
         bpp::Node *sonRight = tree_->getNode(sonRightID);
 
         _compute_lk_empty_down_rec(sonLeft,lk);
@@ -1175,8 +1227,14 @@ double pPIP::_compute_lk_down_rec(bpp::Node *node,int idx,double lk,int position
 
         if(tr == (int)GAP_X_STATE){
 
-            tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
-            int sonLeftID = treemap_.right.at(vnode_left);
+            //tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
+            //int sonLeftID = treemap_.right.at(vnode_left);
+            //bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+            std::vector<int> sonsIDs = node->getSonsId();
+            int sonLeftID = sonsIDs[0];
+
+            //int sonLeftID = treemap_.right.at(vnode_left);
             bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
             idx = traceback_map_.at(nodeID).at(position).at(LEFT).at(idx_tr);
@@ -1193,8 +1251,11 @@ double pPIP::_compute_lk_down_rec(bpp::Node *node,int idx,double lk,int position
 
         }else if(tr == (int)GAP_Y_STATE) {
 
-            tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
-            int sonRightID = treemap_.right.at(vnode_right);
+            //tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
+            //int sonRightID = treemap_.right.at(vnode_right);
+            std::vector<int> sonsIDs = node->getSonsId();
+            int sonRightID = sonsIDs[1];
+
             bpp::Node *sonRight = tree_->getNode(sonRightID);
 
             idx = traceback_map_.at(nodeID).at(position).at(RIGHT).at(idx_tr);
@@ -1275,14 +1336,27 @@ double pPIP::compute_lk_gap_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
 
     }
 
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+//    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//
+//    int sonLeftID = treemap_.right.at(vnode_left);
+//    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+//
+//    int sonRightID = treemap_.right.at(vnode_right);
+//    bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    int sonLeftID = treemap_.right.at(vnode_left);
+
+    std::vector<int> sonsIDs = node->getSonsId();
+    int sonLeftID = sonsIDs[0];
+    int sonRightID = sonsIDs[1];
+
+    //int sonLeftID = treemap_.right.at(vnode_left);
     bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
-    int sonRightID = treemap_.right.at(vnode_right);
+    //int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
+
+
 
     idx = 0;
     bpp::ColMatrix<double> fv = computeFVrec(node, s, idx, catg);
@@ -1339,13 +1413,23 @@ double pPIP::_compute_lk_down(bpp::Node *node, MSAcolumn_t &s, int catg) {
 
     }
 
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+//    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//
+//    int sonLeftID = treemap_.right.at(vnode_left);
+//    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+//
+//    int sonRightID = treemap_.right.at(vnode_right);
+//    bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    int sonLeftID = treemap_.right.at(vnode_left);
+    std::vector<int> sonsIDs = node->getSonsId();
+    int sonLeftID = sonsIDs[0];
+    int sonRightID = sonsIDs[1];
+
+    //int sonLeftID = treemap_.right.at(vnode_left);
     bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
-    int sonRightID = treemap_.right.at(vnode_right);
+    //int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
     idx = 0;
@@ -1496,13 +1580,23 @@ std::vector<double> pPIP::computeLK_GapColumn_local(bpp::Node *node,
     std::vector<double> pc0;
     pc0.resize(num_gamma_categories);
 
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+//    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//
+//    int sonLeftID = treemap_.right.at(vnode_left);
+//    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+//
+//    int sonRightID = treemap_.right.at(vnode_right);
+//    bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    int sonLeftID = treemap_.right.at(vnode_left);
+    std::vector<int> sonsIDs = node->getSonsId();
+    int sonLeftID = sonsIDs[0];
+    int sonRightID = sonsIDs[1];
+
+    //int sonLeftID = treemap_.right.at(vnode_left);
     bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
-    int sonRightID = treemap_.right.at(vnode_right);
+    //int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
     for (int catg = 0; catg < num_gamma_categories; catg++) {
@@ -1625,13 +1719,23 @@ double pPIP::computeLK_M_local(double NU,
 
     int nodeID = node->getId();
 
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
+//    tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft();
+//    tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight();
+//
+//    int sonLeftID = treemap_.right.at(vnode_left);
+//    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+//
+//    int sonRightID = treemap_.right.at(vnode_right);
+//    bpp::Node *sonRight = tree_->getNode(sonRightID);
 
-    int sonLeftID = treemap_.right.at(vnode_left);
+    std::vector<int> sonsIDs = node->getSonsId();
+    int sonLeftID = sonsIDs[0];
+    int sonRightID = sonsIDs[1];
+
+    //int sonLeftID = treemap_.right.at(vnode_left);
     bpp::Node *sonLeft = tree_->getNode(sonLeftID);
 
-    int sonRightID = treemap_.right.at(vnode_right);
+    //int sonRightID = treemap_.right.at(vnode_right);
     bpp::Node *sonRight = tree_->getNode(sonRightID);
 
     // create left + right column
@@ -1780,16 +1884,26 @@ double pPIP::computeLK_X_local(double NU,
 
     double log_pr;
 
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
-
-    int sonLeftID = treemap_.right.at(vnode_left);
-    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
-
-    int sonRightID = treemap_.right.at(vnode_right);
-    bpp::Node *sonRight = tree_->getNode(sonRightID);
+//    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+//    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//
+//    int sonLeftID = treemap_.right.at(vnode_left);
+//    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+//
+//    int sonRightID = treemap_.right.at(vnode_right);
+//    bpp::Node *sonRight = tree_->getNode(sonRightID);
 
     int nodeID = node->getId();
+
+    std::vector<int> sonsIDs = node->getSonsId();
+    int sonLeftID = sonsIDs[0];
+    int sonRightID = sonsIDs[1];
+
+    //int sonLeftID = treemap_.right.at(vnode_left);
+    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+    //int sonRightID = treemap_.right.at(vnode_right);
+    bpp::Node *sonRight = tree_->getNode(sonRightID);
 
     // create left + right column
     MSAcolumn_t s;
@@ -1948,17 +2062,28 @@ double pPIP::computeLK_Y_local(double NU,
                                bool flag_pattern) {
 
     double log_pr;
-
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
-
-    int sonLeftID = treemap_.right.at(vnode_left);
-    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
-
-    int sonRightID = treemap_.right.at(vnode_right);
-    bpp::Node *sonRight = tree_->getNode(sonRightID);
+//
+//    tshlib::VirtualNode *vnode_left = treemap_.left.at(node->getId())->getNodeLeft();
+//    tshlib::VirtualNode *vnode_right = treemap_.left.at(node->getId())->getNodeRight();
+//
+//    int sonLeftID = treemap_.right.at(vnode_left);
+//    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+//
+//    int sonRightID = treemap_.right.at(vnode_right);
+//    bpp::Node *sonRight = tree_->getNode(sonRightID);
 
     int nodeID = node->getId();
+
+
+    std::vector<int> sonsIDs = node->getSonsId();
+    int sonLeftID = sonsIDs[0];
+    int sonRightID = sonsIDs[1];
+
+    //int sonLeftID = treemap_.right.at(vnode_left);
+    bpp::Node *sonLeft = tree_->getNode(sonLeftID);
+
+    //int sonRightID = treemap_.right.at(vnode_right);
+    bpp::Node *sonRight = tree_->getNode(sonRightID);
 
     // create left + right column
     MSAcolumn_t s;
@@ -2733,7 +2858,7 @@ void pPIP::_computeTaus(std::vector<tshlib::VirtualNode *> &nodeList) {
 
     for (auto &vnode:nodeList) {
 
-        auto node = tree_->getNode(treemap_.right.at(vnode), false);
+        auto node = tree_->getNode(treemap_.right.at(vnode->getVnode_id()), false);
 
         nodeID = node->getId();
 
@@ -2750,7 +2875,7 @@ void pPIP::_computeNus(std::vector<tshlib::VirtualNode *> &nodeList) {
 
     for (auto &vnode:nodeList) {
 
-        auto node = tree_->getNode(treemap_.right.at(vnode), false);
+        auto node = tree_->getNode(treemap_.right.at(vnode->getVnode_id()), false);
 
         nodeID = node->getId();
 
@@ -2892,11 +3017,16 @@ void pPIP::DP3D_PIP_RAM_FAST_SB(bpp::Node *node,int msa_idx_L, int msa_idx_R,int
     int nodeID = node->getId();
 
     // Get the IDs of the sons nodes given the current node
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
+    //tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
+    //tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
 
-    int nodeID_L = treemap_.right.at(vnode_left);
-    int nodeID_R = treemap_.right.at(vnode_right);
+    //int nodeID_L = treemap_.right.at(vnode_left);
+    //int nodeID_R = treemap_.right.at(vnode_right);
+
+    std::vector<int> sonsIDs = node->getSonsId();
+    int nodeID_L = sonsIDs[0];
+    int nodeID_R = sonsIDs[1];
+
     //***************************************************************************************
     // DP VARIABLES
     //***************************************************************************************
@@ -3539,11 +3669,16 @@ void pPIP::DP3D_PIP_RAM_FAST(bpp::Node *node) {
     int nodeID = node->getId();
 
     // Get the IDs of the sons nodes given the current node
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
+    //tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
+    //tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
 
-    int nodeID_L = treemap_.right.at(vnode_left);
-    int nodeID_R = treemap_.right.at(vnode_right);
+    //int nodeID_L = treemap_.right.at(vnode_left);
+    //int nodeID_R = treemap_.right.at(vnode_right);
+
+    std::vector<int> sonsIDs = node->getSonsId();
+    int nodeID_L = sonsIDs[0];
+    int nodeID_R = sonsIDs[1];
+
     //***************************************************************************************
     // DP VARIABLES
     //***************************************************************************************
@@ -4971,10 +5106,14 @@ void pPIP::DP3D_PIP(bpp::Node *node, bool local,bool flag_map) {
 
 
 
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
-    int sequenceID_1 = treemap_.right.at(vnode_left);
-    int sequenceID_2 = treemap_.right.at(vnode_right);
+    //tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
+    //tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
+    //int sequenceID_1 = treemap_.right.at(vnode_left);
+    //int sequenceID_2 = treemap_.right.at(vnode_right);
+
+    std::vector<int> sonsIDs = node->getSonsId();
+    int sequenceID_1 = sonsIDs[0];
+    int sequenceID_2 = sonsIDs[1];
 
     // Compute dimensions of the 3D block at current internal node.
     h = MSA_.at(sequenceID_1).at(0).size() + 1; // dimension of the alignment on the left side
@@ -5821,11 +5960,15 @@ void pPIP::DP3D_PIP_RAM_FAST_SB_cross(bpp::Node *node) {
     int nodeID = node->getId();
 
     // Get the IDs of the sons nodes given the current node
-    tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
-    tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
+    //tshlib::VirtualNode *vnode_left = treemap_.left.at(nodeID)->getNodeLeft(); // bpp::Node to tshlib::VirtualNode
+    //tshlib::VirtualNode *vnode_right = treemap_.left.at(nodeID)->getNodeRight(); // bpp::Node to tshlib::VirtualNode
 
-    int nodeID_L = treemap_.right.at(vnode_left);
-    int nodeID_R = treemap_.right.at(vnode_right);
+    //int nodeID_L = treemap_.right.at(vnode_left);
+    //int nodeID_R = treemap_.right.at(vnode_right);
+
+    std::vector<int> sonsIDs = node->getSonsId();
+    int nodeID_L = sonsIDs[0];
+    int nodeID_R = sonsIDs[1];
 
     int num_MSA_L = MSA_.at(nodeID_L).size();
     int num_MSA_R = MSA_.at(nodeID_R).size();
@@ -5913,7 +6056,7 @@ void pPIP::PIPAligner(std::vector<tshlib::VirtualNode *> &list_vnode_to_root,
         ApplicationTools::displayGauge(i, list_vnode_to_root.size());
         i++;
 
-        auto node = tree_->getNode(treemap_.right.at(vnode), false);
+        auto node = tree_->getNode(treemap_.right.at(vnode->getVnode_id()), false);
 
        DVLOG(1) << "[pPIP] Processing node :(" << node->getId()<<") : "<<node->getName();
 

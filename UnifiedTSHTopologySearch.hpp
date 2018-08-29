@@ -291,10 +291,12 @@ namespace tshlib {
         void deallocateTemporaryLikelihoodData(int numThreads = 1);
 
 
-        std::string debugStackTraceMove(Move *move, Utree *tree,
-                                               std::vector < tshlib::VirtualNode * > listNodesInvolved,
-                                               std::vector < tshlib::VirtualNode * > updatedList,
-                                               double initLK = 0, double moveLK = 0, double returnLK = 0);
+        std::string debugStackTraceMove(Move *move, Utree *_utree,
+                                               std::vector < int > listNodesInvolved,
+                                               std::vector < int > updatedList,
+                                               double initLK = 0,
+                                               double moveLK = 0,
+                                               double returnLK = 0);
     };
 }
 
