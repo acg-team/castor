@@ -173,7 +173,6 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
             // ------------------------------------
             // Prepare the list of nodes involved in the move (Required here!)
-
             VirtualNode *_node__source_id = _thread__topology->getNode(currentMove->getSourceNode());
             VirtualNode *_node__target_id = _thread__topology->getNode(currentMove->getTargetNode());
 
@@ -189,7 +188,6 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
             // ------------------------------------
             // Apply the move
-
             status = candidateMoves->applyMove(i, (*_thread__topology));
 
             if (status) {
@@ -337,30 +335,29 @@ double tshlib::TreeSearch::iterate() {
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
     // Condition handler
-    //double cycle_no = 0;
     double c = std::abs(tshinitScore);
 
     while (toleranceValue < c) {
 
         // ------------------------------------
         // 1. Define moves according to tree-search criteria
-        tshlib::TreeRearrangment *candidateMoves = defineMoves();
+        tshlib::TreeRearrangment *_move__set = defineMoves();
 
-        std::ostringstream taskDescription;
-        taskDescription << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << performed_cycles + 1
-                        << " | Testing " << candidateMoves->getNumberOfMoves() << " tree rearrangements.";
-        ApplicationTools::displayMessage(taskDescription.str());
+        std::ostringstream _task;
+        _task << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << performed_cycles + 1
+                        << " | Testing " << _move__set->getNumberOfMoves() << " tree rearrangements.";
+        ApplicationTools::displayMessage(_task.str());
 
         DVLOG(1) << "[TSH Optimisation] Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " - lk= "
                  << TextTools::toString(tshcycleScore, 15);
 
         // ------------------------------------
         // 2. Test and record likelihood of each and every candidate move
-        testMoves(candidateMoves);
+        testMoves(_move__set);
 
         // ------------------------------------
         // 3. Select the best move in the list and store it
-        Move *bestMove = candidateMoves->selectBestMove(tshcycleScore);
+        Move *bestMove = _move__set->selectBestMove(tshcycleScore);
 
         // number of cycles
         performed_cycles = performed_cycles + 1;
@@ -377,22 +374,22 @@ double tshlib::TreeSearch::iterate() {
                      << " -> " << utree_->getNode(bestMove->getTargetNode())->getNodeName() << "]";
 
 
-            taskDescription.str(std::string());
-            taskDescription << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " | ["
+            _task.str(std::string());
+            _task << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " | ["
                             << bestMove->getClass() << "." << std::setfill('0') << std::setw(3) << bestMove->getUID()
                             << "] New likelihood: " << std::setprecision(12) << bestMove->getScore();
-            ApplicationTools::displayMessage(taskDescription.str());
+            ApplicationTools::displayMessage(_task.str());
 
 
             std::vector<int> listNodesWithinPath, updatedNodesWithinPath;
             listNodesWithinPath = utree_->computePathBetweenNodes(utree_->getNode(bestMove->getSourceNode()),
                                                                   utree_->getNode(bestMove->getTargetNode()));
-            updatedNodesWithinPath = candidateMoves->updatePathBetweenNodes(bestMove->getUID(), listNodesWithinPath);
+            updatedNodesWithinPath = _move__set->updatePathBetweenNodes(bestMove->getUID(), listNodesWithinPath);
             updatedNodesWithinPath.push_back(utree_->rootnode->getVnode_id());
 
             // ------------------------------------
             // Commit final move on the topology
-            candidateMoves->commitMove(bestMove->getUID(), (*utree_));
+            _move__set->commitMove(bestMove->getUID(), (*utree_));
 
             DVLOG(1) << "utree after commit " << utree_->printTreeNewick(true);
 
@@ -417,7 +414,7 @@ double tshlib::TreeSearch::iterate() {
 
             // ------------------------------------
             // Clean memory
-            delete candidateMoves;
+            delete _move__set;
 
         } else {
 
@@ -426,7 +423,7 @@ double tshlib::TreeSearch::iterate() {
 
             // ------------------------------------
             // Clean memory
-            delete candidateMoves;
+            delete _move__set;
 
             break;
         }

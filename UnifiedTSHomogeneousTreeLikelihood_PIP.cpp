@@ -114,6 +114,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::addTestLikelihoodData(int idxThread
         // Allocate memory
         descCount.resize(nbDistinctSites_);
         setA.resize(nbDistinctSites_);
+
         VectorTools::resize3(sub, nbDistinctSites_, nbClasses_, nbStates_);
         VectorTools::resize3(empty, 1, nbClasses_, nbStates_);
 
@@ -122,6 +123,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::addTestLikelihoodData(int idxThread
         testVectorLikelihoodData_[LKDataClass::empty][idxThread][nodeID] = empty;
         tsTemp_descCountData_[idxThread][nodeID] = descCount;
         tsTemp_setAData_[idxThread][nodeID] = setA;
+        tsTemp_node_data_origin[idxThread][nodeID] = false;
 
     }
 
@@ -135,8 +137,8 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::removeTestLikelihoodData(int idxThr
         size_t dim1 = testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID].size();
         size_t dim2 = testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][0].size();
 
-        for(size_t i = 0; i < dim1; ++i) {
-            for(size_t j = 0; j < dim2; ++j)
+        for (size_t i = 0; i < dim1; ++i) {
+            for (size_t j = 0; j < dim2; ++j)
                 testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][i][j].resize(0);
 
             testVectorLikelihoodData_[LKDataClass::sub][idxThread][nodeID][i].resize(0);
@@ -164,11 +166,12 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::fireTopologyChange(std::vector<int>
                                                                 std::map<int, VVVdouble> *ts_lkemptydata,
                                                                 std::map<int, std::vector<int>> *ts_desccount,
                                                                 std::map<int, std::vector<bool>> *ts_setadata,
+                                                                std::map<int, bool> *ts_node__data_origin,
                                                                 tshlib::Utree &_utree__topology) {
 
     // Recompute the value of the FV 3D arrays
     //computeSubtreeLikelihood(likelihoodDataTest_, likelihoodEmptyDataTest_);
-    computeSubtreeLikelihood(ts_lkdata, ts_lkemptydata, nodeList, _utree__topology);
+    computeSubtreeLikelihood(ts_lkdata, ts_lkemptydata, nodeList, ts_node__data_origin, _utree__topology);
     // Compute the insertion histories set (recompute the desc_count and set A)
     setInsertionHistories(*data_, nodeList, ts_desccount, ts_setadata, _utree__topology);
 }
@@ -182,21 +185,38 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangeme
     std::map<int, VVVdouble> *ts_lkemptydata = &testVectorLikelihoodData_[LKDataClass::empty][idxThread];
     std::map<int, std::vector<int>> *ts_desccount = &tsTemp_descCountData_[idxThread];
     std::map<int, std::vector<bool>> *ts_setadata = &tsTemp_setAData_[idxThread];
+    std::map<int, bool> *ts_node__data_origin = &tsTemp_node_data_origin[idxThread];
+
 
     // Add root to the utree structure
     _utree__topology.addVirtualRootNode();
 
     // 0. convert the list of tshlib::VirtualNodes into bpp::Node
-    std::vector<int> rearrangedNodes = remapVirtualNodeLists(nodeList,_utree__topology);
+    std::vector<int> _affected__nodes = remapVirtualNodeLists(nodeList, _utree__topology);
 
-    // 1. Fire topology change
-    fireTopologyChange(rearrangedNodes, ts_lkdata, ts_lkemptydata, ts_desccount, ts_setadata, _utree__topology);
+    // 1. Flag nodes to read from reference
+    for (std::vector<int>::iterator it = _affected__nodes.begin(); it != _affected__nodes.end(); ++it)
+        (*ts_node__data_origin)[(*it)] = true;
 
-    // 2. Compute loglikelihood
-    double logLk = getLogLikelihoodOnTreeRearrangement(rearrangedNodes, _utree__topology);
+    // 2. Fire topology change
+    fireTopologyChange(_affected__nodes, ts_lkdata, ts_lkemptydata, ts_desccount, ts_setadata, ts_node__data_origin, _utree__topology);
 
-    // Remove root node from the utree structure
+    // 3. Compute loglikelihood
+    double logLk = getLogLikelihoodOnTreeRearrangement(_affected__nodes,
+                                                       ts_lkdata,
+                                                       ts_lkemptydata,
+                                                       ts_desccount,
+                                                       ts_setadata,
+                                                       ts_node__data_origin,
+                                                       _utree__topology);
+
+    // 4. Remove root node from the utree structure
     _utree__topology.removeVirtualRootNode();
+
+    // 5. Remove flags
+    for (std::vector<int>::iterator it = _affected__nodes.begin(); it != _affected__nodes.end(); ++it)
+        (*ts_node__data_origin)[(*it)] = false;
+
 
     return logLk;
 
@@ -223,14 +243,20 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::recomputeSiteLikelihoodUsingPartiti
 
 #endif
 
-double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangement(const std::vector<int> &nodeList, tshlib::Utree &_utree__topology) const {
+double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangement(const std::vector<int> &nodeList,
+                                                                                   std::map<int, VVVdouble> *ts_lkdata,
+                                                                                   std::map<int, VVVdouble> *ts_lkemptydata,
+                                                                                   std::map<int, std::vector<int>> *ts_desccount,
+                                                                                   std::map<int, std::vector<bool>> *ts_setadata,
+                                                                                   std::map<int, bool> *ts_node__data_origin,
+                                                                                   tshlib::Utree &_utree__topology) const {
 
     // 1. Initialise variables and contenitors
     double logLK;
     std::vector<double> lk_sites(nbDistinctSites_);
 
     // 2. Compute the lk of the empty column
-    double lk_site_empty = computeLikelihoodWholeAlignmentEmptyColumn(_utree__topology);
+    double lk_site_empty = computeLikelihoodWholeAlignmentEmptyColumn(ts_lkemptydata, _utree__topology);
 
     // 3. Compute the likelihood of each site
     const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
