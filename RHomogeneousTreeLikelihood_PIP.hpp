@@ -432,6 +432,7 @@ namespace bpp {
                                    const std::vector<int> &nodeList,
                                    std::map<int, std::vector<int>> *descCountData,
                                    std::map<int, std::vector<bool>> *setAData,
+                                   std::map<int, bool> *ts_node__data_origin,
                                    tshlib::Utree &_utree__topology) const;
         /**
          * @brief This method sets the indicator for the number of evolutionary events (Insertions and Deletions) at each node of the topology
@@ -479,21 +480,37 @@ namespace bpp {
 
         void _extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<int> &listNodes, unsigned long site, tshlib::Utree &candUTree) const;
 
-        void _extendNodeListOnSetA(int qnodeID, std::vector<int> &listNodes, unsigned long site, tshlib::Utree &candUTree) const;
+        void _extendNodeListOnSetA(int qnodeID,
+                                   unsigned long site,
+                                   std::vector<int> &_node__list,
+                                   std::map<int, std::vector<bool>> *_ts__setadata,
+                                   tshlib::Utree &_utree__topology) const;
 
 
-        double computeLikelihoodForASite(std::vector<int> &likelihoodNodes, size_t i) const;
+        double computeLikelihoodForASite(std::vector<int> &_node__list, size_t i) const;
 
-        double computeLikelihoodForASite(std::vector<int> &likelihoodNodes, size_t i, tshlib::Utree &_utree__topology) const;
+        double computeLikelihoodForASite(size_t i,
+                                         std::map<int, VVVdouble> *likelihoods,
+                                         std::map<int, VVVdouble> *likelihoods_empty,
+                                         std::map<int, std::vector<bool>> *ts_setadata,
+                                         std::vector<int> &_node__list,
+                                         std::map<int, bool> *ts_node__data_origin,
+                                         tshlib::Utree &_utree__topology) const;
 
-        double _kernel_likelihood_forasite(int nodeID, size_t i, Vint *_sons__ids) const;
+        double _kernel_likelihood_forasite(size_t i,
+                                           int nodeID,
+                                           std::vector<VVVdouble *> *lk_sons,
+                                           std::vector<VVVdouble *> *lk_sons_empty,
+                                           std::map<int, std::vector<bool>> *ts_setadata) const;
 
 
         double computeLikelihoodWholeAlignmentEmptyColumn() const;
 
-        double computeLikelihoodWholeAlignmentEmptyColumn(std::map<int, VVVdouble> *ts_lkemptydata, tshlib::Utree &_utree__topology) const;
+        double computeLikelihoodWholeAlignmentEmptyColumn(std::map<int, VVVdouble> *ts_lkemptydata,
+                                                          std::map<int, bool> *ts_node__data_origin,
+                                                          tshlib::Utree &_utree__topology) const;
 
-        double _kernel_likelihood_empty_forasite(int nodeID, Vint *_sons__ids) const;
+        double _kernel_likelihood_empty_forasite(int nodeID, std::vector<VVVdouble *> *lk_sons_empty) const;
 
 
         int countNonGapCharacterInSite(int siteID) const;

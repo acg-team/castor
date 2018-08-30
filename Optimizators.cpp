@@ -412,6 +412,8 @@ namespace bpp {
                                                                                      suffixIsOptional, warn + 1);
                 double PAR_optim_topology_tolerance = ApplicationTools::getDoubleParameter("tolerance", optTopology_MethodDetails, 0.001, suffix,
                                                                                            suffixIsOptional, warn + 1);
+                int PAR_optim_topology_threads = ApplicationTools::getIntParameter("threads", optTopology_MethodDetails, 1, suffix,
+                                                                                     suffixIsOptional, warn + 1);
                 std::string PAR_lkmove = ApplicationTools::getStringParameter("optimization.topology.likelihood", params, "bothways", "", true, true);
 
                 // Prepare settings for the tree-search object (method + coverage)
@@ -490,6 +492,7 @@ namespace bpp {
                 // Set stop condition and threshold to reach (either no. iterations or tolerance)
                 treesearch->setTolerance(PAR_optim_topology_tolerance);
                 treesearch->setMaxCycles(PAR_optim_topology_maxcycles);
+                treesearch->setMaxNumThreads(PAR_optim_topology_threads);
 
                 // Execute tree-search
                 //treesearch->executeTreeSearch();

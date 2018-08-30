@@ -43,6 +43,7 @@
  */
 #include <random>
 #include <glog/logging.h>
+#include <omp.h>
 
 #include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
 #include <Bpp/Phyl/Io/Newick.h>
@@ -146,14 +147,24 @@ double tshlib::TreeSearch::executeTreeSearch() {
 
 void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
-    try {
         bool status = false;
 
+        // Set the number of threads to use
+        omp_set_num_threads(threads_num);
+
         // Allocate memory
-        allocateTemporaryLikelihoodData(1);
+        allocateTemporaryLikelihoodData(threads_num);
+
+        // Count moves performed per each cycle
+        std::vector<int> _count__moves_cycle(candidateMoves->getNumberOfMoves(),0);
 
         // Threads should run the following tasks in parallel
+#pragma omp parallel for
         for (unsigned long i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
+
+            // ------------------------------------
+            // Get the number of the thread
+            int thread_id = omp_get_thread_num();
 
             // ------------------------------------
             // Get move reference
@@ -164,10 +175,6 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
             auto _thread__topology = new tshlib::Utree((*utree_));
 
             // ------------------------------------
-            ApplicationTools::displayGauge(i + 1, candidateMoves->getNumberOfMoves(), '>',
-                                           std::string("node " + _thread__topology->getNode(currentMove->getSourceNode())->getNodeName()));
-
-            // ------------------------------------
             // Initialise local variables
             double moveLogLK = 0;
 
@@ -176,7 +183,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
             VirtualNode *_node__source_id = _thread__topology->getNode(currentMove->getSourceNode());
             VirtualNode *_node__target_id = _thread__topology->getNode(currentMove->getTargetNode());
 
-            std::vector<int> listNodesWithinPath = _thread__topology->computePathBetweenNodes(_node__source_id , _node__target_id );
+            std::vector<int> listNodesWithinPath = _thread__topology->computePathBetweenNodes(_node__source_id, _node__target_id);
             std::vector<int> updatedNodesWithinPath = candidateMoves->updatePathBetweenNodes(i, listNodesWithinPath);
 
             // ------------------------------------
@@ -212,20 +219,19 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
                 // Recompute the likelihood
                 if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)) {
                     moveLogLK = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(
-                            updatedNodesWithinPath, (*_thread__topology), 0);
+                            updatedNodesWithinPath, (*_thread__topology), thread_id);
                 } else {
                     moveLogLK = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood *>(likelihoodFunc)->updateLikelihoodOnTreeRearrangement(
                             updatedNodesWithinPath, (*_thread__topology));
                 }
 
 
-                LOG_IF(WARNING, std::isinf(moveLogLK)) << "llk[Move] value is -inf for [MOVE " << candidateMoves->getMove(i)->getUID() << "]" <<
-                                                       debugStackTraceMove(candidateMoves->getMove(i), _thread__topology,
-                                                                           listNodesWithinPath,
-                                                                           updatedNodesWithinPath,
-                                                                           tshinitScore,
-                                                                           moveLogLK,
-                                                                           0);
+                LOG_IF(FATAL, std::isinf(moveLogLK)) << "llk[Move] value is -inf for [MOVE " << candidateMoves->getMove(i)->getUID() << "]" <<
+                                                     debugStackTraceMove(candidateMoves->getMove(i), _thread__topology,
+                                                                         listNodesWithinPath,
+                                                                         updatedNodesWithinPath,
+                                                                         tshinitScore,
+                                                                         moveLogLK);
 
                 // ------------------------------------
                 // Store likelihood of the move
@@ -279,29 +285,28 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
 
             }
+
             // ------------------------------------
             // Count moves performed
-            //performed_moves += candidateMoves->getNumberOfMoves() * 2;
-            performed_moves++;
+            _count__moves_cycle[i] = 1;
+            ApplicationTools::displayGauge(VectorTools::sum(_count__moves_cycle), candidateMoves->getNumberOfMoves(), '>',
+                                           std::string("node " + _thread__topology->getNode(currentMove->getSourceNode())->getNodeName()));
+
+
+            // ------------------------------------
+            // Delete candidate topology
             delete _thread__topology;
         }
 
-        // Allocate memory
-        deallocateTemporaryLikelihoodData(1);
+        // ------------------------------------
+        // Store count of moves tested for this cycle
+        performed_moves.push_back(VectorTools::sum(_count__moves_cycle));
 
-    } catch (const std::overflow_error &e) {
+        // ------------------------------------
+        // Deallocate memory
+        deallocateTemporaryLikelihoodData(threads_num);
 
-        LOG(ERROR) << e.what();
-
-    } catch (const std::runtime_error &e) {
-
-        LOG(ERROR) << e.what();
-
-    } catch (const std::exception &e) {
-
-        LOG(ERROR) << e.what();
-    }
-
+        // ------------------------------------
     ApplicationTools::displayMessage("");
 
 }
@@ -332,12 +337,14 @@ void tshlib::TreeSearch::deallocateTemporaryLikelihoodData(int numThreads) {
 
 
 double tshlib::TreeSearch::iterate() {
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
 
     // Condition handler
     double c = std::abs(tshinitScore);
 
     while (toleranceValue < c) {
+
+        std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 
         // ------------------------------------
         // 1. Define moves according to tree-search criteria
@@ -345,7 +352,7 @@ double tshlib::TreeSearch::iterate() {
 
         std::ostringstream _task;
         _task << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << performed_cycles + 1
-                        << " | Testing " << _move__set->getNumberOfMoves() << " tree rearrangements.";
+              << " | Testing " << _move__set->getNumberOfMoves() << " tree rearrangements.";
         ApplicationTools::displayMessage(_task.str());
 
         DVLOG(1) << "[TSH Optimisation] Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " - lk= "
@@ -359,8 +366,18 @@ double tshlib::TreeSearch::iterate() {
         // 3. Select the best move in the list and store it
         Move *bestMove = _move__set->selectBestMove(tshcycleScore);
 
+        // ------------------------------------
+        std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+
+        DVLOG(1) << "[TSH Cycle " << performed_cycles << " ] " << "Moves tested: " << performed_moves[performed_cycles] << std::endl;
+        DVLOG(1) << "[TSH Cycle " << performed_cycles << " ] " << "Elapsed time: " << duration << " microseconds" << std::endl;
+        DVLOG(1) << "[TSH Cycle " << performed_cycles << " ] " << "*** " << (double) duration / performed_moves[performed_cycles]
+                << " microseconds/move *** " << std::endl;
+
         // number of cycles
         performed_cycles = performed_cycles + 1;
+
         // ------------------------------------
         // Print winning move
         if (bestMove) {
@@ -376,8 +393,8 @@ double tshlib::TreeSearch::iterate() {
 
             _task.str(std::string());
             _task << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " | ["
-                            << bestMove->getClass() << "." << std::setfill('0') << std::setw(3) << bestMove->getUID()
-                            << "] New likelihood: " << std::setprecision(12) << bestMove->getScore();
+                  << bestMove->getClass() << "." << std::setfill('0') << std::setw(3) << bestMove->getUID()
+                  << "] New likelihood: " << std::setprecision(12) << bestMove->getScore();
             ApplicationTools::displayMessage(_task.str());
 
 
@@ -418,8 +435,8 @@ double tshlib::TreeSearch::iterate() {
 
         } else {
 
-            DLOG(INFO) << "[TSH Cycle] No further likelihood improvement after " << performed_cycles << " cycles and " << performed_moves
-                       << " performed moves. Exit loop.";
+            DLOG(INFO) << "[TSH Cycle] No further likelihood improvement after " << performed_cycles << " cycles and "
+                       << VectorTools::sum(performed_moves) << " performed moves. Exit loop.";
 
             // ------------------------------------
             // Clean memory
@@ -436,15 +453,6 @@ double tshlib::TreeSearch::iterate() {
 
     }
 
-
-    // ------------------------------------
-    std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-
-    DVLOG(1) << "[TSH Cycle] Moves applied and reverted: " << performed_moves << std::endl;
-    DVLOG(1) << "[TSH Cycle] Elapsed time: " << duration << " microseconds" << std::endl;
-    DVLOG(1) << "[TSH Cycle] *** " << (double) duration / performed_moves << " microseconds/move *** " << std::endl;
-
     return -tshcycleScore;
 }
 
@@ -453,8 +461,7 @@ std::string tshlib::TreeSearch::debugStackTraceMove(Move *move, Utree *_utree,
                                                     std::vector<int> listNodesInvolved,
                                                     std::vector<int> updatedList,
                                                     double initLK,
-                                                    double moveLK,
-                                                    double returnLK) {
+                                                    double moveLK) {
 
     std::ostringstream nodepath_lni;
     for (auto &node:listNodesInvolved) {
@@ -477,10 +484,8 @@ std::string tshlib::TreeSearch::debugStackTraceMove(Move *move, Utree *_utree,
     stm << "    @        [ReferenNodeList]  " << nodepath_lni.str() << std::endl;
     stm << "    @        [UpdatedNodeList]  " << nodepath_uni.str() << std::endl;
     stm << "    @        [LLK.Initial]      " << TextTools::toString(initLK, 25) << std::endl;
-    stm << "    @        [LLK.Return]       " << TextTools::toString(returnLK, 25) << std::endl;
     stm << "    @        [LLK.Move]         " << TextTools::toString(moveLK, 25) << std::endl;
 
-    //stm << "    @ [Tree] " << tree->printTreeNewick(true);
 
     return stm.str();
 

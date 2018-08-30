@@ -122,12 +122,12 @@ namespace bpp {
                                                    tshlib::Utree &_utree__topology,
                                                    int idxThread = 0);
 
-        double getLogLikelihoodOnTreeRearrangement(const std::vector<int> &nodeList,
-                                                   std::map<int, VVVdouble> *ts_lkdata,
-                                                   std::map<int, VVVdouble> *ts_lkemptydata,
-                                                   std::map<int, std::vector<int>> *ts_desccount,
-                                                   std::map<int, std::vector<bool>> *ts_setadata,
-                                                   std::map<int, bool> *ts_node__data_origin,
+        double getLogLikelihoodOnTreeRearrangement(const std::vector<int> &_ts__node_list,
+                                                   std::map<int, VVVdouble> *_ts__likelihoods,
+                                                   std::map<int, VVVdouble> *_ts__likelihoods_empty,
+                                                   std::map<int, std::vector<int>> *_ts__desccount,
+                                                   std::map<int, std::vector<bool>> *_ts__setadata,
+                                                   std::map<int, bool> *_ts__node_data_origin,
                                                    tshlib::Utree &_utree__topology) const;
 
         void topologyChangeSuccessful(std::vector<int> listNodes);

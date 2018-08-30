@@ -68,11 +68,12 @@ namespace tshlib {
         double toleranceValue;
         int maxTSCycles;
         std::string scoringMethod;
-        int performed_moves;
+        std::vector<int> performed_moves;
         int performed_cycles;
         int search_startingnodes;
         mutable tshlib::Utree *utree_;
         bool tshStatus;
+        int threads_num;
 
     public:
 
@@ -84,12 +85,12 @@ namespace tshlib {
             tshSearchHeuristic = TreeSearchHeuristics::nosearch;
             tshRearrangementCoverage = TreeRearrangmentOperations::classic_Mixed;
             tshStartingNodeMethod = StartingNodeHeuristics::greedy;
-            performed_moves = 0;
             performed_cycles = 0;
             search_startingnodes = 0;
             scoringMethod = "";
             tshStatus = false;
             utree_ = nullptr;
+            threads_num = 1;
         };
 
         ~TreeSearch() = default;
@@ -100,6 +101,10 @@ namespace tshlib {
 
         Utree* getUtree() {
             return utree_ ?: nullptr;
+        }
+
+        void setMaxNumThreads(int numThreads){
+            TreeSearch::threads_num = numThreads;
         }
 
         bool isTreeSearchSuccessful() const {
@@ -295,8 +300,7 @@ namespace tshlib {
                                                std::vector < int > listNodesInvolved,
                                                std::vector < int > updatedList,
                                                double initLK = 0,
-                                               double moveLK = 0,
-                                               double returnLK = 0);
+                                               double moveLK = 0);
     };
 }
 

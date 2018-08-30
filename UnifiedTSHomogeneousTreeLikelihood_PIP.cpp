@@ -173,7 +173,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::fireTopologyChange(std::vector<int>
     //computeSubtreeLikelihood(likelihoodDataTest_, likelihoodEmptyDataTest_);
     computeSubtreeLikelihood(ts_lkdata, ts_lkemptydata, nodeList, ts_node__data_origin, _utree__topology);
     // Compute the insertion histories set (recompute the desc_count and set A)
-    setInsertionHistories(*data_, nodeList, ts_desccount, ts_setadata, _utree__topology);
+    setInsertionHistories(*data_, nodeList, ts_desccount, ts_setadata, ts_node__data_origin, _utree__topology);
 }
 
 
@@ -243,12 +243,12 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::recomputeSiteLikelihoodUsingPartiti
 
 #endif
 
-double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangement(const std::vector<int> &nodeList,
-                                                                                   std::map<int, VVVdouble> *ts_lkdata,
-                                                                                   std::map<int, VVVdouble> *ts_lkemptydata,
-                                                                                   std::map<int, std::vector<int>> *ts_desccount,
-                                                                                   std::map<int, std::vector<bool>> *ts_setadata,
-                                                                                   std::map<int, bool> *ts_node__data_origin,
+double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangement(const std::vector<int> &_ts__node_list,
+                                                                                   std::map<int, VVVdouble> *_ts__likelihoods,
+                                                                                   std::map<int, VVVdouble> *_ts__likelihoods_empty,
+                                                                                   std::map<int, std::vector<int>> *_ts__desccount,
+                                                                                   std::map<int, std::vector<bool>> *_ts__setadata,
+                                                                                   std::map<int, bool> *_ts__node_data_origin,
                                                                                    tshlib::Utree &_utree__topology) const {
 
     // 1. Initialise variables and contenitors
@@ -256,20 +256,25 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::getLogLikelihoodOnTreeRearrangeme
     std::vector<double> lk_sites(nbDistinctSites_);
 
     // 2. Compute the lk of the empty column
-    double lk_site_empty = computeLikelihoodWholeAlignmentEmptyColumn(ts_lkemptydata, _utree__topology);
+    double lk_site_empty = computeLikelihoodWholeAlignmentEmptyColumn(_ts__likelihoods_empty, _ts__node_data_origin, _utree__topology);
 
     // 3. Compute the likelihood of each site
-    const std::vector<unsigned int> *rootWeights = &likelihoodData_->getWeights();
+    const std::vector<unsigned int> *_root__weights = &likelihoodData_->getWeights();
 
     for (unsigned long i = 0; i < nbDistinctSites_; i++) {
 
         // Extend rearranged-node-list including all the nodes in the setA for each site
-        std::vector<int> tempExtendedNodeList;
-        _extendNodeListOnSetA(nodeList.back(), tempExtendedNodeList, i, _utree__topology);
+        std::vector<int> _node__list;
+        _extendNodeListOnSetA(_ts__node_list.back(), i, _node__list, _ts__setadata, _utree__topology);
 
         // call to function which retrieves the lk value for each site
-        lk_sites[i] = log(computeLikelihoodForASite(tempExtendedNodeList, i, _utree__topology)) * rootWeights->at(i);
-
+        lk_sites[i] = log(computeLikelihoodForASite(i,
+                                                    _ts__likelihoods,
+                                                    _ts__likelihoods_empty,
+                                                    _ts__setadata,
+                                                    _node__list,
+                                                    _ts__node_data_origin,
+                                                    _utree__topology)) * _root__weights->at(i);
 
         DVLOG(2) << "site log_lk[" << i << "]=" << std::setprecision(18) << lk_sites[i] << std::endl;
     }
