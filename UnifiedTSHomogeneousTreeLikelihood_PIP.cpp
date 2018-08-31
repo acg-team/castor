@@ -213,10 +213,14 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangeme
     // 4. Remove root node from the utree structure
     _utree__topology.removeVirtualRootNode();
 
-    // 5. Remove flags
-    for (std::vector<int>::iterator it = _affected__nodes.begin(); it != _affected__nodes.end(); ++it)
-        (*ts_node__data_origin)[(*it)] = false;
 
+
+    // 5. Remove flags
+    for (std::vector<int>::iterator it = _affected__nodes.begin(); it != _affected__nodes.end(); ++it) {
+        (*ts_node__data_origin)[(*it)] = false;
+        std::fill((*ts_setadata)[(*it)].begin(),(*ts_setadata)[(*it)].begin(), false );
+        std::fill((*ts_desccount)[(*it)].begin(),(*ts_desccount)[(*it)].begin(), 0 );
+    }
 
     return logLk;
 
@@ -309,6 +313,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(std::vecto
 
     fireTopologyChange(ponl);
 
+    DVLOG(1) << "loglikelihood after commit" << TextTools::toString(getLogLikelihood(), 15);
 
     // Optimise branches involved in the tree rearrangement
     fireBranchOptimisation(UtreeBppUtils::remapNodeLists(listNodes, tree_, treemap_));

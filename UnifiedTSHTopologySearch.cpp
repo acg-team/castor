@@ -149,9 +149,10 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
     bool status = false;
 
+#ifdef USE_OPENMP
     // Set the number of threads to use
     omp_set_num_threads(threads_num);
-
+#endif
     // Allocate memory
     allocateTemporaryLikelihoodData(threads_num);
 
@@ -164,8 +165,11 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
         // ------------------------------------
         // Get the number of the thread
+#ifdef USE_OPENMP
         int thread_id = omp_get_thread_num();
-
+#else
+        int thread_id = 1;
+#endif
         // ------------------------------------
         // Get move reference
         tshlib::Move *currentMove = candidateMoves->getMove(i);
@@ -188,7 +192,8 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
         // ------------------------------------
         // Log move details
-        DVLOG(1) << "Move [" << _thread__topology->getNode(currentMove->getSourceNode())->getNodeName() << "->"
+        DVLOG(1) << "[TSH Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " ] "
+                 << "Move [" << _thread__topology->getNode(currentMove->getSourceNode())->getNodeName() << "->"
                  << _thread__topology->getNode(currentMove->getTargetNode())->getNodeName() << "]\t"
                  << currentMove->getClass() << "\t(" << currentMove->getRadius() << ")" << "\tdirection: "
                  << currentMove->getDirection();
@@ -199,8 +204,10 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
         if (status) {
 
-            DVLOG(1) << "[TSH Cycle - Topology] [A] MOVE#" << currentMove->getUID() << " | " << _thread__topology->printTreeNewick(true);
-            DVLOG(1) << "[TSH Cycle - Topology] [R] MOVE#" << currentMove->getUID() << " | " << utree_->printTreeNewick(true, false);
+            DVLOG(1) << "[TSH Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1
+                     << " ] [A] MOVE#" << currentMove->getUID() << " | " << _thread__topology->printTreeNewick(true);
+            DVLOG(1) << "[TSH Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1
+                     << " ] [R] MOVE#" << currentMove->getUID() << " | " << utree_->printTreeNewick(true, false);
 
             // ------------------------------------
             // Print root reachability from every node (includes rotations)
@@ -352,13 +359,13 @@ double tshlib::TreeSearch::iterate() {
 
         std::ostringstream _task;
         _task << "Tree-search cycle #" << std::setfill('0') << std::setw(3) << performed_cycles + 1
-              << " | Testing " << _move__set->getNumberOfMoves() << " tree rearrangements.";
+              << "| Testing " << _move__set->getNumberOfMoves() << " tree rearrangements.";
         ApplicationTools::displayMessage(_task.str());
 
         DVLOG(1) << "[TSH Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " ] " <<
-                 " | Initial Log-likelihood = " << TextTools::toString(tshcycleScore, 15);
+                 "Initial Log-likelihood = " << TextTools::toString(tshcycleScore, 15);
         DVLOG(1) << "[TSH Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " ] " <<
-                 " | Testing " << _move__set->getNumberOfMoves() << " moves.";
+                 "Testing " << _move__set->getNumberOfMoves() << " moves.";
 
         // ------------------------------------
         // 2. Test and record likelihood of each and every candidate move
@@ -369,11 +376,11 @@ double tshlib::TreeSearch::iterate() {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
 
         DVLOG(1) << "[TSH Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " ] "
-                 << " | Moves tested: " << performed_moves[performed_cycles] << std::endl;
+                 << "Moves tested: " << performed_moves[performed_cycles] << std::endl;
         DVLOG(1) << "[TSH Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " ] "
-                 << " | Elapsed time: " << duration << " microseconds" << std::endl;
+                 << "Elapsed time: " << duration << " microseconds" << std::endl;
         DVLOG(1) << "[TSH Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " ] "
-                 << " | *** " << (double) duration / performed_moves[performed_cycles] << " microseconds/move *** " << std::endl;
+                 << "*** " << (double) duration / performed_moves[performed_cycles] << " microseconds/move *** " << std::endl;
 
         // ------------------------------------
         // 3. Select the best move in the list and store it
@@ -387,7 +394,7 @@ double tshlib::TreeSearch::iterate() {
             setTreeSearchStatus(true);
 
             DVLOG(1) << "[TSH Cycle " << std::setfill('0') << std::setw(3) << performed_cycles + 1 << " ] "
-                     << "| Found best move | "
+                     << "Found best move | "
                      << "lk = " << std::setprecision(12) << bestMove->getScore() << " | "
                      << bestMove->getClass() << "." << std::setfill('0') << std::setw(3) << bestMove->getUID()
                      << " [" << utree_->getNode(bestMove->getSourceNode())->getNodeName()

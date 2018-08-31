@@ -995,7 +995,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(size_t i,
                                                                  std::map<int, bool> *ts_node__data_origin,
                                                                  tshlib::Utree &_utree__topology) const {
 
-    std::vector<double> _node__partial_likelihood(_node__list.size());
+    std::vector<double> _node__partial_likelihood(_node__list.size(),0);
 
     for (int idxNode = 0; idxNode < _node__list.size(); idxNode++) {
 
