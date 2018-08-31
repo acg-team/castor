@@ -347,6 +347,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood(const std::vector<
 
             }
         }
+        delete _sons__ids;
 
 
         // References
@@ -389,7 +390,7 @@ void RHomogeneousTreeLikelihood_PIP::computeSubtreeLikelihood(std::map<int, VVVd
                 }
             }
         }
-
+        delete _sons__ids;
         // References
         VVVdouble *_likelihoods__node = &(*likelihoods)[nodeID];
         VVVdouble *_likelihoods_empty__node = &(*likelihoods_empty)[nodeID];
@@ -527,6 +528,8 @@ void RHomogeneousTreeLikelihood_PIP::setInsertionHistories(const SiteContainer &
                 // Recompute it
                 for (auto &l:(*_sons__ids))
                     (*descCountData)[nodeID][i] += (*descCountData)[l][i];
+
+                delete _sons__ids;
             }
             // Activate or deactivate set A
             (*setAData)[nodeID][i] = ((*descCountData)[nodeID][i] == nonGaps_);
@@ -870,7 +873,6 @@ void RHomogeneousTreeLikelihood_PIP::computeTreeLikelihood() {
 double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColumn() const {
 
     // Add iota and beta quantities on nodes with actived SetA for empty column
-    double lk_site_empty = 0;
     std::vector<int> likelihoodNodes = getNodeListPostOrder(tree_->getRootNode()->getId());
     std::vector<double> _node__partial_likelihood(likelihoodNodes.size());
 
@@ -886,12 +888,14 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
                 lk_sons_empty[l] = &likelihoodEmptyData_->getLikelihoodArray((*_sons__ids)[l]);
             }
         }
+        delete _sons__ids;
         _node__partial_likelihood[idxNode] = _kernel_likelihood_empty_forasite(likelihoodNodes[idxNode], &lk_sons_empty);
     }
 
-    // Empty column
+    // Empty column likelihood
+    double lk_site_empty = bpp::VectorTools::sum(_node__partial_likelihood);
     DVLOG(2) << "LK Empty [BPP] " << std::setprecision(18) << lk_site_empty;
-    return bpp::VectorTools::sum(_node__partial_likelihood);
+    return lk_site_empty;
 }
 
 
@@ -899,7 +903,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
 double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColumn(std::map<int, VVVdouble> *ts_lkemptydata,
                                                                                   std::map<int, bool> *ts_node__data_origin,
                                                                                   tshlib::Utree &_utree__topology) const {
-    double lk_site_empty = 0;
+
     std::vector<int> likelihoodNodes = getNodeListPostOrder(tree_->getRootNode()->getId());
     std::vector<double> _node__partial_likelihood(likelihoodNodes.size());
 
@@ -919,13 +923,15 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodWholeAlignmentEmptyColum
                 }
             }
         }
+        delete _sons__ids;
         _node__partial_likelihood[idxNode] = _kernel_likelihood_empty_forasite(likelihoodNodes[idxNode], &lk_sons_empty);
+
     }
-    // Empty column
+
+    // Empty column likelihood
+    double lk_site_empty = bpp::VectorTools::sum(_node__partial_likelihood);
     DVLOG(2) << "LK Empty [BPP] " << std::setprecision(18) << lk_site_empty;
-    return bpp::VectorTools::sum(_node__partial_likelihood);
-
-
+    return lk_site_empty;
 }
 
 double RHomogeneousTreeLikelihood_PIP::_kernel_likelihood_empty_forasite(int nodeID, std::vector<VVVdouble *> *lk_sons_empty) const {
@@ -978,7 +984,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(std::vector<int
                 lk_sons_empty[l] = &likelihoodEmptyData_->getLikelihoodArray((*_sons__ids)[l]);
             }
         }
-
+        delete _sons__ids;
         // compute the likelihood at this node
         _node__partial_likelihood[idxNode] = _kernel_likelihood_forasite(i, _node__list[idxNode], &lk_sons, &lk_sons_empty, &setAData_);
     }
@@ -1016,7 +1022,7 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(size_t i,
                 }
             }
         }
-
+        delete _sons__ids;
         _node__partial_likelihood[idxNode] = _kernel_likelihood_forasite(i, _node__list[idxNode], &lk_sons, &lk_sons_empty, ts_setadata);
 
     }

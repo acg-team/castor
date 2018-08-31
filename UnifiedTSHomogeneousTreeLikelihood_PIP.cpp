@@ -59,7 +59,7 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
                                                                                tshlib::Utree *utree,
                                                                                UtreeBppUtils::treemap *tm,
                                                                                bool optNumericalDerivatives,
-                                                                               std::map<std::string, std::string> &params,
+                                                                               std::map <std::string, std::string> &params,
                                                                                const std::string &suffix,
                                                                                bool checkRooted,
                                                                                bool verbose,
@@ -77,7 +77,7 @@ UnifiedTSHomogeneousTreeLikelihood_PIP::UnifiedTSHomogeneousTreeLikelihood_PIP(c
                                                                                tshlib::Utree *utree,
                                                                                UtreeBppUtils::treemap *tm,
                                                                                bool optNumericalDerivatives,
-                                                                               std::map<std::string, std::string> &params,
+                                                                               std::map <std::string, std::string> &params,
                                                                                const std::string &suffix,
                                                                                bool checkRooted,
                                                                                bool verbose,
@@ -106,8 +106,8 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::addTestLikelihoodData(int idxThread
     for (auto &nodeID:tree_->getNodesId()) {
 
         // Instantiation empty objects
-        std::vector<std::vector<std::vector<double>>> sub;
-        std::vector<std::vector<std::vector<double>>> empty;
+        std::vector < std::vector < std::vector < double >> > sub;
+        std::vector < std::vector < std::vector < double >> > empty;
         std::vector<int> descCount;
         std::vector<bool> setA;
 
@@ -218,8 +218,14 @@ double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangeme
     // 5. Remove flags
     for (std::vector<int>::iterator it = _affected__nodes.begin(); it != _affected__nodes.end(); ++it) {
         (*ts_node__data_origin)[(*it)] = false;
-        std::fill((*ts_setadata)[(*it)].begin(),(*ts_setadata)[(*it)].begin(), false );
-        std::fill((*ts_desccount)[(*it)].begin(),(*ts_desccount)[(*it)].begin(), 0 );
+        std::fill((*ts_setadata)[(*it)].begin(), (*ts_setadata)[(*it)].end(), false);
+        std::fill((*ts_desccount)[(*it)].begin(), (*ts_desccount)[(*it)].end(), 0);
+
+        for (int ds = 0; ds < nbDistinctSites_ ; ds++) {
+            for (int c = 0; c < nbClasses_; c++) {
+                //std::fill((*ts_desccount)[(*it)][ds][c].begin(),(*ts_desccount)[(*it)][ds][c].end(),0);
+            }
+        }
     }
 
     return logLk;
@@ -326,10 +332,10 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(std::vecto
 
 void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyCommitTree() {
 
-    std::vector<tshlib::VirtualNode *> nodelist;
+    std::vector < tshlib::VirtualNode * > nodelist;
     nodelist = utree_->listVNodes;
 
-    std::map<int, bpp::Node *> tempMap;
+    std::map < int, bpp::Node * > tempMap;
     std::map<int, double> tempDistanceToFather;
     // reset inBtree
     for (auto &bnode:tree_->getNodes()) {
