@@ -309,6 +309,7 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::topologyChangeSuccessful(std::vecto
 
     fireTopologyChange(ponl);
 
+
     // Optimise branches involved in the tree rearrangement
     fireBranchOptimisation(UtreeBppUtils::remapNodeLists(listNodes, tree_, treemap_));
 
