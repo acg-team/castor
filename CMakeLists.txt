@@ -171,7 +171,7 @@ endif()
 
 endif()
 
-find_package(TshLib 2.0.0 REQUIRED)
+find_package(TshLib 3.0.0 REQUIRED)
 if (TSHLIB_FOUND)
     include_directories(${TSHLIB_INCLUDE_DIRS})
 endif ()
