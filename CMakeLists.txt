@@ -71,25 +71,23 @@ add_definitions(-DPRJ_GITBRANCH=\"${PROJECT_GIT_REF}\"
 
 set(CMAKE_CXX_STANDARD 14)
 
-SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wshadow -Weffc++ -O0 -g")
-SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g")
-
-SET(CMAKE_CXX_FLAGS_DEBUGINTEL "-Wall -Wshadow -Weffc++ -O0 -g")
-SET(CMAKE_C_FLAGS_DEBUGINTEL "-Wall -Wshadow -O0 -g")
-
-SET(CMAKE_CXX_FLAGS_RELWITHINFOINTEL "-Ofast -g -xSSE4.2 -axAVX,CORE-AVX2 -DNDEBUG")
-SET(CMAKE_C_FLAGS_RELWITHINFOINTEL "-Ofast -g -xSSE4.2 -axAVX,CORE-AVX2 -DNDEBUG")
-
-SET(CMAKE_CXX_FLAGS_RELEASE "-O3  -g0 -DNDEBUG")
-SET(CMAKE_C_FLAGS_RELEASE "-O3  -g0 -DNDEBUG")
-
-SET(CMAKE_CXX_FLAGS_INTEL "-Ofast  -g0 -xSSE4.2 -axAVX,CORE-AVX2 -DNDEBUG")
-SET(CMAKE_C_FLAGS_INTEL "-Ofast  -g0 -xSSE4.2 -axAVX,CORE-AVX2 -DNDEBUG")
-
-string(FIND "${CMAKE_BUILD_TYPE}" "Intel" INTELCOMPILERVARS)
 string(FIND "${CMAKE_BUILD_TYPE}" "static" STATIC)
 
-set(INTEL_LIB_ROOT /opt/intel/lib/intel64/)
+# Using the icc/icpc/icl compilers
+if (${USE_INTEL})
+    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Ofast -g -xSSE4.2 -axAVX,CORE-AVX2")
+    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-Ofast -g -xSSE4.2 -axAVX,CORE-AVX2")
+    SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -g0 -xSSE4.2 -axAVX,CORE-AVX2")
+    SET(CMAKE_C_FLAGS_RELEASE "-O3 -g0 -xSSE4.2 -axAVX,CORE-AVX2")
+    set(INTEL_LIB_ROOT /opt/intel/lib/intel64/)
+else()
+    SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -g0 ")
+    SET(CMAKE_C_FLAGS_RELEASE "-O3 -g0")
+    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
+    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g")
+endif()
+SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wshadow -Weffc++ -O0 -g")
+SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g")
 
 message("-- Compilation will be performed with the following release of the software:
 \tbranch   ${PROJECT_GIT_REF}
@@ -105,7 +103,7 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(LINUX TRUE)
     message(STATUS "Compilation will be performed under Linux")
     find_package(glog 0.3.5 REQUIRED)
-    if (INTELCOMPILERVARS GREATER 0)
+    if (${USE_INTEL})
         message(STATUS "Compilation will be performed using the Intel Compilers...")
         message(STATUS "Libraries will be searched in /opt/intel/lib/intel64")
         set(INTEL_LIBS_SHARED ${INTEL_LIB_ROOT}libimf.so ${INTEL_LIB_ROOT}libsvml.so ${INTEL_LIB_ROOT}libirng.so ${INTEL_LIB_ROOT}libintlc.so.5)
@@ -118,7 +116,7 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     endif ()
     message(STATUS "Compilation will be performed under Apple MacOS")
     find_package(glog 0.3.5 REQUIRED)
-    if (INTELCOMPILERVARS GREATER 0)
+    if (${USE_INTEL})
         message(STATUS "Compilation will be performed using the Intel Compilers...")
         message(STATUS "Libraries will be searched in /opt/intel/lib/intel64")
         set(INTEL_LIBS_SHARED ${INTEL_LIB_ROOT}libimf.dylib ${INTEL_LIB_ROOT}libsvml.dylib ${INTEL_LIB_ROOT}libirng.dylib ${INTEL_LIB_ROOT}libintlc.dylib)
@@ -126,7 +124,7 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     endif()
 endif ()
 
-if (INTELCOMPILERVARS GREATER 0)
+if (${USE_INTEL})
     if(STATIC GREATER 0)
         foreach (INTEL_LIB IN LISTS INTEL_LIBS_STATIC)
             message(STATUS "   required: ${INTEL_LIB}")
@@ -194,30 +192,14 @@ if(${USE_PARALLEL})
 	else ()
 		find_package(OpenMP)
 		if (OpenMP_FOUND)
-            message(STATUS "OpenMP Version ${OpenMP_VERSION}")
-            message(STATUS "OpenMP CXX flags: ${OpenMP_CXX_FLAGS}")
-            message(STATUS "OpenMP C flags: ${OpenMP_C_FLAGS}")
-
-
-            set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${OpenMP_CXX_FLAGS}")
-            set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OpenMP_CXX_FLAGS}")
-            set (CMAKE_CXX_FLAGS_INTEL "${CMAKE_CXX_FLAGS_INTEL} ${OpenMP_CXX_FLAGS}")
-            set (CMAKE_CXX_FLAGS_RELWITHINFOINTEL "${CMAKE_CXX_FLAGS_RELWITHINFOINTEL} ${OpenMP_CXX_FLAGS}")
-            set (CMAKE_CXX_FLAGS_DEBUGINTEL "${CMAKE_CXX_FLAGS_DEBUGINTEL} ${OpenMP_CXX_FLAGS}")
-
-            set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OpenMP_C_FLAGS}")
-            set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OpenMP_C_FLAGS}")
-            set (CMAKE_C_FLAGS_INTEL "${CMAKE_C_FLAGS_INTEL} ${OpenMP_C_FLAGS}")
-            set (CMAKE_C_FLAGS_RELWITHINFOINTEL "${CMAKE_C_FLAGS_RELWITHINFOINTEL} ${OpenMP_C_FLAGS}")
-            set (CMAKE_C_FLAGS_DEBUGINTEL "${CMAKE_C_FLAGS_DEBUGINTEL} ${OpenMP_C_FLAGS}")
-
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 
             # Prepare static openMP libraries list
             foreach(loop_var ${OpenMP_CXX_LIBRARIES})
                 string(REGEX MATCH "^(.*)\\.[^.]*$" dummy ${loop_var})
                 set(MYFILE_WITHOUT_EXT ${CMAKE_MATCH_1}.a)
                 list(APPEND OpenMP_CXX_LIBRARIES_STATIC ${MYFILE_WITHOUT_EXT})
-                message(STATUS "${MYFILE_WITHOUT_EXT}")
             endforeach()
 
             message(STATUS "OpenMP Libraries Shared: ${OpenMP_CXX_LIBRARIES}")
