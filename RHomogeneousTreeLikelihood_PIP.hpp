@@ -83,7 +83,7 @@ namespace bpp {
         mutable std::map<int, std::map<int, std::vector<bool>>> tsTemp_setAData_;       // TS: collector for SetA flags vectors insertion hist.
         mutable std::map<int, std::map<int, bool>> tsTemp_node_data_origin;             // TS: origin of the data for the node
 
-    protected:
+        mutable tshlib::Utree *utree_;
 
         double minusLogLik_;        // Log Likelihood values
 
@@ -108,6 +108,7 @@ namespace bpp {
          */
         RHomogeneousTreeLikelihood_PIP(
                 const Tree &tree,
+                tshlib::Utree *utree,
                 TransitionModel *model,
                 DiscreteDistribution *rDist,
                 UtreeBppUtils::treemap *tm,
@@ -133,6 +134,7 @@ namespace bpp {
          */
         RHomogeneousTreeLikelihood_PIP(
                 const Tree &tree,
+                tshlib::Utree *utree,
                 const SiteContainer &data,
                 TransitionModel *model,
                 DiscreteDistribution *rDist,
@@ -175,7 +177,13 @@ namespace bpp {
 
         void _computePrTimesIndicatorEmpty(VVVdouble *pxy__node, VVdouble *indicator_node, VVVdouble *_likelihoods_node) const;
 
-        std::vector<int> _getMappedNodeChildren(int nodeID, tshlib::Utree &candUTree) const;
+        std::vector<int> _getMappedNodeChildren(int nodeID, tshlib::Utree &_utree__topology) const;
+
+        bool _utree__isLeaf(int nodeID) const { return utree_->getNode(_utree__mapNode(nodeID))->isTerminalNode(); };
+
+        bool _utree__isRoot(int nodeID) const { return utree_->getNode(_utree__mapNode(nodeID))->isRootNode(); };
+
+        int _utree__mapNode(int nodeID) const { return treemap_.left.at(nodeID); };
 
         void initialiseInsertionHistories() const;
 
@@ -476,7 +484,7 @@ namespace bpp {
 
         void _printPrMatrix(Node *node, VVdouble *pr);
 
-        std::vector<int> remapVirtualNodeLists(std::vector<int> &inputList, tshlib::Utree &_utree__topology) const;
+        std::vector<int> remapVirtualNodeLists(std::vector<int> &inputList) const;
 
         void _extendNodeListOnSetA(tshlib::VirtualNode *qnode, std::vector<int> &listNodes, unsigned long site, tshlib::Utree &candUTree) const;
 

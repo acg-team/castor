@@ -43,7 +43,14 @@
  */
 #include <random>
 #include <glog/logging.h>
+
+#ifdef USE_OPENMP
 #include <omp.h>
+#endif
+
+#ifdef USE_INTELTBB
+#include <tbb/parallel_for.h>
+#endif
 
 #include <Bpp/Phyl/Likelihood/RHomogeneousTreeLikelihood.h>
 #include <Bpp/Phyl/Io/Newick.h>
@@ -149,26 +156,36 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
     bool status = false;
 
-#ifdef USE_OPENMP
-    // Set the number of threads to use
-    omp_set_num_threads(threads_num);
-#endif
     // Allocate memory
     allocateTemporaryLikelihoodData(threads_num);
 
     // Count moves performed per each cycle
     std::vector<int> _count__moves_cycle(candidateMoves->getNumberOfMoves(), 0);
-
+	
     // Threads should run the following tasks in parallel
-#pragma omp parallel for
-    for (unsigned long i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
-
+    int thread_id, i;
+   
+#ifdef USE_OPENMP
+    // Set the number of threads to use
+    omp_set_num_threads(threads_num);
+    #pragma omp parallel for private(thread_id, i)
+    for (i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
+#elif USE_INTELTBB
+//  tbb::task_scheduler_init init(threads_num);
+//	tbb::parallel_for( tbb::blocked_range<int>(0, candidateMoves->getNumberOfMoves()), [&](tbb::blocked_range<int> r)
+//	{
+//        for (int i=r.begin(); i<r.end(); ++i){
+#else
+	for (i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
+#endif   
         // ------------------------------------
         // Get the number of the thread
 #ifdef USE_OPENMP
-        int thread_id = omp_get_thread_num();
-#else
-        int thread_id = 1;
+        thread_id = omp_get_thread_num();
+#elif USE_INTELTBB
+		//thread_id = tbb::this_tbb_thread::get_id();
+#else 
+        thread_id = 0;
 #endif
         // ------------------------------------
         // Get move reference
@@ -304,6 +321,9 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
         // Delete candidate topology
         delete _thread__topology;
     }
+#ifdef USE_INTELTBB
+//	});
+#endif
 
     // ------------------------------------
     // Store count of moves tested for this cycle

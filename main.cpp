@@ -1117,23 +1117,24 @@ int main(int argc, char *argv[]) {
                                                                                                 0));
 
 
-        // Overwrite the initial alignment with the optimised one  | TODO: the likelihood function should not be reimplemented here.
-        if (PAR_alignment && PAR_align_optim) {
-            sites = pPIPUtils::pPIPmsa2Sites(alignment, 0);
-            logL = alignment->getScore(alignment->getRootNode()).at(0);
-
-            const Tree &tmpTree = tl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
-
-            auto nntl = new bpp::RHomogeneousTreeLikelihood_PIP(tmpTree, *sites, model, rDist, &tm, false, false,
-                                                                false);
-            nntl->initialize();
-            logL = nntl->getLogLikelihood();
-
-            //ntl->getLikelihoodFunction()->setData()   // this should be the only call here
-
-        } else {
+//        // Overwrite the initial alignment with the optimised one
+//        // TODO: the likelihood function should not be reimplemented here.
+//        if (PAR_alignment && PAR_align_optim) {
+//            sites = pPIPUtils::pPIPmsa2Sites(alignment, 0);
+//            logL = alignment->getScore(alignment->getRootNode()).at(0);
+//
+//            const Tree &tmpTree = tl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
+//
+//            auto nntl = new bpp::RHomogeneousTreeLikelihood_PIP(tmpTree, utree, *sites, model, rDist, &tm, false, false,
+//                                                                false);
+//            nntl->initialize();
+//            logL = nntl->getLogLikelihood();
+//
+//            //ntl->getLikelihoodFunction()->setData()   // this should be the only call here
+//
+//        } else {
             logL = tl->getLogLikelihood();
-        }
+//        }
 
         /////////////////////////
         // OUTPUT

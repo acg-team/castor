@@ -99,8 +99,10 @@ namespace bpp {
         //  Entry point for optimization routines (both numerical and topology)
         std::string optimization = ApplicationTools::getStringParameter("optimization", params, "FullD(derivatives=Newton)", suffix, suffixIsOptional,
                                                                         warn);
-        if (optimization == "None" || optimization == "none")
+        if (optimization == "None" || optimization == "none") {
+            ApplicationTools::displayResult("Optimisations requested:", optimization);
             return tl;
+        }
 
         // -------------------------------------------------------------------------
         // Parsing arguments
