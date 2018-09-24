@@ -113,7 +113,10 @@ namespace bpp {
                 dynamic_cast<PIPmsaSingle *>(MSA_)->pipmsa = new PIPmsa();
 
         }
-        virtual ~nodeRAM() = default;
+
+        //virtual ~nodeRAM() = default;
+
+        ~nodeRAM(){ delete MSA_; };
 
         void DP3D_PIP(); // DP algorithm to align (leaf/internal node) under the PIP model
 
