@@ -28,11 +28,12 @@ A second story:
 
 
 ----
-> #### Documentation
-[Wiki](https://bitbucket.org/lorenzogatti89/castor/wiki)
+#### Documentation
+
+You can find tutorial, examples and guides on our [Wikipages](https://bitbucket.org/lorenzogatti89/castor/wiki)
 
 ----
-> #### Licence
+#### Licence
     * Castor is a computer program whose purpose is to infer phylogentic trees
     * under indel-aware substitution models
     *
