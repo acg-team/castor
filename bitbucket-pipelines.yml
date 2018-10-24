@@ -45,7 +45,7 @@ pipelines:
                 - make
                 - export EVERSION=$(git describe --abbrev=0 --tags); echo ${EVERSION};
                 - mv miniJATI miniJATI.Stable.${EVERSION}
-                - curl -u "${BB_USERNAME}:${BB_PASSWORD}" -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"miniJATI.Stable.${EVERSION}"
+                - curl -u "${BB_USERNAME}:${BB_PASSWORD}" -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"Castor.Stable.${EVERSION}"
       develop:
           - step:
               script:
@@ -70,8 +70,8 @@ pipelines:
               - make
               - export EVERSION=$(git describe --abbrev=0 --tags); echo ${EVERSION};
               - mv miniJATI miniJATI.NightBuild.${EVERSION}
-              - curl -u "${BB_USERNAME}:${BB_PASSWORD}" -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"miniJATI.NightBuild.${EVERSION}"
-              
+              - curl -u "${BB_USERNAME}:${BB_PASSWORD}" -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"Castor.NightBuild.${EVERSION}"
+
       feature/*:
           - step:
               script:
