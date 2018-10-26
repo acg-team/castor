@@ -45,7 +45,7 @@
 #define MINIJATI_SUPPORTMEASURES_HPP
 
 #include <Bpp/Phyl/Likelihood/AbstractHomogeneousTreeLikelihood.h>
-#include "pPIP.hpp"
+
 
 namespace bpp {
     class Bootstrap {

@@ -1,37 +1,43 @@
-## miniJATI - Phylogenetic inference and multi-sequence alignment under the Poisson Indel Process
-
-Authors: Lorenzo Gatti & Massimo Maiolo
+## Castor - Indel-aware phylogenetic tree inference
 
 ----
 
-### Releases
+Castor is a phylogenetic tree inference software that implements a new class of
+indel-aware substitution models in the Maximum Likelihood framework.
 
-#### Version 1.0.7 / 02.07.2018
-    
-> #### Task
+There are two stories about the origin of the name Castor. The first one:
 
-- [[MIN-43](https://devops.lorenzogatti.me/browse/MIN-43)] -         Add ML/wML to Initial tree topology estimator schemes (pairwise distances)
-- [[MIN-44](https://devops.lorenzogatti.me/browse/MIN-44)] -         Pairwise distance estimation should be computed under nested models (+PIP)
-    
-> #### Bug
+> Indels leaves traces of their presence on the alignment in the form of small (or big)
+> stretches of gap characters (-), thus generating sequence alignments made of several
+> unconnected segments. These marks resemble those left by beavers (lat. genus name Castor)
+> on logs and trees, which they use to build dams and lodges. Since sequence
+> alignment and tree inference are two interdipendent inference steps, we pictured
+> our indel-aware (the nibbles) phylogeny inferring software as a beaver (Castor)
+> nibbling at the (phylogenetic) trees in the attempt of building a damn.
 
-- [[MIN-40](https://devops.lorenzogatti.me/browse/MIN-40)] -         Initial likelihood value does not match with MSA score
-- [[MIN-41](https://devops.lorenzogatti.me/browse/MIN-41)] -         Initial tree topology cannot be performed under PIP model. Distance measure is missing
-- [[MIN-42](https://devops.lorenzogatti.me/browse/MIN-42)] -         Optimisation of branches during initial tree estimation cannot be performed under PIP
-            
-> #### Story
+A second story:
 
-- [[MIN-8](https://devops.lorenzogatti.me/browse/MIN-8)] -         Design new parameter optimization routine to support more complex scenarios (using lk tolerance)
+> Castor and Pollux (or, in greek Polydeuces) were half twin brothers in the greek and latin
+> mitology, and they were known together as Dioscuri. Castor was the mortal son of Tyndareous,
+> while Pollux was the divine son of Zeus. They were regarded as helpers of humankind in time
+> of difficulties or to win challenges. The separation between mortal and immortal nature
+> of the two brothers could -- with some degree of immagination -- suggest a link between the two
+> different steps of indel-aware phylogenetic inference, which requires that both sequence
+> alignment and the phylogenetic tree inference interpret indels as evolutionary events and
+> account for their contribution.
+
 
 ----
-   
-### Licence
+#### Documentation
 
+You can find tutorial, examples and guides on our [Wikipages](https://bitbucket.org/lorenzogatti89/castor/wiki)
 
-    * MiniJATI is a computer program whose purpose is to infer phylogentic trees 
-    * and multi-sequence alignments under the Poisson Indel Process.
+----
+#### Licence
+    * Castor is a computer program whose purpose is to infer phylogentic trees
+    * under indel-aware substitution models
     *
-    * miniJATI is distributed in the hope that it will be useful, but WITHOUT
+    * Castor is distributed in the hope that it will be useful, but WITHOUT
     * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     * FITNESS FOR A PARTICULAR PURPOSE.
     *
@@ -63,3 +69,20 @@ Authors: Lorenzo Gatti & Massimo Maiolo
     *
     * The fact that you are presently reading this means that you have had
     * knowledge of the CeCILL license and that you accept its terms.
+
+
+----
+#### Support
+In case of bugs or improvement suggestions feel free to:
+- File an issue using via our issue collector here
+- Write to [Lorenzo Gatti](mailto:lorenzo.gatti@alumni.ethz.ch)
+- Write to [Massimo Maiolo](mailto:massimo.maiolo@zhaw.ch)
+
+
+We use Google Analytics to study the traffic of this website. Please find information about the data usage [here](https://policies.google.com/technologies/partner-sites?hl=en).
+
+----
+##### Latest update
+Build on commit: refs/heads/develop a5c173949e465945497fecd02d8f3c0ceeeb5109
+
+On date: 31 Jul 2018, 16:00:20

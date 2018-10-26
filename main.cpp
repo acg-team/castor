@@ -95,7 +95,7 @@
 using namespace tshlib;
 
 /*
-* From miniJati:
+* From Castor:
 */
 #include "Version.hpp"
 #include "Utilities.hpp"
@@ -109,10 +109,6 @@ using namespace tshlib;
 #include "SupportMeasures.hpp"
 #include "UnifiedDistanceEstimation.hpp"
 
-#include "pPIP.hpp" // obsolete
-#include "progressivePIP.hpp"
-#include "FactoryPIPnode.hpp"
-#include "CompositePIPnode.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -143,6 +139,7 @@ int main(int argc, char *argv[]) {
         //////////////////////////////////////////////
         // CLI ARGUMENTS
 
+<<<<<<< HEAD
         bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", jatiapp.getParams(), false);
         bool PAR_align_optim = ApplicationTools::getBooleanParameter("optimisation.alignment", jatiapp.getParams(),
                                                                      false);
@@ -153,6 +150,12 @@ int main(int argc, char *argv[]) {
                                                                          false, "", true, "", 1);
         std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", jatiapp.getParams(), false,
                                                                         false, "", true, "", 1);
+=======
+        int PAR_execution_numthreads = ApplicationTools::getIntParameter("exec_numthreads", jatiapp.getParams(), OMP_max_avail_threads, "", true, 0);
+        std::string PAR_model_substitution = ApplicationTools::getStringParameter("model", jatiapp.getParams(), "JC69", "", true, true);
+        std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", jatiapp.getParams(), false, false, "", true, "", 1);
+        std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", jatiapp.getParams(), false, false, "", true, "", 1);
+>>>>>>> master
 
         // Split model string description and test if PIP is required
         std::string modelStringName;
@@ -250,6 +253,7 @@ int main(int argc, char *argv[]) {
 
         try {
 
+<<<<<<< HEAD
             ApplicationTools::displayBooleanResult("Aligned sequences", !PAR_alignment);
 
             if (PAR_alignment) {
@@ -274,6 +278,14 @@ int main(int argc, char *argv[]) {
 
             }
 
+=======
+            VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet, jatiapp.getParams());
+            sites = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams(), "", true, !PAR_model_indels, true, 1);
+            delete allSites;
+            AlignmentUtils::checkAlignmentConsistency(*sites);
+            ApplicationTools::displayResult("Number of sequences", TextTools::toString(sites->getNumberOfSequences()));
+            ApplicationTools::displayResult("Number of sites", TextTools::toString(sites->getNumberOfSites()));
+>>>>>>> master
 
         } catch (bpp::Exception &e) {
             LOG(FATAL) << "Error when reading sequence file due to: " << e.message();
@@ -326,7 +338,7 @@ int main(int argc, char *argv[]) {
                 distMethod = bionj;
             } else throw Exception("Unknown tree reconstruction method.");
 
-            if (!PAR_alignment) {
+
 
                 // Compute bioNJ tree using the GTR model
                 map<std::string, std::string> parmap;
@@ -510,6 +522,7 @@ int main(int argc, char *argv[]) {
                 delete distMethod;
 
 
+<<<<<<< HEAD
             } else {
 
                 // Use a distance matrix provided by the user
@@ -530,6 +543,8 @@ int main(int argc, char *argv[]) {
                 tree = bionj.getTree();
             }
 
+=======
+>>>>>>> master
         } else throw Exception("Unknown init tree method.");
 
         // If the tree has multifurcation, then resolve it with midpoint rooting
@@ -592,11 +607,8 @@ int main(int argc, char *argv[]) {
         auto utree = new Utree();
         UtreeBppUtils::treemap tm;
         UtreeBppUtils::convertTree_b2u(tree, utree, tm);
-        if (PAR_alignment) {
-            UtreeBppUtils::associateNode2Alignment(sequences, utree);
-        } else {
-            UtreeBppUtils::associateNode2Alignment(sites, utree);
-        }
+        UtreeBppUtils::associateNode2Alignment(sites, utree);
+
 
         DLOG(INFO) << "Bidirectional map size: " << tm.size();
         DLOG(INFO) << "[Initial Utree Topology] " << utree->printTreeNewick(true);
@@ -626,7 +638,7 @@ int main(int argc, char *argv[]) {
             bool computeFrequenciesFromData = false;
 
             // If frequencies are estimated from the data, but there is no alignment, then flag it.
-            if (!PAR_alignment) {
+
                 std::string baseModel;
 
                 std::map<std::string, std::string> basemodelMap;
@@ -652,7 +664,7 @@ int main(int argc, char *argv[]) {
                     modelMap["model"] = baseModel;
                 }
 
-            }
+
 
             // Instantiation of the canonical substitution model
             if (PAR_Alphabet.find("Codon") != std::string::npos || PAR_Alphabet.find("Protein") != std::string::npos) {
@@ -676,6 +688,7 @@ int main(int argc, char *argv[]) {
 
             if (estimatePIPparameters) {
 
+<<<<<<< HEAD
                 if (PAR_alignment) {
                     lambda = bpp::estimateLambdaFromData(tree, sequences, PAR_proportion);
                     mu = bpp::estimateMuFromData(tree, PAR_proportion);
@@ -684,6 +697,13 @@ int main(int argc, char *argv[]) {
                     lambda = bpp::estimateLambdaFromData(tree, sites);
                     mu = bpp::estimateMuFromData(tree, sites);
                 }
+=======
+
+                    lambda = bpp::estimateLambdaFromData(tree, sites);
+                    mu = bpp::estimateMuFromData(tree, sites);
+                    DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input alignment (lambda=" << lambda << ",mu=" << mu << ")";
+
+>>>>>>> master
 
                 DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input sequences (lambda=" <<
                            lambda << ",mu=" << mu << "," "I=" << lambda * mu << ")";
@@ -697,6 +717,7 @@ int main(int argc, char *argv[]) {
                        << lambda * mu << ")";
 
             // Instantiate the corrisponding PIP model given the alphabet
+<<<<<<< HEAD
             if (PAR_alignment) {
                 if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
 
@@ -719,6 +740,9 @@ int main(int argc, char *argv[]) {
                     DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
                 }
             } else {
+=======
+
+>>>>>>> master
                 if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
 
                     smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sites, lambda, mu,
@@ -739,13 +763,18 @@ int main(int argc, char *argv[]) {
                             "Codon models are experimental in the current version... use with caution!");
                     DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
                 }
-            }
+
 
         } else {
             // if the alphabet is not extended, then the gap character is not supported
+<<<<<<< HEAD
             if (!PAR_alignment) bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
             smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites,
                                                                               jatiapp.getParams(), "", true, false, 0);
+=======
+            bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
+            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
+>>>>>>> master
         }
 
         DLOG(INFO) << "[Substitution model] Number of states: " << (int) smodel->getNumberOfStates();
@@ -789,6 +818,7 @@ int main(int argc, char *argv[]) {
             rDist = PhylogeneticsApplicationTools::getRateDistribution(jatiapp.getParams());
         }
 
+<<<<<<< HEAD
         /////////////////////////
         // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
         pPIP *alignment = nullptr;
@@ -972,6 +1002,8 @@ int main(int argc, char *argv[]) {
         //    Utree *best_tree_from_MSA=progressivePIP::marginalizationOverMSAs(treesearch,alpha,pi,lambda, mu, sequences, tm);
         //}
         //--------------------------------------------------------------------------------------------------------------
+=======
+>>>>>>> master
 
         /////////////////////////
         // Homogeneous modeling - initialization likelihood functions
@@ -1108,7 +1140,6 @@ int main(int argc, char *argv[]) {
         ApplicationTools::displayMessage("\n[Executing numerical parameters and topology optimization]");
 
         tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl,
-                                                                                                proPIP,
                                                                                                 tl->getParameters(),
                                                                                                 jatiapp.getParams(),
                                                                                                 "",
@@ -1117,6 +1148,7 @@ int main(int argc, char *argv[]) {
                                                                                                 0));
 
 
+<<<<<<< HEAD
 //        // Overwrite the initial alignment with the optimised one
 //        // TODO: the likelihood function should not be reimplemented here.
 //        if (PAR_alignment && PAR_align_optim) {
@@ -1135,19 +1167,12 @@ int main(int argc, char *argv[]) {
 //        } else {
             logL = tl->getLogLikelihood();
 //        }
+=======
+        logL = tl->getLogLikelihood();
+>>>>>>> master
 
         /////////////////////////
         // OUTPUT
-
-        // Export final alignment
-        if (PAR_output_file_msa.find("none") == std::string::npos) {
-            ApplicationTools::displayResult("\n\nOutput alignment to file", PAR_output_file_msa);
-            DLOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
-            bpp::Fasta seqWriter;
-            seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
-        }
-
-        delete sequences;
 
         // Export final tree (if nexus is required, then our re-implementation of the the nexus writer is called)
         tree = new TreeTemplate<Node>(tl->getTree());
