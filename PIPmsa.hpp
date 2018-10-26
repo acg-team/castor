@@ -108,6 +108,8 @@ namespace bpp {
 
         PIPmsa() { score_ = -std::numeric_limits<double>::infinity(); }; // constructor
 
+        ~PIPmsa(){};
+
         void _setSeqNameLeaf(std::string &seqName); // assign the sequence name at a leaf
 
         void _setMSAleaf(const bpp::Sequence *sequence); // assign the MSA at a leaf (which corresponds

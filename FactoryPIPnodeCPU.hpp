@@ -273,7 +273,9 @@ namespace bpp {
                                                                                                     bnode) {
         }
 
-        virtual ~nodeCPU() = default;
+        //virtual ~nodeCPU() = default;
+
+        ~nodeCPU(){ delete MSA_; };
 
         void DP3D_PIP();
 

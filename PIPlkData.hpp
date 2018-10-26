@@ -165,6 +165,171 @@ struct LKdata {
 
     }
 
+    void freeMemory(bool sparse){
+
+        int i,j,k;
+        int depth;
+        //*************************
+        if(sparse) {
+            depth=2;
+        }else{
+            depth=d_;
+        }
+        //*************************
+        // allocate memory for the 2 layers
+        for (k = depth-1; k >=0 ; k--) {
+            for (i = h_-1; i >= 0; i--) {
+                Log3DM[k][i].resize(0);
+                Log3DX[k][i].resize(0);
+                Log3DY[k][i].resize(0);
+
+                Log3DM[k][i].shrink_to_fit();
+                Log3DX[k][i].shrink_to_fit();
+                Log3DY[k][i].shrink_to_fit();
+
+            }
+            Log3DM[k].resize(0);
+            Log3DX[k].resize(0);
+            Log3DY[k].resize(0);
+
+            Log3DM[k].shrink_to_fit();
+            Log3DX[k].shrink_to_fit();
+            Log3DY[k].shrink_to_fit();
+        }
+        Log3DM.resize(0);
+        Log3DX.resize(0);
+        Log3DY.resize(0);
+
+        Log3DM.shrink_to_fit();
+        Log3DX.shrink_to_fit();
+        Log3DY.shrink_to_fit();
+        //*************************
+
+        Log2DX.resize(0);
+        Log2DY.resize(0);
+        Log2DX_fp.resize(0);
+        Log2DY_fp.resize(0);
+
+        Log2DX.shrink_to_fit();
+        Log2DY.shrink_to_fit();
+        Log2DX_fp.shrink_to_fit();
+        Log2DY_fp.shrink_to_fit();
+
+        for(i = h_compr_-1; i >= 0; i--){
+            Log2DM[i].resize(0);
+            Log2DM_fp[i].resize(0);
+
+            Log2DM[i].shrink_to_fit();
+            Log2DM_fp[i].shrink_to_fit();
+        }
+        Log2DM.resize(0);
+        Log2DM_fp.resize(0);
+
+        Log2DM.shrink_to_fit();
+        Log2DM_fp.shrink_to_fit();
+
+        for(i = h_compr_-1; i >=0; i--){
+            for(j = w_compr_-1; j >=0; j--) {
+                for (k = numCatg_ - 1; k >= 0; k--) {
+                    (Fv_M[i][j][k]).resize(0,0);
+                }
+                Fv_M[i][j].resize(0);
+
+                Fv_M[i][j].shrink_to_fit();
+            }
+            Fv_M[i].resize(0);
+
+            Fv_M[i].shrink_to_fit();
+        }
+        Fv_M.resize(0);
+
+        Fv_M.shrink_to_fit();
+
+        for(i = h_compr_-1; i >=0; i--){
+            for(j = numCatg_-1; j >=0; j--) {
+                (Fv_X[i][j]).resize(0,0);
+            }
+            Fv_X[i].resize(0);
+
+            Fv_X[i].shrink_to_fit();
+        }
+        Fv_X.resize(0);
+
+        Fv_X.shrink_to_fit();
+
+        for(i = w_compr_-1; i >=0; i--){
+            for(j = numCatg_-1; j >=0; j--) {
+                (Fv_Y[i][j]).resize(0,0);
+            }
+            Fv_Y[i].resize(0);
+
+            Fv_Y[i].shrink_to_fit();
+        }
+        Fv_Y.resize(0);
+
+        Fv_Y.shrink_to_fit();
+
+        for(i = h_compr_-1; i >= 0 ; i--){
+            for(j = w_compr_-1; j >=0 ; j--){
+                Fv_sigma_M[i][j].resize(0);
+
+                Fv_sigma_M[i][j].shrink_to_fit();
+            }
+            Fv_sigma_M[i].resize(0);
+
+            Fv_sigma_M[i].shrink_to_fit();
+        }
+        Fv_sigma_M.resize(0);
+
+        Fv_sigma_M.shrink_to_fit();
+
+        for(i = h_compr_-1; i >= 0; i--){
+            Fv_sigma_X[i].resize(0);
+
+            Fv_sigma_X[i].shrink_to_fit();
+        }
+        Fv_sigma_X.resize(0);
+
+        Fv_sigma_X.shrink_to_fit();
+
+        for(j = w_compr_-1; j >= 0 ; j--){
+            Fv_sigma_Y[j].resize(0);
+
+            Fv_sigma_Y[j].shrink_to_fit();
+        }
+        Fv_sigma_Y.resize(0);
+
+        Fv_sigma_Y.shrink_to_fit();
+
+        if(sparse){
+            for (i = d_-1; i >= 1; i--) {
+                for(j = h_-1; j >= 0; j--){
+                    TR[i][j].resize(0);
+
+                    TR[i][j].shrink_to_fit();
+                }
+                TR[i].resize(0);
+
+                TR[i].shrink_to_fit();
+            }
+            TR[0].resize(0);
+
+            TR[0].shrink_to_fit();
+
+            TR.resize(0);
+
+            TR.shrink_to_fit();
+        }
+
+        d_ = 0;
+        h_ = 0;
+        h_compr_ = 0;
+        w_ = 0;
+        w_compr_ = 0;
+        numCatg_ = 0;
+
+    }
+
 };
 
 #endif //MINIJATI_PIPLKDATA_HPP

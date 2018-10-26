@@ -170,6 +170,24 @@ void nodeRAM::DP3D(LKdata &lkdata,
     // 3D DYNAMIC PROGRAMMING
     //***************************************************************************************
 
+//    printf("\n");
+//    for(int i=0;i<21;i++){
+//        for(int j=0;j<21;j++){
+//            printf("%18.16lf ",progressivePIP_->substModel_->getGenerator().operator()(i,j));
+//        }
+//        printf("\n");
+//    }
+//    printf("\n");
+//    printf("\n");
+//    printf("\n");
+//    for(int i=0;i<21;i++){
+//        for(int j=0;j<21;j++){
+//            printf("%18.16lf ",prNode_.at(0).operator()(i,j));
+//        }
+//        printf("\n");
+//    }
+//    printf("\n");
+
     //***************************************************************************************
     // DP VARIABLES
     //***************************************************************************************
@@ -550,6 +568,16 @@ void nodeRAM::DP3D_PIP_node() {
     MSA_->getMSA()->_compressLK(lk_down_not_compressed);
     MSA_->getMSA()->_compressFv(fv_data_not_compressed);
     MSA_->getMSA()->_compressFvSigma(fv_sigma_not_compressed);
+    //***************************************************************************************
+    // FREE MEMORY
+    //***************************************************************************************
+    // free memory
+    lkdata.freeMemory(true);
+
+
+    delete childL;
+    delete childR;
+
 
 }
 
