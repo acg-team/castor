@@ -69,7 +69,6 @@
 #include "Optimizators.hpp"
 #include "Utilities.hpp"
 #include "UnifiedTSHTopologySearch.hpp"
-#include "pPIP.hpp"
 #include "UnifiedTSHomogeneousTreeLikelihood_PIP.hpp"
 
 using namespace bpp;
@@ -83,7 +82,6 @@ namespace bpp {
 
     TreeLikelihood *Optimizators::optimizeParameters(
             bpp::AbstractHomogeneousTreeLikelihood *inTL,
-            progressivePIP *proPIP,
             const ParameterList &parameters,
             std::map<std::string, std::string> &params,
             const std::string &suffix,
@@ -635,60 +633,6 @@ namespace bpp {
 
         if (verbose) ApplicationTools::displayResult("Log likelihood after num/top optimisation", TextTools::toString(-tl->getValue(), 15));
 
-
-        ///////////////////////////
-        // Alignment optimization
-        bool PAR_align_optim = ApplicationTools::getBooleanParameter("optimisation.alignment", params, false, suffix, suffixIsOptional, warn + 1);
-        if (verbose) ApplicationTools::displayBooleanResult("MSA optimization", PAR_align_optim);
-
-        if (PAR_align_optim) {
-            string PAR_align_algorithm = ApplicationTools::getStringParameter("optimisation.alignment.algorithm", params, "greedy", suffix,
-                                                                              suffixIsOptional, warn + 1);
-            string PAR_align_algorithm_stopcond = ApplicationTools::getStringParameter("optimisation.alignment.algorithm.stopcondition", params,
-                                                                                       "steps", suffix, suffixIsOptional, warn + 1);
-            double PAR_align_algorithm_tolerance = ApplicationTools::getDoubleParameter("optimisation.alignment.algorithm.tolerance", params, 0.001,
-                                                                                        suffix, suffixIsOptional, warn + 1);
-            int PAR_align_algorithm_maxeval = ApplicationTools::getIntParameter("optimisation.alignment.algorithm.max_f_eval", params, 100, suffix,
-                                                                                suffixIsOptional, warn + 1);
-            if (verbose) ApplicationTools::displayResult("\nMSA optimization | Algorithm", PAR_align_algorithm);
-            if (verbose) ApplicationTools::displayResult("MSA optimization | Stop Condition", PAR_align_algorithm_stopcond);
-            if (verbose) ApplicationTools::displayResult("MSA optimization | Tolerance", PAR_align_algorithm_tolerance);
-            if (verbose) ApplicationTools::displayResult("MSA optimization | Max # ML evaluations", PAR_align_algorithm_maxeval);
-
-
-            ApplicationTools::displayMessage("\n[Alignment optimisation]");
-            DLOG(INFO) << "[Alignment optimisation] pPIP("
-                       << PAR_align_algorithm << "," << PAR_align_algorithm_stopcond << ","
-                       << PAR_align_algorithm_tolerance << "," << PAR_align_algorithm_maxeval <<
-                       ")";
-
-            // Execute alignment on post-order node list
-            tshlib::Utree *utree_;
-
-            if (dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(tl)) {
-                utree_ = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood_PIP *>(tl)->getUtreeTopology();
-            } else {
-                utree_ = dynamic_cast<UnifiedTSHomogeneousTreeLikelihood *>(tl)->getUtreeTopology();
-            }
-            std::vector<tshlib::VirtualNode *> ftn = utree_->getPostOrderNodeList();//getPostOrderNodeList();
-
-
-            // getting rid of const
-            auto tu_subModel = const_cast<SubstitutionModel *>(tl->getSubstitutionModel());
-
-            /*
-            pAlignment->setSubstModel(tu_subModel);
-            pAlignment->setTree(&tl->getTree());
-            pAlignment->PIPAligner(ftn, true, true, true);
-
-            double score = pAlignment->getScore(pAlignment->getRootNode()).at(0);
-            ApplicationTools::displayResult("\nLog likelihood after MSA optimisation", TextTools::toString(score, 15));
-            DLOG(INFO) << "[Alignment optimisation] Alignment has a new lk=" << score;
-
-            */
-
-
-        }
 
         if (backupFile != "none") {
             string bf = backupFile + ".def";

@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(MINIJATI_SOFTWARENAME "miniJATI")
-set(MINIJATI_DESCRIPTION "Joint Alignment Tree Inference")
+set(CASTOR_SOFTWARENAME "Castor")
+set(CASTOR_DESCRIPTION "Joint Alignment Tree Inference")
 
-project(${MINIJATI_SOFTWARENAME}
-        DESCRIPTION ${MINIJATI_DESCRIPTION}
+project(${CASTOR_SOFTWARENAME}
+        DESCRIPTION ${CASTOR_DESCRIPTION}
         LANGUAGES "CXX")
 
 ## Store the git hash of the current head
@@ -54,20 +54,20 @@ else()
     string(REGEX REPLACE "\n" "" GIT_TAG_VERSION_STRIPPED "${GIT_TAG_VERSION}")
 endif()
 
-set(MINIJATI_RELTIME ${PROJECT_BUILD_TIME})
-set(MINIJATI_RELDATE ${PROJECT_BUILD_DATE})
-set(MINIJATI_VERSION ${GIT_TAG_VERSION_STRIPPED})
+set(CASTOR_RELTIME ${PROJECT_BUILD_TIME})
+set(CASTOR_RELDATE ${PROJECT_BUILD_DATE})
+set(CASTOR_VERSION ${GIT_TAG_VERSION_STRIPPED})
 
-project(${MINIJATI_SOFTWARENAME} VERSION ${GIT_TAG_VERSION_STRIPPED})
+project(${CASTOR_SOFTWARENAME} VERSION ${GIT_TAG_VERSION_STRIPPED})
 
 
 add_definitions(-DPRJ_GITBRANCH=\"${PROJECT_GIT_REF}\"
-        -DPRJ_VERSION=\"${MINIJATI_VERSION}\"
+        -DPRJ_VERSION=\"${CASTOR_VERSION}\"
         -DPRJ_GITREF=\"${PROJECT_SOURCE_VERSION}\"
-        -DPRJ_DESC=\"${MINIJATI_DESCRIPTION}\"
-        -DPRJ_NAME=\"${MINIJATI_SOFTWARENAME}\"
-        -DPRJ_DATE=\"${MINIJATI_RELDATE}\"
-        -DPRJ_TIME=\"${MINIJATI_RELTIME}\" )
+        -DPRJ_DESC=\"${CASTOR_DESCRIPTION}\"
+        -DPRJ_NAME=\"${CASTOR_SOFTWARENAME}\"
+        -DPRJ_DATE=\"${CASTOR_RELDATE}\"
+        -DPRJ_TIME=\"${CASTOR_RELTIME}\" )
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -91,8 +91,8 @@ string(FIND "${CMAKE_BUILD_TYPE}" "static" STATIC)
 message("-- Compilation will be performed with the following release of the software:
 \tbranch   ${PROJECT_GIT_REF}
 \tref      ${PROJECT_SOURCE_VERSION}
-\ttime     ${MINIJATI_RELDATE} ${MINIJATI_RELTIME}
-\tcurrent  ${MINIJATI_VERSION} (latest version)")
+\ttime     ${CASTOR_RELDATE} ${CASTOR_RELTIME}
+\tcurrent  ${CASTOR_VERSION} (latest version)")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(WINDOWS TRUE)
@@ -155,7 +155,6 @@ find_package(bpp-core 4.0.0 REQUIRED)
 find_package(bpp-seq  12.0.0 REQUIRED)
 find_package(bpp-phyl 12.0.0 REQUIRED)
 
-# @MAX: memtest
 include (CTest)
 
 set(SOURCES
@@ -169,15 +168,10 @@ set(SOURCES
         RHomogeneousTreeLikelihood_PIP.hpp
         ExtendedAlphabet.cpp
         ExtendedAlphabet.hpp
-        #TSHHomogeneousTreeLikelihood.cpp
-        #TSHHomogeneousTreeLikelihood.hpp
-        #TSHSearchable.hpp
         UnifiedTSHTopologySearch.cpp
         UnifiedTSHTopologySearch.hpp
         JATIApplication.cpp
         JATIApplication.hpp
-        pPIP.cpp
-        pPIP.hpp
         Optimizators.cpp
         Optimizators.hpp
         UnifiedTSHomogeneousTreeLikelihood_Generic.cpp
@@ -190,45 +184,29 @@ set(SOURCES
         RHomogeneousTreeLikelihood_Generic.hpp
         SupportMeasures.cpp
         SupportMeasures.hpp
-        progressivePIP.hpp
-        progressivePIP.cpp
         UnifiedPhylogeneticTools.cpp
         UnifiedPhylogeneticTools.hpp
         UnifiedDistanceEstimation.cpp
-        UnifiedDistanceEstimation.hpp
-        PIPnode.hpp
-        PIPnode.cpp
-        FactoryPIPnodeCPU.cpp
-        FactoryPIPnodeRAM.cpp
-        FactoryPIPnodeSB.cpp
-        CompositePIPmsa.hpp
-        CompositePIPmsa.cpp
-        FactoryPIPnodeCPU.hpp
-        FactoryPIPnodeRAM.hpp
-        FactoryPIPnodeSB.hpp
-        FactoryPIPnode.hpp
-        CompositePIPnode.hpp
-        CompositePIPnode.cpp)
+        UnifiedDistanceEstimation.hpp)
 
 
 if (STATIC GREATER 0)
     message(STATUS "Compilation will produce a static executable")
-    add_executable(miniJATI ${SOURCES})
-    set_target_properties(miniJATI PROPERTIES LINK_FLAGS "-static")
-    target_link_libraries(miniJATI tshlib-static)
-    target_link_libraries(miniJATI glog::glog)
-    target_link_libraries(miniJATI ${BPP_LIBS_STATIC})
-    target_link_libraries(miniJATI ${Boost_LIBRARIES})
+    add_executable(CASTOR ${SOURCES})
+    set_target_properties(CASTOR PROPERTIES LINK_FLAGS "-static")
+    target_link_libraries(CASTOR tshlib-static)
+    target_link_libraries(CASTOR glog::glog)
+    target_link_libraries(CASTOR ${BPP_LIBS_STATIC})
+    target_link_libraries(CASTOR ${Boost_LIBRARIES})
 else ()
-    add_executable(miniJATI ${SOURCES})
-    target_link_libraries(miniJATI tshlib)
-    target_link_libraries(miniJATI glog::glog)
-    target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
-    target_link_libraries(miniJATI ${Boost_LIBRARIES})
+    add_executable(CASTOR ${SOURCES})
+    target_link_libraries(CASTOR tshlib)
+    target_link_libraries(CASTOR glog::glog)
+    target_link_libraries(CASTOR ${BPP_LIBS_SHARED})
+    target_link_libraries(CASTOR ${Boost_LIBRARIES})
 endif ()
 
-# @MAX: memtest
-add_test(example_test miniJATI)
+add_test(example_test CASTOR)
 
 # Test target
 #enable_testing()
