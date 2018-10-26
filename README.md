@@ -24,7 +24,7 @@ A second story:
 > of the two brothers could -- with some degree of immagination -- suggest a link between the two
 > different steps of indel-aware phylogenetic inference, which requires that both sequence
 > alignment and the phylogenetic tree inference interpret indels as evolutionary events and
-> account for their contribution during for the inference process.
+> account for their contribution.
 
 
 ----
