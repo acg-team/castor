@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_UNIFIEDPHYLOGENETICTOOLS_HPP
-#define MINIJATI_UNIFIEDPHYLOGENETICTOOLS_HPP
+#ifndef CASTOR_UNIFIEDPHYLOGENETICTOOLS_HPP
+#define CASTOR_UNIFIEDPHYLOGENETICTOOLS_HPP
 
 #include <Bpp/Phyl/Model/SubstitutionModel.h>
 #include <Bpp/Seq/GeneticCode/GeneticCode.h>
@@ -64,4 +64,4 @@ namespace UnifiedPhylogeneticTools {
 }
 
 
-#endif //MINIJATI_UNIFIEDPHYLOGENETICTOOLS_HPP
+#endif //CASTOR_UNIFIEDPHYLOGENETICTOOLS_HPP

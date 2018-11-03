@@ -42,8 +42,8 @@
  * @see For more information visit:
  */
 
-#ifndef MINIJATI_PIPMSA_HPP
-#define MINIJATI_PIPMSA_HPP
+#ifndef CASTOR_PIPMSA_HPP
+#define CASTOR_PIPMSA_HPP
 
 #include <string>
 #include <vector>
@@ -199,4 +199,4 @@ namespace PIPmsaUtils {
 //***********************************************************************************************
 //***********************************************************************************************
 
-#endif //MINIJATI_PIPMSA_HPP
+#endif //CASTOR_PIPMSA_HPP

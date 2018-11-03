@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_EXTENDEDALPHABET_HPP
-#define MINIJATI_EXTENDEDALPHABET_HPP
+#ifndef CASTOR_EXTENDEDALPHABET_HPP
+#define CASTOR_EXTENDEDALPHABET_HPP
 
 
 #include <Bpp/Seq/Alphabet/LetterAlphabet.h>
@@ -602,4 +602,4 @@ namespace bpp {
 
 }
 
-#endif //MINIJATI_EXTENDEDALPHABET_HPP
+#endif //CASTOR_EXTENDEDALPHABET_HPP

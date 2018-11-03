@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_PIP_HPP
-#define MINIJATI_PIP_HPP
+#ifndef CASTOR_PIP_HPP
+#define CASTOR_PIP_HPP
 
 #include <Bpp/Phyl/Model/SubstitutionModel.h>
 #include <Bpp/Phyl/Model/AbstractSubstitutionModel.h>
@@ -258,5 +258,5 @@ namespace bpp {
     double computeNH(SiteContainer *alignment);
 
 }
-#endif //MINIJATI_PIP_HPP
+#endif //CASTOR_PIP_HPP
 

@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file JATIApplication.hpp
+ * @file CastorApplication.hpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 06 02 2018
@@ -41,8 +41,8 @@
  *
  * @see For more information visit:
  */
-#ifndef MINIJATI_JATIAPPLICATION_HPP
-#define MINIJATI_JATIAPPLICATION_HPP
+#ifndef CASTOR_CASTORAPPLICATION_HPP
+#define CASTOR_CASTORAPPLICATION_HPP
 // From the STL:
 #include <string>
 #include <map>
@@ -55,7 +55,7 @@
 
 
 namespace bpp {
-    class JATIApplication {
+    class CastorApplication {
     private:
         std::string appName_;
         std::string appBuild_;
@@ -65,7 +65,7 @@ namespace bpp {
         long seed_;
 
     public:
-        JATIApplication(int argc, char *argv[], const std::string &name, const std::string &strVersion, const std::string &build_date);
+        CastorApplication(int argc, char *argv[], const std::string &name, const std::string &strVersion, const std::string &build_date);
 
     public:
         void startTimer();
@@ -121,4 +121,4 @@ namespace bpp {
 
 
 
-#endif //MINIJATI_JATIAPPLICATION_HPP
+#endif //CASTOR_JATIAPPLICATION_HPP

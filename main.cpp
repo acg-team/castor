@@ -95,7 +95,7 @@
 using namespace tshlib;
 
 /*
-* From Castor:
+* From miniJati:
 */
 #include "Version.hpp"
 #include "Utilities.hpp"
@@ -103,7 +103,7 @@ using namespace tshlib;
 #include "ExtendedAlphabet.hpp"
 #include "RHomogeneousTreeLikelihood_PIP.hpp"
 #include "RHomogeneousTreeLikelihood_Generic.hpp"
-#include "JATIApplication.hpp"
+#include "CastorApplication.hpp"
 #include "UnifiedTSHTopologySearch.hpp"
 #include "Optimizators.hpp"
 #include "SupportMeasures.hpp"
@@ -119,43 +119,36 @@ int main(int argc, char *argv[]) {
 
     try {
 
-        bpp::JATIApplication jatiapp(argc,
+        bpp::CastorApplication castorapp(argc,
                                      argv,
                                      std::string(software::name + " " + software::version),
                                      std::string(software::releasegitbranch + " " + software::releasegitref),
                                      std::string(software::releasedate + ", " + software::releasetime));
 
         if (argc < 2) {
-            jatiapp.help();
+            castorapp.help();
             exit(0);
         } else {
-            jatiapp.banner();
-            jatiapp.startTimer();
+            castorapp.banner();
+            castorapp.startTimer();
         };
 
-        bpp::ApplicationTools::displayResult("Random seed set to", jatiapp.getSeed());
+        bpp::ApplicationTools::displayResult("Random seed set to", castorapp.getSeed());
         ApplicationTools::displayResult("Log files location", std::string("current execution path"));
 
         //////////////////////////////////////////////
         // CLI ARGUMENTS
 
-<<<<<<< HEAD
-        bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", jatiapp.getParams(), false);
-        bool PAR_align_optim = ApplicationTools::getBooleanParameter("optimisation.alignment", jatiapp.getParams(),
+        bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", castorapp.getParams(), false);
+        bool PAR_align_optim = ApplicationTools::getBooleanParameter("optimisation.alignment", castorapp.getParams(),
                                                                      false);
-        double PAR_proportion = ApplicationTools::getDoubleParameter("alignment.proportion", jatiapp.getParams(), .1);
-        std::string PAR_model_substitution = ApplicationTools::getStringParameter("model", jatiapp.getParams(), "JC69",
+        double PAR_proportion = ApplicationTools::getDoubleParameter("alignment.proportion", castorapp.getParams(), .1);
+        std::string PAR_model_substitution = ApplicationTools::getStringParameter("model", castorapp.getParams(), "JC69",
                                                                                   "", true, true);
-        std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", jatiapp.getParams(), false,
+        std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", castorapp.getParams(), false,
                                                                          false, "", true, "", 1);
-        std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", jatiapp.getParams(), false,
+        std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", castorapp.getParams(), false,
                                                                         false, "", true, "", 1);
-=======
-        int PAR_execution_numthreads = ApplicationTools::getIntParameter("exec_numthreads", jatiapp.getParams(), OMP_max_avail_threads, "", true, 0);
-        std::string PAR_model_substitution = ApplicationTools::getStringParameter("model", jatiapp.getParams(), "JC69", "", true, true);
-        std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", jatiapp.getParams(), false, false, "", true, "", 1);
-        std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", jatiapp.getParams(), false, false, "", true, "", 1);
->>>>>>> master
 
         // Split model string description and test if PIP is required
         std::string modelStringName;
@@ -178,11 +171,11 @@ int main(int argc, char *argv[]) {
         // ALPHABET
         // The alphabet object contains the not-extended alphabet as requested by the user,
         // while alpha contains the extended version of the same alphabet.
-        std::string PAR_Alphabet = ApplicationTools::getStringParameter("alphabet", jatiapp.getParams(), "DNA", "",
+        std::string PAR_Alphabet = ApplicationTools::getStringParameter("alphabet", castorapp.getParams(), "DNA", "",
                                                                         true, true);
 
         // Alphabet without gaps
-        bpp::Alphabet *alphabetNoGaps = bpp::SequenceApplicationTools::getAlphabet(jatiapp.getParams(), "", false,
+        bpp::Alphabet *alphabetNoGaps = bpp::SequenceApplicationTools::getAlphabet(castorapp.getParams(), "", false,
                                                                                    false);
 
         // Genetic code
@@ -225,7 +218,7 @@ int main(int argc, char *argv[]) {
         // Alphabet used for codon models
         //CodonAlphabet *codonAlphabet = dynamic_cast<bpp::CodonAlphabet *>(alphabet);
         if (codonAlphabet) {
-            std::string codeDesc = ApplicationTools::getStringParameter("genetic_code", jatiapp.getParams(), "Standard",
+            std::string codeDesc = ApplicationTools::getStringParameter("genetic_code", castorapp.getParams(), "Standard",
                                                                         "", true, true);
             ApplicationTools::displayResult("Genetic Code", codeDesc);
             //if (PAR_model_indels) {
@@ -245,7 +238,7 @@ int main(int argc, char *argv[]) {
         //////////////////////////////////////////////
         // DATA
         ApplicationTools::displayMessage("\n[Preparing input data]");
-        std::string PAR_input_sequences = ApplicationTools::getAFilePath("input.sequence.file", jatiapp.getParams(),
+        std::string PAR_input_sequences = ApplicationTools::getAFilePath("input.sequence.file", castorapp.getParams(),
                                                                          true, true, "", false, "", 1);
 
         bpp::SequenceContainer *sequences = nullptr;
@@ -253,7 +246,6 @@ int main(int argc, char *argv[]) {
 
         try {
 
-<<<<<<< HEAD
             ApplicationTools::displayBooleanResult("Aligned sequences", !PAR_alignment);
 
             if (PAR_alignment) {
@@ -267,8 +259,8 @@ int main(int argc, char *argv[]) {
             } else {
 
                 VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet,
-                                                                                           jatiapp.getParams());
-                sites = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams(), "", true,
+                                                                                           castorapp.getParams());
+                sites = SequenceApplicationTools::getSitesToAnalyse(*allSites, castorapp.getParams(), "", true,
                                                                     !PAR_model_indels, true, 1);
                 delete allSites;
                 AlignmentUtils::checkAlignmentConsistency(*sites);
@@ -278,14 +270,6 @@ int main(int argc, char *argv[]) {
 
             }
 
-=======
-            VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet, jatiapp.getParams());
-            sites = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams(), "", true, !PAR_model_indels, true, 1);
-            delete allSites;
-            AlignmentUtils::checkAlignmentConsistency(*sites);
-            ApplicationTools::displayResult("Number of sequences", TextTools::toString(sites->getNumberOfSequences()));
-            ApplicationTools::displayResult("Number of sites", TextTools::toString(sites->getNumberOfSites()));
->>>>>>> master
 
         } catch (bpp::Exception &e) {
             LOG(FATAL) << "Error when reading sequence file due to: " << e.message();
@@ -297,13 +281,13 @@ int main(int argc, char *argv[]) {
         ApplicationTools::displayMessage("\n[Preparing initial tree]");
 
         bpp::Tree *tree = nullptr;
-        string initTreeOpt = ApplicationTools::getStringParameter("init.tree", jatiapp.getParams(), "user", "", false,
+        string initTreeOpt = ApplicationTools::getStringParameter("init.tree", castorapp.getParams(), "user", "", false,
                                                                   1);
         ApplicationTools::displayResult("Initial tree", initTreeOpt);
 
         if (initTreeOpt == "user") {
 
-            tree = PhylogeneticsApplicationTools::getTree(jatiapp.getParams());
+            tree = PhylogeneticsApplicationTools::getTree(castorapp.getParams());
             DLOG(INFO) << "[Input tree parser] Number of leaves" << tree->getNumberOfLeaves();
 
         } else if (initTreeOpt == "random") {
@@ -317,7 +301,7 @@ int main(int argc, char *argv[]) {
             bpp::DistanceMatrix *distances;
 
             std::string PAR_distance_method = ApplicationTools::getStringParameter("init.distance.method",
-                                                                                   jatiapp.getParams(), "nj");
+                                                                                   castorapp.getParams(), "nj");
             ApplicationTools::displayResult("Initial tree reconstruction method", PAR_distance_method);
 
             AgglomerativeDistanceMethod *distMethod = nullptr;
@@ -338,7 +322,7 @@ int main(int argc, char *argv[]) {
                 distMethod = bionj;
             } else throw Exception("Unknown tree reconstruction method.");
 
-
+            if (!PAR_alignment) {
 
                 // Compute bioNJ tree using the GTR model
                 map<std::string, std::string> parmap;
@@ -352,11 +336,11 @@ int main(int argc, char *argv[]) {
                     parmap["model"] = modelMap["model"];
                 } else {
                     alphabetDistMethod = alphabetNoGaps;
-                    parmap["model"] = jatiapp.getParams()["model"];
+                    parmap["model"] = castorapp.getParams()["model"];
                 }
 
-                allSites = SequenceApplicationTools::getSiteContainer(alphabetDistMethod, jatiapp.getParams());
-                sitesDistMethod = SequenceApplicationTools::getSitesToAnalyse(*allSites, jatiapp.getParams());
+                allSites = SequenceApplicationTools::getSiteContainer(alphabetDistMethod, castorapp.getParams());
+                sitesDistMethod = SequenceApplicationTools::getSitesToAnalyse(*allSites, castorapp.getParams());
                 delete allSites;
 
                 bpp::SubstitutionModel *smodel;
@@ -419,7 +403,7 @@ int main(int argc, char *argv[]) {
                     //Markov-modulated Markov model!
                     rDist = new ConstantRateDistribution();
                 } else {
-                    rDist = PhylogeneticsApplicationTools::getRateDistribution(jatiapp.getParams());
+                    rDist = PhylogeneticsApplicationTools::getRateDistribution(castorapp.getParams());
                 }
 
                 // Remove gap characters since we are roughly estimating the initial topology
@@ -432,7 +416,7 @@ int main(int argc, char *argv[]) {
                 if (PAR_distance_method.find("-ml") != std::string::npos) {
 
                     std::string PAR_optim_distance = ApplicationTools::getStringParameter(
-                            "init.distance.optimization.method", jatiapp.getParams(),
+                            "init.distance.optimization.method", castorapp.getParams(),
                             "init");
                     ApplicationTools::displayResult("Initial tree model parameters estimation method",
                                                     PAR_optim_distance);
@@ -445,8 +429,8 @@ int main(int argc, char *argv[]) {
 
                     // Optimisation method verbosity
                     auto optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose",
-                                                                                   jatiapp.getParams(), 2);
-                    string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", jatiapp.getParams(),
+                                                                                   castorapp.getParams(), 2);
+                    string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", castorapp.getParams(),
                                                                    false, false);
                     auto *messenger = (mhPath == "none") ? nullptr : (mhPath == "std") ? ApplicationTools::message.get()
                                                                                        : new StlOutputStream(
@@ -454,7 +438,7 @@ int main(int argc, char *argv[]) {
                     ApplicationTools::displayResult("Initial tree optimization handler", mhPath);
 
                     // Optimisation method profiler
-                    string prPath = ApplicationTools::getAFilePath("optimization.profiler", jatiapp.getParams(), false,
+                    string prPath = ApplicationTools::getAFilePath("optimization.profiler", castorapp.getParams(), false,
                                                                    false);
                     auto *profiler = (prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message.get()
                                                                                       : new StlOutputStream(
@@ -468,7 +452,7 @@ int main(int argc, char *argv[]) {
 
                     ParameterList parametersToIgnore;
                     string paramListDesc = ApplicationTools::getStringParameter(
-                            "init.distance.optimization.ignore_parameter", jatiapp.getParams(),
+                            "init.distance.optimization.ignore_parameter", castorapp.getParams(),
                             "", "", true, false);
                     bool ignoreBrLen = false;
                     StringTokenizer st(paramListDesc, ",");
@@ -491,12 +475,12 @@ int main(int argc, char *argv[]) {
                     }
 
                     auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval",
-                                                                                  jatiapp.getParams(), 1000000);
+                                                                                  castorapp.getParams(), 1000000);
                     ApplicationTools::displayResult("Initial tree optimization | max # ML evaluations",
                                                     TextTools::toString(nbEvalMax));
 
                     double tolerance = ApplicationTools::getDoubleParameter("optimization.tolerance",
-                                                                            jatiapp.getParams(), .000001);
+                                                                            castorapp.getParams(), .000001);
                     ApplicationTools::displayResult("Initial tree optimization | Tolerance",
                                                     TextTools::toString(tolerance));
 
@@ -522,7 +506,6 @@ int main(int argc, char *argv[]) {
                 delete distMethod;
 
 
-<<<<<<< HEAD
             } else {
 
                 // Use a distance matrix provided by the user
@@ -531,7 +514,7 @@ int main(int argc, char *argv[]) {
                 std::string PAR_distance_matrix;
                 try {
                     PAR_distance_matrix = ApplicationTools::getAFilePath("init.distance.matrix.file",
-                                                                         jatiapp.getParams(), true, true, "", false, "",
+                                                                         castorapp.getParams(), true, true, "", false, "",
                                                                          0);
                 } catch (bpp::Exception &e) {
                     LOG(FATAL) << "Error when reading distance matrix file: " << e.message();
@@ -543,8 +526,6 @@ int main(int argc, char *argv[]) {
                 tree = bionj.getTree();
             }
 
-=======
->>>>>>> master
         } else throw Exception("Unknown init tree method.");
 
         // If the tree has multifurcation, then resolve it with midpoint rooting
@@ -560,10 +541,10 @@ int main(int argc, char *argv[]) {
 
         // Try to write the current tree to file. This will be overwritten by the optimized tree,
         // but allow to check file existence before running optimization!
-        PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
+        PhylogeneticsApplicationTools::writeTree(*tree, castorapp.getParams());
 
         // Setting branch lengths?
-        string initBrLenMethod = ApplicationTools::getStringParameter("init.brlen.method", jatiapp.getParams(), "Input",
+        string initBrLenMethod = ApplicationTools::getStringParameter("init.brlen.method", castorapp.getParams(), "Input",
                                                                       "", true, 1);
         string cmdName;
         map<string, string> cmdArgs;
@@ -607,8 +588,11 @@ int main(int argc, char *argv[]) {
         auto utree = new Utree();
         UtreeBppUtils::treemap tm;
         UtreeBppUtils::convertTree_b2u(tree, utree, tm);
-        UtreeBppUtils::associateNode2Alignment(sites, utree);
-
+        if (PAR_alignment) {
+            UtreeBppUtils::associateNode2Alignment(sequences, utree);
+        } else {
+            UtreeBppUtils::associateNode2Alignment(sites, utree);
+        }
 
         DLOG(INFO) << "Bidirectional map size: " << tm.size();
         DLOG(INFO) << "[Initial Utree Topology] " << utree->printTreeNewick(true);
@@ -638,7 +622,7 @@ int main(int argc, char *argv[]) {
             bool computeFrequenciesFromData = false;
 
             // If frequencies are estimated from the data, but there is no alignment, then flag it.
-
+            if (!PAR_alignment) {
                 std::string baseModel;
 
                 std::map<std::string, std::string> basemodelMap;
@@ -664,7 +648,7 @@ int main(int argc, char *argv[]) {
                     modelMap["model"] = baseModel;
                 }
 
-
+            }
 
             // Instantiation of the canonical substitution model
             if (PAR_Alphabet.find("Codon") != std::string::npos || PAR_Alphabet.find("Protein") != std::string::npos) {
@@ -688,7 +672,6 @@ int main(int argc, char *argv[]) {
 
             if (estimatePIPparameters) {
 
-<<<<<<< HEAD
                 if (PAR_alignment) {
                     lambda = bpp::estimateLambdaFromData(tree, sequences, PAR_proportion);
                     mu = bpp::estimateMuFromData(tree, PAR_proportion);
@@ -697,13 +680,6 @@ int main(int argc, char *argv[]) {
                     lambda = bpp::estimateLambdaFromData(tree, sites);
                     mu = bpp::estimateMuFromData(tree, sites);
                 }
-=======
-
-                    lambda = bpp::estimateLambdaFromData(tree, sites);
-                    mu = bpp::estimateMuFromData(tree, sites);
-                    DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input alignment (lambda=" << lambda << ",mu=" << mu << ")";
-
->>>>>>> master
 
                 DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input sequences (lambda=" <<
                            lambda << ",mu=" << mu << "," "I=" << lambda * mu << ")";
@@ -717,7 +693,6 @@ int main(int argc, char *argv[]) {
                        << lambda * mu << ")";
 
             // Instantiate the corrisponding PIP model given the alphabet
-<<<<<<< HEAD
             if (PAR_alignment) {
                 if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
 
@@ -740,9 +715,6 @@ int main(int argc, char *argv[]) {
                     DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
                 }
             } else {
-=======
-
->>>>>>> master
                 if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
 
                     smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sites, lambda, mu,
@@ -763,18 +735,13 @@ int main(int argc, char *argv[]) {
                             "Codon models are experimental in the current version... use with caution!");
                     DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
                 }
-
+            }
 
         } else {
             // if the alphabet is not extended, then the gap character is not supported
-<<<<<<< HEAD
             if (!PAR_alignment) bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
             smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites,
-                                                                              jatiapp.getParams(), "", true, false, 0);
-=======
-            bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
-            smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites, jatiapp.getParams(), "", true, false, 0);
->>>>>>> master
+                                                                              castorapp.getParams(), "", true, false, 0);
         }
 
         DLOG(INFO) << "[Substitution model] Number of states: " << (int) smodel->getNumberOfStates();
@@ -815,195 +782,9 @@ int main(int argc, char *argv[]) {
             // Markov-modulated Markov model!
             rDist = new ConstantRateDistribution();
         } else {
-            rDist = PhylogeneticsApplicationTools::getRateDistribution(jatiapp.getParams());
+            rDist = PhylogeneticsApplicationTools::getRateDistribution(castorapp.getParams());
         }
 
-<<<<<<< HEAD
-        /////////////////////////
-        // COMPUTE ALIGNMENT USING PROGRESSIVE-PIP
-        pPIP *alignment = nullptr;
-        progressivePIP *proPIP = nullptr;
-        if (PAR_alignment) {
-            std::string PAR_alignment_version = ApplicationTools::getStringParameter("alignment.version",
-                                                                                     jatiapp.getParams(), "cpu", "",
-                                                                                     true, 0);
-            int PAR_alignment_sbsolutions = ApplicationTools::getIntParameter("alignment.sb_solutions",
-                                                                              jatiapp.getParams(), 1, "", true, 0);
-
-            ApplicationTools::displayMessage("\n[Computing the multi-sequence alignment]");
-            ApplicationTools::displayResult("Proportion gappy sites", TextTools::toString(PAR_proportion, 4));
-            ApplicationTools::displayResult("Aligner optimised for:", PAR_alignment_version);
-
-            ApplicationTools::displayBooleanResult("Stochastic backtracking active", PAR_alignment_sbsolutions > 1);
-            if (PAR_alignment_sbsolutions > 1) {
-                ApplicationTools::displayResult("Number of stochastic solutions:",
-                                                TextTools::toString(PAR_alignment_sbsolutions));
-            }
-
-            DLOG(INFO) << "[Alignment sequences] Starting MSA_t inference using Pro-PIP...";
-
-            // Execute alignment on post-order node list
-            std::vector<tshlib::VirtualNode *> ftn = utree->getPostOrderNodeList();
-
-            //**********************************************************************************************************
-            // ********  3D DP PIP  ************************************************************************************
-            //**********************************************************************************************************
-            int num_sb = 0; // number of sub-optimal MSAs
-            double temperature = 0.0001; // temperature for SB version
-
-            enumDP3Dversion DPversion = CPU; // DP3D version
-
-            if (PAR_alignment_version.find("cpu") != std::string::npos) {
-                DPversion = CPU; // slower but uses less memory
-                num_sb = 1;
-            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
-                DPversion = RAM; // faster but uses more memory
-                num_sb = 1;
-            } else if (PAR_alignment_version.find("sb") != std::string::npos) {
-                DPversion = SB;  // stochastic backtracking version
-                num_sb = 4;
-            } else {
-                ApplicationTools::displayError("The user specified an unknown alignment.version. "
-                                               "The execution will not continue.");
-            }
-
-            std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-
-            proPIP = new bpp::progressivePIP(utree,               // tshlib tree
-                                             tree,                // bpp tree
-                                             smodel,              // substitution model
-                                             tm,                  // tree-map
-                                             sequences,           // un-aligned input sequences
-                                             rDist,               // rate-variation among site distribution
-                                             jatiapp.getSeed());  // seed for random number generation
-
-            proPIP->_initializePIP(ftn,          // list of tshlib nodes in on post-order (correct order of execution)
-                                   DPversion,    // version of the alignment algorithm
-                                   num_sb,       // number of suboptimal MSAs
-                                   temperature); // to tune the greedyness of the sub-optimal solution
-
-            proPIP->PIPnodeAlign(); // align input sequences with a DP algorithm under PIP
-
-            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-            std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
-            ApplicationTools::displayResult("\nAlignment elapsed time (msec):",
-                                            TextTools::toString((double) duration, 4));
-
-
-            // convert PIPmsa into a sites objects
-            sites = PIPmsaUtils::PIPmsa2Sites(proPIP->alphabet_,
-                                              *(proPIP->getPIPnodeRootNode()->MSA_->getMSA()->_getseqNames()),
-                                              *(proPIP->getPIPnodeRootNode()->MSA_->getMSA()->_getMSA()));
-
-
-            // Export alignment to file
-            if (PAR_output_file_msa.find("none") == std::string::npos) {
-                DLOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
-                bpp::Fasta seqWriter;
-                seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
-            }
-
-            double MSAscore = proPIP->getPIPnodeRootNode()->MSA_->getMSA()->_getScore();
-
-            std::ofstream lkFile;
-            lkFile << std::setprecision(18);
-            lkFile.open(PAR_output_file_lk);
-            lkFile << MSAscore;
-            lkFile.close();
-
-            ApplicationTools::displayResult("Alignment log likelihood", TextTools::toString(MSAscore, 15));
-            //**********************************************************************************************************
-            // ********  3D DP PIP  ************************************************************************************
-            //**********************************************************************************************************
-
-            /*
-            //===== OBSOLETE ===========================================================
-            //Align sequences using the progressive 3D Dynamic Programming under PIP
-            bool flag_local;
-            bool flag_map;
-            bool flag_fv;
-
-            if (PAR_alignment_version.find("cpu") != std::string::npos) {
-
-                flag_local = true;
-                flag_map = true;
-                flag_fv = false;
-
-            } else if (PAR_alignment_version.find("ram") != std::string::npos) {
-
-                flag_local = true;
-                flag_map = false;
-                flag_fv = true;
-
-            } else {
-
-                flag_local = false;
-                flag_map = true;
-                flag_fv = false;
-
-                ApplicationTools::displayError(
-                        "The user specified an unknown alignment.version. The execution will not continue.");
-
-            }
-
-            std::chrono::high_resolution_clock::time_point t3 = std::chrono::high_resolution_clock::now();
-            // Initialise alignment object
-            alignment = new bpp::pPIP(utree, tree, smodel, tm, sequences, rDist, jatiapp.getSeed(),
-                                      PAR_alignment_sbsolutions);
-
-            alignment->PIPAligner(ftn, flag_local, flag_map, flag_fv);
-
-            std::chrono::high_resolution_clock::time_point t4 = std::chrono::high_resolution_clock::now();
-
-            duration = std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
-            std::cout << "\nAlignment elapsed time (msec): " << duration << std::endl;
-            ApplicationTools::displayResult("\nAlignment elapsed time (msec):",
-                                            TextTools::toString((double) duration, 4));
-
-
-            //===== OBSOLETE ===========================================================
-            // Convert PIP Aligner into bpp::sites
-//            sites = pPIPUtils::pPIPmsa2Sites(alignment, 0);
-//
-//            // Export alignment to file
-//            if (PAR_output_file_msa.find("none") == std::string::npos) {
-//                DLOG(INFO) << "[Alignment sequences]\t The final alignment can be found in " << PAR_output_file_msa;
-//                bpp::Fasta seqWriter;
-//                seqWriter.writeAlignment(TextUtils::appendToFilePath(PAR_output_file_msa, "initial"), *sites, true);
-//            }
-//
-//            double score;
-//            score = alignment->getScore(alignment->getRootNode()).at(0);
-//
-//            std::ofstream LogLkFile;
-//            LogLkFile << std::setprecision(18);
-//            LogLkFile.open(PAR_output_file_lk);
-//            LogLkFile << score;
-//            LogLkFile.close();
-//
-//            ApplicationTools::displayResult("Alignment log likelihood", TextTools::toString(score, 15));
-//
-//            DLOG(INFO) << "[Alignment sequences] Alignment has likelihood: " << score;
-            //===== OBSOLETE ===========================================================
-
-
-             */
-
-
-        }
-
-
-        //--------------------------------------------------------------------------------------------------------------
-        // best tree from MSA_t marginalization
-        //if(false){
-        //    auto treesearch = new tshlib::TreeSearch;
-        //    Utree *best_tree_from_MSA=progressivePIP::marginalizationOverMSAs(treesearch,alpha,pi,lambda, mu, sequences, tm);
-        //}
-        //--------------------------------------------------------------------------------------------------------------
-=======
->>>>>>> master
 
         /////////////////////////
         // Homogeneous modeling - initialization likelihood functions
@@ -1016,7 +797,7 @@ int main(int argc, char *argv[]) {
         // Get transition model from substitution model
         if (!PAR_model_indels) {
             model = bpp::PhylogeneticsApplicationTools::getTransitionModel(alphabet, gCode.get(), sites,
-                                                                           jatiapp.getParams(), "", true, false, 0);
+                                                                           castorapp.getParams(), "", true, false, 0);
         } else {
             unique_ptr<TransitionModel> test;
             test.reset(smodel);
@@ -1027,13 +808,13 @@ int main(int argc, char *argv[]) {
         if (!PAR_model_indels) {
             //tl = new bpp::RHomogeneousTreeLikelihood_Generic(*tree, *sites, model, rDist, false, false, false);
             tl = new bpp::UnifiedTSHomogeneousTreeLikelihood(*tree, *sites, model, rDist, utree, &tm, true,
-                                                             jatiapp.getParams(), "", false, false,
+                                                             castorapp.getParams(), "", false, false,
                                                              false);
 
         } else {
             //tl = new bpp::RHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, &tm, false, false, false);
             tl = new bpp::UnifiedTSHomogeneousTreeLikelihood_PIP(*tree, *sites, model, rDist, utree, &tm, true,
-                                                                 jatiapp.getParams(), "", false,
+                                                                 castorapp.getParams(), "", false,
                                                                  false, false);
         }
         ApplicationTools::displayResult("Tree likelihood model", std::string("Homogeneous"));
@@ -1047,7 +828,7 @@ int main(int argc, char *argv[]) {
         ApplicationTools::displayMessage("\n[Parameter sanity check]");
 
         //Listing parameters
-        string paramNameFile = ApplicationTools::getAFilePath("output.parameter_names.file", jatiapp.getParams(), false,
+        string paramNameFile = ApplicationTools::getAFilePath("output.parameter_names.file", castorapp.getParams(), false,
                                                               false, "", true, "none", 1);
         if (paramNameFile != "none") {
             ApplicationTools::displayResult("List parameters to", paramNameFile);
@@ -1097,7 +878,7 @@ int main(int argc, char *argv[]) {
                     exit(-1);
             }
             bool removeSaturated = ApplicationTools::getBooleanParameter("input.sequence.remove_saturated_sites",
-                                                                         jatiapp.getParams(), false, "",
+                                                                         castorapp.getParams(), false, "",
                                                                          true, 1);
             if (!removeSaturated) {
                 ofstream debug("DEBUG_likelihoods.txt", ios::out);
@@ -1141,44 +922,33 @@ int main(int argc, char *argv[]) {
 
         tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tl,
                                                                                                 tl->getParameters(),
-                                                                                                jatiapp.getParams(),
+                                                                                                castorapp.getParams(),
                                                                                                 "",
                                                                                                 true,
                                                                                                 true,
                                                                                                 0));
 
-
-<<<<<<< HEAD
-//        // Overwrite the initial alignment with the optimised one
-//        // TODO: the likelihood function should not be reimplemented here.
-//        if (PAR_alignment && PAR_align_optim) {
-//            sites = pPIPUtils::pPIPmsa2Sites(alignment, 0);
-//            logL = alignment->getScore(alignment->getRootNode()).at(0);
-//
-//            const Tree &tmpTree = tl->getTree(); // WARN: This tree should come from the likelihood function and not from the parent class.
-//
-//            auto nntl = new bpp::RHomogeneousTreeLikelihood_PIP(tmpTree, utree, *sites, model, rDist, &tm, false, false,
-//                                                                false);
-//            nntl->initialize();
-//            logL = nntl->getLogLikelihood();
-//
-//            //ntl->getLikelihoodFunction()->setData()   // this should be the only call here
-//
-//        } else {
-            logL = tl->getLogLikelihood();
-//        }
-=======
         logL = tl->getLogLikelihood();
->>>>>>> master
+
 
         /////////////////////////
         // OUTPUT
+
+        // Export final alignment
+        if (PAR_output_file_msa.find("none") == std::string::npos) {
+            ApplicationTools::displayResult("\n\nOutput alignment to file", PAR_output_file_msa);
+            DLOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
+            bpp::Fasta seqWriter;
+            seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
+        }
+
+        delete sequences;
 
         // Export final tree (if nexus is required, then our re-implementation of the the nexus writer is called)
         tree = new TreeTemplate<Node>(tl->getTree());
 
         std::string PAR_output_tree_format = ApplicationTools::getStringParameter("output.tree.format",
-                                                                                  jatiapp.getParams(),
+                                                                                  castorapp.getParams(),
                                                                                   "Newick",
                                                                                   "",
                                                                                   true,
@@ -1186,15 +956,15 @@ int main(int argc, char *argv[]) {
         if (PAR_output_tree_format.find("Nexus") != std::string::npos) {
             std::vector<Tree *> tmp;
             tmp.push_back(tree);
-            OutputUtils::writeNexusMetaTree(tmp, jatiapp.getParams());
+            OutputUtils::writeNexusMetaTree(tmp, castorapp.getParams());
         } else {
-            PhylogeneticsApplicationTools::writeTree(*tree, jatiapp.getParams());
+            PhylogeneticsApplicationTools::writeTree(*tree, castorapp.getParams());
         }
 
 
         // Export annotation file (tab separated values)
         std::string PAR_output_annotation_file = ApplicationTools::getAFilePath("output.annotation.file",
-                                                                                jatiapp.getParams(),
+                                                                                castorapp.getParams(),
                                                                                 false,
                                                                                 false,
                                                                                 "",
@@ -1228,16 +998,16 @@ int main(int argc, char *argv[]) {
         PhylogeneticsApplicationTools::checkEstimatedParameters(tl->getParameters());
 
         // Write parameters to file (according to arguments)
-        OutputUtils::exportOutput(tl, sites, jatiapp.getParams());
+        OutputUtils::exportOutput(tl, sites, castorapp.getParams());
 
 
         // Compute support measures
-        std::string PAR_support = ApplicationTools::getStringParameter("support", jatiapp.getParams(), "", "", true,
+        std::string PAR_support = ApplicationTools::getStringParameter("support", castorapp.getParams(), "", "", true,
                                                                        true);
         if (PAR_support == "bootstrap") {
             ApplicationTools::displayMessage("\n[Tree support measures]");
 
-            bpp::Bootstrap(tl, *sites, rDist, utree, &tm, jatiapp.getParams(), "support.");
+            bpp::Bootstrap(tl, *sites, rDist, utree, &tm, castorapp.getParams(), "support.");
         }
 
         // Delete objects and free memory
@@ -1248,7 +1018,7 @@ int main(int argc, char *argv[]) {
         delete tl;
         delete tree;
 
-        jatiapp.done();
+        castorapp.done();
         google::ShutdownGoogleLogging();
         exit(0);
 

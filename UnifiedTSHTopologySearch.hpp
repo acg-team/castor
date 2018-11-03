@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_TSHTOPOLOGYSEARCH_HPP
-#define MINIJATI_TSHTOPOLOGYSEARCH_HPP
+#ifndef CASTOR_TSHTOPOLOGYSEARCH_HPP
+#define CASTOR_TSHTOPOLOGYSEARCH_HPP
 
 #include <chrono>
 #include <Bpp/Phyl/TopologySearch.h>
@@ -305,4 +305,4 @@ namespace tshlib {
 }
 
 
-#endif //MINIJATI_TSHTOPOLOGYSEARCH_HPP
+#endif //CASTOR_TSHTOPOLOGYSEARCH_HPP

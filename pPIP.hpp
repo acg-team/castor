@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_PPIP_HPP
-#define MINIJATI_PPIP_HPP
+#ifndef CASTOR_PPIP_HPP
+#define CASTOR_PPIP_HPP
 
 #include <Bpp/Numeric/VectorTools.h>
 #include <Bpp/Phyl/Node.h>
@@ -503,4 +503,4 @@ namespace pPIPUtils {
 
 }
 
-#endif //MINIJATI_PPIP_HPP
+#endif //CASTOR_PPIP_HPP

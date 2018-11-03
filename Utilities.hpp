@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_UTILS_HPP
-#define MINIJATI_UTILS_HPP
+#ifndef CASTOR_UTILS_HPP
+#define CASTOR_UTILS_HPP
 
 
 #include <Utree.hpp>
@@ -247,4 +247,4 @@ public:
 };
 
 
-#endif //MINIJATI_UTILS_HPP
+#endif //CASTOR_UTILS_HPP

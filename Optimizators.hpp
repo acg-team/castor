@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_OPTIMIZATORS_HPP
-#define MINIJATI_OPTIMIZATORS_HPP
+#ifndef CASTOR_OPTIMIZATORS_HPP
+#define CASTOR_OPTIMIZATORS_HPP
 #include <Bpp/Phyl/Distance/DistanceMethod.h>
 #include "UnifiedDistanceEstimation.hpp"
 
@@ -181,4 +181,4 @@ namespace bpp {
 } // end of namespace bpp.
 
 
-#endif //MINIJATI_OPTIMIZATORS_HPP
+#endif //CASTOR_OPTIMIZATORS_HPP

@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_VERSION_HPP
-#define MINIJATI_VERSION_HPP
+#ifndef CASTOR_VERSION_HPP
+#define CASTOR_VERSION_HPP
 
 
 
@@ -63,6 +63,6 @@ namespace software{
 
     std::string desc = name_extended + " ("+ name + ") " + build;
 }
-#endif //MINIJATI_VERSION_HPP
+#endif //CASTOR_VERSION_HPP
 
 

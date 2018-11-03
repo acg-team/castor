@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_SUPPORTMEASURES_HPP
-#define MINIJATI_SUPPORTMEASURES_HPP
+#ifndef CASTOR_SUPPORTMEASURES_HPP
+#define CASTOR_SUPPORTMEASURES_HPP
 
 #include <Bpp/Phyl/Likelihood/AbstractHomogeneousTreeLikelihood.h>
 
@@ -70,4 +70,4 @@ namespace bpp {
 }
 
 
-#endif //MINIJATI_SUPPORTMEASURES_HPP
+#endif //CASTOR_SUPPORTMEASURES_HPP

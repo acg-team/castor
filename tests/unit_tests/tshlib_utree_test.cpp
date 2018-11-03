@@ -36,7 +36,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Homehttp://www.lorenzogatti.me
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Homehttp://www.lorenzogatti.me
  */
 
 

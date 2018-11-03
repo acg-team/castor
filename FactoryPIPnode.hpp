@@ -42,8 +42,8 @@
  * @see For more information visit:
  */
 
-#ifndef MINIJATI_FACTORYPIPNODE_HPP
-#define MINIJATI_FACTORYPIPNODE_HPP
+#ifndef CASTOR_FACTORYPIPNODE_HPP
+#define CASTOR_FACTORYPIPNODE_HPP
 
 #include "PIPnode.hpp"
 #include "FactoryPIPnodeCPU.hpp"
@@ -87,4 +87,4 @@ namespace bpp {
 
 }
 
-#endif //MINIJATI_FACTORYPIPNODE_HPP
+#endif //CASTOR_FACTORYPIPNODE_HPP

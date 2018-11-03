@@ -42,8 +42,8 @@
  * @see For more information visit:
  */
 
-#ifndef MINIJATI_PROGRESSIVEPIP_HPP
-#define MINIJATI_PROGRESSIVEPIP_HPP
+#ifndef CASTOR_PROGRESSIVEPIP_HPP
+#define CASTOR_PROGRESSIVEPIP_HPP
 
 #include <Bpp/Numeric/VectorTools.h>
 #include <Bpp/Phyl/Node.h>
@@ -207,4 +207,4 @@ namespace bpp {
 
 }
 
-#endif //MINIJATI_PROGRESSIVEPIP_HPP
+#endif //CASTOR_PROGRESSIVEPIP_HPP

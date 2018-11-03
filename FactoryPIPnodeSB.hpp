@@ -42,8 +42,8 @@
  * @see For more information visit:
  */
 
-#ifndef MINIJATI_FACTORYNODESB_HPP
-#define MINIJATI_FACTORYNODESB_HPP
+#ifndef CASTOR_FACTORYNODESB_HPP
+#define CASTOR_FACTORYNODESB_HPP
 
 #include <Bpp/Numeric/VectorTools.h>
 #include <Bpp/Phyl/Node.h>
@@ -151,4 +151,4 @@ namespace bpp {
 
 }
 
-#endif //MINIJATI_FACTORYNODESB_HPP
+#endif //CASTOR_FACTORYNODESB_HPP

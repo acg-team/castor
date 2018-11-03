@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 set(CASTOR_SOFTWARENAME "Castor")
-set(CASTOR_DESCRIPTION "Joint Alignment Tree Inference")
+set(CASTOR_DESCRIPTION "Indel-Aware Phylogenetic Tree Inference")
 
 project(${CASTOR_SOFTWARENAME}
         DESCRIPTION ${CASTOR_DESCRIPTION}
@@ -59,7 +59,6 @@ set(CASTOR_RELDATE ${PROJECT_BUILD_DATE})
 set(CASTOR_VERSION ${GIT_TAG_VERSION_STRIPPED})
 
 project(${CASTOR_SOFTWARENAME} VERSION ${GIT_TAG_VERSION_STRIPPED})
-
 
 add_definitions(-DPRJ_GITBRANCH=\"${PROJECT_GIT_REF}\"
         -DPRJ_VERSION=\"${CASTOR_VERSION}\"
@@ -178,7 +177,6 @@ find_package(bpp-core 4.0.0 REQUIRED)
 find_package(bpp-seq  12.0.0 REQUIRED)
 find_package(bpp-phyl 12.0.0 REQUIRED)
 
-<<<<<<< HEAD
 if(${USE_PARALLEL})
 	message(STATUS "Compilation will check for a parallel framework" )
 	if(PATH_INTELTBB)
@@ -210,10 +208,7 @@ if(${USE_PARALLEL})
 		endif()
 	endif()
 endif()
-# @MAX: memtest
-=======
->>>>>>> master
-include (CTest)
+
 
 set(SOURCES
         main.cpp
@@ -228,8 +223,8 @@ set(SOURCES
         ExtendedAlphabet.hpp
         UnifiedTSHTopologySearch.cpp
         UnifiedTSHTopologySearch.hpp
-        JATIApplication.cpp
-        JATIApplication.hpp
+        CastorApplication.cpp
+        CastorApplication.hpp
         Optimizators.cpp
         Optimizators.hpp
         UnifiedTSHomogeneousTreeLikelihood_Generic.cpp
@@ -245,28 +240,10 @@ set(SOURCES
         UnifiedPhylogeneticTools.cpp
         UnifiedPhylogeneticTools.hpp
         UnifiedDistanceEstimation.cpp
-<<<<<<< HEAD
         UnifiedDistanceEstimation.hpp
-        PIPnode.hpp
-        PIPnode.cpp
-        FactoryPIPnodeCPU.cpp
-        FactoryPIPnodeRAM.cpp
-        FactoryPIPnodeSB.cpp
-        CompositePIPmsa.hpp
-        CompositePIPmsa.cpp
-        FactoryPIPnodeCPU.hpp
-        FactoryPIPnodeRAM.hpp
-        FactoryPIPnodeSB.hpp
-        FactoryPIPnode.hpp
-        CompositePIPnode.hpp
-        CompositePIPnode.cpp
         Horner.h
         LambertW.cc
-        LambertW.h
-        CompositePIPnode.cpp
-        PIPmsa.cpp
-        PIPmsa.hpp
-        PIPlkData.hpp)
+        LambertW.h)
 
 if (STATIC GREATER 0)
     message(STATUS "Compilation will produce a static executable")
@@ -281,46 +258,28 @@ if (STATIC GREATER 0)
         SET(CMAKE_C_FLAGS_DEBUGINTEL "${CMAKE_C_FLAGS_DEBUGINTEL} -static-intel -static")
     endif()
 
-    add_executable(miniJATI ${SOURCES})
-    set_target_properties(miniJATI PROPERTIES LINK_FLAGS "-static")
-    target_link_libraries(miniJATI tshlib-static)
-    target_link_libraries(miniJATI glog::glog)
-    target_link_libraries(miniJATI ${INTEL_LIBS_STATIC})
-    target_link_libraries(miniJATI ${BPP_LIBS_STATIC})
-    target_link_libraries(miniJATI ${Boost_LIBRARIES})
-    target_link_libraries(miniJATI ${TBB_IMPORTED_TARGETS})
-    target_link_libraries(miniJATI ${OpenMP_CXX_LIBRARIES_STATIC})
+    add_executable(Castor ${SOURCES})
+    set_target_properties(Castor PROPERTIES LINK_FLAGS "-static")
+    target_link_libraries(Castor tshlib-static)
+    target_link_libraries(Castor glog::glog)
+    target_link_libraries(Castor ${INTEL_LIBS_STATIC})
+    target_link_libraries(Castor ${BPP_LIBS_STATIC})
+    target_link_libraries(Castor ${Boost_LIBRARIES})
+    target_link_libraries(Castor ${TBB_IMPORTED_TARGETS})
+    target_link_libraries(Castor ${OpenMP_CXX_LIBRARIES_STATIC})
 else ()
-    add_executable(miniJATI ${SOURCES})
-    target_link_libraries(miniJATI tshlib)
-    target_link_libraries(miniJATI glog::glog)
-    target_link_libraries(miniJATI ${INTEL_LIBS_SHARED})
-    target_link_libraries(miniJATI ${BPP_LIBS_SHARED})
-    target_link_libraries(miniJATI ${Boost_LIBRARIES})
-    target_link_libraries(miniJATI ${TBB_IMPORTED_TARGETS})
-    target_link_libraries(miniJATI ${OpenMP_CXX_LIBRARIES})
-=======
-        UnifiedDistanceEstimation.hpp)
+    add_executable(Castor ${SOURCES})
+    target_link_libraries(Castor tshlib)
+    target_link_libraries(Castor glog::glog)
+    target_link_libraries(Castor ${INTEL_LIBS_SHARED})
+    target_link_libraries(Castor ${BPP_LIBS_SHARED})
+    target_link_libraries(Castor ${Boost_LIBRARIES})
+    target_link_libraries(Castor ${TBB_IMPORTED_TARGETS})
+    target_link_libraries(Castor ${OpenMP_CXX_LIBRARIES})
+endif()
 
-
-if (STATIC GREATER 0)
-    message(STATUS "Compilation will produce a static executable")
-    add_executable(CASTOR ${SOURCES})
-    set_target_properties(CASTOR PROPERTIES LINK_FLAGS "-static")
-    target_link_libraries(CASTOR tshlib-static)
-    target_link_libraries(CASTOR glog::glog)
-    target_link_libraries(CASTOR ${BPP_LIBS_STATIC})
-    target_link_libraries(CASTOR ${Boost_LIBRARIES})
-else ()
-    add_executable(CASTOR ${SOURCES})
-    target_link_libraries(CASTOR tshlib)
-    target_link_libraries(CASTOR glog::glog)
-    target_link_libraries(CASTOR ${BPP_LIBS_SHARED})
-    target_link_libraries(CASTOR ${Boost_LIBRARIES})
->>>>>>> master
-endif ()
-
-add_test(example_test CASTOR)
+include (CTest)
+add_test(example_test Castor)
 
 # Test target
 #enable_testing()

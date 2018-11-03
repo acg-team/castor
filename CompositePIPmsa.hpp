@@ -42,8 +42,8 @@
  * @see For more information visit:
  */
 
-#ifndef MINIJATI_COMPOSITEPIPMSA_HPP
-#define MINIJATI_COMPOSITEPIPMSA_HPP
+#ifndef CASTOR_COMPOSITEPIPMSA_HPP
+#define CASTOR_COMPOSITEPIPMSA_HPP
 
 #include <string>
 #include <vector>
@@ -150,4 +150,4 @@ namespace bpp {
 
 }
 
-#endif //MINIJATI_COMPOSITEPIPMSA_HPP
+#endif //CASTOR_COMPOSITEPIPMSA_HPP

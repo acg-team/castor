@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
 
 #include <glog/logging.h>
@@ -142,7 +142,7 @@ Bootstrap::Bootstrap(AbstractHomogeneousTreeLikelihood *tl,
                 parametersRep.deleteParameters(paramsToIgnore.getParameterNames());
             }
 
-            tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tlRep, nullptr,parametersRep, params, "", true, false, 0));
+            tl = dynamic_cast<AbstractHomogeneousTreeLikelihood *>(Optimizators::optimizeParameters(tlRep,parametersRep, params, "", true, false, 0));
 
             bsTrees[i] = new TreeTemplate<Node>(tlRep->getTree());
             if (out_trees && i == 0) newick.write(*bsTrees[i], bsTreesPath, true);

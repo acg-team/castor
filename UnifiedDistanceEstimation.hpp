@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_UNIFIEDDISTANCEESTIMATION_HPP
-#define MINIJATI_UNIFIEDDISTANCEESTIMATION_HPP
+#ifndef CASTOR_UNIFIEDDISTANCEESTIMATION_HPP
+#define CASTOR_UNIFIEDDISTANCEESTIMATION_HPP
 
 #include <Bpp/Numeric/ParameterList.h>
 #include <Bpp/Numeric/Function/Optimizer.h>
@@ -568,4 +568,4 @@ namespace bpp {
     };
 }
 
-#endif //MINIJATI_UNIFIEDDISTANCEESTIMATION_HPP
+#endif //CASTOR_UNIFIEDDISTANCEESTIMATION_HPP

@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_RHOMOGENEOUSTREELIKELIHOOD_GENERIC_HPP
-#define MINIJATI_RHOMOGENEOUSTREELIKELIHOOD_GENERIC_HPP
+#ifndef CASTOR_RHOMOGENEOUSTREELIKELIHOOD_GENERIC_HPP
+#define CASTOR_RHOMOGENEOUSTREELIKELIHOOD_GENERIC_HPP
 
 #include <Bpp/Phyl/Likelihood/AbstractHomogeneousTreeLikelihood.h>
 #include <Bpp/Phyl/Model/SubstitutionModel.h>
@@ -283,4 +283,4 @@ namespace bpp {
 } //end of namespace bpp.
 
 
-#endif //MINIJATI_RHOMOGENEOUSTREELIKELIHOOD_GENERIC_HPP
+#endif //CASTOR_RHOMOGENEOUSTREELIKELIHOOD_GENERIC_HPP

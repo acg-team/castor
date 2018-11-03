@@ -54,8 +54,8 @@
 #include "FactoryPIPnode.hpp"
 #include "CompositePIPmsa.hpp"
 
-#ifndef MINIJATI_FACTORYNODECPU_HPP
-#define MINIJATI_FACTORYNODECPU_HPP
+#ifndef CASTOR_FACTORYNODECPU_HPP
+#define CASTOR_FACTORYNODECPU_HPP
 
 namespace bpp {
 
@@ -284,4 +284,4 @@ namespace bpp {
 
 }
 
-#endif //MINIJATI_FACTORYNODECPU_HPP
+#endif //CASTOR_FACTORYNODECPU_HPP

@@ -42,8 +42,8 @@
  * @see For more information visit:
  */
 
-#ifndef MINIJATI_PIPLKDATA_HPP
-#define MINIJATI_PIPLKDATA_HPP
+#ifndef CASTOR_PIPLKDATA_HPP
+#define CASTOR_PIPLKDATA_HPP
 
 struct LKdata {
 
@@ -332,4 +332,4 @@ struct LKdata {
 
 };
 
-#endif //MINIJATI_PIPLKDATA_HPP
+#endif //CASTOR_PIPLKDATA_HPP

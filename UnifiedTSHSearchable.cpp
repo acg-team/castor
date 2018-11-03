@@ -39,7 +39,7 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
 #include <Bpp/Numeric/Function/SimpleMultiDimensions.h>
 #include <Bpp/Phyl/Likelihood/PseudoNewtonOptimizer.h>

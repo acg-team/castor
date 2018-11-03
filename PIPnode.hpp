@@ -42,8 +42,8 @@
  * @see For more information visit:
  */
 
-#ifndef MINIJATI_PIPNODE_HPP
-#define MINIJATI_PIPNODE_HPP
+#ifndef CASTOR_PIPNODE_HPP
+#define CASTOR_PIPNODE_HPP
 
 #include <Bpp/Numeric/VectorTools.h>
 #include <Bpp/Phyl/Node.h>
@@ -191,4 +191,4 @@ namespace bpp {
 
 }
 
-#endif //MINIJATI_PIPNODE_HPP
+#endif //CASTOR_PIPNODE_HPP

@@ -22,7 +22,7 @@
  *******************************************************************************/
 
 /**
- * @file JATIApplication.cpp
+ * @file CastorApplication.cpp
  * @author Lorenzo Gatti
  * @author Massimo Maiolo
  * @date 06 02 2018
@@ -39,9 +39,9 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#include "JATIApplication.hpp"
+#include "CastorApplication.hpp"
 #include <ctime>
 #include <iostream>
 #include <Bpp/Utils/AttributesTools.h>
@@ -51,7 +51,7 @@
 
 using namespace bpp;
 
-JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name, const std::string &strVersion, const std::string &build_date) :
+CastorApplication::CastorApplication(int argc, char *argv[], const std::string &name, const std::string &strVersion, const std::string &build_date) :
         appName_(name), appBuild_(build_date), appVersion_(strVersion), params_(), timerStarted_(false) {
 
     params_ = bpp::AttributesTools::parseOptions(argc, argv);
@@ -78,12 +78,12 @@ JATIApplication::JATIApplication(int argc, char *argv[], const std::string &name
     }
 }
 
-void JATIApplication::startTimer() {
+void CastorApplication::startTimer() {
     ApplicationTools::startTimer();
     timerStarted_ = true;
 }
 
-void JATIApplication::done() {
+void CastorApplication::done() {
    DLOG(INFO) << appName_ << "'s done. Bye.";
     if (timerStarted_)
         bpp::ApplicationTools::displayTime("Total execution time:");

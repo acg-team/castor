@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP
-#define MINIJATI_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP
+#ifndef CASTOR_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP
+#define CASTOR_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP
 
 #include "UnifiedTSHSearchable.hpp"
 #include "Utilities.hpp"
@@ -124,4 +124,4 @@ namespace bpp {
 }
 
 
-#endif //MINIJATI_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP
+#endif //CASTOR_UNIFIEDTSHOMOGENEOUSTREELIKELIHOOD_HPP

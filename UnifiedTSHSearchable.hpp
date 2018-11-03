@@ -39,10 +39,10 @@
  * @bug
  * @warning
  *
- * @see For more information visit: https://bitbucket.org/acg-team/minijati/wiki/Home
+ * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
-#ifndef MINIJATI_UNIFIEDTSHSEARCHABLE_HPP
-#define MINIJATI_UNIFIEDTSHSEARCHABLE_HPP
+#ifndef CASTOR_UNIFIEDTSHSEARCHABLE_HPP
+#define CASTOR_UNIFIEDTSHSEARCHABLE_HPP
 
 #include <Bpp/Numeric/Function/AbstractNumericalDerivative.h>
 #include <Bpp/Numeric/Function/ConjugateGradientMultiDimensions.h>
@@ -110,4 +110,4 @@ namespace bpp {
 }
 
 
-#endif //MINIJATI_UNIFIEDTSHSEARCHABLE_HPP
+#endif //CASTOR_UNIFIEDTSHSEARCHABLE_HPP
