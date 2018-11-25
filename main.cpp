@@ -120,10 +120,10 @@ int main(int argc, char *argv[]) {
     try {
 
         bpp::CastorApplication castorapp(argc,
-                                     argv,
-                                     std::string(software::name + " " + software::version),
-                                     std::string(software::releasegitbranch + " " + software::releasegitref),
-                                     std::string(software::releasedate + ", " + software::releasetime));
+                                         argv,
+                                         std::string(software::name + " " + software::version),
+                                         std::string(software::releasegitbranch + " " + software::releasegitref),
+                                         std::string(software::releasedate + ", " + software::releasetime));
 
         if (argc < 2) {
             castorapp.help();
@@ -139,16 +139,16 @@ int main(int argc, char *argv[]) {
         //////////////////////////////////////////////
         // CLI ARGUMENTS
 
-        bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", castorapp.getParams(), false);
-        bool PAR_align_optim = ApplicationTools::getBooleanParameter("optimisation.alignment", castorapp.getParams(),
-                                                                     false);
-        double PAR_proportion = ApplicationTools::getDoubleParameter("alignment.proportion", castorapp.getParams(), .1);
+        //bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", castorapp.getParams(), false);
+        //bool PAR_align_optim = ApplicationTools::getBooleanParameter("optimisation.alignment", castorapp.getParams(),
+        //                                                             false);
+        //double PAR_proportion = ApplicationTools::getDoubleParameter("alignment.proportion", castorapp.getParams(), .1);
         std::string PAR_model_substitution = ApplicationTools::getStringParameter("model", castorapp.getParams(), "JC69",
                                                                                   "", true, true);
-        std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", castorapp.getParams(), false,
-                                                                         false, "", true, "", 1);
-        std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", castorapp.getParams(), false,
-                                                                        false, "", true, "", 1);
+        //std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", castorapp.getParams(), false,
+        //                                                                 false, "", true, "", 1);
+        //std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", castorapp.getParams(), false,
+        //                                                                false, "", true, "", 1);
 
         // Split model string description and test if PIP is required
         std::string modelStringName;
@@ -246,29 +246,29 @@ int main(int argc, char *argv[]) {
 
         try {
 
-            ApplicationTools::displayBooleanResult("Aligned sequences", !PAR_alignment);
+            //ApplicationTools::displayBooleanResult("Aligned sequences", !PAR_alignment);
 
-            if (PAR_alignment) {
+            //if (PAR_alignment) {
 
-                // If the user requires the computation of an alignment, then the input file is made of unaligned sequences
-                bpp::Fasta seqReader;
-                sequences = seqReader.readSequences(PAR_input_sequences, alphabet);
-                ApplicationTools::displayResult("Number of sequences",
-                                                TextTools::toString(sequences->getNumberOfSequences()));
+            // If the user requires the computation of an alignment, then the input file is made of unaligned sequences
+            //    bpp::Fasta seqReader;
+            //    sequences = seqReader.readSequences(PAR_input_sequences, alphabet);
+            //    ApplicationTools::displayResult("Number of sequences",
+            //                                    TextTools::toString(sequences->getNumberOfSequences()));
 
-            } else {
+            //} else {
 
-                VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet,
-                                                                                           castorapp.getParams());
-                sites = SequenceApplicationTools::getSitesToAnalyse(*allSites, castorapp.getParams(), "", true,
-                                                                    !PAR_model_indels, true, 1);
-                delete allSites;
-                AlignmentUtils::checkAlignmentConsistency(*sites);
-                ApplicationTools::displayResult("Number of sequences",
-                                                TextTools::toString(sites->getNumberOfSequences()));
-                ApplicationTools::displayResult("Number of sites", TextTools::toString(sites->getNumberOfSites()));
+            VectorSiteContainer *allSites = SequenceApplicationTools::getSiteContainer(alphabet,
+                                                                                       castorapp.getParams());
+            sites = SequenceApplicationTools::getSitesToAnalyse(*allSites, castorapp.getParams(), "", true,
+                                                                !PAR_model_indels, true, 1);
+            delete allSites;
+            AlignmentUtils::checkAlignmentConsistency(*sites);
+            ApplicationTools::displayResult("Number of sequences",
+                                            TextTools::toString(sites->getNumberOfSequences()));
+            ApplicationTools::displayResult("Number of sites", TextTools::toString(sites->getNumberOfSites()));
 
-            }
+            //}
 
 
         } catch (bpp::Exception &e) {
@@ -322,67 +322,67 @@ int main(int argc, char *argv[]) {
                 distMethod = bionj;
             } else throw Exception("Unknown tree reconstruction method.");
 
-            if (!PAR_alignment) {
+            //if (!PAR_alignment) {
 
-                // Compute bioNJ tree using the GTR model
-                map<std::string, std::string> parmap;
+            // Compute bioNJ tree using the GTR model
+            map<std::string, std::string> parmap;
 
-                VectorSiteContainer *allSites;
-                VectorSiteContainer *sitesDistMethod;
-                bpp::Alphabet *alphabetDistMethod;
+            VectorSiteContainer *allSites;
+            VectorSiteContainer *sitesDistMethod;
+            bpp::Alphabet *alphabetDistMethod;
 
-                if (PAR_model_indels) {
-                    alphabetDistMethod = alphabet;
-                    parmap["model"] = modelMap["model"];
+            if (PAR_model_indels) {
+                alphabetDistMethod = alphabet;
+                parmap["model"] = modelMap["model"];
+            } else {
+                alphabetDistMethod = alphabetNoGaps;
+                parmap["model"] = castorapp.getParams()["model"];
+            }
+
+            allSites = SequenceApplicationTools::getSiteContainer(alphabetDistMethod, castorapp.getParams());
+            sitesDistMethod = SequenceApplicationTools::getSitesToAnalyse(*allSites, castorapp.getParams());
+            delete allSites;
+
+            bpp::SubstitutionModel *smodel;
+            if (PAR_model_indels) {
+
+                // Instantiation of the canonical substitution model
+                if (PAR_Alphabet.find("Codon") != std::string::npos ||
+                    PAR_Alphabet.find("Protein") != std::string::npos) {
+                    smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(),
+                                                                                      sitesDistMethod, modelMap, "",
+                                                                                      true,
+                                                                                      false, 0);
                 } else {
-                    alphabetDistMethod = alphabetNoGaps;
-                    parmap["model"] = castorapp.getParams()["model"];
+                    smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetDistMethod,
+                                                                                      gCode.get(), sitesDistMethod,
+                                                                                      modelMap,
+                                                                                      "", true,
+                                                                                      false, 0);
                 }
 
-                allSites = SequenceApplicationTools::getSiteContainer(alphabetDistMethod, castorapp.getParams());
-                sitesDistMethod = SequenceApplicationTools::getSitesToAnalyse(*allSites, castorapp.getParams());
-                delete allSites;
+                double lambda = (modelMap.find("lambda") == modelMap.end()) ? 0.1 : std::stod(modelMap["lambda"]);
+                double mu = (modelMap.find("mu") == modelMap.end()) ? 0.2 : std::stod(modelMap["mu"]);
 
-                bpp::SubstitutionModel *smodel;
-                if (PAR_model_indels) {
-
-                    // Instantiation of the canonical substitution model
-                    if (PAR_Alphabet.find("Codon") != std::string::npos ||
-                        PAR_Alphabet.find("Protein") != std::string::npos) {
-                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetNoGaps, gCode.get(),
-                                                                                          sitesDistMethod, modelMap, "",
-                                                                                          true,
-                                                                                          false, 0);
-                    } else {
-                        smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabetDistMethod,
-                                                                                          gCode.get(), sitesDistMethod,
-                                                                                          modelMap,
-                                                                                          "", true,
-                                                                                          false, 0);
-                    }
-
-                    double lambda = (modelMap.find("lambda") == modelMap.end()) ? 0.1 : std::stod(modelMap["lambda"]);
-                    double mu = (modelMap.find("mu") == modelMap.end()) ? 0.2 : std::stod(modelMap["mu"]);
-
-                    // Instatiate the corrisponding PIP model given the alphabet
-                    if (PAR_Alphabet.find("DNA") != std::string::npos &&
-                        PAR_Alphabet.find("Codon") == std::string::npos) {
-                        smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabetDistMethod), smodel,
-                                             *sitesDistMethod, lambda, mu, false);
-                    } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
-                        smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabetDistMethod), smodel,
-                                            *sitesDistMethod, lambda, mu, false);
-                    } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
-                        smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabetDistMethod), gCode.get(),
-                                               smodel, *sitesDistMethod,
-                                               lambda,
-                                               mu, false);
-                        ApplicationTools::displayWarning(
-                                "Codon models are experimental in the current version... use with caution!");
-                        DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
-                    }
-
+                // Instatiate the corrisponding PIP model given the alphabet
+                if (PAR_Alphabet.find("DNA") != std::string::npos &&
+                    PAR_Alphabet.find("Codon") == std::string::npos) {
+                    smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabetDistMethod), smodel,
+                                         *sitesDistMethod, lambda, mu, false);
+                } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
+                    smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabetDistMethod), smodel,
+                                        *sitesDistMethod, lambda, mu, false);
+                } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
+                    smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabetDistMethod), gCode.get(),
+                                           smodel, *sitesDistMethod,
+                                           lambda,
+                                           mu, false);
+                    ApplicationTools::displayWarning(
+                            "Codon models are experimental in the current version... use with caution!");
+                    DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
                 }
+
+                //}
 
                 //Initialize model to compute the distance tree
                 //TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetDistMethod, gCode.get(), sitesDistMethod, parmap);
@@ -588,11 +588,11 @@ int main(int argc, char *argv[]) {
         auto utree = new Utree();
         UtreeBppUtils::treemap tm;
         UtreeBppUtils::convertTree_b2u(tree, utree, tm);
-        if (PAR_alignment) {
-            UtreeBppUtils::associateNode2Alignment(sequences, utree);
-        } else {
-            UtreeBppUtils::associateNode2Alignment(sites, utree);
-        }
+        //if (PAR_alignment) {
+        //    UtreeBppUtils::associateNode2Alignment(sequences, utree);
+        //} else {
+        UtreeBppUtils::associateNode2Alignment(sites, utree);
+        //}
 
         DLOG(INFO) << "Bidirectional map size: " << tm.size();
         DLOG(INFO) << "[Initial Utree Topology] " << utree->printTreeNewick(true);
@@ -622,33 +622,33 @@ int main(int argc, char *argv[]) {
             bool computeFrequenciesFromData = false;
 
             // If frequencies are estimated from the data, but there is no alignment, then flag it.
-            if (!PAR_alignment) {
-                std::string baseModel;
+            //if (!PAR_alignment) {
+            std::string baseModel;
 
-                std::map<std::string, std::string> basemodelMap;
-                KeyvalTools::parseProcedure(modelMap["model"], baseModel, basemodelMap);
+            std::map<std::string, std::string> basemodelMap;
+            KeyvalTools::parseProcedure(modelMap["model"], baseModel, basemodelMap);
 
-                std::vector<std::string> keys;
-                for (auto it = basemodelMap.begin(); it != basemodelMap.end(); ++it) keys.push_back(it->first);
+            std::vector<std::string> keys;
+            for (auto it = basemodelMap.begin(); it != basemodelMap.end(); ++it) keys.push_back(it->first);
 
-                if (!keys.empty()) {
-                    baseModel += "(";
-                    for (auto &key:keys) {
-                        if (key != "initFreqs") {
-                            baseModel += key + "=" + basemodelMap[key];
-                        } else {
-                            if (basemodelMap[key] == "observed") {
-                                computeFrequenciesFromData = true;
-                            }
+            if (!keys.empty()) {
+                baseModel += "(";
+                for (auto &key:keys) {
+                    if (key != "initFreqs") {
+                        baseModel += key + "=" + basemodelMap[key];
+                    } else {
+                        if (basemodelMap[key] == "observed") {
+                            computeFrequenciesFromData = true;
                         }
-                        baseModel += ",";
                     }
-                    baseModel.pop_back();
-                    baseModel += ")";
-                    modelMap["model"] = baseModel;
+                    baseModel += ",";
                 }
-
+                baseModel.pop_back();
+                baseModel += ")";
+                modelMap["model"] = baseModel;
             }
+
+            //}
 
             // Instantiation of the canonical substitution model
             if (PAR_Alphabet.find("Codon") != std::string::npos || PAR_Alphabet.find("Protein") != std::string::npos) {
@@ -672,14 +672,14 @@ int main(int argc, char *argv[]) {
 
             if (estimatePIPparameters) {
 
-                if (PAR_alignment) {
-                    lambda = bpp::estimateLambdaFromData(tree, sequences, PAR_proportion);
-                    mu = bpp::estimateMuFromData(tree, PAR_proportion);
-
-                } else {
-                    lambda = bpp::estimateLambdaFromData(tree, sites);
-                    mu = bpp::estimateMuFromData(tree, sites);
-                }
+//                if (PAR_alignment) {
+//                    lambda = bpp::estimateLambdaFromData(tree, sequences, PAR_proportion);
+//                    mu = bpp::estimateMuFromData(tree, PAR_proportion);
+//
+//                } else {
+                lambda = bpp::estimateLambdaFromData(tree, sites);
+                mu = bpp::estimateMuFromData(tree, sites);
+                //}
 
                 DLOG(INFO) << "[PIP model] Estimated PIP parameters from data using input sequences (lambda=" <<
                            lambda << ",mu=" << mu << "," "I=" << lambda * mu << ")";
@@ -693,53 +693,54 @@ int main(int argc, char *argv[]) {
                        << lambda * mu << ")";
 
             // Instantiate the corrisponding PIP model given the alphabet
-            if (PAR_alignment) {
-                if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
+//            if (PAR_alignment) {
+//                if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
+//
+//                    smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sequences, lambda, mu,
+//                                         computeFrequenciesFromData);
+//
+//                } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
+//
+//                    smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sequences, lambda, mu,
+//                                        computeFrequenciesFromData);
+//
+//                } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
+//
+//                    smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabet), gCode.get(), smodel,
+//                                           *sequences, lambda, mu,
+//                                           computeFrequenciesFromData);
+//
+//                    ApplicationTools::displayWarning(
+//                            "Codon models are experimental in the current version... use with caution!");
+//                    DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
+//                }
+//            } else {
+            if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
 
-                    smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sequences, lambda, mu,
-                                         computeFrequenciesFromData);
+                smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sites, lambda, mu,
+                                     computeFrequenciesFromData);
 
-                } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
+            } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
 
-                    smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sequences, lambda, mu,
-                                        computeFrequenciesFromData);
+                smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sites, lambda, mu,
+                                    computeFrequenciesFromData);
 
-                } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
+            } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
 
-                    smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabet), gCode.get(), smodel,
-                                           *sequences, lambda, mu,
-                                           computeFrequenciesFromData);
+                smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabet), gCode.get(), smodel,
+                                       *sites, lambda, mu,
+                                       computeFrequenciesFromData);
 
-                    ApplicationTools::displayWarning(
-                            "Codon models are experimental in the current version... use with caution!");
-                    DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
-                }
-            } else {
-                if (PAR_Alphabet.find("DNA") != std::string::npos && PAR_Alphabet.find("Codon") == std::string::npos) {
-
-                    smodel = new PIP_Nuc(dynamic_cast<NucleicAlphabet *>(alphabet), smodel, *sites, lambda, mu,
-                                         computeFrequenciesFromData);
-
-                } else if (PAR_Alphabet.find("Protein") != std::string::npos) {
-
-                    smodel = new PIP_AA(dynamic_cast<ProteicAlphabet *>(alphabet), smodel, *sites, lambda, mu,
-                                        computeFrequenciesFromData);
-
-                } else if (PAR_Alphabet.find("Codon") != std::string::npos) {
-
-                    smodel = new PIP_Codon(dynamic_cast<CodonAlphabet_Extended *>(alphabet), gCode.get(), smodel,
-                                           *sites, lambda, mu,
-                                           computeFrequenciesFromData);
-
-                    ApplicationTools::displayWarning(
-                            "Codon models are experimental in the current version... use with caution!");
-                    DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
-                }
+                ApplicationTools::displayWarning(
+                        "Codon models are experimental in the current version... use with caution!");
+                DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
             }
+            //}
 
         } else {
             // if the alphabet is not extended, then the gap character is not supported
-            if (!PAR_alignment) bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
+            //if (!PAR_alignment) bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
+            bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sites);
             smodel = bpp::PhylogeneticsApplicationTools::getSubstitutionModel(alphabet, gCode.get(), sites,
                                                                               castorapp.getParams(), "", true, false, 0);
         }
@@ -758,7 +759,8 @@ int main(int argc, char *argv[]) {
 
         for (size_t i = 0; i < smodel->getFrequencies().size(); i++) {
 
-            ApplicationTools::displayResult("eq.freq("+smodel->getAlphabet()->getName(i)+")", TextTools::toString(smodel->getFrequencies()[i], 4));
+            ApplicationTools::displayResult("eq.freq(" + smodel->getAlphabet()->getName(i) + ")",
+                                            TextTools::toString(smodel->getFrequencies()[i], 4));
         }
 
 
@@ -935,12 +937,12 @@ int main(int argc, char *argv[]) {
         // OUTPUT
 
         // Export final alignment
-        if (PAR_output_file_msa.find("none") == std::string::npos) {
-            ApplicationTools::displayResult("\n\nOutput alignment to file", PAR_output_file_msa);
-            DLOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
-            bpp::Fasta seqWriter;
-            seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
-        }
+//        if (PAR_output_file_msa.find("none") == std::string::npos) {
+//            ApplicationTools::displayResult("\n\nOutput alignment to file", PAR_output_file_msa);
+//            DLOG(INFO) << "[Output alignment]\t The final alignment can be found in " << PAR_output_file_msa;
+//            bpp::Fasta seqWriter;
+//            seqWriter.writeAlignment(PAR_output_file_msa, *sites, true);
+//        }
 
         delete sequences;
 
