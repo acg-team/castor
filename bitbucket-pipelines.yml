@@ -4,7 +4,7 @@
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
 image:
-  name: lorenzogatti89/minijati:latest
+  name: lorenzogatti89/castor:latest
   username: $DOCKER_HUB_USERNAME
   password: $DOCKER_HUB_PASSWORD
   email: $DOCKER_HUB_EMAIL
@@ -21,8 +21,6 @@ pipelines:
           - step:
               script:
               - cd /tshlib; git checkout master; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
-          - step:
-              script: # Modify the commands below to build your repository.
               - cd $BITBUCKET_CLONE_DIR; cmake --target Castor -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
@@ -31,7 +29,6 @@ pipelines:
               script:
               - ./Castor version=true
               - ./Castor params=./tests/param_files/CORE/pip_likelihoodfunction.txt ; bash ./tests/scripts/test_core_pip_lkfunc.sh
-              - ./Castor params=./tests/param_files/ALIGN/pip_alignment_likelihood.txt ; bash ./tests/scripts/test_align_pip_likelihood.sh
               - ./Castor params=./tests/param_files/GTR/nt_real_aligned_optall.txt
               - ./Castor params=./tests/param_files/GTR_F/nt_real_aligned_optall.txt
               - ./Castor params=./tests/param_files/GTR_PIP/nt_real_aligned_optall.txt
@@ -50,9 +47,7 @@ pipelines:
       develop:
           - step:
               script:
-              - cd /tshlib; git checkout develop; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
-          - step:
-              script: # Modify the commands below to build your repository.
+              - cd /tshlib; git checkout master; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
               - cd $BITBUCKET_CLONE_DIR; cmake --target Castor -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
@@ -60,7 +55,6 @@ pipelines:
           - step:
               script:
               - ./Castor version=true
-              - ./Castor params=./tests/param_files/ALIGN/pip_alignment_likelihood.txt ; bash ./tests/scripts/test_align_pip_likelihood.sh
               - ./Castor params=./tests/param_files/CORE/pip_likelihoodfunction.txt ; bash ./tests/scripts/test_core_pip_lkfunc.sh
           - step:
               name: Deploy Night-Build Version
@@ -77,9 +71,7 @@ pipelines:
       feature/*:
           - step:
               script:
-              - cd /tshlib; git checkout develop; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
-          - step:
-              script: # Modify the commands below to build your repository.
+              - cd /tshlib; git checkout master; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
               - cd $BITBUCKET_CLONE_DIR; cmake --target Castor -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
@@ -91,8 +83,6 @@ pipelines:
           - step:
               script:
               - cd /tshlib; git checkout master; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
-          - step:
-              script: # Modify the commands below to build your repository.
               - cd $BITBUCKET_CLONE_DIR; cmake --target Castor -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
@@ -101,7 +91,6 @@ pipelines:
               script:
               - ./Castor version=true
               - ./Castor params=./tests/param_files/CORE/pip_likelihoodfunction.txt ; bash ./tests/scripts/test_core_pip_lkfunc.sh
-              - ./Castor params=./tests/param_files/ALIGN/pip_alignment_likelihood.txt ; bash ./tests/scripts/test_align_pip_likelihood.sh
               - ./Castor params=./tests/param_files/GTR/nt_real_aligned_optall.txt
               - ./Castor params=./tests/param_files/GTR_F/nt_real_aligned_optall.txt
               - ./Castor params=./tests/param_files/GTR_PIP/nt_real_aligned_optall.txt
@@ -110,8 +99,6 @@ pipelines:
           - step:
               script:
               - cd /tshlib; git checkout master; git pull; cmake -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt; make install; cd ..;
-          - step:
-              script: # Modify the commands below to build your repository.
               - cd $BITBUCKET_CLONE_DIR; cmake --target Castor -- -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
               - make
               artifacts:
