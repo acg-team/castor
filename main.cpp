@@ -382,149 +382,148 @@ int main(int argc, char *argv[]) {
                     DLOG(WARNING) << "CODONS activated byt the program is not fully tested under these settings!";
                 }
 
-                //}
+            }
 
-                //Initialize model to compute the distance tree
-                //TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetDistMethod, gCode.get(), sitesDistMethod, parmap);
-                TransitionModel *dmodel;
-                // Get transition model from substitution model
-                if (!PAR_model_indels) {
-                    dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetDistMethod, gCode.get(),
-                                                                               sitesDistMethod, parmap);
-                } else {
-                    unique_ptr<TransitionModel> test;
-                    test.reset(smodel);
-                    dmodel = test.release();
-                }
+            //Initialize model to compute the distance tree
+            //TransitionModel *dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetDistMethod, gCode.get(), sitesDistMethod, parmap);
+            TransitionModel *dmodel;
+            // Get transition model from substitution model
+            if (!PAR_model_indels) {
+                dmodel = PhylogeneticsApplicationTools::getTransitionModel(alphabetDistMethod, gCode.get(),
+                                                                           sitesDistMethod, parmap);
+            } else {
+                unique_ptr<TransitionModel> test;
+                test.reset(smodel);
+                dmodel = test.release();
+            }
 
-                // Add a ASRV distribution
-                DiscreteDistribution *rDist = nullptr;
-                if (dmodel->getNumberOfStates() > dmodel->getAlphabet()->getSize()) {
-                    //Markov-modulated Markov model!
-                    rDist = new ConstantRateDistribution();
-                } else {
-                    rDist = PhylogeneticsApplicationTools::getRateDistribution(castorapp.getParams());
-                }
+            // Add a ASRV distribution
+            DiscreteDistribution *rDist = nullptr;
+            if (dmodel->getNumberOfStates() > dmodel->getAlphabet()->getSize()) {
+                //Markov-modulated Markov model!
+                rDist = new ConstantRateDistribution();
+            } else {
+                rDist = PhylogeneticsApplicationTools::getRateDistribution(castorapp.getParams());
+            }
 
-                // Remove gap characters since we are roughly estimating the initial topology
-                if (!PAR_model_indels) {
-                    bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sitesDistMethod);
-                }
+            // Remove gap characters since we are roughly estimating the initial topology
+            if (!PAR_model_indels) {
+                bpp::SiteContainerTools::changeGapsToUnknownCharacters(*sitesDistMethod);
+            }
 
-                UnifiedDistanceEstimation distEstimation(dmodel, rDist, sitesDistMethod, 1, false);
+            UnifiedDistanceEstimation distEstimation(dmodel, rDist, sitesDistMethod, 1, false);
 
-                if (PAR_distance_method.find("-ml") != std::string::npos) {
+            if (PAR_distance_method.find("-ml") != std::string::npos) {
 
-                    std::string PAR_optim_distance = ApplicationTools::getStringParameter(
-                            "init.distance.optimization.method", castorapp.getParams(),
-                            "init");
-                    ApplicationTools::displayResult("Initial tree model parameters estimation method",
-                                                    PAR_optim_distance);
-                    if (PAR_optim_distance == "init") PAR_optim_distance = Optimizators::DISTANCEMETHOD_INIT;
-                    else if (PAR_optim_distance == "pairwise")
-                        PAR_optim_distance = Optimizators::DISTANCEMETHOD_PAIRWISE;
-                    else if (PAR_optim_distance == "iterations")
-                        PAR_optim_distance = Optimizators::DISTANCEMETHOD_ITERATIONS;
-                    else throw Exception("Unknown parameter estimation procedure '" + PAR_optim_distance + "'.");
+                std::string PAR_optim_distance = ApplicationTools::getStringParameter(
+                        "init.distance.optimization.method", castorapp.getParams(),
+                        "init");
+                ApplicationTools::displayResult("Initial tree model parameters estimation method",
+                                                PAR_optim_distance);
+                if (PAR_optim_distance == "init") PAR_optim_distance = Optimizators::DISTANCEMETHOD_INIT;
+                else if (PAR_optim_distance == "pairwise")
+                    PAR_optim_distance = Optimizators::DISTANCEMETHOD_PAIRWISE;
+                else if (PAR_optim_distance == "iterations")
+                    PAR_optim_distance = Optimizators::DISTANCEMETHOD_ITERATIONS;
+                else throw Exception("Unknown parameter estimation procedure '" + PAR_optim_distance + "'.");
 
-                    // Optimisation method verbosity
-                    auto optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose",
-                                                                                   castorapp.getParams(), 2);
-                    string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", castorapp.getParams(),
-                                                                   false, false);
-                    auto *messenger = (mhPath == "none") ? nullptr : (mhPath == "std") ? ApplicationTools::message.get()
-                                                                                       : new StlOutputStream(
-                                    new ofstream(mhPath.c_str(), ios::out));
-                    ApplicationTools::displayResult("Initial tree optimization handler", mhPath);
+                // Optimisation method verbosity
+                auto optVerbose = ApplicationTools::getParameter<unsigned int>("optimization.verbose",
+                                                                               castorapp.getParams(), 2);
+                string mhPath = ApplicationTools::getAFilePath("optimization.message_handler", castorapp.getParams(),
+                                                               false, false);
+                auto *messenger = (mhPath == "none") ? nullptr : (mhPath == "std") ? ApplicationTools::message.get()
+                                                                                   : new StlOutputStream(
+                                new ofstream(mhPath.c_str(), ios::out));
+                ApplicationTools::displayResult("Initial tree optimization handler", mhPath);
 
-                    // Optimisation method profiler
-                    string prPath = ApplicationTools::getAFilePath("optimization.profiler", castorapp.getParams(), false,
-                                                                   false);
-                    auto *profiler = (prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message.get()
-                                                                                      : new StlOutputStream(
-                                    new ofstream(prPath.c_str(), ios::out));
-                    if (profiler) profiler->setPrecision(20);
-                    ApplicationTools::displayResult("Initial tree optimization profiler", prPath);
+                // Optimisation method profiler
+                string prPath = ApplicationTools::getAFilePath("optimization.profiler", castorapp.getParams(), false,
+                                                               false);
+                auto *profiler = (prPath == "none") ? nullptr : (prPath == "std") ? ApplicationTools::message.get()
+                                                                                  : new StlOutputStream(
+                                new ofstream(prPath.c_str(), ios::out));
+                if (profiler) profiler->setPrecision(20);
+                ApplicationTools::displayResult("Initial tree optimization profiler", prPath);
 
-                    // Should I ignore some parameters?
-                    ParameterList allParameters = dmodel->getParameters();
-                    allParameters.addParameters(rDist->getParameters());
+                // Should I ignore some parameters?
+                ParameterList allParameters = dmodel->getParameters();
+                allParameters.addParameters(rDist->getParameters());
 
-                    ParameterList parametersToIgnore;
-                    string paramListDesc = ApplicationTools::getStringParameter(
-                            "init.distance.optimization.ignore_parameter", castorapp.getParams(),
-                            "", "", true, false);
-                    bool ignoreBrLen = false;
-                    StringTokenizer st(paramListDesc, ",");
+                ParameterList parametersToIgnore;
+                string paramListDesc = ApplicationTools::getStringParameter(
+                        "init.distance.optimization.ignore_parameter", castorapp.getParams(),
+                        "", "", true, false);
+                bool ignoreBrLen = false;
+                StringTokenizer st(paramListDesc, ",");
 
-                    while (st.hasMoreToken()) {
-                        try {
-                            string param = st.nextToken();
-                            if (param == "BrLen")
-                                ignoreBrLen = true;
-                            else {
-                                if (allParameters.hasParameter(param)) {
-                                    Parameter *p = &allParameters.getParameter(param);
-                                    parametersToIgnore.addParameter(*p);
-                                } else ApplicationTools::displayWarning("Parameter '" + param + "' not found.");
-                            }
-                        } catch (ParameterNotFoundException &pnfe) {
-                            ApplicationTools::displayError(
-                                    "Parameter '" + pnfe.getParameter() + "' not found, and so can't be ignored!");
+                while (st.hasMoreToken()) {
+                    try {
+                        string param = st.nextToken();
+                        if (param == "BrLen")
+                            ignoreBrLen = true;
+                        else {
+                            if (allParameters.hasParameter(param)) {
+                                Parameter *p = &allParameters.getParameter(param);
+                                parametersToIgnore.addParameter(*p);
+                            } else ApplicationTools::displayWarning("Parameter '" + param + "' not found.");
                         }
+                    } catch (ParameterNotFoundException &pnfe) {
+                        ApplicationTools::displayError(
+                                "Parameter '" + pnfe.getParameter() + "' not found, and so can't be ignored!");
                     }
-
-                    auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval",
-                                                                                  castorapp.getParams(), 1000000);
-                    ApplicationTools::displayResult("Initial tree optimization | max # ML evaluations",
-                                                    TextTools::toString(nbEvalMax));
-
-                    double tolerance = ApplicationTools::getDoubleParameter("optimization.tolerance",
-                                                                            castorapp.getParams(), .000001);
-                    ApplicationTools::displayResult("Initial tree optimization | Tolerance",
-                                                    TextTools::toString(tolerance));
-
-                    //Here it is:
-                    tree = Optimizators::buildDistanceTreeGeneric(distEstimation, *distMethod, parametersToIgnore,
-                                                                  !ignoreBrLen, PAR_optim_distance,
-                                                                  tolerance, nbEvalMax, profiler, messenger,
-                                                                  optVerbose);
-
-                } else {
-                    // Fast but rough estimate of the initial tree topology (distance based without optimisation -ML)
-
-                    distEstimation.computeMatrix();
-                    DistanceMatrix *dm = distEstimation.getMatrix();
-                    distMethod->setDistanceMatrix((*dm));
-                    distMethod->computeTree();
-                    tree = distMethod->getTree();
-                    std::cout << std::endl;
-
                 }
 
-                delete sitesDistMethod;
-                delete distMethod;
+                auto nbEvalMax = ApplicationTools::getParameter<unsigned int>("optimization.max_number_f_eval",
+                                                                              castorapp.getParams(), 1000000);
+                ApplicationTools::displayResult("Initial tree optimization | max # ML evaluations",
+                                                TextTools::toString(nbEvalMax));
 
+                double tolerance = ApplicationTools::getDoubleParameter("optimization.tolerance",
+                                                                        castorapp.getParams(), .000001);
+                ApplicationTools::displayResult("Initial tree optimization | Tolerance",
+                                                TextTools::toString(tolerance));
+
+                //Here it is:
+                tree = Optimizators::buildDistanceTreeGeneric(distEstimation, *distMethod, parametersToIgnore,
+                                                              !ignoreBrLen, PAR_optim_distance,
+                                                              tolerance, nbEvalMax, profiler, messenger,
+                                                              optVerbose);
 
             } else {
+                // Fast but rough estimate of the initial tree topology (distance based without optimisation -ML)
 
-                // Use a distance matrix provided by the user
+                distEstimation.computeMatrix();
+                DistanceMatrix *dm = distEstimation.getMatrix();
+                distMethod->setDistanceMatrix((*dm));
+                distMethod->computeTree();
+                tree = distMethod->getTree();
+                std::cout << std::endl;
 
-                ApplicationTools::displayResult("Initial tree method", std::string("LZ compression"));
-                std::string PAR_distance_matrix;
-                try {
-                    PAR_distance_matrix = ApplicationTools::getAFilePath("init.distance.matrix.file",
-                                                                         castorapp.getParams(), true, true, "", false, "",
-                                                                         0);
-                } catch (bpp::Exception &e) {
-                    LOG(FATAL) << "Error when reading distance matrix file: " << e.message();
-                }
-
-                DLOG(INFO) << "initial tree method from LZ compression from matrix file" << PAR_distance_matrix;
-                distances = InputUtils::parseDistanceMatrix(PAR_distance_matrix);
-                bpp::BioNJ bionj(*distances, true, true, false);
-                tree = bionj.getTree();
             }
+
+            delete sitesDistMethod;
+            delete distMethod;
+
+//            } else {
+//
+//                // Use a distance matrix provided by the user
+//
+//                ApplicationTools::displayResult("Initial tree method", std::string("LZ compression"));
+//                std::string PAR_distance_matrix;
+//                try {
+//                    PAR_distance_matrix = ApplicationTools::getAFilePath("init.distance.matrix.file",
+//                                                                         castorapp.getParams(), true, true, "", false, "",
+//                                                                         0);
+//                } catch (bpp::Exception &e) {
+//                    LOG(FATAL) << "Error when reading distance matrix file: " << e.message();
+//                }
+//
+//                DLOG(INFO) << "initial tree method from LZ compression from matrix file" << PAR_distance_matrix;
+//                distances = InputUtils::parseDistanceMatrix(PAR_distance_matrix);
+//                bpp::BioNJ bionj(*distances, true, true, false);
+//                tree = bionj.getTree();
+//            }
 
         } else throw Exception("Unknown init tree method.");
 
