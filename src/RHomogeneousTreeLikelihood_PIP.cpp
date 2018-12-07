@@ -48,7 +48,7 @@
 #include <Bpp/Phyl/Model/SubstitutionModelSetTools.h>
 #include <Bpp/Phyl/PatternTools.h>
 #include <glog/logging.h>
-#include "Utilities.hpp"
+#include "Utils.hpp"
 
 using namespace bpp;
 

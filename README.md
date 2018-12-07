@@ -35,7 +35,8 @@ You can find tutorial, examples and guides on our [Wikipages](https://bitbucket.
 ----
 #### Licence
     * Castor is a computer program whose purpose is to infer phylogentic trees
-    * under indel-aware substitution models
+    * under indel-aware and indel-non-aware substitution models for nucleotide,
+    * protein, and codon datasets
     *
     * Castor is distributed in the hope that it will be useful, but WITHOUT
     * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
