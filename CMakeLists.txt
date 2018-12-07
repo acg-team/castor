@@ -1,3 +1,33 @@
+# Licensed Materials - Property of Lorenzo Gatti & Massimo Maiolo
+# Copyright (C) 2015-2019 by Lorenzo Gatti & Massimo Maiolo
+# -------------------------------------------------------------------------
+# This file is part of Castor
+#
+# Castor is a computer program whose purpose is to infer phylogentic trees
+# under indel-aware and indel-non-aware substitution models for nucleotide,
+# protein, and codon datasets
+#
+# This software is based and extends the following libraries:
+# - the Bio++ libraries
+#   developed by the Bio++ Development Team <http://biopp.univ-montp2.fr>
+#
+# - The Tree Search Heuristic Library (TSH-LIB)
+#   developed by L. Gatti & M. Maiolo <http://bit.ly/tsh-lib>
+#
+# Castor is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.
+#
+# Castor is a free software: you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with Castor. If not, see <http://www.gnu.org/licenses/>.
+# -------------------------------------------------------------------------
+
+
 cmake_minimum_required(VERSION 3.5)
 
 set(CASTOR_SOFTWARENAME "Castor")
@@ -212,41 +242,14 @@ if(${USE_PARALLEL})
 	endif()
 endif()
 
+# Add local include folder
+include_directories("${PROJECT_SOURCE_DIR}/include")
+# Files to compile
+file(GLOB SOURCES src/*.cpp src/*.cc)
+file(GLOB HEADERS include/*.hpp include/*.h)
+add_executable(Castor ${SOURCES} ${HEADERS})
+set_target_properties(Castor PROPERTIES PUBLIC_HEADER "${HEADERS}")
 
-set(SOURCES
-        main.cpp
-        Utilities.cpp
-        Utilities.hpp
-        PIP.cpp
-        PIP.hpp
-        Version.hpp
-        RHomogeneousTreeLikelihood_PIP.cpp
-        RHomogeneousTreeLikelihood_PIP.hpp
-        ExtendedAlphabet.cpp
-        ExtendedAlphabet.hpp
-        UnifiedTSHTopologySearch.cpp
-        UnifiedTSHTopologySearch.hpp
-        CastorApplication.cpp
-        CastorApplication.hpp
-        Optimizators.cpp
-        Optimizators.hpp
-        UnifiedTSHomogeneousTreeLikelihood_Generic.cpp
-        UnifiedTSHomogeneousTreeLikelihood_Generic.hpp
-        UnifiedTSHomogeneousTreeLikelihood_PIP.cpp
-        UnifiedTSHomogeneousTreeLikelihood_PIP.hpp
-        UnifiedTSHSearchable.cpp
-        UnifiedTSHSearchable.hpp
-        RHomogeneousTreeLikelihood_Generic.cpp
-        RHomogeneousTreeLikelihood_Generic.hpp
-        SupportMeasures.cpp
-        SupportMeasures.hpp
-        UnifiedPhylogeneticTools.cpp
-        UnifiedPhylogeneticTools.hpp
-        UnifiedDistanceEstimation.cpp
-        UnifiedDistanceEstimation.hpp
-        Horner.h
-        LambertW.cc
-        LambertW.h)
 
 if (STATIC GREATER 0)
     message(STATUS "Compilation will produce a static executable")
@@ -261,7 +264,7 @@ if (STATIC GREATER 0)
         SET(CMAKE_C_FLAGS_DEBUGINTEL "${CMAKE_C_FLAGS_DEBUGINTEL} -static-intel -static")
     endif()
 
-    add_executable(Castor ${SOURCES})
+    #add_executable(Castor ${SOURCES})
     set_target_properties(Castor PROPERTIES LINK_FLAGS "-static")
     target_link_libraries(Castor tshlib-static)
     target_link_libraries(Castor glog::glog)
@@ -271,7 +274,8 @@ if (STATIC GREATER 0)
     target_link_libraries(Castor ${TBB_IMPORTED_TARGETS})
     target_link_libraries(Castor ${OpenMP_CXX_LIBRARIES_STATIC})
 else ()
-    add_executable(Castor ${SOURCES})
+
+    #add_executable(Castor ${SOURCES})
     target_link_libraries(Castor tshlib)
     target_link_libraries(Castor glog::glog)
     target_link_libraries(Castor ${INTEL_LIBS_SHARED})

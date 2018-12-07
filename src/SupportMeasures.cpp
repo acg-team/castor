@@ -2,23 +2,34 @@
  * Licensed Materials - Property of Lorenzo Gatti & Massimo Maiolo
  *
  *
- * Copyright (C) 2015-2018 by Lorenzo Gatti & Massimo Maiolo
+ * Copyright (C) 2015-2019 by Lorenzo Gatti & Massimo Maiolo
  *******************************************************************************
  *
- * This file is part of miniJATI
+ * This file is part of Castor
  *
- * miniJATI is a free software: you can redistribute it and/or modify it
+ * Castor is a computer program whose purpose is to infer phylogentic trees
+ * under indel-aware and indel-non-aware substitution models for nucleotide,
+ * protein, and codon datasets
+ *
+ * This software is based and extends the following libraries:
+ *
+ * - the Bio++ libraries
+ *   developed by the Bio++ Development Team <http://biopp.univ-montp2.fr>
+ *
+ * - The Tree Search Heuristic Library (TSH-LIB)
+ *   developed by L. Gatti & M. Maiolo <http://bit.ly/tsh-lib>
+ *
+ * Castor is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * Castor is a free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published
  * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * miniJATI is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
  * You should have received a copy of the GNU Lesser General Public
- * License along with miniJATI. If not, see <http://www.gnu.org/licenses/>.
+ * License along with Castor. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
 /**
