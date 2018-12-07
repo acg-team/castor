@@ -150,17 +150,9 @@ int main(int argc, char *argv[]) {
 
         //////////////////////////////////////////////
         // CLI ARGUMENTS
-
-        //bool PAR_alignment = ApplicationTools::getBooleanParameter("alignment", castorapp.getParams(), false);
-        //bool PAR_align_optim = ApplicationTools::getBooleanParameter("optimisation.alignment", castorapp.getParams(),
-        //                                                             false);
-        //double PAR_proportion = ApplicationTools::getDoubleParameter("alignment.proportion", castorapp.getParams(), .1);
         std::string PAR_model_substitution = ApplicationTools::getStringParameter("model", castorapp.getParams(), "JC69",
                                                                                   "", true, true);
-        //std::string PAR_output_file_msa = ApplicationTools::getAFilePath("output.msa.file", castorapp.getParams(), false,
-        //                                                                 false, "", true, "", 1);
-        //std::string PAR_output_file_lk = ApplicationTools::getAFilePath("output.lk.file", castorapp.getParams(), false,
-        //                                                                false, "", true, "", 1);
+
 
         // Split model string description and test if PIP is required
         std::string modelStringName;

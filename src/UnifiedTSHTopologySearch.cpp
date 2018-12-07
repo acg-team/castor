@@ -172,7 +172,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 
     // Count moves performed per each cycle
     std::vector<int> _count__moves_cycle(candidateMoves->getNumberOfMoves(), 0);
-	
+
     // Threads should run the following tasks in parallel
     int thread_id, i;
    
@@ -183,8 +183,8 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
     for (i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
 #elif USE_INTELTBB
 //  tbb::task_scheduler_init init(threads_num);
-//	tbb::parallel_for( tbb::blocked_range<int>(0, candidateMoves->getNumberOfMoves()), [&](tbb::blocked_range<int> r)
-//	{
+//  tbb::parallel_for( tbb::blocked_range<int>(0, candidateMoves->getNumberOfMoves()), [&](tbb::blocked_range<int> r)
+//  {
 //        for (int i=r.begin(); i<r.end(); ++i){
 #else
 	for (i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
@@ -194,7 +194,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
 #ifdef USE_OPENMP
         thread_id = omp_get_thread_num();
 #elif USE_INTELTBB
-		//thread_id = tbb::this_tbb_thread::get_id();
+        //thread_id = tbb::this_tbb_thread::get_id();
 #else 
         thread_id = 0;
 #endif
