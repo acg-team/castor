@@ -175,6 +175,7 @@ if (${CMAKE_PREFIX_PATH})
     message(STATUS "Looking for headers in the following directory: ${CMAKE_PREFIX_PATH}/include")
 endif ()
 
+# Find Boost Libraries
 if (STATIC GREATER 0)
 set(Boost_USE_STATIC_LIBS        ON) # only find static libs
 else ()
@@ -198,48 +199,42 @@ endif()
 
 endif()
 
+# Find Tree-Search Heuristic Library
 find_package(TshLib 3.0.0 REQUIRED)
 if (TSHLIB_FOUND)
     include_directories(${TSHLIB_INCLUDE_DIRS})
 endif ()
 
+# Find BPP dependencies
 find_package(bpp-core 4.0.0 REQUIRED)
 find_package(bpp-seq  12.0.0 REQUIRED)
 find_package(bpp-phyl 12.0.0 REQUIRED)
 
+# Check for a parallel framework (openMP)
 if(${USE_PARALLEL})
 	message(STATUS "Compilation will check for a parallel framework" )
-	if(PATH_INTELTBB)
-		include_directories(${PATH_INTELTBB})
-		find_package(TBB)
-		if(TBB_FOUND)
-		    message(STATUS "Intel TBB Library ${TBB_VERSION} ${TBB_INTERFACE_VERSION} found:")
-		    message(STATUS "  directory: ${PATH_INTELTBB}")
-		    message(STATUS "  targets: ${TBB_IMPORTED_TARGETS}")
-		    add_definitions("-DUSE_INTELTBB")
-		endif()
-	else ()
-        set(OPENMP_LIBRARIES "/usr/local/Cellar/llvm/7.0.0/lib")
-        set(OPENMP_INCLUDES "/usr/local/Cellar/llvm/7.0.0/include")
-        find_package(OpenMP)
-        if (OpenMP_FOUND)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 
-            # Prepare static openMP libraries list
-            foreach(loop_var ${OpenMP_CXX_LIBRARIES})
-                string(REGEX MATCH "^(.*)\\.[^.]*$" dummy ${loop_var})
-                set(MYFILE_WITHOUT_EXT ${CMAKE_MATCH_1}.a)
-                list(APPEND OpenMP_CXX_LIBRARIES_STATIC ${MYFILE_WITHOUT_EXT})
-            endforeach()
+    find_package(OpenMP)
 
-            message(STATUS "OpenMP Libraries Shared: ${OpenMP_CXX_LIBRARIES}")
-            message(STATUS "OpenMP Libraries Static: ${OpenMP_CXX_LIBRARIES_STATIC}")
+    if (OPENMP_FOUND)
+        message(STATUS "${OpenMP_VERSION}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 
-            add_definitions("-DUSE_OPENMP")
-        endif()
+        # Prepare static openMP libraries list
+        foreach(loop_var ${OpenMP_CXX_LIBRARIES})
+            string(REGEX MATCH "^(.*)\\.[^.]*$" dummy ${loop_var})
+            set(MYFILE_WITHOUT_EXT ${CMAKE_MATCH_1}.a)
+            list(APPEND OpenMP_CXX_LIBRARIES_STATIC ${MYFILE_WITHOUT_EXT})
+        endforeach()
 
-	endif()
+        message(STATUS "OpenMP Libraries Shared: ${OpenMP_CXX_LIBRARIES}")
+        message(STATUS "OpenMP Libraries Static: ${OpenMP_CXX_LIBRARIES_STATIC}")
+
+        add_definitions("-DUSE_OPENMP")
+    endif()
+
+	#endif()
 endif()
 
 # Add local include folder
@@ -264,24 +259,20 @@ if (STATIC GREATER 0)
         SET(CMAKE_C_FLAGS_DEBUGINTEL "${CMAKE_C_FLAGS_DEBUGINTEL} -static-intel -static")
     endif()
 
-    #add_executable(Castor ${SOURCES})
     set_target_properties(Castor PROPERTIES LINK_FLAGS "-static")
     target_link_libraries(Castor tshlib-static)
     target_link_libraries(Castor glog::glog)
     target_link_libraries(Castor ${INTEL_LIBS_STATIC})
     target_link_libraries(Castor ${BPP_LIBS_STATIC})
     target_link_libraries(Castor ${Boost_LIBRARIES})
-    target_link_libraries(Castor ${TBB_IMPORTED_TARGETS})
     target_link_libraries(Castor ${OpenMP_CXX_LIBRARIES_STATIC})
 else ()
 
-    #add_executable(Castor ${SOURCES})
     target_link_libraries(Castor tshlib)
     target_link_libraries(Castor glog::glog)
     target_link_libraries(Castor ${INTEL_LIBS_SHARED})
     target_link_libraries(Castor ${BPP_LIBS_SHARED})
     target_link_libraries(Castor ${Boost_LIBRARIES})
-    target_link_libraries(Castor ${TBB_IMPORTED_TARGETS})
     target_link_libraries(Castor ${OpenMP_CXX_LIBRARIES})
 endif()
 

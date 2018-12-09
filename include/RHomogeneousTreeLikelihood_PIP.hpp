@@ -169,7 +169,7 @@ namespace bpp {
         /**
          * @brief Method called by constructors.
          */
-        void init_(bool usePatterns) throw(Exception);
+        void init_(bool usePatterns) noexcept(false);
 
         void _computeHadamardFVSons(std::vector<VVVdouble *> inFVSons, VVVdouble *outFVParent) const;
 

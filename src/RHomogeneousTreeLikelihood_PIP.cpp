@@ -123,8 +123,9 @@ RHomogeneousTreeLikelihood_PIP::~RHomogeneousTreeLikelihood_PIP() {
 }
 
 
-void RHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) throw(Exception) {
-    // This call initialises the data structure to compute the partial likelihoods of the nodes (it allows for ASRV distributions to be added on top of the s.m.)
+void RHomogeneousTreeLikelihood_PIP::init_(bool usePatterns) noexcept(false) {
+    // This call initialises the data structure to compute the partial likelihoods of the nodes (it allows for ASRV distributions to be added on
+    // top of the s.m.)
     likelihoodData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);
     likelihoodEmptyData_ = new DRASRTreeLikelihoodData(tree_, rateDistribution_->getNumberOfCategories(), usePatterns);
 }
