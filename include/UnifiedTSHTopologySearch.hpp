@@ -110,11 +110,11 @@ namespace tshlib {
             utree_ = inUTree;
         }
 
-        Utree* getUtree() {
+        Utree *getUtree() {
             return utree_ ?: nullptr;
         }
 
-        void setMaxNumThreads(int numThreads){
+        void setMaxNumThreads(int numThreads) {
             TreeSearch::threads_num = numThreads;
         }
 
@@ -153,11 +153,11 @@ namespace tshlib {
             toleranceValue = inTolerance;
         }
 
-        void setMaxCycles(int inCycles){
+        void setMaxCycles(int inCycles) {
             maxTSCycles = inCycles;
         }
 
-        void setStartingNodeHeuristic(StartingNodeHeuristics in_tshStartingNodeMethod, int in_search_startingnodes){
+        void setStartingNodeHeuristic(StartingNodeHeuristics in_tshStartingNodeMethod, int in_search_startingnodes) {
             tshStartingNodeMethod = in_tshStartingNodeMethod;
             setStartingNodes(in_search_startingnodes);
         }
@@ -203,15 +203,15 @@ namespace tshlib {
 
                     search_startingnodes = (int) utree_->listVNodes.size();
 
-                   DLOG(WARNING) << "[TreeSearch::setStartingNodes] User requested too many initial seed nodes [" << in_search_startingnodes
-                                 << "] to define candidate topology. Reset value to max number of nodes in the tree = "
-                                 << search_startingnodes;
+                    DLOG(WARNING) << "[TreeSearch::setStartingNodes] User requested too many initial seed nodes [" << in_search_startingnodes
+                                  << "] to define candidate topology. Reset value to max number of nodes in the tree = "
+                                  << search_startingnodes;
 
                 } else {
                     search_startingnodes = in_search_startingnodes;
 
                 }
-            }else{
+            } else {
                 LOG(ERROR) << "[TreeSearch::setStartingNodes] Utree has not been set for the current tree-search object. Call setUtree() first.";
             }
         }
@@ -292,7 +292,8 @@ namespace tshlib {
         tshlib::TreeRearrangment *defineMoves();
 
         /*!
-         * @brief testCandidateMoves method tests all the candidate tree topologies in the rearrangement list (or set), and it saves the score for each of them
+         * @brief This method tests all the candidate tree topologies in the rearrangement list (or set),
+         *        and it saves the score (likelihood) for each of them
          * @param candidateMoves pointer to the list of candidate rearrangements on a fixed topology
          */
         void testMoves(tshlib::TreeRearrangment *candidateMoves);
@@ -300,18 +301,32 @@ namespace tshlib {
         /*!
          * @brief This method preallocates the required amount of memory to test each candidate tree-rearrangement.
          *        Memory can have concurrent threads in reading and writing mode.
-         * @param candidateMoves stack of the moves to test
+         * @param numThreads number of concurrent threads
          */
         void allocateTemporaryLikelihoodData(int numThreads = 1);
 
+        /*!
+         * @brief This method deallocates the memory requested to test each candidate tree-rearrangement.
+         * @param numThreads number of concurrent threads
+         */
         void deallocateTemporaryLikelihoodData(int numThreads = 1);
 
-
-        std::string debugStackTraceMove(Move *move, Utree *_utree,
-                                               std::vector < int > listNodesInvolved,
-                                               std::vector < int > updatedList,
-                                               double initLK = 0,
-                                               double moveLK = 0);
+        /*!
+         * @brief This method prints a debug trace of the tree-rearrangement which generated an error
+         * @param move
+         * @param _utree
+         * @param listNodesInvolved
+         * @param updatedList
+         * @param initLK
+         * @param moveLK
+         * @return String to print
+         */
+        std::string debugStackTraceMove(Move *move,
+                                        Utree *_utree,
+                                        std::vector<int> listNodesInvolved,
+                                        std::vector<int> updatedList,
+                                        double initLK = 0,
+                                        double moveLK = 0);
     };
 }
 

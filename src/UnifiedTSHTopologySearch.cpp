@@ -181,11 +181,6 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
     omp_set_num_threads(threads_num);
     #pragma omp parallel for private(thread_id, i)
     for (i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
-#elif USE_INTELTBB
-//  tbb::task_scheduler_init init(threads_num);
-//  tbb::parallel_for( tbb::blocked_range<int>(0, candidateMoves->getNumberOfMoves()), [&](tbb::blocked_range<int> r)
-//  {
-//        for (int i=r.begin(); i<r.end(); ++i){
 #else
 	for (i = 0; i < candidateMoves->getNumberOfMoves(); i++) {
 #endif   
@@ -193,9 +188,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
         // Get the number of the thread
 #ifdef USE_OPENMP
         thread_id = omp_get_thread_num();
-#elif USE_INTELTBB
-        //thread_id = tbb::this_tbb_thread::get_id();
-#else 
+#else
         thread_id = 0;
 #endif
         // ------------------------------------
@@ -332,9 +325,7 @@ void tshlib::TreeSearch::testMoves(tshlib::TreeRearrangment *candidateMoves) {
         // Delete candidate topology
         delete _thread__topology;
     }
-#ifdef USE_INTELTBB
-//	});
-#endif
+
 
     // ------------------------------------
     // Store count of moves tested for this cycle

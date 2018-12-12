@@ -85,7 +85,12 @@ namespace bpp {
 
     public:
 
-        explicit PIP_Nuc(const NucleicAlphabet *alpha, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData);
+        explicit PIP_Nuc(const NucleicAlphabet *alpha,
+                         SubstitutionModel *basemodel,
+                         const SequenceContainer &data,
+                         double lambda,
+                         double mu,
+                         bool initFreqFromData);
 
         virtual ~PIP_Nuc() = default;
 
@@ -133,7 +138,8 @@ namespace bpp {
          *
          * @param alpha A proteic alphabet.
          */
-        PIP_AA(const ProteicAlphabet *alpha, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData);
+        PIP_AA(const ProteicAlphabet *alpha, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu,
+               bool initFreqFromData);
 
         /**
          * @brief Build a PIP_AA model with special equilibrium frequencies.
@@ -163,7 +169,7 @@ namespace bpp {
         PIP_AA *clone() const { return new PIP_AA(*this); }
 
     public:
-        std::string getName() const { return name_ ;}
+        std::string getName() const { return name_; }
 
         void fireParameterChanged(const ParameterList &parameters) {
             freqSet_->matchParametersValues(parameters);
@@ -216,7 +222,8 @@ namespace bpp {
     public:
         size_t getNumberOfStates() const override { return 65; };
 
-        PIP_Codon(const CodonAlphabet_Extended *alpha, const GeneticCode *gc, SubstitutionModel *basemodel, const SequenceContainer &data, double lambda, double mu, bool initFreqFromData);
+        PIP_Codon(const CodonAlphabet_Extended *alpha, const GeneticCode *gc, SubstitutionModel *basemodel, const SequenceContainer &data,
+                  double lambda, double mu, bool initFreqFromData);
 
         ~PIP_Codon();
 

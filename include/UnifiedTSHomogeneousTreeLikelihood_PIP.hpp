@@ -149,48 +149,7 @@ namespace bpp {
 
         void removeTestLikelihoodData(int idxThread) override;
 
-
-#ifdef INTELTBB
-        void recomputeSiteLikelihoodUsingPartitions(const tbb::blocked_range<size_t> &range, std::vector<double> *lk_sites) const;
-#endif
     };
-
-
-#ifdef INTELTBB
-
-    class PartitionedSiteLikelihood {
-
-        friend class UnifiedTSHomogeneousTreeLikelihood_PIP;
-
-    private:
-
-        std::vector<double> *siteLogLK_;
-        UnifiedTSHomogeneousTreeLikelihood_PIP *lkFunc_;
-
-    public:
-        PartitionedSiteLikelihood(std::vector<double> *inSiteLogLK, UnifiedTSHomogeneousTreeLikelihood_PIP *inLkFunc) :
-                siteLogLK_(inSiteLogLK), lkFunc_(inLkFunc) {};
-
-        void operator()(const tbb::blocked_range<size_t> &range) const {
-
-            for (size_t i = range.begin(); i != range.end(); ++i) {
-
-                std::vector<int> tempExtendedNodeList;
-                const std::vector<unsigned int> *rootWeights = &lkFunc_->likelihoodData_->getWeights();
-
-                // Extend it
-                lkFunc_->_extendNodeListOnSetA(lkFunc_->likelihoodNodes_.back(), tempExtendedNodeList, i);
-
-                // call to function which retrieves the lk value for each site
-                (*siteLogLK_)[i] = = log(lkFunc_->computeLikelihoodForASite(tempExtendedNodeList, i)) * rootWeights->at(i);
-            }
-
-        };
-
-
-    };
-
-#endif
 
 }
 
