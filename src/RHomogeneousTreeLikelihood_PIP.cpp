@@ -222,7 +222,6 @@ void RHomogeneousTreeLikelihood_PIP::_computeHadamardFVSons(std::vector<VVVdoubl
     size_t t_distSites = (*outFVParent).size();
     size_t t_classes = (*outFVParent)[0].size();
     size_t t_states = (*outFVParent)[0][0].size();
-
     for (int i = 0; i < t_distSites; i++) {
         for (int c = 0; c < t_classes; c++) {
             for (int x = 0; x < t_states; x++) {
@@ -258,14 +257,17 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesFv(VVVdouble *pxy__node, VVV
     size_t t_distSites = (*_likelihoods_node).size();
     size_t t_classes = (*_likelihoods_node)[0].size();
     size_t t_states = (*_likelihoods_node)[0][0].size();
-
+    #pragma vector always
     for (int c = 0; c < t_classes; c++) {
         //VVdouble *pxy__node_c = &(*pxy__node)[c];
+        #pragma vector always
         for (int i = 0; i < t_distSites; i++) {
             // this vector stores the old values before recomputing them
             Vdouble reference = (*_likelihoods_node)[i][c];
+            #pragma vector always
             for (int x = 0; x < t_states; x++) {
                 (*_likelihoods_node)[i][c][x] = 0.0;
+                #pragma vector always
                 for (int y = 0; y < t_states; y++)
                     (*_likelihoods_node)[i][c][x] += (*pxy__node)[c][x][y] * reference[y];
             }
@@ -279,12 +281,15 @@ void RHomogeneousTreeLikelihood_PIP::_computePrTimesIndicator(VVVdouble *pxy__no
     size_t t_classes = (*_likelihoods_node)[0].size();
     size_t t_states = (*_likelihoods_node)[0][0].size();
 
+    #pragma vector always
     for (int c = 0; c < t_classes; c++) {
+        #pragma vector alway
         for (int i = 0; i < t_distSites; i++) {
+            #pragma vector always
             for (int x = 0; x < t_states; x++) {
                 // Reset value for the current state
                 (*_likelihoods_node)[i][c][x] = 0.0;
-
+                #pragma vector always
                 for (int y = 0; y < t_states; y++)
                     (*_likelihoods_node)[i][c][x] += (*pxy__node)[c][x][y] * (*indicator_node)[i][y];
 

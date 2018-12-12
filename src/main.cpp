@@ -107,7 +107,7 @@
 using namespace tshlib;
 
 /*
-* From miniJati:
+* From Castor:
 */
 #include "Version.hpp"
 #include "Utils.hpp"
