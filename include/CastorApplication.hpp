@@ -96,8 +96,8 @@ namespace bpp {
 
         void help() {
             std::cout << appName_ << std::endl << std::endl;
-            std::cout << "Usage: miniJATI [arguments] or [params=file.txt]" << std::endl;
-            std::cout << "Documentation can be found at https://bitbucket.org/acg-team/minijati/" << std::endl;
+            std::cout << "Usage: Castor [arguments] or [params=file.txt]" << std::endl;
+            std::cout << "Documentation can be found at https://bitbucket.org/lorenzogatti89/castor/" << std::endl;
         }
 
 
