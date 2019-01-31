@@ -74,8 +74,3 @@ In case of bugs or improvement suggestions feel free to:
 
 We use Google Analytics to study the traffic of this website. Please find information about the data usage [here](https://policies.google.com/technologies/partner-sites?hl=en).
 
-----
-##### Latest update
-Build on commit: refs/heads/develop a5c173949e465945497fecd02d8f3c0ceeeb5109
-
-On date: 31 Jul 2018, 16:00:20
