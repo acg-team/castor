@@ -15,17 +15,6 @@ There are two stories about the origin of the name Castor. The first one:
 > our indel-aware (the nibbles) phylogeny inferring software as a beaver (Castor)
 > nibbling at the (phylogenetic) trees in the attempt of building a damn.
 
-A second story:
-
-> Castor and Pollux (or, in greek Polydeuces) were half twin brothers in the greek and latin
-> mitology, and they were known together as Dioscuri. Castor was the mortal son of Tyndareous,
-> while Pollux was the divine son of Zeus. They were regarded as helpers of humankind in time
-> of difficulties or to win challenges. The separation between mortal and immortal nature
-> of the two brothers could -- with some degree of immagination -- suggest a link between the two
-> different steps of indel-aware phylogenetic inference, which requires that both sequence
-> alignment and the phylogenetic tree inference interpret indels as evolutionary events and
-> account for their contribution.
-
 
 ----
 #### Documentation
@@ -75,8 +64,11 @@ You can find tutorial, examples and guides on our [Wikipages](https://bitbucket.
 ----
 #### Support
 In case of bugs or improvement suggestions feel free to:
-- File an issue using via our issue collector here
+    
+- File an issue using via our issue collector [here](http://track.lorenzogatti.me/issuetracking_minijati.html)
+    
 - Write to [Lorenzo Gatti](mailto:lorenzo.gatti@alumni.ethz.ch)
+    
 - Write to [Massimo Maiolo](mailto:massimo.maiolo@zhaw.ch)
 
 
