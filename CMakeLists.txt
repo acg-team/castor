@@ -118,11 +118,16 @@ endif()
 SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wshadow -Weffc++ -O0 -g")
 SET(CMAKE_C_FLAGS_DEBUG "-Wall -Wshadow -O0 -g")
 
-message("-- Compilation will be performed with the following release of the software:
+message("==========================================================")
+message("==> Compilation will be performed with the following release of the software:
 \tbranch   ${PROJECT_GIT_REF}
 \tref      ${PROJECT_SOURCE_VERSION}
 \ttime     ${CASTOR_RELDATE} ${CASTOR_RELTIME}
 \tcurrent  ${CASTOR_VERSION} (latest version)")
+
+
+
+
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(WINDOWS TRUE)
@@ -166,14 +171,19 @@ if (${USE_INTEL})
 endif()
 
 # Dependencies not covered by find package should be found in the following directories
-if (${CMAKE_PREFIX_PATH})
+message("CMAKE_PREFIX_PATH: " ${CMAKE_PREFIX_PATH})
+
+
+if (CMAKE_PREFIX_PATH)
+    message("CMAKE_PREFIX_PATH FOUND!")
     include_directories("${CMAKE_PREFIX_PATH}/include")
     LINK_DIRECTORIES("${CMAKE_PREFIX_PATH}}/lib")
     LINK_DIRECTORIES("${CMAKE_PREFIX_PATH}/lib64")
-    message(STATUS "Looking for libraries in the following directory: ${CMAKE_PREFIX_PATH}/lib")
-    message(STATUS "Looking for libraries in the following directory: ${CMAKE_PREFIX_PATH}/lib64")
-    message(STATUS "Looking for headers in the following directory: ${CMAKE_PREFIX_PATH}/include")
+    message(STATUS ">Looking for headers in the following directory: ${CMAKE_PREFIX_PATH}/include")
+    message(STATUS ">Looking for libraries in the following directory: ${CMAKE_PREFIX_PATH}/lib")
+    message(STATUS ">Looking for libraries in the following directory: ${CMAKE_PREFIX_PATH}/lib64")
 endif ()
+
 
 # Find Boost Libraries
 if (STATIC GREATER 0)
@@ -200,10 +210,16 @@ endif()
 endif()
 
 # Find Tree-Search Heuristic Library
-find_package(TshLib 3.0.0 REQUIRED)
+message("--------------------------------------")
+message("TSHLIB_INCLUDE_DIRS 1: " ${TSHLIB_INCLUDE_DIRS})
+#find_package(TshLib 3.0.0 REQUIRED)
+LINK_DIRECTORIES(${TSHLIB_INCLUDE_DIRS})
+
 if (TSHLIB_FOUND)
+    message("TSHLIB_INCLUDE_DIRS 2: " ${TSHLIB_INCLUDE_DIRS})
     include_directories(${TSHLIB_INCLUDE_DIRS})
 endif ()
+message("---------------------------------------")
 
 # Find BPP dependencies
 find_package(bpp-core 4.0.0 REQUIRED)

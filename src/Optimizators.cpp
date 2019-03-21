@@ -539,7 +539,7 @@ namespace bpp {
 
                 if (optimizeTopo) {
                     // Execute tree-search
-                    treesearch->executeTreeSearch();
+                    treesearch->executeTreeSearch();  //tshlib::TreeSearch
 
                     if (treesearch->isTreeSearchSuccessful()) {
                         // Recompute the difference

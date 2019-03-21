@@ -607,6 +607,10 @@ int main(int argc, char *argv[]) {
         tm.insert(UtreeBppUtils::nodeassoc(tree->getRootId(), utree->rootnode->getVnode_id()));
 
         ApplicationTools::displayResult("Initial tree total length", TextTools::toString(tree->getTotalLength(), 6));
+
+
+
+
         /////////////////////////
         // SUBSTITUTION MODEL
 
@@ -776,6 +780,8 @@ int main(int argc, char *argv[]) {
         bpp::StdStr s1;
         bpp::PhylogeneticsApplicationTools::printParameters(smodel, s1, 1, true);
         DLOG(INFO) << s1.str();
+
+
 
         /////////////////////////
         // AMONG-SITE-RATE-VARIATION

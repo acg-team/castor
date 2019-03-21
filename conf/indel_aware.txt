@@ -1,0 +1,24 @@
+analysis_name = gene_HA
+model_description = GTR+PIP
+input_folder = /Users/alex/Projects_cpp/castor/input
+output_folder = /Users/alex/Projects_cpp/castor/output
+
+alphabet=DNA
+alignment=false
+input.sequence.file=$(input_folder)/example_dataset_nuc.fasta
+input.sequence.sites_to_use=all
+init.tree=distance
+init.distance.method=bionj
+model=PIP(model=GTR(initFreqs=observed),initFreqs=observed)
+rate_distribution=Constant
+optimization=D-BFGS(derivatives=BFGS)
+optimization.max_number_f_eval=5000
+optimization.tolerance=0.001
+optimization.final=bfgs
+optimization.topology=true
+optimization.topology.algorithm=Mixed(coverage=best-search,starting_nodes=Hillclimbing(n=50),max_cycles=100,tolerance=0.001,brlen_optimisation=BFGS,threads=4)
+output.msa.file=$(output_folder)/$(analysis_name).$(model_description).out.align.fasta
+output.tree.file=$(output_folder)/$(analysis_name).$(model_description).out.tree.tree
+output.estimates.file=$(output_folder)/$(analysis_name).$(model_description).out.estimates.log
+output.estimates.format=json
+support=none
