@@ -218,6 +218,7 @@ LINK_DIRECTORIES(${TSHLIB_INCLUDE_DIRS})
 if (TSHLIB_FOUND)
     message("TSHLIB_INCLUDE_DIRS 2: " ${TSHLIB_INCLUDE_DIRS})
     include_directories(${TSHLIB_INCLUDE_DIRS})
+    add_subdirectory(${TSHLIB_INCLUDE_DIRS})
 endif ()
 message("---------------------------------------")
 
