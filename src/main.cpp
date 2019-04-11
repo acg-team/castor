@@ -121,8 +121,10 @@ using namespace tshlib;
 #include "SupportMeasures.hpp"
 #include "UnifiedDistanceEstimation.hpp"
 
+#include "Profiler.h"
 
 int main(int argc, char *argv[]) {
+
 
     //FLAGS_logtostderr = 1;
     FLAGS_log_dir = ".";
@@ -130,6 +132,7 @@ int main(int argc, char *argv[]) {
     google::InstallFailureSignalHandler();
 
     try {
+        LOG_DURATION("==  TOTAL RUNTIME ==");
 
         bpp::CastorApplication castorapp(argc,
                                          argv,

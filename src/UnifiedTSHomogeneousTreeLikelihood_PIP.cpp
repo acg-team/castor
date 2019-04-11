@@ -55,6 +55,7 @@
 
 #include <glog/logging.h>
 #include "UnifiedTSHomogeneousTreeLikelihood_PIP.hpp"
+#include "Profiler.h"
 
 
 using namespace bpp;
@@ -189,6 +190,9 @@ void UnifiedTSHomogeneousTreeLikelihood_PIP::fireTopologyChange(std::vector<int>
 double UnifiedTSHomogeneousTreeLikelihood_PIP::updateLikelihoodOnTreeRearrangement(std::vector<int> &nodeList,
                                                                                    tshlib::Utree &_utree__topology,
                                                                                    int idxThread) {
+    // @Alex: run profiler
+    //LOG_DURATION("- updateLikelihoodOnTreeRearrangement")
+
     //fetch temporary arrays
     std::map<int, VVVdouble> *ts_lkdata = &testVectorLikelihoodData_[LKDataClass::sub][idxThread];
     std::map<int, VVVdouble> *ts_lkemptydata = &testVectorLikelihoodData_[LKDataClass::empty][idxThread];

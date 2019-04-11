@@ -26,7 +26,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with Castor. If not, see <http://www.gnu.org/licenses/>.
 # -------------------------------------------------------------------------
-
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -O0")
 
 cmake_minimum_required(VERSION 3.5)
 

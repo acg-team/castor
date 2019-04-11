@@ -1042,18 +1042,18 @@ double RHomogeneousTreeLikelihood_PIP::computeLikelihoodForASite(size_t i,
 
     std::vector<double> _node__partial_likelihood(_node__list.size(),0);
 
-    for (int idxNode = 0; idxNode < _node__list.size(); idxNode++) {
+    for (int idxNode = 0; idxNode < _node__list.size(); idxNode++) { //post order node visiting
 
         auto _sons__ids = new std::vector<int>;
         std::vector<VVVdouble *> lk_sons(2);
         std::vector<VVVdouble *> lk_sons_empty(2);
-        
+
         //if (!tree_->isLeaf(_node__list[idxNode])) {
-        if (!utree_->getNode(treemap_.left.at(_node__list[idxNode]))->isTerminalNode()) {
+        if (!utree_->getNode(treemap_.left.at(_node__list[idxNode]))->isTerminalNode()) {  // extract two children of node
             (*_sons__ids) = _getMappedNodeChildren(_node__list[idxNode], _utree__topology);
 
             for (int l = 0; l < 2; l++) {
-                if ((*ts_node__data_origin)[(*_sons__ids)[l]]) {
+                if ((*ts_node__data_origin)[(*_sons__ids)[l]]) {   // fill in temp vectors
                     lk_sons[l] = &(*likelihoods)[(*_sons__ids)[l]];
                     lk_sons_empty[l] = &(*likelihoods_empty)[(*_sons__ids)[l]];
                 } else {
@@ -1078,12 +1078,12 @@ double RHomogeneousTreeLikelihood_PIP::_kernel_likelihood_forasite(size_t i,
 
     double lk_site = 0;
     std::vector<double> _site__class_likelihood(nbClasses_,0);
-    for (size_t c = 0; c < nbClasses_; c++) {
+    for (size_t c = 0; c < nbClasses_; c++) {  // for all gamma categories
         double fv_site = 0;
-        if ((*ts_setadata)[nodeID][i]) {
+        if ((*ts_setadata)[nodeID][i]) {  // for set A
             DVLOG(3) << "[BPP] Likelihood for setA (" << i << ") @node " << tree_->getNodeName(nodeID);
             //if (!tree_->isLeaf(nodeID)) {
-            if (!_utree__isLeaf(nodeID)) {
+            if (!_utree__isLeaf(nodeID)) {  // add iot etc survival prob
                 std::vector<double> fvsons = _SingleRateCategoryHadamardMultFvSons(nodeID, i, c, (*lk_sons));
                 fv_site += iotasData_[nodeID] * betasData_[nodeID] * MatrixBppUtils::dotProd(&fvsons, &rootFreqs_);
             } else {
@@ -1092,7 +1092,7 @@ double RHomogeneousTreeLikelihood_PIP::_kernel_likelihood_forasite(size_t i,
         }
         // Multiply the likelihood value of the site for the ASVR category probability
         //lk_site += (fv_site * rateDistribution_->getProbability(c));
-        _site__class_likelihood[c] = (fv_site * rateDistribution_->getProbability(c));
+        _site__class_likelihood[c] = (fv_site * rateDistribution_->getProbability(c));  // not fr set A but for regular likelihood
     }
     return bpp::VectorTools::sum(_site__class_likelihood);
     //return lk_site;

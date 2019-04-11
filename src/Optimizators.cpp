@@ -52,6 +52,7 @@
  *
  * @see For more information visit: https://bitbucket.org/lorenzogatti89/castor/wiki/Home
  */
+#include "Profiler.h"
 
 #include <glog/logging.h>
 
@@ -525,12 +526,13 @@ namespace bpp {
                 ApplicationTools::displayResult("Numerical opt. cycle LK", TextTools::toString(initScore, 15));
                 // Execute num-opt
                 if ((optName == "D-Brent") || (optName == "D-BFGS")) {
+                    LOG_DURATION(">>Initial parameter optimization (if)");
                     n = OptimizationTools::optimizeNumericalParameters(
                             dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl), parametersToEstimate,
                             backupListener.get(), nstep, tolerance, nbEvalMax, messageHandler, profiler, reparam, optVerbose, optMethodDeriv,
                             optMethodModel);
                 } else {
-
+                    LOG_DURATION(">>Initial parameter optimization (else)");
                     n = Optimizators::optimizeNumericalParametersUsingNumericalDerivatives(
                             dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl), parametersToEstimate,
                             backupListener.get(), nstep, tolerance, nbEvalMax, messageHandler, profiler, reparam, optVerbose, optMethodDeriv,
@@ -539,6 +541,7 @@ namespace bpp {
 
                 if (optimizeTopo) {
                     // Execute tree-search
+                    LOG_DURATION("Tree optimization");
                     treesearch->executeTreeSearch();  //tshlib::TreeSearch
 
                     if (treesearch->isTreeSearchSuccessful()) {
@@ -597,6 +600,7 @@ namespace bpp {
             parametersToEstimate.matchParametersValues(tl->getParameters());
 
             if ((optName == "D-Brent") || (optName == "D-BFGS")) {
+                LOG_DURATION("Final parameter optimization");
                 n = OptimizationTools::optimizeNumericalParameters(
                         dynamic_cast<DiscreteRatesAcrossSitesTreeLikelihood *>(tl),
                         parametersToEstimate,
