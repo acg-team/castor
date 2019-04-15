@@ -1,11 +1,4 @@
-# Licensed Materials - Property of Lorenzo Gatti & Massimo Maiolo
-# Copyright (C) 2015-2019 by Lorenzo Gatti & Massimo Maiolo
-# -------------------------------------------------------------------------
-# This file is part of Castor
-#
-# Castor is a computer program whose purpose is to infer phylogentic trees
-# under indel-aware and indel-non-aware substitution models for nucleotide,
-# protein, and codon datasets
+
 #
 # This software is based and extends the following libraries:
 # - the Bio++ libraries
@@ -14,17 +7,6 @@
 # - The Tree Search Heuristic Library (TSH-LIB)
 #   developed by L. Gatti & M. Maiolo <http://bit.ly/tsh-lib>
 #
-# Castor is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.
-#
-# Castor is a free software: you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with Castor. If not, see <http://www.gnu.org/licenses/>.
 # -------------------------------------------------------------------------
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -O0")
@@ -178,6 +160,7 @@ message("CMAKE_PREFIX_PATH: " ${CMAKE_PREFIX_PATH})
 if (CMAKE_PREFIX_PATH)
     message("CMAKE_PREFIX_PATH FOUND!")
     include_directories("${CMAKE_PREFIX_PATH}/include")
+    include_directories("${CMAKE_PREFIX_PATH}/src")
     LINK_DIRECTORIES("${CMAKE_PREFIX_PATH}}/lib")
     LINK_DIRECTORIES("${CMAKE_PREFIX_PATH}/lib64")
     message(STATUS ">Looking for headers in the following directory: ${CMAKE_PREFIX_PATH}/include")
@@ -213,11 +196,13 @@ endif()
 # Find Tree-Search Heuristic Library
 message("--------------------------------------")
 message("TSHLIB_INCLUDE_DIRS 1: " ${TSHLIB_INCLUDE_DIRS})
+message("TSHLIB_SRC_DIRS 1: " ${TSHLIB_SRC_DIRS})
 #find_package(TshLib 3.0.0 REQUIRED)
 LINK_DIRECTORIES(${TSHLIB_INCLUDE_DIRS})
 
 if (TSHLIB_FOUND)
     message("TSHLIB_INCLUDE_DIRS 2: " ${TSHLIB_INCLUDE_DIRS})
+    message("TSHLIB_SRC_DIRS 2: " ${TSHLIB_SRC_DIRS})
     include_directories(${TSHLIB_INCLUDE_DIRS})
     add_subdirectory(${TSHLIB_INCLUDE_DIRS})
 endif ()

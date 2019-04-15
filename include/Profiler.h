@@ -23,10 +23,10 @@ public:
     ~LogDuration() {
         auto finish = steady_clock::now();
         auto dur = finish - start;
-        cerr << endl
+        cerr << '\n'
              << message
              << duration_cast<seconds>(dur).count()
-             << " sec" << endl << endl;
+             << " sec " << '\n' << endl;
     }
 private:
     string message;

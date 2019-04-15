@@ -108,6 +108,7 @@ tshlib::TreeRearrangment *tshlib::TreeSearch::defineMoves() {
             RandomTools::getSample(utree_->listVNodes, _seed__nodes);
 
             // Generate candidate list of possible moves given the node topology and the rearrangement operation type
+            // TODO: the first move always has TBR as moveType, possibly a bug
             for (auto &node:_seed__nodes) {
 
                 // Print node description with neighbors

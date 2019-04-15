@@ -539,6 +539,17 @@ namespace bpp {
                             optMethodModel);
                 }
 
+
+                // show params after num optimization
+
+                ApplicationTools::displayMessage("\n[Parameters after NUMERICAL optimization]");
+                ApplicationTools::displayResult("LogLik",tl->getLogLikelihood());
+                ApplicationTools::displayResult("PIP.lambda", parametersToEstimate.getParameter("PIP.lambda").getValue());
+                ApplicationTools::displayResult("PIP.mu", parametersToEstimate.getParameter("PIP.mu").getValue());
+                double pip_intensity = parametersToEstimate.getParameter("PIP.lambda").getValue() * parametersToEstimate.getParameter("PIP.mu").getValue();
+                ApplicationTools::displayResult("PIP.intensity", TextTools::toString(pip_intensity));
+
+
                 if (optimizeTopo) {
                     // Execute tree-search
                     LOG_DURATION("Tree optimization");
@@ -584,6 +595,15 @@ namespace bpp {
                     backupListener.get(), tolerance, nbEvalMax, messageHandler, profiler, reparam, useClock, optVerbose, optMethodDeriv);
         } else
             throw Exception("Unknown optimization method: " + optName);
+
+        // show params after tree optimization
+        ApplicationTools::displayMessage("\n[Parameters after TREE optimization]");
+        ApplicationTools::displayResult("LogLik",tl->getLogLikelihood());
+        ApplicationTools::displayResult("PIP.lambda", parametersToEstimate.getParameter("PIP.lambda").getValue());
+        ApplicationTools::displayResult("PIP.mu", parametersToEstimate.getParameter("PIP.mu").getValue());
+        double pip_intensity = parametersToEstimate.getParameter("PIP.lambda").getValue() * parametersToEstimate.getParameter("PIP.mu").getValue();
+        ApplicationTools::displayResult("PIP.intensity", TextTools::toString(pip_intensity));
+
 
         string finalMethod = ApplicationTools::getStringParameter("optimization.final", params, "none", suffix, suffixIsOptional, warn + 1);
 
@@ -634,6 +654,13 @@ namespace bpp {
         } else
             throw Exception("Unknown final optimization method: " + finalMethod);
 
+        // show params after final optimization
+        ApplicationTools::displayMessage("\n[Parameters after FINAL NUMERICAL optimization]");
+        ApplicationTools::displayResult("LogLik",tl->getLogLikelihood());
+        ApplicationTools::displayResult("PIP.lambda", parametersToEstimate.getParameter("PIP.lambda").getValue());
+        ApplicationTools::displayResult("PIP.mu", parametersToEstimate.getParameter("PIP.mu").getValue());
+
+
         if (finalOptimizer) {
             parametersToEstimate.matchParametersValues(tl->getParameters());
 
@@ -660,6 +687,10 @@ namespace bpp {
         }
         return tl;
     }
+
+
+
+
 
     std::string Optimizators::DISTANCEMETHOD_INIT = "init";
     std::string Optimizators::DISTANCEMETHOD_PAIRWISE = "pairwise";
